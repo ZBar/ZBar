@@ -1,0 +1,7 @@
+  * finish addon decoding
+  * combine partial decodes into final result
+    * soft reset when partial mismatches same slot
+    * parity checking
+  * add scan patterns to zebraimg & zebracam
+    * via some kind of reusable library API?
+  * documentation
