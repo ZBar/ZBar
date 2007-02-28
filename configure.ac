@@ -1,11 +1,12 @@
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.60])
 AC_INIT([zebra], [0.1], [spadix@users.sourceforge.net])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_SRCDIR(zebra/scanner.c)
 
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 AC_PROG_RANLIB
@@ -81,11 +82,5 @@ AC_C_INLINE
 AC_FUNC_MMAP
 AC_CHECK_FUNCS([memset atexit setenv])
 
-AC_CONFIG_FILES([
-  Makefile
-  zebra/Makefile
-  zebraimg/Makefile
-  zebracam/Makefile
-  test/Makefile
-])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

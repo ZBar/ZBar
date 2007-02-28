@@ -33,7 +33,13 @@ namespace zebra {
 
 class Decoder {
  public:
+    class Handler {
+    public:
+        virtual void decode_callback(Decoder &decoder) = 0;
+    };
+
     Decoder ()
+        : _handler(NULL)
     {
         _decoder = zebra_decoder_create();
     }
@@ -55,19 +61,18 @@ class Decoder {
 
     zebra_symbol_type_t decode_width (unsigned width)
     {
-        _type = zebra_decode_width(_decoder, width);
-        return(_type);
+        return(zebra_decode_width(_decoder, width));
     }
 
     Decoder& operator<< (unsigned width)
     {
-        _type = zebra_decode_width(_decoder, width);
+        zebra_decode_width(_decoder, width);
         return(*this);
     }
 
     zebra_symbol_type_t get_type () const
     {
-        return(_type);
+        return(zebra_decoder_get_type(_decoder));
     }
 
     const char *get_data_chars() const
@@ -81,11 +86,25 @@ class Decoder {
         return(_data);
     }
 
+    void set_handler (Handler &handler)
+    {
+        _handler = &handler;
+        zebra_decoder_set_handler(_decoder, _cb);
+        zebra_decoder_set_userdata(_decoder, this);
+    }
+
  private:
     friend class Scanner;
     zebra_decoder_t *_decoder;
-    zebra_symbol_type_t _type;
     std::string _data;
+    Handler *_handler;
+
+    static void _cb (zebra_decoder_t *cdcode)
+    {
+        Decoder *dcode = (Decoder*)zebra_decoder_get_userdata(cdcode);
+        if(dcode && dcode->_handler)
+            dcode->_handler->decode_callback(*dcode);
+    }
 };
 
 }

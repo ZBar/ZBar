@@ -31,6 +31,17 @@ using namespace zebra;
 
 int display = 0;
 
+
+class ImageHandler : public Decoder::Handler {
+    virtual void decode_callback (Decoder &decoder)
+    {
+        if(decoder.get_type() > ZEBRA_PARTIAL)
+            cout << decoder.get_type() << ": "
+                 << decoder.get_data_string() << endl;
+    }
+};
+
+ImageHandler handler;
 Decoder decoder;
 Scanner scanner(decoder);
 
@@ -75,6 +86,8 @@ int usage (int rc, const char *msg = NULL)
 
 int main (int argc, const char *argv[])
 {
+    decoder.set_handler(handler);
+
     int num_images = 0;
     for(int i = 1; i < argc; i++) {
         if(!strcmp(argv[i], "-h") ||

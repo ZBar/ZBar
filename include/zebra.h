@@ -25,7 +25,7 @@
 
 #ifdef __cplusplus
 namespace zebra {
-  extern "C" {
+    extern "C" {
 #endif
 
 
@@ -56,6 +56,11 @@ typedef enum zebra_symbol_type_e {
 /* opaque decoder object */
 struct zebra_decoder_s;
 typedef struct zebra_decoder_s zebra_decoder_t;
+
+/* decoder data handler callback function.
+ * called by decoder when new data has just been decoded
+ */
+typedef void (zebra_decoder_handler_t)(zebra_decoder_t *decoder);
 
 /* constructor */
 extern zebra_decoder_t *zebra_decoder_create();
@@ -90,6 +95,29 @@ extern zebra_symbol_type_t zebra_decode_width(zebra_decoder_t *decoder,
  * and next library call
  */
 extern const char *zebra_decoder_get_data(const zebra_decoder_t *decoder);
+
+/* returns last decoded type,
+ * or ZEBRA_NONE if no new data available
+ */
+extern zebra_symbol_type_t
+zebra_decoder_get_type(const zebra_decoder_t *decoder);
+
+/* setup data handler callback.
+ * the registered function will be called by the decoder
+ * just before zebra_decode_width returns a non-zero value.
+ * pass a NULL value to disable callbacks.
+ * returns the previously registered handler
+ */
+extern zebra_decoder_handler_t*
+zebra_decoder_set_handler(zebra_decoder_t *decoder,
+                          zebra_decoder_handler_t *handler);
+
+/* associate user specified data value with the decoder */
+extern void zebra_decoder_set_userdata(zebra_decoder_t *decoder,
+                                       void *userdata);
+
+/* return user specified data value associated with the decoder */
+extern void *zebra_decoder_get_userdata(zebra_decoder_t *decoder);
 
 
 /*------------------------------------------------------------*/
@@ -140,7 +168,7 @@ extern zebra_color_t zebra_scanner_get_color(const zebra_scanner_t *scanner);
 
 
 #ifdef __cplusplus
-  }
+    }
 }
 
 # include "zebra/Decoder.h"

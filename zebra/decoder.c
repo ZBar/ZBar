@@ -95,18 +95,21 @@ static const char parity_decode[] = {
 
 
 typedef struct scan_s {
-    char state;         /* module position of w[idx] in symbol */
-#define STATE_ADDON 0x40  /* scanning add-on */
-#define STATE_IDX   0x1f  /* element offset into symbol */
-    char raw[7];        /* decode in process */
+    char state;                 /* module position of w[idx] in symbol */
+#define STATE_ADDON 0x40        /*   scanning add-on */
+#define STATE_IDX   0x1f        /*   element offset into symbol */
+    char raw[7];                /* decode in process */
 } scan_t;
 
 /* decoder state */
 struct zebra_decoder_s {
-    unsigned char idx;  /* current width index */
-    unsigned w[8];      /* window of last N bar widths */
-    scan_t scans[4];    /* track decode states in parallel */
-    char buf[20];       /* decoded characters */
+    unsigned char idx;                  /* current width index */
+    unsigned w[8];                      /* window of last N bar widths */
+    scan_t scans[4];                    /* track decode states in parallel */
+    char buf[20];                       /* decoded characters */
+    zebra_symbol_type_t type;           /* type of last decoded data */
+    void *userdata;                     /* application data */
+    zebra_decoder_handler_t *handler;   /* application callback */
 };
 
 zebra_decoder_t *zebra_decoder_create ()
@@ -137,6 +140,40 @@ void zebra_decoder_new_scan (zebra_decoder_t *dcode)
     dcode->scans[2].state = -1;
     dcode->scans[3].state = -1;
 }
+
+const char *zebra_decoder_get_data (const zebra_decoder_t *dcode)
+{
+    return(dcode->buf);
+}
+
+zebra_decoder_handler_t *
+zebra_decoder_set_handler (zebra_decoder_t *dcode,
+                           zebra_decoder_handler_t handler)
+{
+    zebra_decoder_handler_t *result = dcode->handler;
+    dcode->handler = handler;
+    return(result);
+}
+
+void zebra_decoder_set_userdata (zebra_decoder_t *dcode,
+                                 void *userdata)
+{
+    dcode->userdata = userdata;
+}
+
+void *zebra_decoder_get_userdata (zebra_decoder_t *dcode)
+{
+    return(dcode->userdata);
+}
+
+zebra_symbol_type_t zebra_decoder_get_type (const zebra_decoder_t *dcode)
+{
+    return((dcode->type == RIGHT_HALF ||
+            dcode->type == LEFT_HALF)
+           ? ZEBRA_PARTIAL
+           : dcode->type);
+}
+
 
 /* bar+space width are compared as a fraction of the reference dimension "x"
  *   - +/- 1/2 x tolerance
@@ -396,35 +433,35 @@ static inline zebra_symbol_type_t integrate_partial (zebra_decoder_t *dcode,
                                                      scan_t *scan,
                                                      zebra_symbol_type_t part)
 {
-    zebra_symbol_type_t sym = ZEBRA_NONE;
-
     /* FIXME if same partial is not consistent, reset others */
-    unsigned char j = 0;
+    /* FIXME UPC-E, EAN-8 */
+    unsigned char start;
+    unsigned char len = 6;
+    unsigned char i = 0;
     if(part == LEFT_HALF) {
-        dcode->buf[0] = scan->raw[6] + '0';
-        j = 1;
+        start = 0;
+        len = 7;
         if(dcode->buf[7])
-            sym = ((dcode->buf[13])
-                   ? ZEBRA_EAN13 + ZEBRA_ADDON5 /* FIXME */
-                   : ZEBRA_EAN13);
+            part = ZEBRA_EAN13;
     }
-    else if(part == RIGHT_HALF)
-        j = 7;
-    else
-        j = 13;
-    unsigned char k;
-    for(k = 0; k < 6; k++)
-        dcode->buf[j + k] = scan->raw[k] + '0';
-    
-    if(dcode->buf[15])
+    else if(part == RIGHT_HALF) {
+        i = 1;
+        start = 7;
         if(dcode->buf[0])
-            ;
-    if(dcode->buf[0] && dcode->buf[7] &&
-       dcode->buf[13] && dcode->buf[15])
-        sym = ZEBRA_EAN13 + ZEBRA_ADDON5;
-    else if(dcode->buf[0] && dcode->buf[7] && dcode->buf[13])
-        sym = ZEBRA_EAN13 + ZEBRA_ADDON5;
-    return(sym);
+            part = ZEBRA_EAN13;
+    }
+    else {
+        start = 13;
+        len = (part == ZEBRA_ADDON5) ? 5 : 2;
+    }
+    if(part == ZEBRA_EAN13 && dcode->buf[13])
+        part |= ZEBRA_ADDON5;
+
+    /* copy raw data into output buffer */
+    for(; i < len; i++, start++)
+        dcode->buf[start] = (scan->raw[i] & 0xf) + '0';
+
+    return(part);
 }
 
 zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
@@ -446,11 +483,16 @@ zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
             zebra_symbol_type_t part = decode_scan(dcode, &dcode->scans[i]);
             if(part) {
                 /* update accumulated data from new partial decode */
-                assert(sym <= 1);
+                /*assert(sym <= 1); FIXME why?! */
                 sym = integrate_partial(dcode, &dcode->scans[i], part);
+                dcode->type = sym;
             }
             dprintf(2, "\n");
         }
     dcode->idx++;
+    if(sym == LEFT_HALF || sym == RIGHT_HALF)
+        sym = ZEBRA_PARTIAL;
+    if(sym && dcode->handler)
+        dcode->handler(dcode);
     return(sym);
 }

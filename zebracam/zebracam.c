@@ -207,7 +207,10 @@ static void process ()
     uint8_t *p = buf + ((vwin.height + 1) >> 1) * dy;
     int i;
     for(i = 0; i < vwin.width; i++, p += 3) {
-        zebra_scan_rgb24(scanner, p);
+        if(zebra_scan_rgb24(scanner, p) > 1)
+            printf("%x: %s\n",
+                   zebra_decoder_get_type(decoder),
+                   zebra_decoder_get_data(decoder));
         *(p + 2) = 0xff;
     }
 }
