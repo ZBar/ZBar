@@ -5,6 +5,8 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_SRCDIR(zebra/scanner.c)
 
+AC_SUBST([LIB_VERSION], [1:0:1])
+
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX

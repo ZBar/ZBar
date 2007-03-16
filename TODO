@@ -1,6 +1,7 @@
+  * C++ interface to img_walker
+  * img_walker should have userdata
+  * scanner: resolve int/fixed inconsistency bug
   * soft reset when partial mismatches same slot
-  * parity checking
-  * finish addon decoding
-  * add scan patterns to zebraimg & zebracam
-    * via some kind of reusable library API?
+  * finish UPC-E, EAN-8 and addon decoding
+  * profile and weed out obvious oversights
   * documentation

@@ -25,7 +25,8 @@
 #ifdef DEBUG_SCANNER
 # include <stdio.h>     /* fprintf */
 #endif
-#include <stdlib.h>     /* calloc, free, abs */
+#include <stdlib.h>     /* malloc, free, abs */
+#include <string.h>     /* memset */
 
 #include "zebra.h"
 
@@ -43,13 +44,13 @@
 /* scanner state */
 struct zebra_scanner_s {
     zebra_decoder_t *decoder; /* associated bar width decoder */
+    unsigned y1_min_thresh; /* minimum threshold */
 
     unsigned x;             /* relative scan position of next sample */
     int y0[4];              /* short circular buffer of average intensities */
 
     int y1_sign;            /* slope at last crossing */
     unsigned y1_thresh;     /* current slope threshold */
-    unsigned y1_min_thresh; /* minimum threshold */
 
     unsigned cur_edge;      /* interpolated position of tracking edge */
     unsigned last_edge;     /* interpolated position of last located edge */
@@ -58,15 +59,35 @@ struct zebra_scanner_s {
 
 zebra_scanner_t *zebra_scanner_create (zebra_decoder_t *dcode)
 {
-    zebra_scanner_t *scn = calloc(1, sizeof(zebra_scanner_t));
+    zebra_scanner_t *scn = malloc(sizeof(zebra_scanner_t));
     scn->decoder = dcode;
-    scn->y1_thresh = scn->y1_min_thresh = 8;
+    scn->y1_min_thresh = 4;
+    zebra_scanner_reset(scn);
     return(scn);
 }
 
 void zebra_scanner_destroy (zebra_scanner_t *scn)
 {
     free(scn);
+}
+
+void zebra_scanner_reset (zebra_scanner_t *scn)
+{
+    memset(&scn->x, 0, sizeof(zebra_scanner_t) + (void*)scn - (void*)&scn->x);
+    scn->y1_thresh = scn->y1_min_thresh;
+    if(scn->decoder)
+        zebra_decoder_reset(scn->decoder);
+}
+
+void zebra_scanner_new_scan (zebra_scanner_t *scn)
+{
+    /* reset color to SPACE
+     * (actually just resets everything)
+     */
+    memset(&scn->x, 0, sizeof(zebra_scanner_t) + (void*)scn - (void*)&scn->x);
+    scn->y1_thresh = scn->y1_min_thresh;
+    if(scn->decoder)
+        zebra_decoder_new_scan(scn->decoder);
 }
 
 unsigned zebra_scanner_get_width (const zebra_scanner_t *scn)
@@ -105,9 +126,10 @@ static inline zebra_symbol_type_t process_edge (zebra_scanner_t *scn,
                                                 int y1)
 {
     scn->width = scn->cur_edge - scn->last_edge;
-    dprintf(" sgn=%d cur=%d.%d w=%d\n",
+    dprintf(" sgn=%d cur=%d.%d w=%d (%s)\n",
             scn->y1_sign, scn->cur_edge >> ZEBRA_FIXED,
-            scn->cur_edge & ((1 << ZEBRA_FIXED) - 1), scn->width);
+            scn->cur_edge & ((1 << ZEBRA_FIXED) - 1), scn->width,
+            ((y1 > 0) ? "SPACE" : "BAR"));
     scn->last_edge = scn->cur_edge;
 
     /* adaptive thresholding */
@@ -117,8 +139,7 @@ static inline zebra_symbol_type_t process_edge (zebra_scanner_t *scn,
         scn->y1_thresh = scn->y1_min_thresh;
 
     /* pass to decoder */
-    if(scn->width) {
-        scn->y1_sign = y1;
+    if(scn->width || (y1 > 0)) {
         if(scn->decoder)
             return(zebra_decode_width(scn->decoder, scn->width));
         return(ZEBRA_PARTIAL);
@@ -137,14 +158,16 @@ zebra_symbol_type_t zebra_scan_y (zebra_scanner_t *scn,
         /* update weighted moving average */
         y0_0 = scn->y0[scn->x & 3] = y0_1 + ((y - y0_1 + 1) / 2);
     else
-        y0_0 = scn->y0[0] = scn->y0[1] = scn->y0[2] = scn->y0[3] = y;
+        y0_0 = y0_1 = scn->y0[0] = scn->y0[1] = scn->y0[2] = scn->y0[3] = y;
     register int y0_2 = scn->y0[(scn->x - 2) & 3];
     register int y0_3 = scn->y0[(scn->x - 3) & 3];
     /* 1st differential @ x-1 */
     register int y1_1 = y0_0 - y0_2;
     {
         register int y1_2 = y0_1 - y0_3;
-        if(abs(y1_1) < abs(y1_2)) y1_1 = y1_2;
+        if((abs(y1_1) < abs(y1_2)) &&
+           ((y1_1 >= 0) == (y1_2 >= 0)))
+            y1_1 = y1_2;
     }
     /* 2nd differentials @ x-1 & x-2 */
     register int y2_1 = y0_0 - (y0_1 * 2) + y0_2;
@@ -156,24 +179,28 @@ zebra_symbol_type_t zebra_scan_y (zebra_scanner_t *scn,
     /* 2nd zero-crossing is 1st local min/max - could be edge */
     if((!y2_1 ||
         ((y2_1 > 0) ? y2_2 < 0 : y2_2 > 0)) &&
-       (calc_thresh(scn) < abs(y1_1)))
+       (calc_thresh(scn) <= abs(y1_1)))
     {
         /* check for 1st sign change */
-        if((scn->y1_sign > 0) ? y1_1 < 0 : y1_1 > 0)
+        char y1_rev = (scn->y1_sign > 0) ? y1_1 < 0 : y1_1 > 0;
+        if(y1_rev || !scn->y1_sign)
             /* intensity change reversal - finalize previous edge */
             edge = process_edge(scn, y1_1);
         else
             dprintf("\n");
 
-        /* update current edge */
-        int d = y2_1 - y2_2;
-        scn->cur_edge = 1 << ZEBRA_FIXED;
-        if(!d)
-            scn->cur_edge >>= 1;
-        else if(y2_1)
-            /* interpolate zero crossing */
-            scn->cur_edge -= ((y2_1 << ZEBRA_FIXED) + 1) / d;
-        scn->cur_edge += scn->x << ZEBRA_FIXED;
+        if(y1_rev || (abs(scn->y1_sign) < abs(y1_1))) {
+            /* update current edge */
+            scn->y1_sign = y1_1;
+            int d = y2_1 - y2_2;
+            scn->cur_edge = 1 << ZEBRA_FIXED;
+            if(!d)
+                scn->cur_edge >>= 1;
+            else if(y2_1)
+                /* interpolate zero crossing */
+                scn->cur_edge -= ((y2_1 << ZEBRA_FIXED) + 1) / d;
+            scn->cur_edge += scn->x << ZEBRA_FIXED;
+        }
     }
     else
         dprintf("\n");
@@ -193,14 +220,15 @@ void zebra_scanner_get_state (const zebra_scanner_t *scn,
                               int *y2,
                               int *y1_thresh)
 {
-    register int y0_0 = scn->y0[scn->x & 0x3];
-    register int y0_1 = scn->y0[(scn->x - 1) & 3];
-    register int y0_2 = scn->y0[(scn->x - 2) & 3];
+    register int y0_0 = scn->y0[(scn->x - 1) & 3];
+    register int y0_1 = scn->y0[(scn->x - 2) & 3];
+    register int y0_2 = scn->y0[(scn->x - 3) & 3];
     if(x) *x = scn->x - 1;
     if(cur_edge) *cur_edge = scn->cur_edge;
     if(last_edge) *last_edge = scn->last_edge;
     if(y0) *y0 = y0_1;
     if(y1) *y1 = y0_0 - y0_2;
     if(y2) *y2 = y0_0 - (y0_1 * 2) + y0_2;
+    /* NB not quite accurate (uses updated x) */
     if(y1_thresh) *y1_thresh = calc_thresh((zebra_scanner_t*)scn);
 }

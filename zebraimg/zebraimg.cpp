@@ -36,8 +36,8 @@ class ImageHandler : public Decoder::Handler {
     virtual void decode_callback (Decoder &decoder)
     {
         if(decoder.get_type() > ZEBRA_PARTIAL)
-            cout << decoder.get_type() << ": "
-                 << decoder.get_data_string() << endl;
+            cout << decoder.get_symbol_name() << decoder.get_addon_name()
+                 << ": " << decoder.get_data_string() << endl;
     }
 };
 
@@ -49,6 +49,7 @@ void scan_image (const char *filename)
 {
     Image image;
     image.read(filename);
+
     unsigned width = image.columns();
     unsigned height = image.rows();
 
@@ -65,13 +66,22 @@ void scan_image (const char *filename)
         *pxp++ = red;
     }
     view.sync();
-    y.y(y.y() * .75);
-    scanner << (int)(y.y() * 0x100)
-            << (int)(y.y() * 0x100)
-            << (int)(y.y() * 0x100); /* flush scan FIXME? */
+    int iy = (int)(y.y() * .75) * 0x100;
+    scanner << iy << iy << iy; /* flush scan FIXME? */
 
-    if(display)
+    if(display) {
+#if (MagickLibVersion >= 0x632)
         image.display();
+#else
+        // workaround for "no window with specified ID exists" bug
+        // ref http://www.imagemagick.org/discourse-server/viewtopic.php?t=6315
+        // fixed in 6.3.1-25
+        char c = image.imageInfo()->filename[0];
+        image.imageInfo()->filename[0] = 0;
+        image.display();
+        image.imageInfo()->filename[0] = c;
+#endif
+    }
 }
 
 int usage (int rc, const char *msg = NULL)

@@ -25,7 +25,7 @@
 #ifdef DEBUG_DECODER
 # include <stdio.h>     /* fprintf */
 #endif
-#include <stdlib.h>     /* calloc, free */
+#include <stdlib.h>     /* malloc, free */
 #include <string.h>     /* memset */
 #include <assert.h>
 
@@ -114,8 +114,8 @@ struct zebra_decoder_s {
 
 zebra_decoder_t *zebra_decoder_create ()
 {
-    zebra_decoder_t *dcode = calloc(1, sizeof(zebra_decoder_t));
-    zebra_decoder_new_scan(dcode);
+    zebra_decoder_t *dcode = malloc(sizeof(zebra_decoder_t));
+    zebra_decoder_reset(dcode);
     return(dcode);
 }
 
@@ -126,14 +126,17 @@ void zebra_decoder_destroy (zebra_decoder_t *dcode)
 
 void zebra_decoder_reset (zebra_decoder_t *dcode)
 {
-    memset(dcode, 0, sizeof(zebra_decoder_t));
+    memset(dcode, 0, (long)&dcode->userdata - (long)dcode);
+    dcode->scans[0].state = -1;
+    dcode->scans[1].state = -1;
+    dcode->scans[2].state = -1;
+    dcode->scans[3].state = -1;
 }
 
 void zebra_decoder_new_scan (zebra_decoder_t *dcode)
 {
     /* soft reset decoder */
-    memset(dcode->w, 0, 8 * sizeof(unsigned));
-    memset(dcode->buf, 0, 20);
+    memset(dcode->w, 0, sizeof(dcode->w));
     dcode->idx = 0;
     dcode->scans[0].state = -1;
     dcode->scans[1].state = -1;
@@ -174,6 +177,26 @@ zebra_symbol_type_t zebra_decoder_get_type (const zebra_decoder_t *dcode)
            : dcode->type);
 }
 
+const char *zebra_get_symbol_name (zebra_symbol_type_t sym)
+{
+    switch(sym & ZEBRA_SYMBOL) {
+    case ZEBRA_EAN8: return("EAN8");
+    case ZEBRA_UPCE: return("UPC-E");
+    case ZEBRA_UPCA: return("UPC-A");
+    case ZEBRA_EAN13: return("EAN-13");
+    default: return("UNKNOWN");
+    }
+}
+
+const char *zebra_get_addon_name (zebra_symbol_type_t sym)
+{
+    switch(sym & ZEBRA_ADDON) {
+    case ZEBRA_ADDON2: return("+2");
+    case ZEBRA_ADDON5: return("+5");
+    default: return("");
+    }
+}
+
 
 /* bar+space width are compared as a fraction of the reference dimension "x"
  *   - +/- 1/2 x tolerance
@@ -207,9 +230,8 @@ static inline unsigned width(zebra_decoder_t *dcode,
     return(dcode->w[(dcode->idx - offset) & 7]);
 }
 
-/* calculate module width "x"
- *   - based on total character width "s"
- *     => start of character identified by context sensitive offset (<= 4)
+/* calculate total character width "s"
+ *   => start of character identified by context sensitive offset (<= 4)
  */
 static inline unsigned calc_s (zebra_decoder_t *dcode,
                                unsigned char offset)
@@ -259,7 +281,7 @@ static inline char aux_start (zebra_decoder_t *dcode,
 
     if((dcode->idx & 1) == ZEBRA_BAR) {
         /* check for quiet-zone */
-        if(width(dcode, 7) > (s * 6 / 7)) {
+        if((width(dcode, 7) * 14 + 1) / s >= 3) {
             if(!E1) {
                 dprintf(2, " [valid normal]");
                 return(0); /* normal symbol start */
@@ -359,8 +381,8 @@ static inline zebra_symbol_type_t partial_end (scan_t *scan, char fwd)
         unsigned char i;
         for(i = 1; i < 4; i++) {
             char tmp = scan->raw[i];
-            scan->raw[i] = scan->raw[6 - i];
-            scan->raw[6 - i] = tmp;
+            scan->raw[i] = scan->raw[7 - i];
+            scan->raw[7 - i] = tmp;
         }
     }
 
@@ -368,7 +390,7 @@ static inline zebra_symbol_type_t partial_end (scan_t *scan, char fwd)
         return(RIGHT_HALF);
     if(par & 0x20)
         return(LEFT_HALF);
-    return(ZEBRA_UPCE);
+    return(/*ZEBRA_UPCE*/ZEBRA_NONE);
 }
 
 /* update state for one of 4 parallel scans */
@@ -383,6 +405,8 @@ static inline zebra_symbol_type_t decode_scan (zebra_decoder_t *dcode,
         : 0x00111111))
     {
         unsigned s = calc_s(dcode, 0);
+        if(!s)
+            return(0);
         dprintf(2, " s=%d", s);
         /* validate guard bars before decoding first char of symbol */
         if(!scan->state) {
@@ -422,9 +446,36 @@ static inline zebra_symbol_type_t decode_scan (zebra_decoder_t *dcode,
                     scan->raw[6] & 0xf, part);
         }
         else
-            dprintf(2, " invalid end guard");
+            dprintf(2, " [invalid end guard]");
         scan->state = -1;
         return(part);
+    }
+    return(0);
+}
+
+static inline char check_ean13_parity (zebra_decoder_t *dcode)
+{
+    unsigned char chk = 0;
+    unsigned char i;
+    for(i = 0; i < 12; i++) {
+        unsigned char d = dcode->buf[i] - '0';
+        chk += d;
+        if(i & 1) {
+            chk += d << 1;
+            if(chk >= 20)
+                chk -= 20;
+        }
+        if(chk >= 10)
+            chk -= 10;
+    }
+    assert(chk < 10);
+    if(chk)
+        chk = 10 - chk;
+    unsigned char d = dcode->buf[12] - '0';
+    assert(d < 10);
+    if(chk != d) {
+        dprintf(1, "checksum mismatch %d != %d (%s)\n", chk, d, dcode->buf);
+        return(-1);
     }
     return(0);
 }
@@ -436,11 +487,10 @@ static inline zebra_symbol_type_t integrate_partial (zebra_decoder_t *dcode,
     /* FIXME if same partial is not consistent, reset others */
     /* FIXME UPC-E, EAN-8 */
     unsigned char start;
-    unsigned char len = 6;
+    unsigned char len = 7;
     unsigned char i = 0;
     if(part == LEFT_HALF) {
         start = 0;
-        len = 7;
         if(dcode->buf[7])
             part = ZEBRA_EAN13;
     }
@@ -455,11 +505,17 @@ static inline zebra_symbol_type_t integrate_partial (zebra_decoder_t *dcode,
         len = (part == ZEBRA_ADDON5) ? 5 : 2;
     }
     if(part == ZEBRA_EAN13 && dcode->buf[13])
-        part |= ZEBRA_ADDON5;
+        part |= (dcode->buf[15]) ? ZEBRA_ADDON5 : ZEBRA_ADDON2;
 
     /* copy raw data into output buffer */
     for(; i < len; i++, start++)
         dcode->buf[start] = (scan->raw[i] & 0xf) + '0';
+
+    if(part == ZEBRA_EAN13 &&
+       start <= 13 &&
+       check_ean13_parity(dcode))
+        /* invalid parity */
+        part = ZEBRA_NONE;
 
     return(part);
 }
@@ -483,9 +539,15 @@ zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
             zebra_symbol_type_t part = decode_scan(dcode, &dcode->scans[i]);
             if(part) {
                 /* update accumulated data from new partial decode */
-                /*assert(sym <= 1); FIXME why?! */
                 sym = integrate_partial(dcode, &dcode->scans[i], part);
                 dcode->type = sym;
+                if(sym) {
+                    /* this scan valid => _reset_ all scans */
+                    dcode->scans[0].state = -1;
+                    dcode->scans[1].state = -1;
+                    dcode->scans[2].state = -1;
+                    dcode->scans[3].state = -1;
+                }
             }
             dprintf(2, "\n");
         }

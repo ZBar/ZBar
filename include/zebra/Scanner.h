@@ -102,6 +102,11 @@ class Scanner {
         return(_type);
     }
 
+    const zebra_scanner_t *get_c_scanner () const
+    {
+        return(_scanner);
+    }
+
  private:
     zebra_scanner_t *_scanner;
     zebra_symbol_type_t _type;

@@ -43,9 +43,17 @@ typedef enum zebra_symbol_type_e {
     ZEBRA_UPCE        =   11,   /* UPC-E */
     ZEBRA_UPCA        =   12,   /* UPC-A */
     ZEBRA_EAN13       =   13,   /* EAN-13 */
+    ZEBRA_SYMBOL      = 0x0f,   /* mask for base symbol type */
     ZEBRA_ADDON2      = 0x20,   /* 2-digit add-on flag */
     ZEBRA_ADDON5      = 0x50,   /* 5-digit add-on flag */
+    ZEBRA_ADDON       = 0x70,   /* add-on flag mask */
 } zebra_symbol_type_t;
+
+/* return string name for symbol encoding */
+extern const char *zebra_get_symbol_name(zebra_symbol_type_t sym);
+
+/* return string name for addon encoding */
+extern const char *zebra_get_addon_name(zebra_symbol_type_t sym);
 
 
 /*------------------------------------------------------------*/
@@ -141,7 +149,14 @@ extern zebra_scanner_t *zebra_scanner_create(zebra_decoder_t *decoder);
 /* destructor */
 extern void zebra_scanner_destroy(zebra_scanner_t *scanner);
 
+/* clear all scanner state.
+ * also resets an associated decoder
+ */
 extern void zebra_scanner_reset(zebra_scanner_t *scanner);
+
+/* mark start of a new scan pass, resets color to SPACE.
+ * also updates an associated decoder
+ */
 extern void zebra_scanner_new_scan(zebra_scanner_t *scanner);
 
 /* process next sample intensity value (y)
@@ -165,6 +180,81 @@ extern unsigned zebra_scanner_get_width(const zebra_scanner_t *scanner);
 
 /* retrieve last scanned color */
 extern zebra_color_t zebra_scanner_get_color(const zebra_scanner_t *scanner);
+
+
+/*------------------------------------------------------------*/
+/* 2-D image walker interface
+ * walks a default scan pattern over image data buffers
+ * using configured image parameters
+ */
+
+/* opaque walker object */
+struct zebra_img_walker_s;
+typedef struct zebra_img_walker_s zebra_img_walker_t;
+
+/* pixel handler callback function.
+ * called by image walker for each pixel of the walk.
+ * any non-zero return value will terminate the walk
+ * with the returned value.
+ */
+typedef char (zebra_img_walker_handler_t)(zebra_img_walker_t *walker,
+                                          void *pixel);
+
+/* constructor
+ * create a new image walker instance.  image parameters
+ * must be initialized before a walk can be started
+ */
+extern zebra_img_walker_t *zebra_img_walker_create();
+
+/* destructor */
+extern void zebra_img_walker_destroy(zebra_img_walker_t *walker);
+
+/* set the pixel handler */
+extern void zebra_img_walker_set_handler(zebra_img_walker_t *walker,
+                                         zebra_img_walker_handler_t *handler);
+
+/* associate user specified data value with the walker */
+extern void zebra_img_walker_set_userdata(zebra_img_walker_t *walker,
+                                          void *userdata);
+
+/* return user specified data value associated with the decoder */
+extern void *zebra_img_walker_get_userdata(zebra_img_walker_t *walker);
+
+/* set the width of the image in columns,
+ * and the height of the image in rows
+ */
+extern void zebra_img_walker_set_size(zebra_img_walker_t *walker,
+                                      unsigned width,
+                                      unsigned height);
+
+
+/* (optional) set column and row sizes.
+ * bytes_per_col is the number of bytes in each column
+ * of the image buffer (eg, often 1 for YUV format
+ *  and 3 for packed RGB).  defaults to 1 if unspecified.
+ * bytes_per_row is the number of bytes in each row
+ * of the image buffer. defaults to width * bytes_per_col
+ * if unspecified
+ */
+extern void zebra_img_walker_set_stride(zebra_img_walker_t *walker,
+                                        unsigned bytes_per_col,
+                                        unsigned bytes_per_row);
+
+/* start walking over specified new image
+ * returns the first non-zero value returned by the handler,
+ * 0 when walk completes or -1 if walk cannot start
+ * (usually because some image parameter is in error).
+ * NB the image buffer is never dereferenced by the walker,
+ * a NULL value *will* be walked (which could be used as an offset)
+ */
+extern char zebra_img_walk(zebra_img_walker_t *walker,
+                           const void *image);
+
+/* return current column location of walker */
+extern unsigned zebra_img_walker_get_col(zebra_img_walker_t *walker);
+
+/* return current row location of walker */
+extern unsigned zebra_img_walker_get_row(zebra_img_walker_t *walker);
 
 
 #ifdef __cplusplus

@@ -75,6 +75,16 @@ class Decoder {
         return(zebra_decoder_get_type(_decoder));
     }
 
+    const char *get_symbol_name () const
+    {
+        return(zebra_get_symbol_name(zebra_decoder_get_type(_decoder)));
+    }
+
+    const char *get_addon_name () const
+    {
+        return(zebra_get_addon_name(zebra_decoder_get_type(_decoder)));
+    }
+
     const char *get_data_chars() const
     {
         return(zebra_decoder_get_data(_decoder));
