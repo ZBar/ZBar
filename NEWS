@@ -1,0 +1,7 @@
+Zebra Barcode Reader
+
+version 0.1 (2007-03-24):
+  first official Zebra release!
+  supports basic scanning and decoding of EAN-13 and UPC-A symbols
+  using a webcam (zebracam) or from stored image files (zebraimg).
+  still need to add support for addons and EAN-8/UPC-E

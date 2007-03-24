@@ -1,0 +1,38 @@
+version 0.1:
+  * add NEWS and ChangeLog
+  * fix some config/build issues found on other boxes
+  * add missing ImageWalker install
+  * fix scanner runaway threshold calculation bug
+  * fix zebracam/zebraimg bugs overwriting currently scanning image w/scan
+    pattern
+  * add c++ interface to img_walker
+  * apply ImageWalker to zebraimg
+  * add decoder soft reset on partial mismatch
+  * finish basic decoder symbol assembly/reporting
+  * add decoder symbol checksum verification
+  * add callback API option to decoder for "async" symbol processing
+  * add "image walker" library API to trace scan pattern over 2D images
+  * apply image walker to zebracam (C++/zebraimg scan pattern still TBD)
+  * add audio feedback to zebracam (still has long latency)
+  * add zebracam key cmd to dump frame to file (for debugging)
+  * fixes for decoder/scanner reset/new_scan
+  * fixes to scanner initialization and algorithm tweaks
+  * made decoder less sensitive to violated quiet-zone
+  * apply zebraimg workaround for imagemagick image display bug
+  * add string names for symbol types to library and API to access them
+  * add dbg_scan test program for visually debugging image scanner (and
+    decoder)
+  * add test_walk for basic image walker sanity/debug
+  * removed recursive makes in favor of monolithic build
+  * renamed some makefiles accordingly
+  * finished some final symbol data construction
+  * added result callbacks to decoder APIs for data reporting
+  * zebraimg hooks into callback
+  * zebracam still seems to "hang" in undecodeable state?
+  * populate svn with current sources.
+  * most of the basic functionality is included and working.
+  * still need to combine final decode data, finish addons, etc (see TODO).
+  * c++ wrappers are included and tested, but API may need tweaked.
+  * zebraimg and zebracam basically working but need cleanup/polish.
+  * need to create some basic documentation...
+  * initial repository layout
