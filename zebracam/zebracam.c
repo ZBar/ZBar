@@ -315,7 +315,7 @@ static char pixel_handler (zebra_img_walker_t *walker,
 {
     if(zebra_scan_rgb24(scanner, p) > ZEBRA_PARTIAL)
         return(1);
-    *((char*)p + 2) = 0xff;
+    *((uint8_t*)p - buf + (uint8_t*)screen->pixels + 2) = 0xff;
     return(0);
 }
 
@@ -359,11 +359,11 @@ int main (int argc, const char *argv[])
                 return(1);
             }
 
-            /* application processing */
-            process();
-
             /* show result onscreen */
             display();
+
+            /* application processing */
+            process();
 
             /* dump frame to file */
             if(dumping)
@@ -371,7 +371,7 @@ int main (int argc, const char *argv[])
 
             if(SDL_MUSTLOCK(screen))
                 SDL_UnlockSurface(screen);
-        
+
             SDL_Flip(screen);
         }
         else if(dumping)

@@ -263,6 +263,7 @@ extern unsigned zebra_img_walker_get_row(zebra_img_walker_t *walker);
 
 # include "zebra/Decoder.h"
 # include "zebra/Scanner.h"
+# include "zebra/ImageWalker.h"
 #endif
 
 #endif

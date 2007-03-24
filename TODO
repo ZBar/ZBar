@@ -1,7 +1,5 @@
-  * C++ interface to img_walker
-  * img_walker should have userdata
-  * scanner: resolve int/fixed inconsistency bug
-  * soft reset when partial mismatches same slot
+  * better C++ interface to img_walker
+    * nice to match STL iterator interface
   * finish UPC-E, EAN-8 and addon decoding
   * profile and weed out obvious oversights
   * documentation

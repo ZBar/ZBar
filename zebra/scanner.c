@@ -27,6 +27,7 @@
 #endif
 #include <stdlib.h>     /* malloc, free, abs */
 #include <string.h>     /* memset */
+#include <assert.h>
 
 #include "zebra.h"
 
@@ -109,17 +110,20 @@ static inline unsigned calc_thresh (zebra_scanner_t *scn)
         return(scn->y1_min_thresh);
     }
     /* slowly return threshold to min */
-    unsigned long t = thresh * ((scn->x << ZEBRA_FIXED) - scn->last_edge);
+    unsigned dx = (scn->x << ZEBRA_FIXED) - scn->last_edge;
+    unsigned long t = thresh * dx;
     t /= scn->width;
     t /= 4; /* FIXME add config API */
-    t = ((t >> (ZEBRA_FIXED - 1)) + 1) >> 1;
-    thresh -= t;
-    dprintf(" thr=%d t=%ld x=%d last=%d.%d",
+    dprintf(" thr=%d t=%ld x=%d last=%d.%d (%d)",
             thresh, t, scn->x, scn->last_edge >> ZEBRA_FIXED,
-            scn->last_edge & ((1 << ZEBRA_FIXED) - 1));
-    if(thresh < scn->y1_min_thresh)
-        thresh = scn->y1_thresh = scn->y1_min_thresh;
-    return(thresh);
+            scn->last_edge & ((1 << ZEBRA_FIXED) - 1), dx);
+    if(thresh > t) {
+        thresh -= t;
+        if(thresh > scn->y1_min_thresh)
+            return(thresh);
+    }
+    scn->y1_thresh = scn->y1_min_thresh;
+    return(scn->y1_min_thresh);
 }
 
 static inline zebra_symbol_type_t process_edge (zebra_scanner_t *scn,

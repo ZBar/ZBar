@@ -31,55 +31,68 @@ using namespace zebra;
 
 int display = 0;
 
+Decoder decoder;
+Scanner scanner(decoder);
+ImageWalker walker;
+const PixelPacket *rd_pxp;
+PixelPacket *wr_pxp;
 
-class ImageHandler : public Decoder::Handler {
+Color red("red");
+
+class PixelHandler : public ImageWalker::Handler {
+    virtual char walker_callback (ImageWalker &, void *pixel)
+    {
+        ColorYUV y;
+        y = *(rd_pxp + (unsigned)pixel);
+        scanner << (int)(y.y() * 0x100);
+        *(wr_pxp + (unsigned)pixel) = red;
+        return(0);
+    }
+} pixel_handler;
+
+class SymbolHandler : public Decoder::Handler {
     virtual void decode_callback (Decoder &decoder)
     {
         if(decoder.get_type() > ZEBRA_PARTIAL)
             cout << decoder.get_symbol_name() << decoder.get_addon_name()
                  << ": " << decoder.get_data_string() << endl;
     }
-};
-
-ImageHandler handler;
-Decoder decoder;
-Scanner scanner(decoder);
+} symbol_handler;
 
 void scan_image (const char *filename)
 {
     Image image;
     image.read(filename);
+    Image wr_img = image;
 
     unsigned width = image.columns();
     unsigned height = image.rows();
+    walker.set_size(width, height);
 
-    Color red("red");
-    image.modifyImage();
+    wr_img.modifyImage();
 
     // extract image pixels
-    Pixels view(image);
-    PixelPacket *pxp = view.get(0, (height + 1) / 2, width, 1);
-    ColorYUV y;
-    for(unsigned i = 0; i < width; i++) {
-        y = *pxp;
-        scanner << (int)(y.y() * 0x100);
-        *pxp++ = red;
-    }
-    view.sync();
-    int iy = (int)(y.y() * .75) * 0x100;
-    scanner << iy << iy << iy; /* flush scan FIXME? */
+    Pixels rd_view(image);
+    rd_pxp = rd_view.getConst(0, 0, width, height);
+    Pixels wr_view(wr_img);
+    wr_pxp = wr_view.get(0, 0, width, height);
+    walker.walk(0);
+    assert(*rd_pxp != red);
+
+    wr_view.sync();
+    scanner << 0 << 0 << 0; /* flush scan FIXME? */
 
     if(display) {
 #if (MagickLibVersion >= 0x632)
-        image.display();
+        wr_img.display();
 #else
         // workaround for "no window with specified ID exists" bug
         // ref http://www.imagemagick.org/discourse-server/viewtopic.php?t=6315
         // fixed in 6.3.1-25
-        char c = image.imageInfo()->filename[0];
-        image.imageInfo()->filename[0] = 0;
-        image.display();
-        image.imageInfo()->filename[0] = c;
+        char c = wr_img.imageInfo()->filename[0];
+        wr_img.imageInfo()->filename[0] = 0;
+        wr_img.display();
+        wr_img.imageInfo()->filename[0] = c;
 #endif
     }
 }
@@ -96,7 +109,8 @@ int usage (int rc, const char *msg = NULL)
 
 int main (int argc, const char *argv[])
 {
-    decoder.set_handler(handler);
+    decoder.set_handler(symbol_handler);
+    walker.set_handler(pixel_handler);
 
     int num_images = 0;
     for(int i = 1; i < argc; i++) {

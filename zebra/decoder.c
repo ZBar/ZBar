@@ -484,38 +484,61 @@ static inline zebra_symbol_type_t integrate_partial (zebra_decoder_t *dcode,
                                                      scan_t *scan,
                                                      zebra_symbol_type_t part)
 {
-    /* FIXME if same partial is not consistent, reset others */
     /* FIXME UPC-E, EAN-8 */
-    unsigned char start;
-    unsigned char len = 7;
-    unsigned char i = 0;
+    /* copy raw data into output buffer */
+    /* if same partial is not consistent, reset others */
+    unsigned char i;
     if(part == LEFT_HALF) {
-        start = 0;
-        if(dcode->buf[7])
+        if(dcode->buf[0] && dcode->buf[7])
             part = ZEBRA_EAN13;
+        
+        for(i = 0; i < 7; i++) {
+            char ch = (scan->raw[i] & 0xf) + '0';
+            if(part == ZEBRA_EAN13 &&
+               dcode->buf[i] != ch) {
+                /* partial mismatch - reset other parts */
+                dcode->buf[7] = dcode->buf[13] = 0;
+                part = ZEBRA_PARTIAL;
+            }
+            dcode->buf[i] = ch;
+        }
     }
     else if(part == RIGHT_HALF) {
-        i = 1;
-        start = 7;
-        if(dcode->buf[0])
+        if(dcode->buf[0] && dcode->buf[7])
             part = ZEBRA_EAN13;
+        for(i = 0; i < 6; i++) {
+            char ch = (scan->raw[i + 1] & 0xf) + '0';
+            if(part == ZEBRA_EAN13 &&
+               dcode->buf[i + 7] != ch) {
+                /* partial mismatch - reset other parts */
+                dcode->buf[0] = dcode->buf[13] = 0;
+                part = ZEBRA_PARTIAL;
+            }
+            dcode->buf[i + 7] = ch;
+        }
     }
     else {
-        start = 13;
-        len = (part == ZEBRA_ADDON5) ? 5 : 2;
+        unsigned char len = (part == ZEBRA_ADDON5) ? 5 : 2;
+        if(dcode->buf[0] && dcode->buf[7] && dcode->buf[13])
+            part |= ZEBRA_EAN13;
+        for(i = 0; i < len; i++) {
+            char ch = (scan->raw[i] & 0xf) + '0';
+            if((part & ZEBRA_SYMBOL) == ZEBRA_EAN13 &&
+               dcode->buf[i + 13] != ch) {
+                /* partial mismatch - reset other parts */
+                dcode->buf[0] = dcode->buf[7] = 0;
+                part &= ZEBRA_ADDON;
+            }
+            dcode->buf[i + 13] = ch;
+        }
     }
-    if(part == ZEBRA_EAN13 && dcode->buf[13])
-        part |= (dcode->buf[15]) ? ZEBRA_ADDON5 : ZEBRA_ADDON2;
-
-    /* copy raw data into output buffer */
-    for(; i < len; i++, start++)
-        dcode->buf[start] = (scan->raw[i] & 0xf) + '0';
-
     if(part == ZEBRA_EAN13 &&
-       start <= 13 &&
        check_ean13_parity(dcode))
         /* invalid parity */
         part = ZEBRA_NONE;
+
+    if(part == ZEBRA_EAN13 && dcode->buf[13])
+        part |= (dcode->buf[15]) ? ZEBRA_ADDON5 : ZEBRA_ADDON2;
 
     return(part);
 }
