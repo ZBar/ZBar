@@ -24,6 +24,7 @@
 #include <Magick++.h>
 #include <iostream>
 #include <zebra.h>
+#include <assert.h>
 
 using namespace std;
 using namespace Magick;

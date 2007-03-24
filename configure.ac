@@ -19,7 +19,7 @@ AC_ARG_WITH([imagemagick],
   [],
   [with_imagemagick=check])
 
-AC_CHECK_TOOL([MAGICK_CONFIG], [Magick++-config])
+AC_CHECK_TOOL([MAGICK_CONFIG], [Magick++-config], [:])
 AS_IF([test "x$with_imagemagick" != "xno" && \
        test "x$with_imagemagick" != "xcheck" && \
        test "x$MAGICK_CONFIG" = "x:"],
@@ -57,7 +57,7 @@ AC_ARG_WITH([sdl],
     fi
   ])
 
-AC_CHECK_TOOL([SDL_CONFIG], [sdl-config])
+AC_CHECK_TOOL([SDL_CONFIG], [sdl-config], [:])
 AS_IF([test "x$enable_video" = "xno"],
         [SDL_CONFIG=":"],
       [test "x$with_sdl" != "xno" && \

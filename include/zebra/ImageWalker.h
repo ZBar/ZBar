@@ -33,6 +33,7 @@ class ImageWalker {
  public:
     class Handler {
     public:
+        virtual ~Handler() { }
         virtual char walker_callback(ImageWalker &walker, void *pixel) = 0;
     };
 

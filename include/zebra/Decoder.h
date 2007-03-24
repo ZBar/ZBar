@@ -35,6 +35,7 @@ class Decoder {
  public:
     class Handler {
     public:
+        virtual ~Handler() { }
         virtual void decode_callback(Decoder &decoder) = 0;
     };
 
