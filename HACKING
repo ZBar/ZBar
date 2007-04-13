@@ -1,0 +1,18 @@
+if you're hacking at zebra, PLEASE send patches against the latest SVN!
+to get zebra from SVN (if you haven't already), run:
+
+    svn co https://zebra.svn.sourceforge.net/svnroot/zebra/trunk zebra
+    cd zebra
+    autoreconf --install
+
+this will generate configure and all that other foo you usually get with
+a release.  you will need to have some basic "developer tools" installed
+in order for this to work (particularly GNU autotools)
+
+when you're done hacking and want to make your patch, run:
+
+    svn diff > hacked.patch
+
+and go post this file in the patches section off the project page:
+
+    https://sourceforge.net/tracker/?group_id=189236&atid=928517

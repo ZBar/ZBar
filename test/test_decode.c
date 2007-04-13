@@ -55,6 +55,17 @@ static const unsigned char parity_encode[] = {
 
 zebra_decoder_t *decoder;
 
+static void symbol_handler (zebra_decoder_t *decoder)
+{
+    zebra_symbol_type_t sym = zebra_decoder_get_type(decoder);
+    if(sym <= ZEBRA_PARTIAL)
+        return;
+    printf("%s%s: %s\n",
+           zebra_get_symbol_name(sym),
+           zebra_get_addon_name(sym),
+           zebra_decoder_get_data(decoder));
+}
+
 static void encode_junk (int n)
 {
     int i;
@@ -97,7 +108,7 @@ static zebra_symbol_type_t encode_ean13 (unsigned char *data)
     encode(guard[3], FWD);
     for(i = 1; i < 7; i++, par <<= 1) {
         printf("    encode %x%d:", (par >> 5) & 1, data[i]);
-        encode(digits[data[i]], FWD ^ ((par >> 5) & 1));
+        encode(digits[data[i]], REV ^ ((par >> 5) & 1));
     }
     printf("    encode center guard:");
     encode(guard[5], FWD);
@@ -124,16 +135,19 @@ int main (int argc, char **argv)
      *   - inject parity errors
      */
     decoder = zebra_decoder_create();
+    zebra_decoder_set_handler(decoder, symbol_handler);
 
     encode_junk(rnd_size);
 
     unsigned char data[14];
-    unsigned int chk = 0;
+    int chk = 0;
     for(i = 0; i < 12; i++) {
         data[i] = (rand() >> 16) % 10;
         chk += (i & 1) ? data[i] * 3 : data[i];
     }
     data[12] = chk % 10;
+    if(data[12])
+        data[12] = 10 - data[12];
     data[13] = 0;
 
     encode_ean13(data);

@@ -13,58 +13,67 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 AC_PROG_RANLIB
 
+
 AC_ARG_WITH([imagemagick],
   [AS_HELP_STRING([--without-imagemagick],
     [disable support for scanning images using ImageMagick])],
   [],
-  [with_imagemagick=check])
+  [with_imagemagick=yes])
 
-AC_CHECK_TOOL([MAGICK_CONFIG], [Magick++-config], [:])
+AC_ARG_VAR([MAGICKXX_CONFIG], [full path to Magick++-config program])
+AC_CHECK_TOOL([MAGICKXX_CONFIG], [Magick++-config], [:])
 AS_IF([test "x$with_imagemagick" != "xno" && \
-       test "x$with_imagemagick" != "xcheck" && \
-       test "x$MAGICK_CONFIG" = "x:"],
-      [AC_MSG_FAILURE(
-        [--with-imagemagick was given, but test for imagemagick failed])])
-AM_CONDITIONAL([HAVE_MAGICK], [test "x$MAGICK_CONFIG" != "x:"])
-AC_SUBST([MAGICK_CPPFLAGS], [`$MAGICK_CONFIG --cppflags`])
-AC_SUBST([MAGICK_CXXFLAGS], [`$MAGICK_CONFIG --cxxflags`])
-AC_SUBST([MAGICK_LDFLAGS], [`$MAGICK_CONFIG --ldflags`])
-AC_SUBST([MAGICK_LIBS], [`$MAGICK_CONFIG --libs`])
+       test "x$MAGICKXX_CONFIG" = "x:"],
+  [AC_CHECK_TOOL([CONVERT], [convert])
+   AS_IF([test "x$CONVERT" != "x" && \
+          convert -version | grep ImageMagick >/dev/null 2>&1],
+     [AC_MSG_FAILURE([test for Magick++ interface failed!
+although ImageMagick programs appear to be installed?
+make sure you install any ImageMagick development packages
+provided by your distribution or configure --without-imagemagick
+to skip building programs that use ImageMagick.])],
+     [AC_MSG_FAILURE([test for ImageMagick failed!
+install imagemagick or configure --without-imagemagick
+to skip building programs that use ImageMagick.])]
+)])
+AM_CONDITIONAL([HAVE_MAGICK], [test "x$MAGICKXX_CONFIG" != "x:"])
+AC_SUBST([MAGICK_CPPFLAGS], [`$MAGICKXX_CONFIG --cppflags`])
+AC_SUBST([MAGICK_CXXFLAGS], [`$MAGICKXX_CONFIG --cxxflags`])
+AC_SUBST([MAGICK_LDFLAGS], [`$MAGICKXX_CONFIG --ldflags`])
+AC_SUBST([MAGICK_LIBS], [`$MAGICKXX_CONFIG --libs`])
+
 
 AC_ARG_ENABLE([video],
   [AS_HELP_STRING([--disable-video],
     [exclude video scanner application])],
   [],
-  [enable_video=check])
+  [enable_video=yes])
 
 AC_CHECK_HEADER([linux/videodev.h],
-  [ if test "x$enable_video" = "xcheck"; then enable_video="yes"; fi ],
-  [ if test "x$enable_video" != "xno" && \
-       test "x$enable_video" != "xcheck"; then
-      AC_MSG_FAILURE(
-        [--enable-video was given, but test for video support failed])
-    fi
-  ])
+  [],
+  [AS_IF([test "x$enable_video" != "xno"],
+    [AC_MSG_FAILURE([test for video support failed!
+rebuild your kernel to include video4linux support or
+configure --disable-video to skip building programs that use video.])]
+)])
+
 
 AC_ARG_WITH([sdl],
   [AS_HELP_STRING([--without-sdl],
     [disable support for live video display using SDL])],
   [],
-  [ if test "x$enable_video" != "xno"; then
-      with_sdl=check
-    else
-      with_sdl=no
-    fi
-  ])
+  [with_sdl=yes])
 
+AC_ARG_VAR([SDL_CONFIG], [full path to sdl-config program])
 AC_CHECK_TOOL([SDL_CONFIG], [sdl-config], [:])
 AS_IF([test "x$enable_video" = "xno"],
-        [SDL_CONFIG=":"],
-      [test "x$with_sdl" != "xno" && \
-       test "x$with_sdl" != "xcheck" && \
-       test "x$SDL_CONFIG" = "x:"],
-        [AC_MSG_FAILURE(
-          [--with-sdl was given, but test for SDL failed])])
+    [SDL_CONFIG=":"],
+  [test "x$with_sdl" != "xno" && \
+   test "x$SDL_CONFIG" = "x:"],
+    [AC_MSG_FAILURE([test for SDL failed!
+install SDL or configure --without-sdl
+to skip building programs that use SDL])]
+)
 AM_CONDITIONAL([HAVE_SDL], [test "x$SDL_CONFIG" != "x:"])
 AC_SUBST([SDL_CPPFLAGS], [`$SDL_CONFIG --cflags`])
 AC_SUBST([SDL_LIBS], [`$SDL_CONFIG --libs`])
@@ -86,3 +95,18 @@ AC_CHECK_FUNCS([memset atexit setenv])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+
+echo ""
+echo "please verify that the detected configuration matches your expectations:"
+echo "------------------------------------------------------------------------"
+echo "v4l               --enable-video=$enable_video"
+echo "SDL               --with-sdl=$with_sdl"
+AS_IF([test "x$enable_video" != "xyes" || test "x$with_sdl" != "xyes"],
+  [echo "       => zebracam video scanner will *NOT* be built"],
+  [echo "       => zebracam video scanner will be built"])
+echo ""
+echo "Magick++          --with-imagemagick=$with_imagemagick"
+AS_IF([test "x$with_imagemagick" != "xyes"],
+  [echo "       => the zebraimg program will *NOT* be built"],
+  [echo "       => zebraimg image file scanner will be built"])
+echo ""

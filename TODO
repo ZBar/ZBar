@@ -1,5 +1,8 @@
+  * decoder needs symbology/feature enable/disable
   * better C++ interface to img_walker
     * nice to match STL iterator interface
+  * redundant output suppression for zebraimg
+  * decode hook (program/script) to zebracam/(zebraimg?)
   * finish UPC-E, EAN-8 and addon decoding
   * profile and weed out obvious oversights
   * documentation

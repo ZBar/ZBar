@@ -37,16 +37,17 @@ typedef enum zebra_color_e {
 
 /* decoded symbol type */
 typedef enum zebra_symbol_type_e {
-    ZEBRA_NONE        =    0,   /* no symbol decoded */
-    ZEBRA_PARTIAL     =    1,   /* intermediate status */
-    ZEBRA_EAN8        =    8,   /* EAN-8 */
-    ZEBRA_UPCE        =   11,   /* UPC-E */
-    ZEBRA_UPCA        =   12,   /* UPC-A */
-    ZEBRA_EAN13       =   13,   /* EAN-13 */
-    ZEBRA_SYMBOL      = 0x0f,   /* mask for base symbol type */
-    ZEBRA_ADDON2      = 0x20,   /* 2-digit add-on flag */
-    ZEBRA_ADDON5      = 0x50,   /* 5-digit add-on flag */
-    ZEBRA_ADDON       = 0x70,   /* add-on flag mask */
+    ZEBRA_NONE        =      0,   /* no symbol decoded */
+    ZEBRA_PARTIAL     =      1,   /* intermediate status */
+    ZEBRA_EAN8        =      8,   /* EAN-8 */
+    ZEBRA_UPCE        =     11,   /* UPC-E */
+    ZEBRA_UPCA        =     12,   /* UPC-A */
+    ZEBRA_EAN13       =     13,   /* EAN-13 */
+    ZEBRA_CODE128     =    128,   /* Code 128 */
+    ZEBRA_SYMBOL      = 0x00ff,   /* mask for base symbol type */
+    ZEBRA_ADDON2      = 0x0200,   /* 2-digit add-on flag */
+    ZEBRA_ADDON5      = 0x0500,   /* 5-digit add-on flag */
+    ZEBRA_ADDON       = 0x0700,   /* add-on flag mask */
 } zebra_symbol_type_t;
 
 /* return string name for symbol encoding */
@@ -125,7 +126,7 @@ extern void zebra_decoder_set_userdata(zebra_decoder_t *decoder,
                                        void *userdata);
 
 /* return user specified data value associated with the decoder */
-extern void *zebra_decoder_get_userdata(zebra_decoder_t *decoder);
+extern void *zebra_decoder_get_userdata(const zebra_decoder_t *decoder);
 
 
 /*------------------------------------------------------------*/

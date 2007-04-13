@@ -1,3 +1,18 @@
+current:
+  * internal decoder restructuring to support additional symbologies
+    - separated out 1-D decoder infrastructure into generic internal API
+    - moved EAN/UPC specific decoding into it's own module
+  * fix confusing configure behavior which quietly avoided building
+    targets with missing dependencies(?!)
+    configure will now fail with a descriptive error message if you 
+    do not have Magick++ and fail to specify --without-imagemagick or
+    do not have SDL and fail to specify --without-sdl
+  * add configure summary describing what will be built (req #1698196)
+  * fix parity encoding in test_decode and add decoded symbol output
+  * introduce Code 128 symbol type
+  * increase width of zebra_symbol_type_t to 16 bits
+  * add HACKING (bug #1698202)
+
 version 0.1:
   * add NEWS and ChangeLog
   * fix some config/build issues found on other boxes
