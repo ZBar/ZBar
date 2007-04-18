@@ -1,4 +1,5 @@
 current:
+  * add Debian packaging sources - thanks to Vít Hrachový for the patch!
   * add DocBook template and build infrastructure
   * add manpages for zebracam and zebraimg
   * add GNU standard options to zebracam and zebraimg

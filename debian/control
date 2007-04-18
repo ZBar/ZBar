@@ -1,0 +1,30 @@
+Source: libzebra
+Priority: optional
+Maintainer: Vít Hrachový <vit.hrachovy@sandbox.cz>
+Build-Depends: debhelper (>= 5), autotools-dev, libmagick++9-dev, autoconf (>= 2.61), automake1.9 (>= 1.9), libtool (>= 1.5.22)
+Standards-Version: 3.7.2
+Section: libs
+
+Package: libzebra-dev
+Section: libdevel
+Architecture: any
+Depends: libzebra (= ${Source-Version})
+Description: Header files for Zebra bar code reading library.
+ This packages installs files neccessary for development using Zebra barcodes
+ decoding library.
+
+Package: libzebra
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Bar codes reading library with small memory footprint
+ Zebra is a layered barcode (EAN/UPC) scanning and decoding library. Features a
+ fast streaming interface with minimal memory footprint.
+
+Package: zebra-tools
+Section: graphics
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmagick9
+Description: Reading barcodes using web camera or scanned images
+ This package provides tools for reading barcodes using web camera or using
+ scanned images.
