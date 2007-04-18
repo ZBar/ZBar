@@ -1,0 +1,106 @@
+<refentry id="zebraimg">
+
+  <refmeta>
+    <refentrytitle>zebraimg</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>zebraimg</refname>
+
+    <refpurpose>scan and decode bar codes from image file(s)
+    </refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>zebraimg</command>
+      <group choice="req" rep="repeat">
+        <arg choice="plain"><option>-d</option>,
+        <option>--display</option></arg>
+        <arg choice="plain"><option>--nodisplay</option></arg>
+        <arg choice="plain"><replaceable>image</replaceable></arg>
+      </group>
+    </cmdsynopsis>
+
+    <cmdsynopsis>
+      <command>zebraimg</command>
+      <group choice="req">
+        <arg choice="plain"><option>-h</option>, <option>--help</option></arg>
+        <arg choice="plain"><option>--version</option></arg>
+      </group>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para>For each specified image file <command>zebraimg</command>
+    scans the image for bar codes and prints any decoded data to
+    stdout.  The image and scan pattern overlay may optionally be
+    displayed to the screen</para>
+
+  </refsection>
+
+  <refsection>
+    <title>Options</title>
+
+    <para>This program follows the usual GNU command line syntax, with
+    long options starting with two dashes (`-').  A summary of options
+    is included below</para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-d</option>, <option>--display</option></term>
+        <listitem>
+          <simpara>Enable display of subsequent image file arguments
+          to the screen, until <option>--nodisplay</option> is
+          encountered.  This argument may appear multiple
+          times</simpara>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-h</option>, <option>--help</option></term>
+        <listitem>
+          <simpara>Print a short help message describing command line
+          options to standard output</simpara>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--nodisplay</option></term>
+        <listitem>
+          <simpara>Disable display of subsequent image file arguments,
+          until <option>--display</option> is encountered.  This
+          argument may appear multiple times.  Image display is
+          disabled by default</simpara>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--version</option></term>
+        <listitem>
+          <simpara>Print program version information to standard
+          output and exit</simpara>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsection>
+
+  <refsection>
+    <title>Example</title>
+
+    <para>Scan a JPEG image of a UPC bar code symbol and pass
+    resulting data to another program (not provided) that searches for
+    the code in a database and does something useful with it:
+
+    <screen><command>zebraimg</command> product.jpg | <command>lookup_upc.pl</command></screen></para>
+  </refsection>
+
+  <refsection>
+    <title>See Also</title>
+    <para><xref linkend="zebracam"/></para>
+  </refsection>
+
+</refentry>

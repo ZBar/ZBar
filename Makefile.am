@@ -14,4 +14,4 @@ if HAVE_SDL
 include $(srcdir)/zebracam/Makefile.am.inc
 endif
 include $(srcdir)/test/Makefile.am.inc
-#include $(srcdir)/doc/Makefile.am.inc
+include $(srcdir)/doc/Makefile.am.inc

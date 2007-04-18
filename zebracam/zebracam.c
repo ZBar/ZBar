@@ -36,7 +36,8 @@
 #include <linux/videodev.h>
 #include <SDL/SDL.h>
 
-#include "zebra.h"
+#include <zebra.h>
+#include "config.h"
 
 #define DUMP_NAME_MAX 0x20
 #define PPM_HDR_MAX 0x20
@@ -319,9 +320,35 @@ static char pixel_handler (zebra_img_walker_t *walker,
     return(0);
 }
 
+int usage (int rc)
+{
+    FILE *out = (rc) ? stderr : stdout;
+    fprintf(out,
+            "usage: zebracam [-h|--help|--version]\n"
+            "\n"
+            "scan and decode bar codes from a video stream\n"
+            "\n"
+            "options:\n"
+            "    -h, --help     display this help text\n"
+            "    --version      display version information and exit\n"
+            "\n");
+    return(rc);
+}
 
 int main (int argc, const char *argv[])
 {
+    int i;
+    for(i = 1; i < argc; i++) {
+        if(!strcmp(argv[i], "-h") ||
+           !strcmp(argv[i], "--help"))
+            return(usage(0));
+        if(!strcmp(argv[i], "--version"))
+            return(printf(PACKAGE_VERSION "\n") <= 0);
+        else
+            fprintf(stderr, "WARNING: ignoring unknown argument: %s\n",
+                    argv[i]);
+    }
+
     /* initialization */
     init_cam();
     init_sdl();

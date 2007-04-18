@@ -1,4 +1,7 @@
 current:
+  * add DocBook template and build infrastructure
+  * add manpages for zebracam and zebraimg
+  * add GNU standard options to zebracam and zebraimg
   * internal decoder restructuring to support additional symbologies
     - separated out 1-D decoder infrastructure into generic internal API
     - moved EAN/UPC specific decoding into it's own module

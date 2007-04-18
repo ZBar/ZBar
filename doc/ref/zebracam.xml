@@ -1,0 +1,66 @@
+<refentry id="zebracam">
+
+  <refmeta>
+    <refentrytitle>zebracam</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>zebracam</refname>
+
+    <refpurpose>scan and decode bar codes from a video stream
+    </refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>zebracam</command>
+      <group>
+        <arg choice="plain"><option>-h</option>, <option>--help</option></arg>
+        <arg choice="plain"><option>--version</option></arg>
+      </group>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsection>
+    <title>Description</title>
+
+    <para><command>zebracam</command> scans a video4linux video source
+    (eg, a webcam) for bar codes and prints any decoded data to the
+    standard output.  The video stream is also displayed to the screen
+    with the scan pattern overlay</para>
+
+  </refsection>
+
+  <refsection>
+    <title>Options</title>
+
+    <para>This program follows the usual GNU command line syntax, with
+    long options starting with two dashes (`-').  A summary of options
+    is included below</para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-h</option>, <option>--help</option></term>
+        <listitem>
+          <simpara>Print a short help message describing command line
+          options to standard output</simpara>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--version</option></term>
+        <listitem>
+          <simpara>Print program version information to standard
+          output and exit</simpara>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsection>
+
+  <refsection>
+    <title>See Also</title>
+    <para><xref linkend="zebraimg"/></para>
+  </refsection>
+
+</refentry>

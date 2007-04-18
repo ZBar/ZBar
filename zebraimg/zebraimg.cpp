@@ -23,14 +23,23 @@
 
 #include <Magick++.h>
 #include <iostream>
-#include <zebra.h>
 #include <assert.h>
+
+#include <zebra.h>
+
+/* wand/wand-config.h defines these conflicting values :| */
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#include "config.h"
 
 using namespace std;
 using namespace Magick;
 using namespace zebra;
 
-int display = 0;
+int display = 0, num_images = 0;
 
 Decoder decoder;
 Scanner scanner(decoder);
@@ -96,6 +105,7 @@ void scan_image (const char *filename)
         wr_img.imageInfo()->filename[0] = c;
 #endif
     }
+    num_images++;
 }
 
 int usage (int rc, const char *msg = NULL)
@@ -103,8 +113,16 @@ int usage (int rc, const char *msg = NULL)
     ostream &out = (rc) ? cerr : cout;
     if(msg)
         out << msg << endl;
-    out <<
-        "usage: zebraimg [-h|-d|--display|--nodisplay] <image>..." << endl;
+    out << "usage: zebraimg [-h|--help|-d|--display|--nodisplay] <image>..." << endl
+        << endl
+        << "scan and decode bar codes from one or more image files" << endl
+        << endl
+        << "options:" << endl
+        << "    -h, --help     display this help text" << endl
+        << "    --version      display version information and exit" << endl
+        << "    -d, --display  enable display of following images to the screen" << endl
+        << "    --nodisplay    disable display of following images (default)" << endl
+        << endl;
     return(rc);
 }
 
@@ -113,21 +131,28 @@ int main (int argc, const char *argv[])
     decoder.set_handler(symbol_handler);
     walker.set_handler(pixel_handler);
 
-    int num_images = 0;
-    for(int i = 1; i < argc; i++) {
+    int i;
+    for(i = 1; i < argc; i++) {
         if(!strcmp(argv[i], "-h") ||
            !strcmp(argv[i], "--help"))
             return(usage(0));
+        if(!strcmp(argv[i], "--version")) {
+            cout << PACKAGE_VERSION << endl;
+            return(0);
+        }
         if(!strcmp(argv[i], "-d") ||
            !strcmp(argv[i], "--display"))
             display = 1;
         else if(!strcmp(argv[i], "--nodisplay"))
             display = 0;
-        else {
-            num_images++;
+        else if(!strcmp(argv[i], "--"))
+            break;
+        else
             scan_image(argv[i]);
-        }
     }
+    for(i++; i < argc; i++)
+        scan_image(argv[i]);
+
     if(!num_images)
         return(usage(1, "ERROR: specify image file(s) to scan"));
 

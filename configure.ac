@@ -1,11 +1,12 @@
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.60])
 AC_INIT([zebra], [0.1], [spadix@users.sourceforge.net])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects std-options dist-bzip2])
 AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_SRCDIR(zebra/scanner.c)
 
 AC_SUBST([LIB_VERSION], [1:0:1])
+AC_SUBST([RELDATE], [`date +%Y-%m-%d`])
 
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -13,6 +14,10 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 AC_PROG_RANLIB
 
+AC_ARG_VAR([XMLTO], [location of xmlto, used for optional \
+documentation generation])
+AC_ARG_VAR([XMLTOFLAGS], [additional arguments for xmlto])
+AC_CHECK_TOOL([XMLTO], [xmlto], [:])
 
 AC_ARG_WITH([imagemagick],
   [AS_HELP_STRING([--without-imagemagick],
@@ -93,7 +98,7 @@ AC_C_INLINE
 AC_FUNC_MMAP
 AC_CHECK_FUNCS([memset atexit setenv])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile doc/manual.xml])
 AC_OUTPUT
 
 echo ""
