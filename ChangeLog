@@ -1,4 +1,6 @@
 current:
+  * build and dist fixes
+    - suppress documentation rebuilds in distributed sources
   * add Debian packaging sources - thanks to Vít Hrachový for the patch!
   * add DocBook template and build infrastructure
   * add manpages for zebracam and zebraimg

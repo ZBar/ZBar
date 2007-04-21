@@ -3,8 +3,8 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
   "file:///usr/share/sgml/docbook/xml-dtd-4.4/docbookx.dtd" [
 
-  <!ENTITY date "@RELDATE@">
-  <!ENTITY version "@VERSION@">
+  <!ENTITY version SYSTEM "version.xml">
+  <!ENTITY date SYSTEM "reldate.xml">
 
   <!ENTITY refzebraimg SYSTEM "ref/zebraimg.xml">
   <!ENTITY refzebracam SYSTEM "ref/zebracam.xml">

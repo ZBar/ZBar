@@ -5,8 +5,19 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects std-options dist-bzip2])
 AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_SRCDIR(zebra/scanner.c)
 
+# update these before each release (along w/pacakge version above)
+#   LIB_VERSION update instructions copied from libtool docs:
+#   library version follows the form current:revision:age
+#   - If the library source code has changed at all since the last update,
+#     then increment revision (c:r:a becomes c:r+1:a).
+#   - If any interfaces have been added, removed, or changed,
+#     increment current, and set revision to 0.
+#   - If any interfaces have been added since the last public release,
+#     then increment age.
+#   - If any interfaces have been removed since the last public release,
+#     then set age to 0. 
 AC_SUBST([LIB_VERSION], [1:0:1])
-AC_SUBST([RELDATE], [`date +%Y-%m-%d`])
+AC_SUBST([RELDATE], [2007-03-24])
 
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -98,7 +109,23 @@ AC_C_INLINE
 AC_FUNC_MMAP
 AC_CHECK_FUNCS([memset atexit setenv])
 
-AC_CONFIG_FILES([Makefile doc/manual.xml])
+# avoid doc rebuilds unless revision info changes
+AC_CONFIG_COMMANDS([doc/version.xml],
+  [AS_IF([test -f doc/version.xml && \
+          ! echo $VERSION | diff doc/version.xml - >/dev/null 2>&1 || \
+          ! echo $VERSION | diff $srcdir/doc/version.xml - >/dev/null 2>&1 ],
+    [echo "writing new doc/version.xml" ; echo $VERSION > doc/version.xml ])],
+  [VERSION=$VERSION]
+)
+AC_CONFIG_COMMANDS([doc/reldate.xml],
+  [AS_IF([test -f doc/reldate.xml && \
+          ! echo $RELDATE | diff doc/reldate.xml - >/dev/null 2>&1 || \
+          ! echo $RELDATE | diff $srcdir/doc/reldate.xml - >/dev/null 2>&1 ],
+    [echo "writing new doc/reldate.xml" ; echo $RELDATE > doc/reldate.xml ])],
+  [RELDATE=$RELDATE]
+)
+
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 
 echo ""
