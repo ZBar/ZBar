@@ -1,4 +1,6 @@
 current:
+  * incorporate documentation into Debian package
+    - thanks to Vít Hrachový for the patch!
   * build and dist fixes
     - suppress documentation rebuilds in distributed sources
   * add Debian packaging sources - thanks to Vít Hrachový for the patch!
