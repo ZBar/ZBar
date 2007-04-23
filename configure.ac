@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
-AC_PREREQ([2.60])
+AC_PREREQ([2.61])
 AC_INIT([zebra], [0.1], [spadix@users.sourceforge.net])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects std-options dist-bzip2])
+AM_INIT_AUTOMAKE([1.10 -Wall -Werror foreign subdir-objects std-options dist-bzip2])
 AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_SRCDIR(zebra/scanner.c)
 

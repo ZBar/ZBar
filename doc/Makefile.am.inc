@@ -17,7 +17,7 @@ EXTRA_DIST = $(DOCSOURCES) $(man_stamp)
 docs: $(dist_man_MANS) #dist_doc_DATA
 .PHONY: docs
 
-doc_path = --searchpath $(abs_srcdir)/doc:$(abs_srcdir)/doc/ref
+doc_path = --searchpath $(abs_builddir)/doc
 # FIXME xmlto doesnt seem to apply --searchpath to xmllint?
 doc_path += --skip-validation
 
