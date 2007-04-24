@@ -18,4 +18,6 @@ test_dbg_scan_LDADD = $(MAGICK_LIBS) zebra/libzebra.la
 # automake bug in "monolithic mode"?
 CLEANFILES += test/.libs/dbg_scan
 
+check_PROGRAMS += test/test_video
+
 endif

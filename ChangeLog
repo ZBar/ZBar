@@ -1,6 +1,8 @@
 current:
+  * add diagnostic program test_video to dump more verbose video debug
   * incorporate documentation into Debian package
     - thanks to Vít Hrachový for the patch!
+  * fix VPATH doc builds (requires automake-1.10 and autoconf-2.61)
   * build and dist fixes
     - suppress documentation rebuilds in distributed sources
   * add Debian packaging sources - thanks to Vít Hrachový for the patch!
