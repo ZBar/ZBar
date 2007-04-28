@@ -20,38 +20,26 @@
  *
  *  http://sourceforge.net/projects/zebra
  *------------------------------------------------------------------------*/
-#ifndef _EAN_H_
-#define _EAN_H_
+#ifndef _CODE128_H_
+#define _CODE128_H_
 
-/* state of each parallel decode attempt */
-typedef struct ean_pass_s {
-    char state;                 /* module position of w[idx] in symbol */
-#define STATE_ADDON 0x40        /*   scanning add-on */
-#define STATE_IDX   0x1f        /*   element offset into symbol */
-    char raw[7];                /* decode in process */
-} ean_pass_t;
+/* Code 128 specific decode state */
+typedef struct code128_decoder_s {
+    int direction : 1;          /* scan direction: 0=fwd/space, 1=rev/bar */
+    unsigned element : 3;       /* element offset 0-5 */
+    int character : 12;         /* character position in symbol */
+    char buf[6];                /* holding buffer */
+} code128_decoder_t;
 
-/* EAN/UPC specific decode state */
-typedef struct ean_decoder_s {
-    ean_pass_t pass[4];         /* state of each parallel decode attempt */
-    char buf[18];               /* holding buffer */
-} ean_decoder_t;
-
-/* reset EAN/UPC pass specific state */
-static inline void ean_new_scan (ean_decoder_t *ean)
+/* reset Code 128 specific state */
+static inline void code128_reset (code128_decoder_t *dcode128)
 {
-    ean->pass[0].state = ean->pass[1].state = -1;
-    ean->pass[2].state = ean->pass[3].state = -1;
+    dcode128->direction = 0;
+    dcode128->element = 0;
+    dcode128->character = -1;
 }
 
-/* reset all EAN/UPC state */
-static inline void ean_reset (ean_decoder_t *ean)
-{
-    ean_new_scan(ean);
-    ean->buf[0] = ean->buf[7] = ean->buf[13] = ean->buf[15] = -1;
-}
-
-/* decode EAN/UPC symbols */
-zebra_symbol_type_t zebra_decode_ean(zebra_decoder_t *dcode);
+/* decode Code 128 symbols */
+zebra_symbol_type_t zebra_decode_code128(zebra_decoder_t *dcode);
 
 #endif

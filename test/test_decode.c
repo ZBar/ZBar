@@ -26,33 +26,6 @@
 
 #include <zebra.h>
 
-static const unsigned int digits[10] = {
-    0x1123, 0x1222, 0x2212, 0x1141, 0x2311,
-    0x1321, 0x4111, 0x2131, 0x3121, 0x2113,
-};
-
-static const unsigned int guard[] = {
-    0, 0,
-    0x11,       /* [2] add-on delineator */
-    0x1117,     /* [3] normal guard bars */
-    0x2117,     /* [4] add-on guard bars */
-    0x11111,    /* [5] center guard bars */
-    0x111111    /* [6] "special" guard bars */
-};
-
-static const unsigned char parity_encode[] = {
-    0x3f,       /* AAAAAA = 0 */
-    0x34,       /* AABABB = 1 */
-    0x32,       /* AABBAB = 2 */
-    0x31,       /* AABBBA = 3 */
-    0x2c,       /* ABAABB = 4 */
-    0x26,       /* ABBAAB = 5 */
-    0x23,       /* ABBBAA = 6 */
-    0x2a,       /* ABABAB = 7 */
-    0x29,       /* ABABBA = 8 */
-    0x25,       /* ABBABA = 9 */
-};
-
 zebra_decoder_t *decoder;
 
 static void symbol_handler (zebra_decoder_t *decoder)
@@ -68,6 +41,7 @@ static void symbol_handler (zebra_decoder_t *decoder)
 
 static void encode_junk (int n)
 {
+    printf("encode random junk...\n");
     int i;
     for(i = 0; i < n; i++)
         zebra_decode_width(decoder, 10. * (rand() / (RAND_MAX + 1.)));
@@ -94,10 +68,110 @@ static void encode (unsigned int units,
     }
 }
 
-static zebra_symbol_type_t encode_ean13 (unsigned char *data)
+
+/*------------------------------------------------------------*/
+/* Code 128 encoding */
+
+typedef enum code128_char_e {
+    FNC3        = 0x60,
+    FNC2        = 0x61,
+    SHIFT       = 0x62,
+    CODE_C      = 0x63,
+    CODE_B      = 0x64,
+    CODE_A      = 0x65,
+    FNC1        = 0x66,
+    START_A     = 0x67,
+    START_B     = 0x68,
+    START_C     = 0x69,
+    STOP        = 0x6a,
+} code128_char_t;
+
+static const unsigned int code128[107] = {
+    0x212222, 0x222122, 0x222221, 0x121223, /* 00 */
+    0x121322, 0x131222, 0x122213, 0x122312,
+    0x132212, 0x221213, 0x221312, 0x231212, /* 08 */
+    0x112232, 0x122132, 0x122231, 0x113222,
+    0x123122, 0x123221, 0x223211, 0x221132, /* 10 */
+    0x221231, 0x213212, 0x223112, 0x312131,
+    0x311222, 0x321122, 0x321221, 0x312212, /* 18 */
+    0x322112, 0x322211, 0x212123, 0x212321,
+    0x232121, 0x111323, 0x131123, 0x131321, /* 20 */
+    0x112313, 0x132113, 0x132311, 0x211313,
+    0x231113, 0x231311, 0x112133, 0x112331, /* 28 */
+    0x132131, 0x113123, 0x113321, 0x133121,
+    0x313121, 0x211331, 0x231131, 0x213113, /* 30 */
+    0x213311, 0x213131, 0x311123, 0x311321,
+    0x331121, 0x312113, 0x312311, 0x332111, /* 38 */
+    0x314111, 0x221411, 0x431111, 0x111224,
+    0x111422, 0x121124, 0x121421, 0x141122, /* 40 */
+    0x141221, 0x112214, 0x112412, 0x122114,
+    0x122411, 0x142112, 0x142211, 0x241211, /* 48 */
+    0x221114, 0x413111, 0x241112, 0x134111,
+    0x111242, 0x121142, 0x121241, 0x114212, /* 50 */
+    0x124112, 0x124211, 0x411212, 0x421112,
+    0x421211, 0x212141, 0x214121, 0x412121, /* 58 */
+    0x111143, 0x111341, 0x131141, 0x114113,
+    0x114311, 0x411113, 0x411311, 0x113141, /* 60 */
+    0x114131, 0x311141, 0x411131, 0x211412,
+    0x211214, 0x211232,                     /* 68 */
+    0x2331112,                              /* STOP (6a) */
+};
+
+static void encode_code128 (unsigned char *data)
+{
+    printf("------------------------------------------------------------\n"
+           "encode CODE-128: %s\n"
+           "    encode START_B: %02x", data, START_B);
+    encode(code128[START_B], 0);
+    int i, chk = START_B;
+    for(i = 0; data[i]; i++) {
+        printf("    encode '%c': %02x", data[i], data[i] - 0x20);
+        encode(code128[data[i] - 0x20], 0);
+        chk += (i + 1) * (data[i] - 0x20);
+    }
+    chk %= 103;
+    printf("    encode checksum: %02x", chk);
+    encode(code128[chk], 0);
+    printf("    encode STOP: %02x", STOP);
+    encode(code128[STOP], 0);
+    printf("------------------------------------------------------------\n");
+}
+
+
+/*------------------------------------------------------------*/
+/* EAN/UPC encoding */
+
+static const unsigned int ean_digits[10] = {
+    0x1123, 0x1222, 0x2212, 0x1141, 0x2311,
+    0x1321, 0x4111, 0x2131, 0x3121, 0x2113,
+};
+
+static const unsigned int ean_guard[] = {
+    0, 0,
+    0x11,       /* [2] add-on delineator */
+    0x1117,     /* [3] normal guard bars */
+    0x2117,     /* [4] add-on guard bars */
+    0x11111,    /* [5] center guard bars */
+    0x111111    /* [6] "special" guard bars */
+};
+
+static const unsigned char ean_parity_encode[] = {
+    0x3f,       /* AAAAAA = 0 */
+    0x34,       /* AABABB = 1 */
+    0x32,       /* AABBAB = 2 */
+    0x31,       /* AABBBA = 3 */
+    0x2c,       /* ABAABB = 4 */
+    0x26,       /* ABBAAB = 5 */
+    0x23,       /* ABBBAA = 6 */
+    0x2a,       /* ABABAB = 7 */
+    0x29,       /* ABABBA = 8 */
+    0x25,       /* ABBABA = 9 */
+};
+
+static void encode_ean13 (unsigned char *data)
 {
     int i;
-    unsigned char par = parity_encode[data[0]];
+    unsigned char par = ean_parity_encode[data[0]];
 
     printf("------------------------------------------------------------\n"
            "encode EAN-13: ");
@@ -105,22 +179,25 @@ static zebra_symbol_type_t encode_ean13 (unsigned char *data)
         printf("%d", data[i]);
     printf("(%02x)\n"
            "    encode start guard:", par);
-    encode(guard[3], FWD);
+    encode(ean_guard[3], FWD);
     for(i = 1; i < 7; i++, par <<= 1) {
         printf("    encode %x%d:", (par >> 5) & 1, data[i]);
-        encode(digits[data[i]], REV ^ ((par >> 5) & 1));
+        encode(ean_digits[data[i]], REV ^ ((par >> 5) & 1));
     }
     printf("    encode center guard:");
-    encode(guard[5], FWD);
+    encode(ean_guard[5], FWD);
     for(; i < 13; i++) {
         printf("    encode %x%d:", 0, data[i]);
-        encode(digits[data[i]], FWD);
+        encode(ean_digits[data[i]], FWD);
     }
     printf("    encode end guard:");
-    encode(guard[3], REV);
-
-    return(0);
+    encode(ean_guard[3], REV);
+    printf("------------------------------------------------------------\n");
 }
+
+
+/*------------------------------------------------------------*/
+/* main test flow */
 
 int main (int argc, char **argv)
 {
@@ -139,18 +216,26 @@ int main (int argc, char **argv)
 
     encode_junk(rnd_size);
 
-    unsigned char data[14];
+    unsigned char data[32];
     int chk = 0;
     for(i = 0; i < 12; i++) {
         data[i] = (rand() >> 16) % 10;
         chk += (i & 1) ? data[i] * 3 : data[i];
     }
-    data[12] = chk % 10;
-    if(data[12])
-        data[12] = 10 - data[12];
-    data[13] = 0;
+    data[i] = chk % 10;
+    if(data[i])
+        data[i] = 10 - data[i];
+    data[++i] = 0;
 
     encode_ean13(data);
+
+    encode_junk(rnd_size);
+
+    for(i = 0; i < 10; i++)
+        data[i] = (rand() >> 16) % 0x5f + 0x20;
+    data[i] = 0;
+
+    encode_code128(data);
 
     encode_junk(rnd_size);
 

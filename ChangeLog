@@ -1,4 +1,12 @@
 current:
+  * add first-pass partial support for Code 128
+    - separate out more EAN state from shared state
+    - internal interface changes
+    - finish dynamic buffer management
+    - add shared resource locking
+    - add Code 128 to test_decode program
+    => still needs additional functionality and plenty of debug
+    => reading both Code 128 *and* EAN still destabilized
   * add diagnostic program test_video to dump more verbose video debug
   * incorporate documentation into Debian package
     - thanks to Vít Hrachový for the patch!

@@ -41,7 +41,7 @@
 zebra_decoder_t *zebra_decoder_create ()
 {
     zebra_decoder_t *dcode = malloc(sizeof(zebra_decoder_t));
-    dcode->buflen = 0x20;
+    dcode->buflen = BUFFER_MIN;
     dcode->buf = malloc(dcode->buflen);
     zebra_decoder_reset(dcode);
     return(dcode);
@@ -56,6 +56,7 @@ void zebra_decoder_reset (zebra_decoder_t *dcode)
 {
     memset(dcode, 0, (long)&dcode->buf - (long)dcode);
     ean_reset(&dcode->ean);
+    code128_reset(&dcode->code128);
 }
 
 void zebra_decoder_new_scan (zebra_decoder_t *dcode)
@@ -63,7 +64,8 @@ void zebra_decoder_new_scan (zebra_decoder_t *dcode)
     /* soft reset decoder */
     memset(dcode->w, 0, sizeof(dcode->w));
     dcode->idx = 0;
-    ean_reset(&dcode->ean);
+    ean_new_scan(&dcode->ean);
+    code128_reset(&dcode->code128);
 }
 
 const char *zebra_decoder_get_data (const zebra_decoder_t *dcode)
@@ -126,19 +128,24 @@ zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
     /* each decoder processes width stream in parallel */
     zebra_symbol_type_t sym = dcode->type = ZEBRA_NONE;
 
-/*#ifdef ENABLE_EAN*/
+#define ENABLE_EAN
+#ifdef ENABLE_EAN
     if((sym = zebra_decode_ean(dcode)))
-        dcode->type = sym;
-/*#endif*/
-
-#ifdef ENABLE_CODE128
-    if((sym = zebra_decode_code128(dcode)) > ZEBRA_PARTIAL || dcode->type)
         dcode->type = sym;
 #endif
 
-    dcode->type = sym;
+#define ENABLE_CODE128
+#ifdef ENABLE_CODE128
+    if((sym = zebra_decode_code128(dcode)) > ZEBRA_PARTIAL)
+        dcode->type = sym;
+#endif
+
     dcode->idx++;
-    if(sym && dcode->handler)
-        dcode->handler(dcode);
-    return(sym);
+    if(dcode->type) {
+        if(dcode->handler)
+            dcode->handler(dcode);
+        if(dcode->lock)
+            dcode->lock = 0;
+    }
+    return(dcode->type);
 }
