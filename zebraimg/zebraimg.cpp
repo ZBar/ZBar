@@ -21,6 +21,9 @@
 //  http://sourceforge.net/projects/zebra
 //------------------------------------------------------------------------
 
+#ifdef HAVE_INTTYPES_H
+# include <inttypes.h>
+#endif
 #include <Magick++.h>
 #include <iostream>
 #include <assert.h>
@@ -53,9 +56,9 @@ class PixelHandler : public ImageWalker::Handler {
     virtual char walker_callback (ImageWalker &, void *pixel)
     {
         ColorYUV y;
-        y = *(rd_pxp + (unsigned)pixel);
+        y = *(rd_pxp + (uintptr_t)pixel);
         scanner << (int)(y.y() * 0x100);
-        *(wr_pxp + (unsigned)pixel) = red;
+        *(wr_pxp + (uintptr_t)pixel) = red;
         return(0);
     }
 } pixel_handler;

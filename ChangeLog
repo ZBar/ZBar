@@ -1,4 +1,5 @@
 current:
+  * cleanup 64-bit compile warnings in zebraimg (bug #1712504)
   * add first-pass partial support for Code 128
     - separate out more EAN state from shared state
     - internal interface changes

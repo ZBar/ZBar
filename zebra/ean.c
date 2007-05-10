@@ -434,9 +434,9 @@ static inline void postprocess (zebra_decoder_t *dcode,
                                 zebra_symbol_type_t sym)
 {
     ean_decoder_t *ean = &dcode->ean;
-    int i;
+    int i = 0;
     if((sym & ZEBRA_SYMBOL) > ZEBRA_PARTIAL)
-        for(i = 0; i < 12 && ean->buf[i] >= 0; i++)
+        for(; i < 12 && ean->buf[i] >= 0; i++)
             dcode->buf[i] = ean->buf[i] + '0';
     int j = i;
     if(sym & ZEBRA_ADDON)

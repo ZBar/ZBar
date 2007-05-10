@@ -102,6 +102,7 @@ AC_CHECK_HEADERS([fcntl.h inttypes.h stdlib.h string.h sys/ioctl.h sys/time.h])
 AC_TYPE_INT32_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
+AC_TYPE_UINTPTR_T
 
 AC_C_CONST
 AC_C_INLINE
