@@ -21,6 +21,7 @@
  *  http://sourceforge.net/projects/zebra
  *------------------------------------------------------------------------*/
 
+#include <config.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -37,7 +38,6 @@
 #include <SDL/SDL.h>
 
 #include <zebra.h>
-#include "config.h"
 
 #define DUMP_NAME_MAX 0x20
 #define PPM_HDR_MAX 0x20

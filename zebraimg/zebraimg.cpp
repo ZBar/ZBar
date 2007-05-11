@@ -50,7 +50,8 @@ ImageWalker walker;
 const PixelPacket *rd_pxp;
 PixelPacket *wr_pxp;
 
-Color red("red");
+ColorRGB space_fill(1., 0., 0.);
+ColorRGB bar_fill(.5, 0., 0.);
 
 class PixelHandler : public ImageWalker::Handler {
     virtual char walker_callback (ImageWalker &, void *pixel)
@@ -58,7 +59,8 @@ class PixelHandler : public ImageWalker::Handler {
         ColorYUV y;
         y = *(rd_pxp + (uintptr_t)pixel);
         scanner << (int)(y.y() * 0x100);
-        *(wr_pxp + (uintptr_t)pixel) = red;
+        *(wr_pxp + (uintptr_t)pixel) =
+            (scanner.get_color() == ZEBRA_SPACE) ? bar_fill : space_fill;
         return(0);
     }
 } pixel_handler;
@@ -90,7 +92,7 @@ void scan_image (const char *filename)
     Pixels wr_view(wr_img);
     wr_pxp = wr_view.get(0, 0, width, height);
     walker.walk(0);
-    assert(*rd_pxp != red);
+    assert(*rd_pxp != space_fill);
 
     wr_view.sync();
     scanner << 0 << 0 << 0; /* flush scan FIXME? */

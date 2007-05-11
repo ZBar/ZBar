@@ -27,7 +27,7 @@
 #endif
 #include <assert.h>
 
-#include "zebra.h"
+#include <zebra.h>
 #include "decoder.h"
 
 #ifdef DEBUG_EAN
@@ -126,15 +126,17 @@ static inline unsigned char aux_end (zebra_decoder_t *dcode,
     /* reference width from previous character */
     unsigned s = calc_s(dcode, n, 4);
 
+    dprintf(2, " (");
     char code = 0;
     char i;
     for(i = 0; i < n - 1; i++) {
         unsigned e = get_width(dcode, i) + get_width(dcode, i + 1);
+        dprintf(2, " %d", e);
         code = (code << 2) | decode_e(e, s, 7);
         if(code < 0)
             return(-1);
     }
-    dprintf(2, " aux=%x", code);
+    dprintf(2, ") s=%d aux=%x", s, code);
     return(code);
 }
 
@@ -210,14 +212,14 @@ static inline char decode4 (zebra_decoder_t *dcode,
         unsigned d2 = ((get_color(dcode) == ZEBRA_BAR)
                        ? get_width(dcode, 0) + get_width(dcode, 2)
                        : get_width(dcode, 1) + get_width(dcode, 3));
-        char D2 = (d2 * 14 + 1) / s;
+        d2 *= 7;
         char mid = (((1 << code) & 0x0420)
-                    ? 6     /* E1E2 in 33,44 */
-                    : 8);   /* E1E2 in 34,43 */
-        char alt = D2 > mid;
+                    ? 3     /* E1E2 in 33,44 */
+                    : 4);   /* E1E2 in 34,43 */
+        char alt = d2 > (mid * s);
         if(alt)
             code = ((code >> 1) & 3) | 0x10; /* compress code space */
-        dprintf(2, " (d2=%d(%d) alt=%d)", d2, D2, alt);
+        dprintf(2, " (d2=%d(%d) alt=%d)", d2, mid * s, alt);
     }
     dprintf(2, " char=%02x", digits[(unsigned char)code]);
     assert(code < 0x14);

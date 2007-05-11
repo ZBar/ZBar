@@ -29,7 +29,7 @@
 #include <string.h>     /* memset */
 #include <assert.h>
 
-#include "zebra.h"
+#include <zebra.h>
 
 #ifdef DEBUG_SCANNER
 # define dprintf(...) \
@@ -41,6 +41,28 @@
 #ifndef ZEBRA_FIXED
 # define ZEBRA_FIXED 5
 #endif
+#define ROUND (1 << (ZEBRA_FIXED - 1))
+
+/* FIXME add runtime config API for these */
+#ifndef ZEBRA_SCANNER_THRESH_MIN
+# define ZEBRA_SCANNER_THRESH_MIN  4
+#endif
+
+#ifndef ZEBRA_SCANNER_THRESH_INIT_WEIGHT
+# define ZEBRA_SCANNER_THRESH_INIT_WEIGHT .44
+#endif
+#define THRESH_INIT ((unsigned)((ZEBRA_SCANNER_THRESH_INIT_WEIGHT       \
+                                 * (1 << (ZEBRA_FIXED + 1)) + 1) / 2))
+
+#ifndef ZEBRA_SCANNER_THRESH_FADE
+# define ZEBRA_SCANNER_THRESH_FADE 8
+#endif
+
+#ifndef ZEBRA_SCANNER_EWMA_WEIGHT
+# define ZEBRA_SCANNER_EWMA_WEIGHT .78
+#endif
+#define EWMA_WEIGHT ((unsigned)((ZEBRA_SCANNER_EWMA_WEIGHT              \
+                                 * (1 << (ZEBRA_FIXED + 1)) + 1) / 2))
 
 /* scanner state */
 struct zebra_scanner_s {
@@ -62,7 +84,7 @@ zebra_scanner_t *zebra_scanner_create (zebra_decoder_t *dcode)
 {
     zebra_scanner_t *scn = malloc(sizeof(zebra_scanner_t));
     scn->decoder = dcode;
-    scn->y1_min_thresh = 4;
+    scn->y1_min_thresh = ZEBRA_SCANNER_THRESH_MIN;
     zebra_scanner_reset(scn);
     return(scn);
 }
@@ -113,7 +135,7 @@ static inline unsigned calc_thresh (zebra_scanner_t *scn)
     unsigned dx = (scn->x << ZEBRA_FIXED) - scn->last_edge;
     unsigned long t = thresh * dx;
     t /= scn->width;
-    t /= 4; /* FIXME add config API */
+    t /= ZEBRA_SCANNER_THRESH_FADE;
     dprintf(" thr=%d t=%ld x=%d last=%d.%d (%d)",
             thresh, t, scn->x, scn->last_edge >> ZEBRA_FIXED,
             scn->last_edge & ((1 << ZEBRA_FIXED) - 1), dx);
@@ -136,12 +158,6 @@ static inline zebra_symbol_type_t process_edge (zebra_scanner_t *scn,
             ((y1 > 0) ? "SPACE" : "BAR"));
     scn->last_edge = scn->cur_edge;
 
-    /* adaptive thresholding */
-    /* start at 1/4 new min/max */
-    scn->y1_thresh = abs((y1 + 1) / 2);
-    if(scn->y1_thresh < scn->y1_min_thresh)
-        scn->y1_thresh = scn->y1_min_thresh;
-
     /* pass to decoder */
     if(scn->width || (y1 > 0)) {
         if(scn->decoder)
@@ -155,24 +171,28 @@ static inline zebra_symbol_type_t process_edge (zebra_scanner_t *scn,
 zebra_symbol_type_t zebra_scan_y (zebra_scanner_t *scn,
                                   int y)
 {
+    /* FIXME calc and clip to max y range... */
     /* retrieve short value history */
     register int y0_1 = scn->y0[(scn->x - 1) & 3];
-    register int y0_0;
-    if(scn->x)
+    register int y0_0 = y0_1;
+    if(scn->x) {
         /* update weighted moving average */
-        y0_0 = scn->y0[scn->x & 3] = y0_1 + ((y - y0_1 + 1) / 2);
+        y0_0 += ((int)((y - y0_1) * EWMA_WEIGHT)) >> ZEBRA_FIXED;
+        scn->y0[scn->x & 3] = y0_0;
+    }
     else
         y0_0 = y0_1 = scn->y0[0] = scn->y0[1] = scn->y0[2] = scn->y0[3] = y;
     register int y0_2 = scn->y0[(scn->x - 2) & 3];
     register int y0_3 = scn->y0[(scn->x - 3) & 3];
     /* 1st differential @ x-1 */
-    register int y1_1 = y0_0 - y0_2;
+    register int y1_1 = y0_1 - y0_2;
     {
-        register int y1_2 = y0_1 - y0_3;
+        register int y1_2 = y0_2 - y0_3;
         if((abs(y1_1) < abs(y1_2)) &&
            ((y1_1 >= 0) == (y1_2 >= 0)))
             y1_1 = y1_2;
     }
+
     /* 2nd differentials @ x-1 & x-2 */
     register int y2_1 = y0_0 - (y0_1 * 2) + y0_2;
     register int y2_2 = y0_1 - (y0_2 * 2) + y0_3;
@@ -193,9 +213,17 @@ zebra_symbol_type_t zebra_scan_y (zebra_scanner_t *scn,
         else
             dprintf("\n");
 
-        if(y1_rev || (abs(scn->y1_sign) < abs(y1_1))) {
-            /* update current edge */
+        if(y1_rev || (abs(scn->y1_sign) <= abs(y1_1))) {
             scn->y1_sign = y1_1;
+
+            /* adaptive thresholding */
+            /* start at multiple of new min/max */
+            scn->y1_thresh = (abs(y1_1) * THRESH_INIT + ROUND) >> ZEBRA_FIXED;
+            dprintf(" thr=%d", scn->y1_thresh);
+            if(scn->y1_thresh < scn->y1_min_thresh)
+                scn->y1_thresh = scn->y1_min_thresh;
+
+            /* update current edge */
             int d = y2_1 - y2_2;
             scn->cur_edge = 1 << ZEBRA_FIXED;
             if(!d)
@@ -231,7 +259,7 @@ void zebra_scanner_get_state (const zebra_scanner_t *scn,
     if(cur_edge) *cur_edge = scn->cur_edge;
     if(last_edge) *last_edge = scn->last_edge;
     if(y0) *y0 = y0_1;
-    if(y1) *y1 = y0_0 - y0_2;
+    if(y1) *y1 = y0_1 - y0_2;
     if(y2) *y2 = y0_0 - (y0_1 * 2) + y0_2;
     /* NB not quite accurate (uses updated x) */
     if(y1_thresh) *y1_thresh = calc_thresh((zebra_scanner_t*)scn);

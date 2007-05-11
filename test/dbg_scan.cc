@@ -64,7 +64,7 @@ void scan_image (const char *filename)
 
     unsigned width = image.columns() + 4 /* for flush */;
     unsigned height = image.rows();
-    unsigned midy = (height + 1) / 2;
+    unsigned midy = (height + 1) / 2 + 2;
     image.crop(Geometry(width - 4, 1, 0, midy));
     image.size(Geometry(width, 1, 0, 0));
 
@@ -77,8 +77,8 @@ void scan_image (const char *filename)
         << " xmlns='http://www.w3.org/2000/svg'>" << endl
         << "<defs><style type='text/css'><![CDATA[" << endl
         << "  * { stroke-linejoin: round; stroke-linecap: round;"
-        <<      " stroke-width: .2; text-anchor: middle;"
-        <<      " font-size: 8; font-weight: bold }" << endl
+        <<      " stroke-width: .1; text-anchor: middle;"
+        <<      " font-size: 6; font-weight: bold }" << endl
         << "  path { fill: none }" << endl
         << "  #zero { stroke: #00f }" << endl
         << "  #edges { stroke: #f00 }" << endl
@@ -97,7 +97,7 @@ void scan_image (const char *filename)
         << "<image width='" << width * 2 << "' height='384'"
         << " preserveAspectRatio='none'"
         << " xlink:href='" << image.baseFilename() << ".png'/>" << endl
-        << "<g transform='translate(-4,384) scale(2,-1)'>" << endl;
+        << "<g transform='translate(-4,384) scale(2,-.5)'>" << endl;
 
     // brute force
     unsigned raw[width];
@@ -168,11 +168,11 @@ void scan_image (const char *filename)
             last_edge[i] = 0;
     }
     svg << "</g>" << endl
-        << "<g transform='translate(-4,384) scale(2,-1)'>" << endl
+        << "<g transform='translate(-4,384) scale(2,-.5)'>" << endl
         << "<path id='edges' d='";
     for(unsigned i = 0; i < width; i++)
         if(last_edge[i])
-            svg << " M" << ((double)last_edge[i] / ZEBRA_FRAC) << ",0v384";
+            svg << " M" << ((double)last_edge[i] / ZEBRA_FRAC) << ",0v768";
     svg << "'/>" << endl
         << "<path id='y0' d='M";
     for(unsigned i = 0; i < width; i++)
@@ -180,7 +180,7 @@ void scan_image (const char *filename)
     svg << "'/>" << endl
         << "</g>" << endl;
 
-    svg << "<g transform='translate(-2,128) scale(2,-2)'>" << endl
+    svg << "<g transform='translate(-2,128) scale(2,-1)'>" << endl
         << "<line id='zero' x2='" << width << "'/>" << endl
         << "<path id='cur-edge' d='";
     for(unsigned i = 1; i < width - 1; i++)

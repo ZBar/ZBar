@@ -1,4 +1,16 @@
 current:
+  * significant scanner improvements
+    - changed "classic" [-1 0 1] first differential kernel to [-1 1]
+      to improve minimum edge resolution to single pixel elements
+      => still need to do some more research and validate assumptions
+    - adaptive thresholding fixes
+    - adjusted filtering for better edge detection
+    - separate constants out to defines (FIXME add config API?)
+  * fix EAN-13 secondary determinant decoding
+  * dbg_scan tweaks to make annotations smaller/more usable
+  * add get_color() interface to decoder
+  * annotated zebraimg scan pattern for marginally useful high-level debug
+  * random include cleanup
   * cleanup 64-bit compile warnings in zebraimg (bug #1712504)
   * add first-pass partial support for Code 128
     - separate out more EAN state from shared state

@@ -25,7 +25,7 @@
 
 #include <stdlib.h>     /* realloc */
 
-#include "zebra.h"
+#include <zebra.h>
 #include "ean.h"
 #include "code128.h"
 

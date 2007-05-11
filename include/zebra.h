@@ -97,6 +97,9 @@ extern void zebra_decoder_new_scan(zebra_decoder_t *decoder);
 extern zebra_symbol_type_t zebra_decode_width(zebra_decoder_t *decoder,
                                               unsigned width);
 
+/* return color of *next* element passed to zebra_decode_width() */
+extern zebra_color_t zebra_decoder_get_color(const zebra_decoder_t *decoder);
+
 /* returns last decoded data,
  * or NULL if no new data available.
  * data buffer is maintained by library,

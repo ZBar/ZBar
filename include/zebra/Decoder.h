@@ -71,6 +71,11 @@ class Decoder {
         return(*this);
     }
 
+    zebra_color_t get_color () const
+    {
+        return(zebra_decoder_get_color(_decoder));
+    }
+
     zebra_symbol_type_t get_type () const
     {
         return(zebra_decoder_get_type(_decoder));

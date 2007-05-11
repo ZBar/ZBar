@@ -29,6 +29,7 @@
 #include <string.h>     /* memset */
 #include <assert.h>
 
+#include <zebra.h>
 #include "decoder.h"
 
 #ifdef DEBUG_DECODER
@@ -66,6 +67,12 @@ void zebra_decoder_new_scan (zebra_decoder_t *dcode)
     dcode->idx = 0;
     ean_new_scan(&dcode->ean);
     code128_reset(&dcode->code128);
+}
+
+
+zebra_color_t zebra_decoder_get_color (const zebra_decoder_t *dcode)
+{
+    return(get_color(dcode));
 }
 
 const char *zebra_decoder_get_data (const zebra_decoder_t *dcode)
