@@ -22,6 +22,7 @@
  *------------------------------------------------------------------------*/
 
 #include <config.h>
+#include <inttypes.h>
 #ifdef DEBUG_IMG_WALKER
 # include <stdio.h>     /* fprintf */
 #endif
@@ -107,8 +108,8 @@ typedef struct walk_state_s {
     const void *p0;
 } walk_state_t;
 
-static char walk_x (zebra_img_walker_t *walk,
-                    walk_state_t *st)
+static char walk_x_diag (zebra_img_walker_t *walk,
+                         walk_state_t *st)
 {
     int err = walk->h - walk->w;
     const void *p = st->p0;
@@ -138,8 +139,8 @@ static char walk_x (zebra_img_walker_t *walk,
     return(0);
 }
 
-static char walk_y (zebra_img_walker_t *walk,
-                    walk_state_t *st)
+static char walk_y_diag (zebra_img_walker_t *walk,
+                         walk_state_t *st)
 {
     int err = walk->w - walk->h;
     const void *p = st->p0;
@@ -185,14 +186,47 @@ char zebra_img_walk (zebra_img_walker_t *walk,
     dprintf("walk: w=%x h=%x dx=%x dy=%x x=%x y=%x\n",
             walk->w, walk->h, st.pdx, st.pdy, walk->x, walk->y);
 
-    unsigned di = walk->w / 4 /* density (FIXME config) */;
-    unsigned long dp = di * st.pdx;
+    /* start w/a few passes along the major axis */
+    unsigned di;
+    uintptr_t dp;
+    if(walk->w > walk->h) {
+        di = walk->h / 8; /* density (FIXME config) */
+        dp = di * st.pdy;
+    }
+    else {
+        di = walk->w / 8;
+        dp = di * st.pdx;
+    }
+    st.p0 = image + dp * 2;
+
+    unsigned i;
+    for(i = di * 2; i <= di * 6; i += di, st.p0 += dp) {
+        const void *p = st.p0;
+        if(walk->w > walk->h) {
+            walk->y = i;
+            for(walk->x = 0; walk->x < walk->w; walk->x++, p += st.pdx)
+                if(walk->handler && ((rc = walk->handler(walk, (void*)p))))
+                    return(rc);
+        }
+        else {
+            walk->x = i;
+            for(walk->y = 0; walk->y < walk->h; walk->y++, p += st.pdy)
+                if(walk->handler && ((rc = walk->handler(walk, (void*)p))))
+                    return(rc);
+        }
+    }
+    
+
+    /* then resort to grid */
+    di = walk->w / 4 /* density (FIXME config) */;
+    dp = di * st.pdx;
+
     st.x0 = st.y0 = 0;
     st.p0 = image;
     st.du = 1;
     st.pdu = st.pdy;
     for(st.x0 = 0; st.x0 < walk->w; st.x0 += di, st.p0 += dp)
-        if((rc = walk_x(walk, &st)))
+        if((rc = walk_x_diag(walk, &st)))
             return(rc);
 
     st.y0 = walk->h - 1;
@@ -200,14 +234,14 @@ char zebra_img_walk (zebra_img_walker_t *walk,
     st.pdu = -st.pdy;
     st.du = -1;
     for(st.x0 = 0; st.x0 < walk->w; st.x0 += di, st.p0 += dp)
-        if((rc = walk_x(walk, &st)))
+        if((rc = walk_x_diag(walk, &st)))
             return(rc);
 
     di /= 2;
     dp /= 2;
     st.p0 = image + st.pdy * st.y0;
     for(st.x0 = 0; st.x0 < walk->w; st.x0 += di, st.p0 += dp)
-        if((rc = walk_y(walk, &st)))
+        if((rc = walk_y_diag(walk, &st)))
             return(rc);
 
     st.y0 = 0;
@@ -215,7 +249,7 @@ char zebra_img_walk (zebra_img_walker_t *walk,
     st.du = 1;
     st.pdu = st.pdy;
     for(st.x0 = 0; st.x0 < walk->w; st.x0 += di, st.p0 += dp)
-        if((rc = walk_y(walk, &st)))
+        if((rc = walk_y_diag(walk, &st)))
             return(rc);
 
     return(0);

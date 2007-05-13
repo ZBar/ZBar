@@ -49,6 +49,7 @@ Scanner scanner(decoder);
 ImageWalker walker;
 const PixelPacket *rd_pxp;
 PixelPacket *wr_pxp;
+unsigned width, height;
 
 ColorRGB space_fill(1., 0., 0.);
 ColorRGB bar_fill(.5, 0., 0.);
@@ -58,6 +59,9 @@ class PixelHandler : public ImageWalker::Handler {
     {
         ColorYUV y;
         y = *(rd_pxp + (uintptr_t)pixel);
+        assert(walker.get_col() < width);
+        assert(walker.get_row() < height);
+        assert((uintptr_t)pixel < width * height);
         scanner << (int)(y.y() * 0x100);
         *(wr_pxp + (uintptr_t)pixel) =
             (scanner.get_color() == ZEBRA_SPACE) ? bar_fill : space_fill;
@@ -80,10 +84,11 @@ void scan_image (const char *filename)
     image.read(filename);
     Image wr_img = image;
 
-    unsigned width = image.columns();
-    unsigned height = image.rows();
+    width = image.columns();
+    height = image.rows();
     walker.set_size(width, height);
 
+    wr_img.type(TrueColorType);
     wr_img.modifyImage();
 
     // extract image pixels

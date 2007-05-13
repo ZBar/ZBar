@@ -78,6 +78,7 @@ void scan_image (const char *filename)
         << "<defs><style type='text/css'><![CDATA[" << endl
         << "  * { stroke-linejoin: round; stroke-linecap: round;"
         <<      " stroke-width: .1; text-anchor: middle;"
+        <<      " image-rendering: optimizeSpeed;"
         <<      " font-size: 6; font-weight: bold }" << endl
         << "  path { fill: none }" << endl
         << "  #zero { stroke: #00f }" << endl
@@ -97,7 +98,7 @@ void scan_image (const char *filename)
         << "<image width='" << width * 2 << "' height='384'"
         << " preserveAspectRatio='none'"
         << " xlink:href='" << image.baseFilename() << ".png'/>" << endl
-        << "<g transform='translate(-4,384) scale(2,-.5)'>" << endl;
+        << "<g transform='translate(1,384) scale(2,-.5)'>" << endl;
 
     // brute force
     unsigned raw[width];
@@ -168,19 +169,21 @@ void scan_image (const char *filename)
             last_edge[i] = 0;
     }
     svg << "</g>" << endl
-        << "<g transform='translate(-4,384) scale(2,-.5)'>" << endl
+        << "<g transform='translate(-3,384) scale(2,-.5)'>" << endl
         << "<path id='edges' d='";
     for(unsigned i = 0; i < width; i++)
         if(last_edge[i])
             svg << " M" << ((double)last_edge[i] / ZEBRA_FRAC) << ",0v768";
     svg << "'/>" << endl
+        << "</g>" << endl
+        << "<g transform='translate(-1,384) scale(2,-.5)'>" << endl
         << "<path id='y0' d='M";
     for(unsigned i = 0; i < width; i++)
         svg << ((i != 1) ? " " : " L ") << i << "," << y0[i];
     svg << "'/>" << endl
         << "</g>" << endl;
 
-    svg << "<g transform='translate(-2,128) scale(2,-1)'>" << endl
+    svg << "<g transform='translate(-1,128) scale(2,-1)'>" << endl
         << "<line id='zero' x2='" << width << "'/>" << endl
         << "<path id='cur-edge' d='";
     for(unsigned i = 1; i < width - 1; i++)
@@ -195,9 +198,9 @@ void scan_image (const char *filename)
     for(unsigned i = 0; i < width; i++)
         svg << ((i != 1) ? " " : " L ") << i << "," << -y1_thr[i];
     svg << "'/>" << endl
-        << "<path id='y1' x='-2' d='M";
+        << "<path id='y1' d='M";
     for(unsigned i = 0; i < width; i++)
-        svg << ((i != 1) ? " " : " L ") << i << "," << y1[i];
+        svg << ((i != 1) ? " " : " L ") << (i - 0.5) << "," << y1[i];
     svg << "'/>" << endl
         << "<path id='y2' d='M";
     for(unsigned i = 0; i < width; i++)

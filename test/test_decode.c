@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include <zebra.h>
 
@@ -112,15 +113,15 @@ static const unsigned int code128[107] = {
     0x421211, 0x212141, 0x214121, 0x412121, /* 58 */
     0x111143, 0x111341, 0x131141, 0x114113,
     0x114311, 0x411113, 0x411311, 0x113141, /* 60 */
-    0x114131, 0x311141, 0x411131, 0x211412,
-    0x211214, 0x211232,                     /* 68 */
-    0x2331112,                              /* STOP (6a) */
+    0x114131, 0x311141, 0x411131,
+    0x211412, 0x211214, 0x211232,           /* 67 */
+    0x2331112a,                             /* STOP (6a) */
 };
 
-static void encode_code128 (unsigned char *data)
+static void encode_code128b (unsigned char *data)
 {
     printf("------------------------------------------------------------\n"
-           "encode CODE-128: %s\n"
+           "encode CODE-128(B): %s\n"
            "    encode START_B: %02x", data, START_B);
     encode(code128[START_B], 0);
     int i, chk = START_B;
@@ -128,6 +129,29 @@ static void encode_code128 (unsigned char *data)
         printf("    encode '%c': %02x", data[i], data[i] - 0x20);
         encode(code128[data[i] - 0x20], 0);
         chk += (i + 1) * (data[i] - 0x20);
+    }
+    chk %= 103;
+    printf("    encode checksum: %02x", chk);
+    encode(code128[chk], 0);
+    printf("    encode STOP: %02x", STOP);
+    encode(code128[STOP], 0);
+    printf("------------------------------------------------------------\n");
+}
+
+static void encode_code128c (unsigned char *data)
+{
+    printf("------------------------------------------------------------\n"
+           "encode CODE-128(C): %s\n"
+           "    encode START_C: %02x", data, START_C);
+    encode(code128[START_C], 0);
+    int i, chk = START_C;
+    for(i = 0; data[i]; i += 2) {
+        assert(data[i] >= '0');
+        assert(data[i + 1] >= '0');
+        unsigned char c = (data[i] - '0') * 10 + (data[i + 1] - '0');
+        printf("    encode '%c%c': %02d", data[i], data[i + 1], c);
+        encode(code128[c], 0);
+        chk += (i / 2 + 1) * c;
     }
     chk %= 103;
     printf("    encode checksum: %02x", chk);
@@ -174,21 +198,19 @@ static void encode_ean13 (unsigned char *data)
     unsigned char par = ean_parity_encode[data[0]];
 
     printf("------------------------------------------------------------\n"
-           "encode EAN-13: ");
-    for(i = 0; i < 13; i++)
-        printf("%d", data[i]);
-    printf("(%02x)\n"
-           "    encode start guard:", par);
+           "encode EAN-13: %s (%02x)\n"
+           "    encode start guard:",
+           data, par);
     encode(ean_guard[3], FWD);
     for(i = 1; i < 7; i++, par <<= 1) {
-        printf("    encode %x%d:", (par >> 5) & 1, data[i]);
-        encode(ean_digits[data[i]], REV ^ ((par >> 5) & 1));
+        printf("    encode %x%c:", (par >> 5) & 1, data[i]);
+        encode(ean_digits[data[i] - '0'], REV ^ ((par >> 5) & 1));
     }
     printf("    encode center guard:");
     encode(ean_guard[5], FWD);
     for(; i < 13; i++) {
-        printf("    encode %x%d:", 0, data[i]);
-        encode(ean_digits[data[i]], FWD);
+        printf("    encode %x%c:", 0, data[i]);
+        encode(ean_digits[data[i] - '0'], FWD);
     }
     printf("    encode end guard:");
     encode(ean_guard[3], REV);
@@ -216,18 +238,25 @@ int main (int argc, char **argv)
 
     encode_junk(rnd_size);
 
-    unsigned char data[32];
+    unsigned char data[32] = { 0 };
     int chk = 0;
     for(i = 0; i < 12; i++) {
-        data[i] = (rand() >> 16) % 10;
-        chk += (i & 1) ? data[i] * 3 : data[i];
+        unsigned char c = (rand() >> 16) % 10;
+        data[i] = c + '0';
+        chk += (i & 1) ? c * 3 : c;
     }
     data[i] = chk % 10;
     if(data[i])
         data[i] = 10 - data[i];
+    data[i] += '0';
     data[++i] = 0;
 
     encode_ean13(data);
+
+    encode_junk(rnd_size);
+
+    data[--i] = 0;
+    encode_code128c(data);
 
     encode_junk(rnd_size);
 
@@ -235,7 +264,7 @@ int main (int argc, char **argv)
         data[i] = (rand() >> 16) % 0x5f + 0x20;
     data[i] = 0;
 
-    encode_code128(data);
+    encode_code128b(data);
 
     encode_junk(rnd_size);
 

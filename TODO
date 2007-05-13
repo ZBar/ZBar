@@ -1,8 +1,12 @@
   * rpm packaging
+  * redundant output suppression for zebraimg
+  * frame consistency checks for zebracam
+  * handle Code 128 function characters (FNC1-4)
   * decoder needs symbology/feature enable/disable
   * better C++ interface to img_walker
     * nice to match STL iterator interface
-  * redundant output suppression for zebraimg
+  * img_walker pattern selection
+  * higher img_walker pattern density (cfg even better)
   * decode hook (program/script) to zebracam/(zebraimg?)
   * finish UPC-E, EAN-8 and addon decoding
   * add library version query interface

@@ -1,4 +1,13 @@
 current:
+  * continue Code 128 refinement
+    - finish character set C decode/expansion
+    - add per-character validation
+    - resolve scan direction in separate postprocessing pass before handling
+      ASCII conversion
+    - add several img_walker passes parallel to major axis (for long symbols)
+    - add simple character set C example to test_decode
+  * promote zebraimg images to TrueColor so colored scan pattern always shows
+  * more dbg_scan tweaks
   * significant scanner improvements
     - changed "classic" [-1 0 1] first differential kernel to [-1 1]
       to improve minimum edge resolution to single pixel elements

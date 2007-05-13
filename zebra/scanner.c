@@ -213,7 +213,7 @@ zebra_symbol_type_t zebra_scan_y (zebra_scanner_t *scn,
         else
             dprintf("\n");
 
-        if(y1_rev || (abs(scn->y1_sign) <= abs(y1_1))) {
+        if(y1_rev || (abs(scn->y1_sign) < abs(y1_1))) {
             scn->y1_sign = y1_1;
 
             /* adaptive thresholding */
