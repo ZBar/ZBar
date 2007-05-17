@@ -15,3 +15,7 @@ include $(srcdir)/zebracam/Makefile.am.inc
 endif
 include $(srcdir)/test/Makefile.am.inc
 include $(srcdir)/doc/Makefile.am.inc
+
+EXTRA_DIST += debian/changelog debian/compat debian/control debian/copyright \
+    debian/docs debian/libzebra0.install debian/libzebra-dev.install \
+    debian/rules debian/shlibs.local debian/zebra-tools.install

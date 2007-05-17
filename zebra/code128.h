@@ -25,7 +25,7 @@
 
 /* Code 128 specific decode state */
 typedef struct code128_decoder_s {
-    int direction : 1;          /* scan direction: 0=fwd/space, 1=rev/bar */
+    unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
     unsigned element : 3;       /* element offset 0-5 */
     int character : 12;         /* character position in symbol */
     char buf[6];                /* holding buffer */

@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.61])
-AC_INIT([zebra], [0.1], [spadix@users.sourceforge.net])
+AC_INIT([zebra], [0.2], [spadix@users.sourceforge.net])
 AM_INIT_AUTOMAKE([1.10 -Wall -Werror foreign subdir-objects std-options dist-bzip2])
 AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_SRCDIR(zebra/scanner.c)
@@ -16,14 +16,13 @@ AC_CONFIG_SRCDIR(zebra/scanner.c)
 #     then increment age.
 #   - If any interfaces have been removed since the last public release,
 #     then set age to 0. 
-AC_SUBST([LIB_VERSION], [1:0:1])
-AC_SUBST([RELDATE], [2007-03-24])
+AC_SUBST([LIB_VERSION], [2:0:2])
+AC_SUBST([RELDATE], [2007-05-16])
 
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_PROG_LIBTOOL
-AC_PROG_RANLIB
 
 AC_ARG_VAR([XMLTO], [location of xmlto, used for optional \
 documentation generation])

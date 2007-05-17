@@ -41,8 +41,10 @@
 
 #define DUMP_NAME_MAX 0x20
 #define PPM_HDR_MAX 0x20
-#define SYM_MAX 0x20
+#define SYM_MAX 0x200
 #define SYM_HYST 2000 /* ms */
+#define UNCERTAINTY 20 /* frames */
+#define CERTAINTY 3 /* frames */
 
 static int cam_fd;
 static struct video_capability vcap;
@@ -66,6 +68,8 @@ int tone_period = 20;
 zebra_symbol_type_t last_sym_type;
 char last_sym_data[SYM_MAX];
 double last_sym_time = 0;
+uint64_t last_sym_frame = 0;
+uint32_t last_sym_count = 0;
 
 double beep_time = 0;
 
@@ -281,6 +285,7 @@ static inline void process ()
 {
     zebra_scanner_new_scan(scanner);
     zebra_img_walk(walker, buf);
+    zebra_scanner_new_scan(scanner); /* flush scan */
 }
 
 static void symbol_handler (zebra_decoder_t *decoder)
@@ -290,19 +295,33 @@ static void symbol_handler (zebra_decoder_t *decoder)
         return;
     const char *data = zebra_decoder_get_data(decoder);
 
-    double ms = SDL_GetTicks();
-    /* edge detect symbol change w/some hysteresis */
-    if(sym == last_sym_type &&
-       !strncmp(data, last_sym_data, SYM_MAX) &&
-       ((ms - last_sym_time) < SYM_HYST)) {
-        last_sym_time = ms;
+    int match = (sym == last_sym_type &&
+                 !strncmp(data, last_sym_data, SYM_MAX));
+    int uncertain = nframes > (last_sym_frame + UNCERTAINTY);
+
+    last_sym_frame = nframes;
+    last_sym_type = sym;
+
+    /* uncertainty filtering
+     * symbols are only reported after they have been
+     * observed consistently in several nearby frames
+     */
+    if(!match || uncertain) {
+        strncpy(last_sym_data, data, SYM_MAX);
+        last_sym_count = 0;
         return;
     }
+    if(++last_sym_count < CERTAINTY)
+        return;
+
+    /* edge detect symbol change w/some hysteresis */
+    double ms = SDL_GetTicks();
+    int edge = match && ((ms - last_sym_time) < SYM_HYST);
+    last_sym_time = ms;
+    if(edge)
+        return;
 
     /* report new symbol */
-    last_sym_time = ms;
-    last_sym_type = sym;
-    strncpy(last_sym_data, data, SYM_MAX);
     printf("%s%s: %s\n",
            zebra_get_symbol_name(sym),
            zebra_get_addon_name(sym),
@@ -314,8 +333,12 @@ static void symbol_handler (zebra_decoder_t *decoder)
 static char pixel_handler (zebra_img_walker_t *walker,
                            void *p)
 {
-    if(zebra_scan_rgb24(scanner, p) > ZEBRA_PARTIAL)
-        return(1);
+    if(!zebra_img_walker_get_col(walker) ||
+       !zebra_img_walker_get_row(walker))
+        zebra_scanner_new_scan(scanner);
+
+    zebra_scan_rgb24(scanner, p);
+
     *((uint8_t*)p - buf + (uint8_t*)screen->pixels + 2) = 0xff;
     return(0);
 }

@@ -24,6 +24,7 @@
 #include <Magick++.h>
 #include <iostream>
 #include <fstream>
+#include <libgen.h>
 #include <zebra.h>
 
 using namespace std;
@@ -60,7 +61,11 @@ void scan_image (const char *filename)
 
     Image image;
     image.read(filename);
-    ofstream svg((image.baseFilename() + ".svg").c_str());
+    string file = image.baseFilename();
+    unsigned baseidx = file.rfind('/');
+    if(baseidx != string::npos)
+        file = file.substr(baseidx + 1, file.length() - baseidx - 1);
+    ofstream svg((file + ".svg").c_str());
 
     unsigned width = image.columns() + 4 /* for flush */;
     unsigned height = image.rows();
@@ -97,7 +102,7 @@ void scan_image (const char *filename)
         << "]]></style></defs>" << endl
         << "<image width='" << width * 2 << "' height='384'"
         << " preserveAspectRatio='none'"
-        << " xlink:href='" << image.baseFilename() << ".png'/>" << endl
+        << " xlink:href='" << file << ".png'/>" << endl
         << "<g transform='translate(1,384) scale(2,-.5)'>" << endl;
 
     // brute force
@@ -128,13 +133,13 @@ void scan_image (const char *filename)
             << "</g>" << endl;
     }
     image.depth(8);
-    image.write(image.baseFilename() + ".png");
+    image.write(file + ".png");
 
     // process scan and capture calculated values
     unsigned cur_edge[width], last_edge[width];
     int y0[width], y1[width], y2[width], y1_thr[width];
 
-    svg << "<g transform='translate(-4)'>" << endl;
+    svg << "<g transform='translate(-3)'>" << endl;
     for(unsigned i = 0; i < width; i++) {
         int edge = scanner.scan_y(raw[i]);
         unsigned x;

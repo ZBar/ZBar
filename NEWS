@@ -1,5 +1,13 @@
 Zebra Barcode Reader
 
+version 0.2 (2007-05-16):
+  this release introduces significant enhancements, bug fixes and new
+  features!  basic EAN-13/UPC-A reading has been improved and should
+  now be much more reliable.  by popular request, new support has been
+  added for decoding Code 128.  additionally, the build process was
+  improved and there is even basic documentation for the application
+  commands
+
 version 0.1 (2007-03-24):
   first official Zebra release!
   supports basic scanning and decoding of EAN-13 and UPC-A symbols

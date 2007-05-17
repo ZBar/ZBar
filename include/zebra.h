@@ -156,12 +156,12 @@ extern void zebra_scanner_destroy(zebra_scanner_t *scanner);
 /* clear all scanner state.
  * also resets an associated decoder
  */
-extern void zebra_scanner_reset(zebra_scanner_t *scanner);
+extern zebra_symbol_type_t zebra_scanner_reset(zebra_scanner_t *scanner);
 
 /* mark start of a new scan pass, resets color to SPACE.
  * also updates an associated decoder
  */
-extern void zebra_scanner_new_scan(zebra_scanner_t *scanner);
+extern zebra_symbol_type_t zebra_scanner_new_scan(zebra_scanner_t *scanner);
 
 /* process next sample intensity value (y)
  * intensity is in arbitrary relative units

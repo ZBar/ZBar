@@ -94,23 +94,13 @@ void zebra_scanner_destroy (zebra_scanner_t *scn)
     free(scn);
 }
 
-void zebra_scanner_reset (zebra_scanner_t *scn)
+zebra_symbol_type_t zebra_scanner_reset (zebra_scanner_t *scn)
 {
     memset(&scn->x, 0, sizeof(zebra_scanner_t) + (void*)scn - (void*)&scn->x);
     scn->y1_thresh = scn->y1_min_thresh;
     if(scn->decoder)
         zebra_decoder_reset(scn->decoder);
-}
-
-void zebra_scanner_new_scan (zebra_scanner_t *scn)
-{
-    /* reset color to SPACE
-     * (actually just resets everything)
-     */
-    memset(&scn->x, 0, sizeof(zebra_scanner_t) + (void*)scn - (void*)&scn->x);
-    scn->y1_thresh = scn->y1_min_thresh;
-    if(scn->decoder)
-        zebra_decoder_new_scan(scn->decoder);
+    return(ZEBRA_NONE);
 }
 
 unsigned zebra_scanner_get_width (const zebra_scanner_t *scn)
@@ -166,6 +156,21 @@ static inline zebra_symbol_type_t process_edge (zebra_scanner_t *scn,
     }
     /* skip initial transition */
     return(ZEBRA_NONE);
+}
+
+zebra_symbol_type_t zebra_scanner_new_scan (zebra_scanner_t *scn)
+{
+    /* finalize outstanding edge */
+    zebra_symbol_type_t edge = process_edge(scn, 0);
+
+    /* reset color to SPACE
+     * (actually just resets everything)
+     */
+    memset(&scn->x, 0, sizeof(zebra_scanner_t) + (void*)scn - (void*)&scn->x);
+    scn->y1_thresh = scn->y1_min_thresh;
+    if(scn->decoder)
+        zebra_decoder_new_scan(scn->decoder);
+    return(edge);
 }
 
 zebra_symbol_type_t zebra_scan_y (zebra_scanner_t *scn,

@@ -1,4 +1,15 @@
-current:
+version 0.2:
+  * update distribution to include debian packaging
+  * add consistency checking to zebracam
+  * add redundant output suppression to zebraimg
+  * fix couple of Code 128 decode table bugs
+  * fix reversed Code 128 decode
+  * add outstanding scanner edge flush to new_scan()
+    - API change: scanner reset/new_scan() now return scan/decode status
+    - update zebracam and zebraimg to call this between each walker pass
+      (interface still needs improvement...)
+    => improves in scan results for many cases
+  * fix dbg_scan filename generation so results go in local directory
   * continue Code 128 refinement
     - finish character set C decode/expansion
     - add per-character validation

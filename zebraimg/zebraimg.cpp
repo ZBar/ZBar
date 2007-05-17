@@ -27,6 +27,7 @@
 #include <Magick++.h>
 #include <iostream>
 #include <assert.h>
+#include <map>
 
 #include <zebra.h>
 
@@ -50,6 +51,9 @@ ImageWalker walker;
 const PixelPacket *rd_pxp;
 PixelPacket *wr_pxp;
 unsigned width, height;
+map<string, unsigned> datahist;
+string data_max;
+unsigned data_cnt;
 
 ColorRGB space_fill(1., 0., 0.);
 ColorRGB bar_fill(.5, 0., 0.);
@@ -62,6 +66,8 @@ class PixelHandler : public ImageWalker::Handler {
         assert(walker.get_col() < width);
         assert(walker.get_row() < height);
         assert((uintptr_t)pixel < width * height);
+        if(!walker.get_col() || !walker.get_row())
+            scanner.new_scan();
         scanner << (int)(y.y() * 0x100);
         *(wr_pxp + (uintptr_t)pixel) =
             (scanner.get_color() == ZEBRA_SPACE) ? bar_fill : space_fill;
@@ -72,14 +78,24 @@ class PixelHandler : public ImageWalker::Handler {
 class SymbolHandler : public Decoder::Handler {
     virtual void decode_callback (Decoder &decoder)
     {
-        if(decoder.get_type() > ZEBRA_PARTIAL)
-            cout << decoder.get_symbol_name() << decoder.get_addon_name()
-                 << ": " << decoder.get_data_string() << endl;
+        if(decoder.get_type() > ZEBRA_PARTIAL) {
+            string data = (string(decoder.get_symbol_name()) + 
+                           string(decoder.get_addon_name()) +
+                           ":" + decoder.get_data_string());
+            if(++datahist[data] > data_cnt) {
+                data_max = data;
+                data_cnt = datahist[data];
+            }
+        }
     }
 } symbol_handler;
 
 void scan_image (const char *filename)
 {
+    scanner.reset();
+    datahist.clear();
+    data_cnt = 0;
+
     Image image;
     image.read(filename);
     Image wr_img = image;
@@ -97,10 +113,12 @@ void scan_image (const char *filename)
     Pixels wr_view(wr_img);
     wr_pxp = wr_view.get(0, 0, width, height);
     walker.walk(0);
-    assert(*rd_pxp != space_fill);
-
+    scanner.new_scan(); /* flush scan */
     wr_view.sync();
-    scanner << 0 << 0 << 0; /* flush scan FIXME? */
+
+    // display result data
+    if(data_cnt)
+        cout << data_max << endl;
 
     if(display) {
 #if (MagickLibVersion >= 0x632)

@@ -64,7 +64,7 @@ static const char characters[NUM_CHARS] = {
     0x5f, 0xe4,                                                 /* [0a] 03 */
 
     0x6b, 0xe8, 0x69, 0xa7, 0xe7,                               /* [0c] 10 */
-    0xc1, 0x51, 0x1e, 0x83, 0xc9, 0x00, 0x84, 0x1f,             /* [11] 11 */
+    0xc1, 0x51, 0x1e, 0x83, 0xd9, 0x00, 0x84, 0x1f,             /* [11] 11 */
     0xc7, 0x0d, 0x33, 0x86, 0xb5, 0x0e, 0x15, 0x87,             /* [19] 12 */
     0x10, 0xda, 0x11,                                           /* [21] 13 */
 
@@ -171,7 +171,7 @@ static inline char decode_hi (int sig)
     case 0x1134: idx = 0xa; break;
     case 0x1242: idx = 0xb; break;
     case 0x1243: idx = 0xc; break;
-    case 0x1441: idx = 0xd; break;
+    case 0x1441: idx = 0xd; rev = 0; break;
     default: return(-1);
     }
     if(rev)
@@ -244,7 +244,7 @@ static inline char validate_checksum (zebra_decoder_t *dcode)
     /* calculate sum in reverse to avoid multiply operations */
     unsigned i, acc = 0;
     for(i = dcode128->character - 3; i; i--) {
-        idx = (dcode128->direction) ? dcode128->character - i : i;
+        idx = (dcode128->direction) ? dcode128->character - 1 - i : i;
         acc += dcode->buf[idx];
         if(acc >= 103)
             acc -= 103;
@@ -325,7 +325,7 @@ static inline char postprocess (zebra_decoder_t *dcode)
             dcode->buf[i] = dcode->buf[j];
             dcode->buf[j] = code;
         }
-        assert(code == STOP_REV);
+        assert(dcode->buf[dcode128->character - 1] == STOP_REV);
     }
     else
         assert(dcode->buf[dcode128->character - 1] == STOP_FWD);
@@ -407,6 +407,7 @@ zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
        /* decode color based on direction */
        (get_color(dcode) != dcode128->direction))
         return(0);
+    dcode128->element = 0;
 
     dprintf(2, "      code128[%c%02d+%x]:",
             (dcode128->direction) ? '<' : '>',
@@ -433,14 +434,13 @@ zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
         dprintf(2, " dir=%x [valid start]", dcode128->direction);
     }
     else if((c < 0) ||
-            ((dcode128->character > BUFFER_MIN) &&
+            ((dcode128->character >= BUFFER_MIN) &&
              size_buf(dcode, dcode128->character + 1))) {
         dprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
         dcode->lock = 0;
         code128_reset(dcode128);
         return(0);
     }
-    dcode128->element = 0;
 
     assert(dcode->buflen > dcode128->character);
     dcode->buf[dcode128->character++] = c;
