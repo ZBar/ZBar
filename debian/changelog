@@ -1,3 +1,10 @@
+libzebra (0.2-1) unstable; urgency=low
+
+  * Added libsdl dependency
+  * automake1.10 is now required
+
+ -- Vít Hrachový <vit.hrachovy@sandbox.cz>  Thu, 17 May 2007 9:20:45 +0200
+
 libzebra (0.1-1) unstable; urgency=low
 
   * Initial release

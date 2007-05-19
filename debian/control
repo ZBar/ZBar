@@ -1,7 +1,7 @@
 Source: libzebra
 Priority: optional
 Maintainer: Vít Hrachový <vit.hrachovy@sandbox.cz>
-Build-Depends: debhelper (>= 5), autotools-dev, libmagick++9-dev, autoconf (>= 2.61), automake1.9 (>= 1.9), libtool (>= 1.5.22), xmlto (>= 0.0.18)
+Build-Depends: debhelper (>= 5), autotools-dev, libmagick++9-dev, autoconf (>= 2.61), automake (>= 1:1.10), libtool (>= 1.5.22), xmlto (>= 0.0.18), libsdl1.2-dev
 Standards-Version: 3.7.2
 Section: libs
 

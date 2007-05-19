@@ -1,3 +1,9 @@
+current:
+  * Debian package patch for 0.2 - thanks to Vít Hrachový:
+    - add libsdl1.2-dev as a build dependency
+    - update automake (>= 1:1.10) as a build dependency
+    - new package
+
 version 0.2:
   * update distribution to include debian packaging
   * add consistency checking to zebracam
