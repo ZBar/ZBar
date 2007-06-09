@@ -5,6 +5,8 @@ bin_PROGRAMS =
 check_PROGRAMS =
 CLEANFILES =
 
+dist_doc_DATA = COPYING.LIB HACKING INSTALL NEWS README TODO
+
 include $(srcdir)/include/Makefile.am.inc
 include $(srcdir)/zebra/Makefile.am.inc
 if HAVE_MAGICK
@@ -16,6 +18,7 @@ endif
 include $(srcdir)/test/Makefile.am.inc
 include $(srcdir)/doc/Makefile.am.inc
 
-EXTRA_DIST += debian/changelog debian/compat debian/control debian/copyright \
+EXTRA_DIST += zebra.spec.in zebra.spec \
+    debian/changelog debian/compat debian/control debian/copyright \
     debian/docs debian/libzebra0.install debian/libzebra-dev.install \
     debian/rules debian/shlibs.local debian/zebra-tools.install

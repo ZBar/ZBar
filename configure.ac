@@ -125,7 +125,7 @@ AC_CONFIG_COMMANDS([doc/reldate.xml],
   [RELDATE=$RELDATE]
 )
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile zebra.spec])
 AC_OUTPUT
 
 echo ""

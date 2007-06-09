@@ -1,4 +1,8 @@
 current:
+  * integrate RPM packaging spec file - thanks to Vít Hrachovı for the draft!
+    (patch #1723536)
+  * finally add HACKING to distribution/install (bug #1698202)
+  * add extra documentation files to install (README NEWS INSTALL, etc)
   * Debian package patch for 0.2 - thanks to Vít Hrachovı:
     - add libsdl1.2-dev as a build dependency
     - update automake (>= 1:1.10) as a build dependency

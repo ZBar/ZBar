@@ -13,3 +13,4 @@
   * add library version query interface
   * profile and weed out obvious oversights
   * documentation
+    * hook up doxygen or robodoc for API docs

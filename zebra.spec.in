@@ -1,0 +1,83 @@
+Name: zebra
+Summary: Scan and decode barcodes using a video device or from image files
+Version: @VERSION@
+Release: 1
+License: LGPL
+Group: Applications/Multimedia
+URL: http://zebra.sourceforge.net
+Packager: Vit Hrachovy <fangorn34@users.sourceforge.net>
+Source: zebra-%{version}.tar.gz
+Requires: ImageMagick-c++, SDL
+BuildPreReq: ImageMagick-c++-devel, SDL-devel
+Prefix: %{_prefix}
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+
+%description
+Zebra is a layered barcode (EAN/UPC/Code 128) scanning and decoding
+library.  Includes applications for decoding captured barcode images
+and using a video device (eg, webcam) as a barcode scanner.  Features
+a fast streaming interface with minimal memory footprint.
+
+%package devel
+Group: Development/Libraries
+Summary: Header files and static libraries for Zebra bar code reading library.
+Requires: %{name} = %{version}
+
+%description devel
+This package installs files neccessary for development of bar code
+applications using Zebra barcode reader library.
+
+%prep
+%setup -q -n zebra-%{version}
+
+%build
+./configure --host=%{_host} --build=%{_build} \
+  CFLAGS="${CFLAGS:-%optflags}" \
+  CXXFLAGS="${CXXFLAGS:-%optflags}" \
+  --prefix=$RPM_BUILD_ROOT/%{_prefix} \
+  --docdir=$RPM_BUILD_ROOT/%{_docdir}/%{name}-%{version}
+make
+
+%install
+rm -rf $RPM_BUILD_ROOT
+make install
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%post
+ldconfig
+
+%postun
+ldconfig
+
+%files
+%defattr(-,root,root)
+%doc %{_docdir}/%{name}-%{version}/COPYING.LIB
+%doc %{_docdir}/%{name}-%{version}/HACKING
+%doc %{_docdir}/%{name}-%{version}/INSTALL
+%doc %{_docdir}/%{name}-%{version}/NEWS
+%doc %{_docdir}/%{name}-%{version}/README
+%doc %{_docdir}/%{name}-%{version}/TODO
+%{_datadir}/man/man1/*
+%{_libdir}/libzebra.so.0.2.0
+%{_libdir}/libzebra.so.0
+%{_libdir}/libzebra.so
+%{_bindir}/zebraimg
+%{_bindir}/zebracam
+
+%files devel
+%defattr(-,root,root)
+%{_libdir}/libzebra.la
+%{_libdir}/libzebra.a
+%{_includedir}/zebra.h
+%{_includedir}/zebra/Scanner.h
+%{_includedir}/zebra/Decoder.h
+%{_includedir}/zebra/ImageWalker.h
+
+%changelog
+* Fri Jun 08 2007 spadix <spadix@users.sourceforge.net>
+- first release
+
+* Tue May 22 2007 Vít Hrachový <fangorn34@users.sourceforge.net>
+- Initial draft
