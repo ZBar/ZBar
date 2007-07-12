@@ -130,7 +130,7 @@ zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
                                         unsigned w)
 {
     dcode->w[dcode->idx & 7] = w;
-    dprintf("    decode[%x]: w=%d\n", dcode->idx, w);
+    dprintf("    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
 
     /* each decoder processes width stream in parallel */
     zebra_symbol_type_t sym = dcode->type = ZEBRA_NONE;

@@ -29,6 +29,9 @@ documentation generation])
 AC_ARG_VAR([XMLTOFLAGS], [additional arguments for xmlto])
 AC_CHECK_TOOL([XMLTO], [xmlto], [:])
 
+AC_ARG_VAR([PKG_CONFIG], [full path to pkg-config utility])
+AC_CHECK_TOOL([PKG_CONFIG], [pkg-config], [:])
+
 AC_ARG_WITH([imagemagick],
   [AS_HELP_STRING([--without-imagemagick],
     [disable support for scanning images using ImageMagick])],
@@ -51,12 +54,23 @@ to skip building programs that use ImageMagick.])],
 install imagemagick or configure --without-imagemagick
 to skip building programs that use ImageMagick.])]
 )])
+
+AS_IF([test "x$with_imagemagick" != "xno"],
+  [AC_MSG_CHECKING([ImageMagick version])
+   MAGICK_VERSION=`$MAGICKXX_CONFIG --version`
+   AC_MSG_RESULT([$MAGICK_VERSION])
+   AS_CASE([$MAGICK_VERSION],
+     [[[0-5].* | 6.[0-2].*]],
+     [AC_MSG_FAILURE([test for ImageMagick version >= 6.3.0 failed!
+upgrade ImageMagick or configure --without-imagemagick
+to skip building programs that use ImageMagick.])])
+])
+    
 AM_CONDITIONAL([HAVE_MAGICK], [test "x$MAGICKXX_CONFIG" != "x:"])
 AC_SUBST([MAGICK_CPPFLAGS], [`$MAGICKXX_CONFIG --cppflags`])
 AC_SUBST([MAGICK_CXXFLAGS], [`$MAGICKXX_CONFIG --cxxflags`])
 AC_SUBST([MAGICK_LDFLAGS], [`$MAGICKXX_CONFIG --ldflags`])
 AC_SUBST([MAGICK_LIBS], [`$MAGICKXX_CONFIG --libs`])
-
 
 AC_ARG_ENABLE([video],
   [AS_HELP_STRING([--disable-video],
@@ -64,7 +78,7 @@ AC_ARG_ENABLE([video],
   [],
   [enable_video=yes])
 
-AC_CHECK_HEADER([linux/videodev.h],
+AC_CHECK_HEADERS([linux/videodev.h],
   [],
   [AS_IF([test "x$enable_video" != "xno"],
     [AC_MSG_FAILURE([test for video support failed!
@@ -72,6 +86,16 @@ rebuild your kernel to include video4linux support or
 configure --disable-video to skip building programs that use video.])]
 )])
 
+AS_IF([test "x$enable_video" != "xno"],
+  [AC_CHECK_HEADERS([linux/videodev2.h],
+    [],
+    [AC_MSG_WARN([v4l2 API not detected, upgrade your kernel!])],
+    [[#include <linux/types.h>
+#include <linux/time.h>
+#ifdef HAVE_VIDEODEV_H
+# include <videodev.h>
+#endif
+]])])
 
 AC_ARG_WITH([sdl],
   [AS_HELP_STRING([--without-sdl],
@@ -89,9 +113,50 @@ AS_IF([test "x$enable_video" = "xno"],
 install SDL or configure --without-sdl
 to skip building programs that use SDL])]
 )
+
+AS_IF([test "x$with_sdl" != "xno"],
+  [AC_MSG_CHECKING([SDL version])
+   SDL_VERSION=`$SDL_CONFIG --version`
+   AC_MSG_RESULT([$SDL_VERSION])
+])
+
 AM_CONDITIONAL([HAVE_SDL], [test "x$SDL_CONFIG" != "x:"])
 AC_SUBST([SDL_CPPFLAGS], [`$SDL_CONFIG --cflags`])
 AC_SUBST([SDL_LIBS], [`$SDL_CONFIG --libs`])
+
+AC_ARG_WITH([mozilla],
+  [AS_HELP_STRING([--without-mozilla],
+    [disable support for Firefox/Mozilla/OpenOffice NPAPI plugin])],
+  [],
+  [with_mozilla=yes])
+
+AC_ARG_VAR([MOZILLA_CFLAGS],
+  [C compiler flags for Firefox/Mozilla plugin (overrides pkg-config)])
+AS_IF([test "x$MOZILLA_CFLAGS" = "x"],
+  [MOZILLA_CFLAGS=`$PKG_CONFIG --cflags firefox-plugin`])
+
+AC_ARG_VAR([MOZILLA_LIBS],
+  [linker flags for Firefox/Mozilla plugin (overrides pkg-config)])
+AS_IF([test "x$MOZILLA_LIBS" = "x"],
+  [MOZILLA_LIBS=`$PKG_CONFIG --libs firefox-plugin`])
+
+AS_IF([test "x$with_mozilla" = "xno"],
+  [],
+  [test "x$MOZILLA_CFLAGS" = "x" || \
+   test "x$MOZILLA_LIBS" = "x"],
+  [AC_MSG_FAILURE([test for Firefox/Mozilla plugin (NPAPI) interface failed!
+  - install pkg-config and Firefox
+  - *or* install Firefox or the Mozilla SDK and manually specify
+      MOZILLA_CFLAGS and MOZILLA_LIBS
+  - *or* configure --without-mozilla to skip building the plugin])]
+)
+AS_IF([test "x$with_mozilla" != "xno"],
+  [AC_MSG_CHECKING([Mozilla version])
+   MOZILLA_VERSION=`$PKG_CONFIG --modversion firefox-plugin`
+   AC_MSG_RESULT([$MOZILLA_VERSION])
+])
+
+AM_CONDITIONAL([HAVE_MOZILLA], [test "x$with_mozilla" != "xno"])
 
 AC_PATH_X
 
@@ -141,4 +206,9 @@ echo "Magick++          --with-imagemagick=$with_imagemagick"
 AS_IF([test "x$with_imagemagick" != "xyes"],
   [echo "       => the zebraimg program will *NOT* be built"],
   [echo "       => zebraimg image file scanner will be built"])
+echo ""
+echo "Mozilla Plugin    --with-mozilla=$with_mozilla"
+AS_IF([test "x$with_mozilla" != "xyes"],
+  [echo "       => the Mozilla/Firefox/OpenOffice plugin will *NOT* be built"],
+  [echo "       => the Mozilla/Firefox/OpenOffice plugin will be built"])
 echo ""

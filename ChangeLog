@@ -1,4 +1,7 @@
 current:
+  * add configure check for ImageMagick version >= 6.3.0
+  * configure dumps ImageMagick, SDL and firefox versions for debug
+  * add NPAPI plugin stub and build infrastructure
   * flush zebracam output after each scanned symbol
   * integrate RPM packaging spec file - thanks to Vít Hrachový for the draft!
     (patch #1723536)

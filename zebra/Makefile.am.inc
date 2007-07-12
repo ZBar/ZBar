@@ -1,4 +1,4 @@
-lib_LTLIBRARIES = zebra/libzebra.la
+lib_LTLIBRARIES += zebra/libzebra.la
 zebra_libzebra_la_SOURCES = \
     zebra/img_walker.c zebra/scanner.c \
     zebra/decoder.h zebra/decoder.c \
