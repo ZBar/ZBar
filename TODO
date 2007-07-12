@@ -1,5 +1,5 @@
-  * rpm packaging
   * handle Code 128 function characters (FNC1-4)
+  * integrated high-level image API
   * decoder needs symbology/feature enable/disable
   * better C++ interface to img_walker
     * nice to match STL iterator interface
@@ -7,6 +7,7 @@
   * img_walker skip uselessly short scan lines
   * img_walker pattern selection
   * higher img_walker pattern density (cfg even better)
+  * zebracam support for v4l2 API
   * support for other v4l image formats
   * decode hook (program/script) to zebracam/(zebraimg?)
   * finish UPC-E, EAN-8 and addon decoding

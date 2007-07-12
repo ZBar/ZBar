@@ -1,4 +1,5 @@
 current:
+  * flush zebracam output after each scanned symbol
   * integrate RPM packaging spec file - thanks to Vít Hrachový for the draft!
     (patch #1723536)
   * finally add HACKING to distribution/install (bug #1698202)

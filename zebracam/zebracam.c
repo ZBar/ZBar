@@ -326,6 +326,7 @@ static void symbol_handler (zebra_decoder_t *decoder)
            zebra_get_symbol_name(sym),
            zebra_get_addon_name(sym),
            zebra_decoder_get_data(decoder));
+    fflush(stdout);
     beep_time = ms;
     SDL_PauseAudio(0);
 }
