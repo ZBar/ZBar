@@ -1,4 +1,16 @@
 current:
+  * add integrated 2D image scanning API
+    - automatically ties to internal scanner and decoder
+    - results reported via new symbol API
+    - deprecated previous, cumbersome img_walker interface
+    - uses new simpler/faster and denser grid pattern (FIXME add 45 and 135)
+    - first step toward more sophisticated image processing
+  * updated zebraimg to use new ImageScanner API
+    - add initial decode location tracking
+  * updated zebracam to use new img_scanner API
+    - extended cache to track multiple symbols per-image
+    - add initial decode location tracking
+    - removed scan grid overlay
   * add configure check for ImageMagick version >= 6.3.0
   * configure dumps ImageMagick, SDL and firefox versions for debug
   * add NPAPI plugin stub and build infrastructure

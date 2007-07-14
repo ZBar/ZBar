@@ -96,10 +96,14 @@ class Decoder {
         return(zebra_decoder_get_data(_decoder));
     }
 
-    const std::string& get_data_string() const
+    const std::string get_data_string() const
     {
-        ((Decoder*)this)->_data = zebra_decoder_get_data(_decoder);
-        return(_data);
+        return(zebra_decoder_get_data(_decoder));
+    }
+
+    const std::string get_data() const
+    {
+        return(zebra_decoder_get_data(_decoder));
     }
 
     void set_handler (Handler &handler)
@@ -112,7 +116,6 @@ class Decoder {
  private:
     friend class Scanner;
     zebra_decoder_t *_decoder;
-    std::string _data;
     Handler *_handler;
 
     static void _cb (zebra_decoder_t *cdcode)

@@ -21,15 +21,7 @@
 //  http://sourceforge.net/projects/zebra
 //------------------------------------------------------------------------
 
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
 #include <Magick++.h>
-#include <iostream>
-#include <assert.h>
-#include <map>
-
-#include <zebra.h>
 
 /* wand/wand-config.h defines these conflicting values :| */
 #undef PACKAGE_BUGREPORT
@@ -37,7 +29,14 @@
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
+
 #include "config.h"
+#include <iostream>
+#include <assert.h>
+#include <string>
+#include <list>
+
+#include <zebra.h>
 
 using namespace std;
 using namespace Magick;
@@ -45,95 +44,117 @@ using namespace zebra;
 
 int display = 0, num_images = 0;
 
-Decoder decoder;
-Scanner scanner(decoder);
-ImageWalker walker;
-const PixelPacket *rd_pxp;
-PixelPacket *wr_pxp;
-unsigned width, height;
-map<string, unsigned> datahist;
-string data_max;
-unsigned data_cnt;
+ImageScanner scanner;
 
-ColorRGB space_fill(1., 0., 0.);
-ColorRGB bar_fill(.5, 0., 0.);
-
-class PixelHandler : public ImageWalker::Handler {
-    virtual char walker_callback (ImageWalker &, void *pixel)
-    {
-        ColorYUV y;
-        y = *(rd_pxp + (uintptr_t)pixel);
-        assert(walker.get_col() < width);
-        assert(walker.get_row() < height);
-        assert((uintptr_t)pixel < width * height);
-        if(!walker.get_col() || !walker.get_row())
-            scanner.new_scan();
-        scanner << (int)(y.y() * 0x100);
-        *(wr_pxp + (uintptr_t)pixel) =
-            (scanner.get_color() == ZEBRA_SPACE) ? bar_fill : space_fill;
-        return(0);
-    }
-} pixel_handler;
-
-class SymbolHandler : public Decoder::Handler {
-    virtual void decode_callback (Decoder &decoder)
-    {
-        if(decoder.get_type() > ZEBRA_PARTIAL) {
-            string data = (string(decoder.get_symbol_name()) + 
-                           string(decoder.get_addon_name()) +
-                           ":" + decoder.get_data_string());
-            if(++datahist[data] > data_cnt) {
-                data_max = data;
-                data_cnt = datahist[data];
-            }
-        }
-    }
-} symbol_handler;
-
-void scan_image (const char *filename)
+static inline void overlay_grid (Image& img)
 {
-    scanner.reset();
-    datahist.clear();
-    data_cnt = 0;
+    unsigned width = img.columns();
+    unsigned height = img.rows();
+    list<Drawable> overlay;
+    overlay.push_back(DrawableStrokeWidth(1));
+    overlay.push_back(DrawableStrokeColor(ColorGray(1)));
+    overlay.push_back(DrawableFillOpacity(0));
+    overlay.push_back(DrawableStrokeOpacity(.15));
+    for(unsigned i = 8; i < width; i += 16)
+        overlay.push_back(DrawableLine(i, 0, i, height - 1));
+    for(unsigned i = 8; i < height; i += 16)
+        overlay.push_back(DrawableLine(0, i, width, i));
+    img.draw(overlay);
+}
 
-    Image image;
-    image.read(filename);
-    Image wr_img = image;
+static inline void overlay_symbol (Image& img,
+                                   Symbol& sym)
+{
+    list<Drawable> overlay;
+    overlay.push_back(DrawableStrokeColor(ColorRGB(1,0,0)));
+    overlay.push_back(DrawableFillOpacity(0));
+    overlay.push_back(DrawableStrokeOpacity(.5));
+    overlay.push_back(DrawableStrokeWidth(3));
 
-    width = image.columns();
-    height = image.rows();
-    walker.set_size(width, height);
+    // FIXME eventually will always have at least 4 points
+    int n_pts = sym.get_location_size();
+    assert(n_pts);
+    if(n_pts == 1) {
+        int x = sym.get_location_x(0);
+        int y = sym.get_location_y(0);
+        cerr << "(" << x << "," << y << ")" << endl;
+        overlay.push_back(DrawablePoint(x, y));
+        overlay.push_back(DrawableCircle(x, y, x - 5, y - 5));
+    }
+    else if(n_pts == 2)
+        overlay.push_back(DrawableLine(sym.get_location_x(0),
+                                       sym.get_location_y(0),
+                                       sym.get_location_x(1),
+                                       sym.get_location_y(1)));
+    else {
+        list<Coordinate> poly;
+        for(int j = 0; j < n_pts; j++)
+            poly.push_back(Coordinate(sym.get_location_x(j),
+                                      sym.get_location_y(j)));
+        overlay.push_back(DrawablePolygon(poly));
+    }
+    img.draw(overlay);
+}
 
-    wr_img.type(TrueColorType);
-    wr_img.modifyImage();
+static int scan_image (const char *filename)
+{
+    Image disp_img;
+    try {
+        disp_img.read(filename);
+    }
+    catch (Exception &e) {
+        cout << "ERROR: " << e.what() << endl
+             << "while reading " << filename << endl;
+        return(1);
+    }
 
-    // extract image pixels
-    Pixels rd_view(image);
-    rd_pxp = rd_view.getConst(0, 0, width, height);
-    Pixels wr_view(wr_img);
-    wr_pxp = wr_view.get(0, 0, width, height);
-    walker.walk(0);
-    scanner.new_scan(); /* flush scan */
-    wr_view.sync();
+    {
+        // extract grayscale image pixels
+        Image scan_img = disp_img;
+        scan_img.modifyImage();
+        Blob scan_data;
+        scan_img.write(&scan_data, "GRAY", 8);
+        unsigned width = disp_img.columns();
+        unsigned height = disp_img.rows();
+        assert(scan_data.length() == width * height);
+        scanner.set_size(width, height);
+        scanner.scan_y(scan_data.data());
+    }
 
-    // display result data
-    if(data_cnt)
-        cout << data_max << endl;
+    if(display) {
+        // FIXME overlay optional
+        disp_img.modifyImage();
+        disp_img.type(TrueColorType);
+        overlay_grid(disp_img);
+    }
+
+    // output result data
+    for(int i = 0; i < scanner.get_result_size(); i++) {
+        Symbol symbol = scanner.get_result(i);
+        cout << (string(symbol.get_type_name()) + 
+                 string(symbol.get_addon_name()) +
+                 ":" + symbol.get_data()) << endl;
+        cout.flush();
+
+        if(display)
+            overlay_symbol(disp_img, symbol);
+    }
 
     if(display) {
 #if (MagickLibVersion >= 0x632)
-        wr_img.display();
+        disp_img.display();
 #else
         // workaround for "no window with specified ID exists" bug
         // ref http://www.imagemagick.org/discourse-server/viewtopic.php?t=6315
         // fixed in 6.3.1-25
-        char c = wr_img.imageInfo()->filename[0];
-        wr_img.imageInfo()->filename[0] = 0;
-        wr_img.display();
-        wr_img.imageInfo()->filename[0] = c;
+        char c = disp_img.imageInfo()->filename[0];
+        disp_img.imageInfo()->filename[0] = 0;
+        disp_img.display();
+        disp_img.imageInfo()->filename[0] = c;
 #endif
     }
     num_images++;
+    return(0);
 }
 
 int usage (int rc, const char *msg = NULL)
@@ -156,17 +177,14 @@ int usage (int rc, const char *msg = NULL)
 
 int main (int argc, const char *argv[])
 {
-    decoder.set_handler(symbol_handler);
-    walker.set_handler(pixel_handler);
-
-    int i;
+    int i, rc = 0;
     for(i = 1; i < argc; i++) {
         if(!strcmp(argv[i], "-h") ||
            !strcmp(argv[i], "--help"))
-            return(usage(0));
+            return(usage(rc));
         if(!strcmp(argv[i], "--version")) {
             cout << PACKAGE_VERSION << endl;
-            return(0);
+            return(rc);
         }
         if(!strcmp(argv[i], "-d") ||
            !strcmp(argv[i], "--display"))
@@ -176,13 +194,13 @@ int main (int argc, const char *argv[])
         else if(!strcmp(argv[i], "--"))
             break;
         else
-            scan_image(argv[i]);
+            rc |= scan_image(argv[i]);
     }
     for(i++; i < argc; i++)
-        scan_image(argv[i]);
+        rc |= scan_image(argv[i]);
 
     if(!num_images)
         return(usage(1, "ERROR: specify image file(s) to scan"));
 
-    return(0);
+    return(rc);
 }

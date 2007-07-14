@@ -58,7 +58,43 @@ extern const char *zebra_get_addon_name(zebra_symbol_type_t sym);
 
 
 /*------------------------------------------------------------*/
-/* high-level bar width stream decoder interface
+/* decoded barcode symbol result object.
+ * stores type, data, and location of decoded symbol.
+ * all memory is owned by the library
+ */
+
+/* opaque decoded symbol object */
+struct zebra_symbol_s;
+typedef struct zebra_symbol_s zebra_symbol_t;
+
+/* return type of decoded symbol */
+extern zebra_symbol_type_t zebra_symbol_get_type(zebra_symbol_t *symbol);
+
+/* return ASCII data decoded from symbol */
+extern const char *zebra_symbol_get_data(zebra_symbol_t *symbol);
+
+/* return the number of points in the location polygon,
+ * which defines the image area that the symbol was extracted from
+ */
+extern unsigned char zebra_symbol_get_loc_size(zebra_symbol_t *symbol);
+
+/* return the x-coordinate for a point in the location polygon.
+ * points are specified by 0-based index.
+ * returns -1 if index is out of range
+ */
+extern int zebra_symbol_get_loc_x(zebra_symbol_t *symbol,
+                                  unsigned char index);
+
+/* return the y-coordinate for a point in the location polygon.
+ * points are specified by 0-based index.
+ * returns -1 if index is out of range
+ */
+extern int zebra_symbol_get_loc_y(zebra_symbol_t *symbol,
+                                  unsigned char index);
+
+
+/*------------------------------------------------------------*/
+/* high-level bar width stream decoder interface.
  * identifies symbols and extracts encoded data
  */
 
@@ -100,7 +136,7 @@ extern zebra_symbol_type_t zebra_decode_width(zebra_decoder_t *decoder,
 /* return color of *next* element passed to zebra_decode_width() */
 extern zebra_color_t zebra_decoder_get_color(const zebra_decoder_t *decoder);
 
-/* returns last decoded data,
+/* returns last decoded data in ASCII format,
  * or NULL if no new data available.
  * data buffer is maintained by library,
  * contents are only valid between non-0 return from zebra_decode_width
@@ -133,7 +169,7 @@ extern void *zebra_decoder_get_userdata(const zebra_decoder_t *decoder);
 
 
 /*------------------------------------------------------------*/
-/* low-level intensity sample stream scanner interface
+/* low-level intensity sample stream scanner interface.
  * identifies "bar" edges and measures width between them
  * optionally passes to bar width decoder
  */
@@ -187,16 +223,72 @@ extern zebra_color_t zebra_scanner_get_color(const zebra_scanner_t *scanner);
 
 
 /*------------------------------------------------------------*/
-/* 2-D image walker interface
+/* integrated 2-D image scanner interface.
+ * extracts symbols from image data buffers
+ * using configured image parameters
+ */
+
+/* opaque scanner object */
+struct zebra_img_scanner_s;
+typedef struct zebra_img_scanner_s zebra_img_scanner_t;
+
+/* constructor
+ * create a new image scanner instance.  image parameters
+ * must be initialized before images can be scanned
+ */
+extern zebra_img_scanner_t *zebra_img_scanner_create();
+
+/* destructor */
+extern void zebra_img_scanner_destroy(zebra_img_scanner_t *scanner);
+
+/* associate user specified data value with the image scanner */
+extern void zebra_img_scanner_set_userdata(zebra_img_scanner_t *scanner,
+                                           void *userdata);
+
+/* return user specified data value associated with the image scanner */
+extern void*
+zebra_img_scanner_get_userdata(const zebra_img_scanner_t *scanner);
+
+/* set the size of the next image(s) to scan.
+ * width is specified as number of columns and height as number of rows
+ */
+extern void zebra_img_scanner_set_size(zebra_img_scanner_t *scanner,
+                                       unsigned width,
+                                       unsigned height);
+
+/* scan for symbols in specified image.
+ * the image must be in packed 8bpp grayscale format.
+ * returns the number of symbols successfully decoded from the image
+ * or -1 if an error occurs
+ */
+extern int zebra_img_scan_y(zebra_img_scanner_t *scanner,
+                            const void *image);
+
+/* return number of symbols in the current result set
+ * (from last scanned image)
+ */
+extern unsigned char
+zebra_img_scanner_get_result_size(const zebra_img_scanner_t *scanner);
+
+/* return a symbol from the result set, specified by 0-based index.
+ * returns NULL if index is out of range
+ */
+extern zebra_symbol_t*
+zebra_img_scanner_get_result(const zebra_img_scanner_t *scanner,
+                             unsigned char index);
+
+
+/*------------------------------------------------------------*/
+/* *DEPRECATED* 2-D image walker interface
  * walks a default scan pattern over image data buffers
  * using configured image parameters
  */
 
-/* opaque walker object */
+/* *DEPRECATED* opaque walker object */
 struct zebra_img_walker_s;
 typedef struct zebra_img_walker_s zebra_img_walker_t;
 
-/* pixel handler callback function.
+/* *DEPRECATED* pixel handler callback function.
  * called by image walker for each pixel of the walk.
  * any non-zero return value will terminate the walk
  * with the returned value.
@@ -204,27 +296,27 @@ typedef struct zebra_img_walker_s zebra_img_walker_t;
 typedef char (zebra_img_walker_handler_t)(zebra_img_walker_t *walker,
                                           void *pixel);
 
-/* constructor
+/* *DEPRECATED* constructor
  * create a new image walker instance.  image parameters
  * must be initialized before a walk can be started
  */
 extern zebra_img_walker_t *zebra_img_walker_create();
 
-/* destructor */
+/* *DEPRECATED* destructor */
 extern void zebra_img_walker_destroy(zebra_img_walker_t *walker);
 
-/* set the pixel handler */
+/* *DEPRECATED* set the pixel handler */
 extern void zebra_img_walker_set_handler(zebra_img_walker_t *walker,
                                          zebra_img_walker_handler_t *handler);
 
-/* associate user specified data value with the walker */
+/* *DEPRECATED* associate user specified data value with the walker */
 extern void zebra_img_walker_set_userdata(zebra_img_walker_t *walker,
                                           void *userdata);
 
-/* return user specified data value associated with the decoder */
+/* *DEPRECATED* return user specified data value associated with the walker */
 extern void *zebra_img_walker_get_userdata(zebra_img_walker_t *walker);
 
-/* set the width of the image in columns,
+/* *DEPRECATED* set the width of the image in columns,
  * and the height of the image in rows
  */
 extern void zebra_img_walker_set_size(zebra_img_walker_t *walker,
@@ -232,7 +324,7 @@ extern void zebra_img_walker_set_size(zebra_img_walker_t *walker,
                                       unsigned height);
 
 
-/* (optional) set column and row sizes.
+/* *DEPRECATED* (optional) set column and row sizes.
  * bytes_per_col is the number of bytes in each column
  * of the image buffer (eg, often 1 for YUV format
  *  and 3 for packed RGB).  defaults to 1 if unspecified.
@@ -244,7 +336,7 @@ extern void zebra_img_walker_set_stride(zebra_img_walker_t *walker,
                                         unsigned bytes_per_col,
                                         unsigned bytes_per_row);
 
-/* start walking over specified new image
+/* *DEPRECATED* start walking over specified new image
  * returns the first non-zero value returned by the handler,
  * 0 when walk completes or -1 if walk cannot start
  * (usually because some image parameter is in error).
@@ -254,10 +346,10 @@ extern void zebra_img_walker_set_stride(zebra_img_walker_t *walker,
 extern char zebra_img_walk(zebra_img_walker_t *walker,
                            const void *image);
 
-/* return current column location of walker */
+/* *DEPRECATED* return current column location of walker */
 extern unsigned zebra_img_walker_get_col(zebra_img_walker_t *walker);
 
-/* return current row location of walker */
+/* *DEPRECATED* return current row location of walker */
 extern unsigned zebra_img_walker_get_row(zebra_img_walker_t *walker);
 
 
@@ -267,7 +359,9 @@ extern unsigned zebra_img_walker_get_row(zebra_img_walker_t *walker);
 
 # include "zebra/Decoder.h"
 # include "zebra/Scanner.h"
+# include "zebra/Symbol.h"
 # include "zebra/ImageWalker.h"
+# include "zebra/ImageScanner.h"
 #endif
 
 #endif

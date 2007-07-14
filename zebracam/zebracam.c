@@ -39,12 +39,19 @@
 
 #include <zebra.h>
 
+#ifdef DEBUG_ZEBRACAM
+# define dprintf(...) \
+    fprintf(stderr, __VA_ARGS__)
+#else
+# define dprintf(...)
+#endif
+
 #define DUMP_NAME_MAX 0x20
 #define PPM_HDR_MAX 0x20
-#define SYM_MAX 0x200
-#define SYM_HYST 2000 /* ms */
 #define UNCERTAINTY 20 /* frames */
 #define CERTAINTY 3 /* frames */
+#define SYM_HYST 2000 /* ms */
+#define CACHE_TIMEOUT (SYM_HYST + 2000) /* ms */
 
 static int cam_fd;
 static struct video_capability vcap;
@@ -65,17 +72,30 @@ SDL_AudioSpec audio;
 static char tone[TONE_MAX];
 int tone_period = 20;
 
-zebra_symbol_type_t last_sym_type;
-char last_sym_data[SYM_MAX];
-double last_sym_time = 0;
-uint64_t last_sym_frame = 0;
-uint32_t last_sym_count = 0;
+typedef struct symbol_cache_entry_s {
+    zebra_symbol_type_t type;   /* cached symbol type */
+    unsigned datalen;           /* data allocation */
+    char *data;                 /* cached symbol data */
+    double time;                /* last cache entry use */
+    uint64_t frame;             /* cache entry start frame */
+    uint32_t count;
+} symbol_cache_entry_t;
 
-double beep_time = 0;
+int sym_cachelen = 0;
+symbol_cache_entry_t *sym_cache = NULL;
 
-zebra_decoder_t *decoder;
-zebra_scanner_t *scanner;
-zebra_img_walker_t *walker;
+zebra_img_scanner_t *scanner;
+void *scan_buf;
+
+static const char marker[] = {  /* +--------------+ */
+    0x08,                       /* |      **      | */
+    0x3e,                       /* |  **********  | */
+    0x2a,                       /* |  **  **  **  | */
+    0x7f,                       /* |**************| */
+    0x2a,                       /* |  **  **  **  | */
+    0x3e,                       /* |  **********  | */
+    0x08,                       /* |      **      | */
+};                              /* +--------------+ */
 
 static void init_cam ()
 {
@@ -281,70 +301,139 @@ static inline void dump ()
     dumping = 0;
 }
 
-static inline void process ()
+static inline void *convert_gray ()
 {
-    zebra_scanner_new_scan(scanner);
-    zebra_img_walk(walker, buf);
-    zebra_scanner_new_scan(scanner); /* flush scan */
+    // FIXME support for other V4L formats
+    unsigned char *dst = scan_buf, *src = buf;
+    int x, y;
+    for(y = 0; y < vwin.height; y++)
+        for(x = 0; x < vwin.width; x++, src += 3)
+            *dst++ = (*(src + 1) + *(src + 2) + *(src + 3)) / 3;
+    return(scan_buf);
 }
 
-static void symbol_handler (zebra_decoder_t *decoder)
+static inline symbol_cache_entry_t *lookup_symbol (zebra_symbol_t *sym,
+                                                   double ms)
 {
-    zebra_symbol_type_t sym = zebra_decoder_get_type(decoder);
-    if(sym <= ZEBRA_PARTIAL)
+    zebra_symbol_type_t type = zebra_symbol_get_type(sym);
+    if(type <= ZEBRA_PARTIAL)
+        return(NULL);
+    const char *data = zebra_symbol_get_data(sym);
+
+    dprintf("%d: %s", type, data);
+
+    /* search for matching entry in cache */
+    int i, flush = -1;
+    symbol_cache_entry_t *entry = NULL;
+    for(i = 0; i < sym_cachelen; i++) {
+        entry = &sym_cache[i];
+        if((flush < 0) && ((ms - entry->time) > CACHE_TIMEOUT))
+            flush = i;
+        if(entry->type == type && !strcmp(entry->data, data)) {
+            dprintf(" [%g %lld %d]\n",
+                    ms - entry->time, nframes - entry->frame, entry->count);
+            return(entry);
+        }
+    }
+
+    /* not found */
+    int datalen = strlen(data) + 1;
+    if(flush >= 0) {
+        /* recycle timed out entry */
+        dprintf(" (recycled %d %g)", flush, ms - entry->time);
+        entry = &sym_cache[flush];
+    }
+    else {
+        /* allocate new entry */
+        sym_cache = realloc(sym_cache,
+                            ++sym_cachelen * sizeof(symbol_cache_entry_t));
+        dprintf(" (new %d)", sym_cachelen);
+        entry = &sym_cache[sym_cachelen - 1];
+        memset(entry, 0, sizeof(symbol_cache_entry_t));
+    }
+    dprintf(" (%d %d)", entry->datalen, datalen);
+    if(entry->datalen < datalen) {
+        if(entry->data)
+            free(entry->data);
+        entry->data = malloc(datalen);
+        entry->datalen = datalen;
+    }
+    dprintf("%p\n", entry->data);
+    strcpy(entry->data, data);
+    entry->type = type;
+    entry->time = ms - SYM_HYST;
+    entry->count = 0;
+    return(entry);
+}
+
+static inline void draw_marker (int x, int y)
+{
+    if(x < 3)
+        x = 3;
+    else if(x > vwin.width - 4)
+        x = vwin.width - 4;
+    if(y < 3)
+        y = 3;
+    else if(y > vwin.height - 4)
+        y = vwin.height - 4;
+    dprintf("(%d, %d) = %p\n", x, y, p);
+
+    uint8_t *p = screen->pixels + 3 * ((x - 3) + (y - 3) * vwin.width) + 2;
+    for(y = 0; y < 7; y++) {
+        char m = marker[y];
+        for(x = 0; x < 7; x++, p += 3, m >>= 1)
+            if(m & 1)
+                *p = 0xff;
+        p += (vwin.width - 7) * 3;
+    }
+}
+
+static void process_symbol (zebra_symbol_t *sym)
+{
+    double ms = SDL_GetTicks();
+    symbol_cache_entry_t *entry = lookup_symbol(sym, ms);
+    if(!entry)
         return;
-    const char *data = zebra_decoder_get_data(decoder);
 
-    int match = (sym == last_sym_type &&
-                 !strncmp(data, last_sym_data, SYM_MAX));
-    int uncertain = nframes > (last_sym_frame + UNCERTAINTY);
-
-    last_sym_frame = nframes;
-    last_sym_type = sym;
+    /* track location overlay on image */
+    if(zebra_symbol_get_loc_size(sym))
+        draw_marker(zebra_symbol_get_loc_x(sym, 0),
+                    zebra_symbol_get_loc_y(sym, 0));
 
     /* uncertainty filtering
      * symbols are only reported after they have been
      * observed consistently in several nearby frames
      */
-    if(!match || uncertain) {
-        strncpy(last_sym_data, data, SYM_MAX);
-        last_sym_count = 0;
-        return;
-    }
-    if(++last_sym_count < CERTAINTY)
+    int uncertain = nframes > (entry->frame + UNCERTAINTY);
+    entry->frame = nframes;
+    if(uncertain || (++entry->count < CERTAINTY))
         return;
 
     /* edge detect symbol change w/some hysteresis */
-    double ms = SDL_GetTicks();
-    int edge = match && ((ms - last_sym_time) < SYM_HYST);
-    last_sym_time = ms;
-    if(edge)
+    int edge = (ms - entry->time) >= SYM_HYST;
+    entry->time = ms;
+    if(!edge)
         return;
 
     /* report new symbol */
     printf("%s%s: %s\n",
-           zebra_get_symbol_name(sym),
-           zebra_get_addon_name(sym),
-           zebra_decoder_get_data(decoder));
+           zebra_get_symbol_name(entry->type),
+           zebra_get_addon_name(entry->type),
+           entry->data);
     fflush(stdout);
-    beep_time = ms;
     SDL_PauseAudio(0);
 }
 
-static char pixel_handler (zebra_img_walker_t *walker,
-                           void *p)
+static inline void process ()
 {
-    if(!zebra_img_walker_get_col(walker) ||
-       !zebra_img_walker_get_row(walker))
-        zebra_scanner_new_scan(scanner);
-
-    zebra_scan_rgb24(scanner, p);
-
-    *((uint8_t*)p - buf + (uint8_t*)screen->pixels + 2) = 0xff;
-    return(0);
+    int n_syms = zebra_img_scan_y(scanner, convert_gray());
+    assert(n_syms >= 0);
+    int i;
+    for(i = 0; i < n_syms; i++)
+        process_symbol(zebra_img_scanner_get_result(scanner, i));
 }
 
-int usage (int rc)
+static int usage (int rc)
 {
     FILE *out = (rc) ? stderr : stdout;
     fprintf(out,
@@ -377,19 +466,10 @@ int main (int argc, const char *argv[])
     init_cam();
     init_sdl();
 
-    /* create decoder object */
-    decoder = zebra_decoder_create();
-    /* attach callback */
-    zebra_decoder_set_handler(decoder, symbol_handler);
-
-    /* attach new scanner to decoder */
-    scanner = zebra_scanner_create(decoder);
-
-    /* setup image scan pattern walker */
-    walker = zebra_img_walker_create();
-    zebra_img_walker_set_size(walker, vwin.width, vwin.height);
-    zebra_img_walker_set_stride(walker, 3, 0); /* RGB */
-    zebra_img_walker_set_handler(walker, pixel_handler);
+    /* setup zebra library image scanner */
+    scanner = zebra_img_scanner_create();
+    zebra_img_scanner_set_size(scanner, vwin.width, vwin.height);
+    scan_buf = malloc(vwin.width * vwin.height);
 
     /* main loop */
     int frame = 0;
@@ -436,12 +516,12 @@ int main (int argc, const char *argv[])
         if(ms >= last_frame_time + 10000) {
             last_frame_time += 10000;
             double fr = nframes * 1000. / ms;
+            /* FIXME use enabled overlay */
             fprintf(stderr, "@%g %gfps\n", ms, fr);
         }
         frame = (frame + 1) % vbuf.frames;
     }
 
-    zebra_scanner_destroy(scanner);
-    zebra_decoder_destroy(decoder);
+    zebra_img_scanner_destroy(scanner);
     return(0);
 }
