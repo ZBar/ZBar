@@ -45,15 +45,15 @@ typedef enum symbol_partial_e {
 } symbol_partial_t;
 
 /* convert compact encoded D2E1E2 to character (bit4 is parity) */
-static const char digits[] = {  /* E1   E2 */
-    0x06, 0x10, 0x04, 0x13,     /*  2  2-5 */
-    0x19, 0x08, 0x11, 0x05,     /*  3  2-5 (d2 <= thr) */
-    0x09, 0x12, 0x07, 0x15,     /*  4  2-5 (d2 <= thr) */
-    0x16, 0x00, 0x14, 0x03,     /*  5  2-5 */
-    0x18, 0x01, 0x02, 0x17,     /* E1E2=43,44,33,34 (d2 > thr) */
+static const unsigned char digits[] = {  /* E1   E2 */
+    0x06, 0x10, 0x04, 0x13,              /*  2  2-5 */
+    0x19, 0x08, 0x11, 0x05,              /*  3  2-5 (d2 <= thr) */
+    0x09, 0x12, 0x07, 0x15,              /*  4  2-5 (d2 <= thr) */
+    0x16, 0x00, 0x14, 0x03,              /*  5  2-5 */
+    0x18, 0x01, 0x02, 0x17,              /* E1E2=43,44,33,34 (d2 > thr) */
 };
 
-static const char parity_decode[] = {
+static const unsigned char parity_decode[] = {
     0xf0, /* [xx] BBBBBB = RIGHT half EAN-13 */
 
     /* UPC-E check digit encoding */
@@ -93,9 +93,9 @@ static const char parity_decode[] = {
 };
 
 #ifdef DEBUG_EAN
-static char debug_buf[0x18];
+static unsigned char debug_buf[0x18];
 
-static inline const char *dsprintbuf(ean_decoder_t *ean)
+static inline const unsigned char *dsprintbuf(ean_decoder_t *ean)
 {
     int i;
     for(i = 0; i < 7; i++)
@@ -120,15 +120,15 @@ static inline const char *dsprintbuf(ean_decoder_t *ean)
 /* evaluate previous N (>= 2) widths as auxiliary pattern,
  * using preceding 4 as character width
  */
-static inline unsigned char aux_end (zebra_decoder_t *dcode,
-                                     unsigned char n)
+static inline signed char aux_end (zebra_decoder_t *dcode,
+                                   unsigned char n)
 {
     /* reference width from previous character */
     unsigned s = calc_s(dcode, n, 4);
 
     dprintf(2, " (");
-    char code = 0;
-    char i;
+    signed char code = 0;
+    unsigned char i;
     for(i = 0; i < n - 1; i++) {
         unsigned e = get_width(dcode, i) + get_width(dcode, i + 1);
         dprintf(2, " %d", e);
@@ -143,8 +143,8 @@ static inline unsigned char aux_end (zebra_decoder_t *dcode,
 /* determine possible auxiliary pattern
  * using current 4 as possible character
  */
-static inline char aux_start (zebra_decoder_t *dcode,
-                              unsigned s)
+static inline signed char aux_start (zebra_decoder_t *dcode,
+                                     unsigned s)
 {
     /* FIXME NB add-on has no guard in reverse */
     unsigned e2 = get_width(dcode, 5) + get_width(dcode, 6);
@@ -185,8 +185,8 @@ static inline char aux_start (zebra_decoder_t *dcode,
 }
 
 /* attempt to decode previous 4 widths (2 bars and 2 spaces) as a character */
-static inline char decode4 (zebra_decoder_t *dcode,
-                            unsigned s)
+static inline signed char decode4 (zebra_decoder_t *dcode,
+                                   unsigned s)
 {
     /* calculate similar edge measurements */
     unsigned e1 = ((get_color(dcode) == ZEBRA_BAR)
@@ -196,7 +196,7 @@ static inline char decode4 (zebra_decoder_t *dcode,
     dprintf(2, "\n        e1=%d e2=%d", e1, e2);
 
     /* create compacted encoding for direct lookup */
-    char code = (decode_e(e1, s, 7) << 2) | decode_e(e2, s, 7);
+    signed char code = (decode_e(e1, s, 7) << 2) | decode_e(e2, s, 7);
     if(code < 0)
         return(-1);
     dprintf(2, " code=%x", code);
@@ -213,10 +213,10 @@ static inline char decode4 (zebra_decoder_t *dcode,
                        ? get_width(dcode, 0) + get_width(dcode, 2)
                        : get_width(dcode, 1) + get_width(dcode, 3));
         d2 *= 7;
-        char mid = (((1 << code) & 0x0420)
-                    ? 3     /* E1E2 in 33,44 */
-                    : 4);   /* E1E2 in 34,43 */
-        char alt = d2 > (mid * s);
+        unsigned char mid = (((1 << code) & 0x0420)
+                             ? 3     /* E1E2 in 33,44 */
+                             : 4);   /* E1E2 in 34,43 */
+        unsigned char alt = d2 > (mid * s);
         if(alt)
             code = ((code >> 1) & 3) | 0x10; /* compress code space */
         dprintf(2, " (d2=%d(%d) alt=%d)", d2, mid * s, alt);
@@ -227,22 +227,22 @@ static inline char decode4 (zebra_decoder_t *dcode,
 }
 
 static inline zebra_symbol_type_t partial_end (ean_pass_t *pass,
-                                               char fwd)
+                                               unsigned char fwd)
 {
     /* calculate parity index */
-    char par = ((fwd)
-                ? ((pass->raw[1] & 0x10) << 1 |
-                   (pass->raw[2] & 0x10) |
-                   (pass->raw[3] & 0x10) >> 1 |
-                   (pass->raw[4] & 0x10) >> 2 |
-                   (pass->raw[5] & 0x10) >> 3 |
-                   (pass->raw[6] & 0x10) >> 4)
-                : ((pass->raw[1] & 0x10) >> 4 |
-                   (pass->raw[2] & 0x10) >> 3 |
-                   (pass->raw[3] & 0x10) >> 2 |
-                   (pass->raw[4] & 0x10) >> 1 |
-                   (pass->raw[5] & 0x10) |
-                   (pass->raw[6] & 0x10) << 1));
+    unsigned char par = ((fwd)
+                         ? ((pass->raw[1] & 0x10) << 1 |
+                            (pass->raw[2] & 0x10) |
+                            (pass->raw[3] & 0x10) >> 1 |
+                            (pass->raw[4] & 0x10) >> 2 |
+                            (pass->raw[5] & 0x10) >> 3 |
+                            (pass->raw[6] & 0x10) >> 4)
+                         : ((pass->raw[1] & 0x10) >> 4 |
+                            (pass->raw[2] & 0x10) >> 3 |
+                            (pass->raw[3] & 0x10) >> 2 |
+                            (pass->raw[4] & 0x10) >> 1 |
+                            (pass->raw[5] & 0x10) |
+                            (pass->raw[6] & 0x10) << 1));
 
     /* lookup parity combination */
     pass->raw[0] = parity_decode[par >> 1];
@@ -259,7 +259,7 @@ static inline zebra_symbol_type_t partial_end (ean_pass_t *pass,
         /* reverse sampled digits */
         unsigned char i;
         for(i = 1; i < 4; i++) {
-            char tmp = pass->raw[i];
+            unsigned char tmp = pass->raw[i];
             pass->raw[i] = pass->raw[7 - i];
             pass->raw[7 - i] = tmp;
         }
@@ -277,7 +277,7 @@ static inline zebra_symbol_type_t decode_pass (zebra_decoder_t *dcode,
                                                ean_pass_t *pass)
 {
     pass->state++;
-    char idx = pass->state & STATE_IDX;
+    unsigned char idx = pass->state & STATE_IDX;
     if((1 << idx) &
        ((pass->state & STATE_ADDON)
         ? 0x00108421
@@ -294,7 +294,7 @@ static inline zebra_symbol_type_t decode_pass (zebra_decoder_t *dcode,
                 return(0);
             idx = pass->state & STATE_IDX;
         }
-        char code = decode4(dcode, s);
+        signed char code = decode4(dcode, s);
         if(code < 0)
             pass->state = -1;
         else {
@@ -312,7 +312,7 @@ static inline zebra_symbol_type_t decode_pass (zebra_decoder_t *dcode,
             ((pass->state & STATE_ADDON)
              ? idx == 0x06 || idx == 0x09 || idx == 0x16 || idx == 0x19
              : idx == 0x17 || idx == 0x18)) {
-        char fwd = idx == 0x18;
+        unsigned char fwd = idx == 0x18;
         dprintf(2, " fwd=%x", fwd);
         zebra_symbol_type_t part = ZEBRA_NONE;
         if(!aux_end(dcode, (fwd) ? 4 : 3)) {
@@ -332,7 +332,7 @@ static inline zebra_symbol_type_t decode_pass (zebra_decoder_t *dcode,
     return(0);
 }
 
-static inline char check_ean13_parity (ean_decoder_t *ean)
+static inline signed char check_ean13_parity (ean_decoder_t *ean)
 {
     unsigned char chk = 0;
     unsigned char i;
@@ -375,7 +375,7 @@ static inline zebra_symbol_type_t integrate_partial (ean_decoder_t *ean,
             part = ZEBRA_EAN13;
 
         for(i = 0; i < 7; i++) {
-            char digit = pass->raw[i] & 0xf;
+            unsigned char digit = pass->raw[i] & 0xf;
             if(part == ZEBRA_EAN13 &&
                ean->buf[i] != digit) {
                 /* partial mismatch - reset other parts */
@@ -391,7 +391,7 @@ static inline zebra_symbol_type_t integrate_partial (ean_decoder_t *ean,
         if(ean->buf[0] >= 0 && ean->buf[7] >= 0)
             part = ZEBRA_EAN13;
         for(i = 0; i < 6; i++) {
-            char digit = pass->raw[i + 1] & 0xf;
+            unsigned char digit = pass->raw[i + 1] & 0xf;
             if(part == ZEBRA_EAN13 &&
                ean->buf[i + 7] != digit) {
                 /* partial mismatch - reset other parts */
@@ -408,7 +408,7 @@ static inline zebra_symbol_type_t integrate_partial (ean_decoder_t *ean,
         if(ean->buf[0] >= 0 && ean->buf[7] >= 0 && ean->buf[13] >= 0)
             part |= ZEBRA_EAN13;
         for(i = 0; i < len; i++) {
-            char digit = pass->raw[i] & 0xf;
+            unsigned char digit = pass->raw[i] & 0xf;
             if((part & ZEBRA_SYMBOL) == ZEBRA_EAN13 &&
                ean->buf[i + 13] != digit) {
                 /* partial mismatch - reset other parts */

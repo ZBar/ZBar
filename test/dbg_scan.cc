@@ -79,6 +79,7 @@ void scan_image (const char *filename)
         << "<svg version='1.1' id='top'"
         << " width='10in' height='6in' preserveAspectRatio='xMinYMid slice'"
         << " overflow='visible' viewBox='0,0 " << width * 2 << ",384'"
+        << " xmlns:xlink='http://www.w3.org/1999/xlink'"
         << " xmlns='http://www.w3.org/2000/svg'>" << endl
         << "<defs><style type='text/css'><![CDATA[" << endl
         << "  * { stroke-linejoin: round; stroke-linecap: round;"

@@ -1,4 +1,7 @@
 current:
+  * add missing xlink namespace to dbg_scan generated output (bug #1764188)
+  * qualify char types as [un]signed to avoid non-portable C ambiguity
+    - thanks to mhirsch45@users.sf.net for the patch! (bug #1759914)
   * add integrated 2D image scanning API
     - automatically ties to internal scanner and decoder
     - results reported via new symbol API

@@ -1,14 +1,20 @@
   * handle Code 128 function characters (FNC1-4)
-  * integrated high-level image API
   * decoder needs symbology/feature enable/disable
-  * better C++ interface to img_walker
-    * nice to match STL iterator interface
   * space lead in/out from each scan line
-  * img_walker skip uselessly short scan lines
-  * img_walker pattern selection
-  * higher img_walker pattern density (cfg even better)
-  * zebracam support for v4l2 API
-  * support for other v4l image formats
+  * reader skip uselessly short scan lines
+  * configurable reader pattern density
+  * support for other X visuals (16 bit depth)
+  * zebraimg features
+    * message when no result found (w/o -q)
+    * xml output format
+  * zebracam features
+    * support for v4l2 API
+    * support for other v4l image formats
+    * specify device
+    * hide cursor
+    * deactivate sound
+    * errors opening sound device
+    * simple image manipulations scale/mirror
   * decode hook (program/script) to zebracam/(zebraimg?)
   * finish UPC-E, EAN-8 and addon decoding
   * add library version query interface

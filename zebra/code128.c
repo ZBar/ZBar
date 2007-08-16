@@ -57,7 +57,7 @@ typedef enum code128_char_e {
     FNC4        = 0x6c,
 } code128_char_t;
 
-static const char characters[NUM_CHARS] = {
+static const unsigned char characters[NUM_CHARS] = {
     0x5c, 0xbf, 0xa1,                                           /* [00] 00 */
     0x2a, 0xc5, 0x0c, 0xa4,                                     /* [03] 01 */
     0x2d, 0xe3, 0x0f,                                           /* [07] 02 */
@@ -96,7 +96,7 @@ static const char characters[NUM_CHARS] = {
     0x2f, 0xca,             /* [6a] 2421 3421 */
 };
 
-static const char lo_base[8] = {
+static const unsigned char lo_base[8] = {
     0x00, 0x07, 0x0c, 0x19, 0x24, 0x32, 0x40, 0x47
 };
 
@@ -120,7 +120,7 @@ static const unsigned char lo_offset[0x80] = {
     0xf7, 0xff, 0xf8, 0x9f, 0xff, 0xff, 0xff, 0xff,     /* 33 */
 };
 
-static inline char decode_lo (int sig)
+static inline signed char decode_lo (int sig)
 {
     unsigned char offset = (((sig >> 1) & 0x01) |
                             ((sig >> 3) & 0x06) |
@@ -139,16 +139,16 @@ static inline char decode_lo (int sig)
     idx += lo_base[base];
 
     assert(idx <= 0x50);
-    char c = characters[idx];
+    unsigned char c = characters[idx];
     dprintf(2, " %02x(%x(%02x)/%x(%02x)) => %02x",
             idx, base, lo_base[base], offset, lo_offset[offset],
             (unsigned char)c);
     return(c);
 }
 
-static inline char decode_hi (int sig)
+static inline signed char decode_hi (int sig)
 {
-    char rev = (sig & 0x4400) != 0;
+    unsigned char rev = (sig & 0x4400) != 0;
     if(rev)
         sig = (((sig >> 12) & 0x000f) |
                ((sig >>  4) & 0x00f0) |
@@ -156,7 +156,7 @@ static inline char decode_hi (int sig)
                ((sig << 12) & 0xf000));
     dprintf(2, " rev=%x", rev != 0);
 
-    char idx;
+    unsigned char idx;
     switch(sig) {
     case 0x0014: idx = 0x0; break;
     case 0x0025: idx = 0x1; break;
@@ -176,12 +176,12 @@ static inline char decode_hi (int sig)
     }
     if(rev)
         idx += 0xe;
-    char c = characters[0x51 + idx];
+    unsigned char c = characters[0x51 + idx];
     dprintf(2, " %02x => %02x", idx, c);
     return(c);
 }
 
-static inline char calc_check (char c)
+static inline unsigned char calc_check (unsigned char c)
 {
     if(!(c & 0x80))
         return(0x18);
@@ -193,7 +193,7 @@ static inline char calc_check (char c)
     return((c < 0x67) ? 0x20 : 0x10);
 }
 
-static inline char decode6 (zebra_decoder_t *dcode)
+static inline signed char decode6 (zebra_decoder_t *dcode)
 {
     /* build edge signature of character */
     unsigned s = calc_s(dcode, 0, 6);
@@ -214,7 +214,7 @@ static inline char decode6 (zebra_decoder_t *dcode)
         return(-1);
     dprintf(2, " sig=%04x", sig);
     /* lookup edge signature */
-    char c = (sig & 0x4444) ? decode_hi(sig) : decode_lo(sig);
+    signed char c = (sig & 0x4444) ? decode_hi(sig) : decode_lo(sig);
     if(c == -1)
         return(-1);
 
@@ -223,7 +223,7 @@ static inline char decode6 (zebra_decoder_t *dcode)
         ? (get_width(dcode, 0) + get_width(dcode, 2) + get_width(dcode, 4))
         : (get_width(dcode, 1) + get_width(dcode, 3) + get_width(dcode, 5));
     bars = bars * 11 * 4 / s;
-    char chk = calc_check(c);
+    unsigned char chk = calc_check(c);
     dprintf(2, " bars=%d chk=%d", bars, chk);
     if(chk - 7 > bars || bars > chk + 7)
         return(-1);
@@ -231,7 +231,7 @@ static inline char decode6 (zebra_decoder_t *dcode)
     return(c & 0x7f);
 }
 
-static inline char validate_checksum (zebra_decoder_t *dcode)
+static inline unsigned char validate_checksum (zebra_decoder_t *dcode)
 {
     code128_decoder_t *dcode128 = &dcode->code128;
     if(dcode128->character < 3)
@@ -257,9 +257,9 @@ static inline char validate_checksum (zebra_decoder_t *dcode)
 
     /* and compare to check character */
     idx = (dcode128->direction) ? 1 : dcode128->character - 2;
-    char check = dcode->buf[idx];
+    unsigned char check = dcode->buf[idx];
     dprintf(2, " chk=%02x(%02x)", sum, check);
-    char err = (sum != check);
+    unsigned char err = (sum != check);
     if(err)
         dprintf(1, " [checksum error]\n");
     return(err);
@@ -310,12 +310,12 @@ static inline unsigned postprocess_c (zebra_decoder_t *dcode,
 }
 
 /* resolve scan direction and convert to ASCII */
-static inline char postprocess (zebra_decoder_t *dcode)
+static inline unsigned char postprocess (zebra_decoder_t *dcode)
 {
     code128_decoder_t *dcode128 = &dcode->code128;
     dprintf(2, "\n    postproc len=%d", dcode128->character);
     unsigned i, j;
-    char code = 0;
+    unsigned char code = 0;
     if(dcode128->direction) {
         /* reverse buffer */
         dprintf(2, " (rev)");
@@ -337,7 +337,7 @@ static inline char postprocess (zebra_decoder_t *dcode)
     dprintf(2, " start=%c", 'A' + charset);
 
     for(i = 1, j = 0; i < dcode128->character - 2; i++) {
-        char code = dcode->buf[i];
+        unsigned char code = dcode->buf[i];
         assert(!(code & 0x80));
 
         if((charset & 0x2) && (code < 100))
@@ -413,7 +413,7 @@ zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
             (dcode128->direction) ? '<' : '>',
             dcode128->character, dcode128->element);
 
-    char c = decode6(dcode);
+    signed char c = decode6(dcode);
     if(dcode128->character < 0) {
         dprintf(2, " c=%02x", c);
         if(c < START_A || c > STOP_REV || c == STOP_FWD) {
