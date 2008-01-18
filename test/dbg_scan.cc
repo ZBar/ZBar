@@ -28,7 +28,6 @@
 #include <zebra.h>
 
 using namespace std;
-using namespace Magick;
 using namespace zebra;
 
 #ifndef ZEBRA_FIXED
@@ -59,7 +58,7 @@ void scan_image (const char *filename)
     // so decoder must also be reset manually
     decoder.reset();
 
-    Image image;
+    Magick::Image image;
     image.read(filename);
     string file = image.baseFilename();
     unsigned baseidx = file.rfind('/');
@@ -67,11 +66,14 @@ void scan_image (const char *filename)
         file = file.substr(baseidx + 1, file.length() - baseidx - 1);
     ofstream svg((file + ".svg").c_str());
 
-    unsigned width = image.columns() + 4 /* for flush */;
+    unsigned inwidth = image.columns();
+    unsigned flush1 = inwidth / 32;
+    unsigned flush0 = 2;
+    unsigned width = inwidth + flush1 + flush0;
     unsigned height = image.rows();
     unsigned midy = (height + 1) / 2 + 2;
-    image.crop(Geometry(width - 4, 1, 0, midy));
-    image.size(Geometry(width, 1, 0, 0));
+    image.crop(Magick::Geometry(inwidth, 1, 0, midy));
+    image.size(Magick::Geometry(width, 1, 0, 0));
 
     svg << "<?xml version='1.0'?>" << endl
         << "<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN'"
@@ -111,20 +113,30 @@ void scan_image (const char *filename)
     {
         // extract scan from image pixels
         image.modifyImage();
-        Pixels view(image);
-        PixelPacket *pxp = view.get(0, 0, width, 1);
-        ColorYUV y;
+        Magick::Pixels view(image);
+        Magick::PixelPacket *pxp = view.get(0, 0, width, 1);
+        Magick::ColorYUV y;
+        double max = 0;
         svg << "<path id='raw' d='M";
-        for(unsigned i = 0; i < width - 4; i++, pxp++) {
+        unsigned i;
+        for(i = 0; i < inwidth; i++, pxp++) {
             y = *pxp;
+            if(max < y.y())
+                max = y.y();
             raw[i] = (unsigned)(y.y() * 0x100);
             svg << ((i != 1) ? " " : " L ") << i << "," << raw[i];
             y.u(0);
             y.v(0);
             *pxp = y;
         }
-        y.y(y.y() * .75); /* flush scan FIXME? */
-        for(unsigned i = width - 4; i < width; i++) {
+        y.y(max); /* flush scan FIXME? */
+        for(; i < inwidth + flush1; i++) {
+            raw[i] = (unsigned)(y.y() * 0x100);
+            svg << " " << i << "," << raw[i];
+            *pxp++ = y;
+        }
+        y.y(0);
+        for(; i < width; i++) {
             raw[i] = (unsigned)(y.y() * 0x100);
             svg << " " << i << "," << raw[i];
             *pxp++ = y;
@@ -174,6 +186,7 @@ void scan_image (const char *filename)
         else
             last_edge[i] = 0;
     }
+
     svg << "</g>" << endl
         << "<g transform='translate(-3,384) scale(2,-.5)'>" << endl
         << "<path id='edges' d='";

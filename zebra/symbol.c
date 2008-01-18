@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -27,40 +27,61 @@
 #include <zebra.h>
 #include "symbol.h"
 
-zebra_symbol_type_t zebra_symbol_get_type (zebra_symbol_t *sym)
+const char *zebra_get_symbol_name (zebra_symbol_type_t sym)
 {
-    assert(sym);
+    switch(sym & ZEBRA_SYMBOL) {
+    case ZEBRA_EAN8: return("EAN8");
+    case ZEBRA_UPCE: return("UPC-E");
+    case ZEBRA_UPCA: return("UPC-A");
+    case ZEBRA_EAN13: return("EAN-13");
+    case ZEBRA_CODE128: return("CODE-128");
+    default: return("UNKNOWN");
+    }
+}
+
+const char *zebra_get_addon_name (zebra_symbol_type_t sym)
+{
+    switch(sym & ZEBRA_ADDON) {
+    case ZEBRA_ADDON2: return("+2");
+    case ZEBRA_ADDON5: return("+5");
+    default: return("");
+    }
+}
+
+zebra_symbol_type_t zebra_symbol_get_type (const zebra_symbol_t *sym)
+{
     return(sym->type);
 }
 
-const char *zebra_symbol_get_data (zebra_symbol_t *sym)
+const char *zebra_symbol_get_data (const zebra_symbol_t *sym)
 {
-    assert(sym);
     return(sym->data);
 }
 
-unsigned char zebra_symbol_get_loc_size (zebra_symbol_t *sym)
+unsigned zebra_symbol_get_loc_size (const zebra_symbol_t *sym)
 {
-    assert(sym);
     return(sym->npts);
 }
 
-int zebra_symbol_get_loc_x (zebra_symbol_t *sym,
-                            unsigned char idx)
+int zebra_symbol_get_loc_x (const zebra_symbol_t *sym,
+                            unsigned idx)
 {
-    assert(sym);
     if(idx < sym->npts)
         return(sym->pts[idx].x);
     else
         return(-1);
 }
 
-int zebra_symbol_get_loc_y (zebra_symbol_t *sym,
-                            unsigned char idx)
+int zebra_symbol_get_loc_y (const zebra_symbol_t *sym,
+                            unsigned idx)
 {
-    assert(sym);
     if(idx < sym->npts)
         return(sym->pts[idx].y);
     else
         return(-1);
+}
+
+const zebra_symbol_t *zebra_symbol_next (const zebra_symbol_t *sym)
+{
+    return((sym) ? sym->next : NULL);
 }

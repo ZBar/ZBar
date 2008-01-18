@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2007 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the Zebra Barcode Library.
 //
@@ -23,15 +23,26 @@
 
 #include <Magick++.h>
 
-/* wand/wand-config.h defines these conflicting values :| */
+/* wand/wand-config.h (or magick/deprecate.h?)
+ * defines these conflicting values :|
+ */
+#undef PACKAGE
+#undef VERSION
 #undef PACKAGE_BUGREPORT
 #undef PACKAGE_NAME
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 
-#include "config.h"
+#include <config.h>
 #include <iostream>
+#include <sstream>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
 #include <assert.h>
 #include <string>
 #include <list>
@@ -39,168 +50,187 @@
 #include <zebra.h>
 
 using namespace std;
-using namespace Magick;
 using namespace zebra;
 
-int display = 0, num_images = 0;
+const char *note_usage =
+    "usage: zebraimg [options] <image>...\n"
+    "\n"
+    "scan and decode bar codes from one or more image files\n"
+    "\n"
+    "options:\n"
+    "    -h, --help      display this help text\n"
+    "    --version       display version information and exit\n"
+    "    -q, --quiet     minimal output, only print decoded symbol data\n"
+    "    -v, --verbose   increase debug output level\n"
+    "    --verbose=N     set specific debug output level\n"
+    "    -d, --display   enable display of following images to the screen\n"
+    "    -D, --nodisplay disable display of following images (default)\n"
+    // FIXME overlay level
+    // FIXME xml output
+    ;
 
-ImageScanner scanner;
+const char *warning_not_found =
+    "WARNING: barcode data was not detected in some image(s)\n"
+    "  things to check:\n"
+    "    - is the barcode type supported?  currently supported\n"
+    "      symbologies are: EAN-13/UPC-A and Code 128\n"
+    "    - is the barcode large enough in the image?\n"
+    "    - is the barcode mostly in focus?\n"
+    "    - is there sufficient contrast/illumination?\n";
 
-static inline void overlay_grid (Image& img)
+int notfound = 0;
+int num_images = 0, num_symbols = 0;
+
+Processor *processor = NULL;
+
+static void scan_image (const std::string& filename)
 {
-    unsigned width = img.columns();
-    unsigned height = img.rows();
-    list<Drawable> overlay;
-    overlay.push_back(DrawableStrokeWidth(1));
-    overlay.push_back(DrawableStrokeColor(ColorGray(1)));
-    overlay.push_back(DrawableFillOpacity(0));
-    overlay.push_back(DrawableStrokeOpacity(.15));
-    for(unsigned i = 8; i < width; i += 16)
-        overlay.push_back(DrawableLine(i, 0, i, height - 1));
-    for(unsigned i = 8; i < height; i += 16)
-        overlay.push_back(DrawableLine(0, i, width, i));
-    img.draw(overlay);
-}
+    Magick::Image image;
+    image.read(filename);
+    image.modifyImage();
 
-static inline void overlay_symbol (Image& img,
-                                   Symbol& sym)
-{
-    list<Drawable> overlay;
-    overlay.push_back(DrawableStrokeColor(ColorRGB(1,0,0)));
-    overlay.push_back(DrawableFillOpacity(0));
-    overlay.push_back(DrawableStrokeOpacity(.5));
-    overlay.push_back(DrawableStrokeWidth(3));
+    // extract grayscale image pixels
+    // FIXME color!! ...preserve most color w/422P
+    // (but only if it's a color image)
+    Magick::Blob scan_data;
+    image.write(&scan_data, "GRAY", 8);
+    unsigned width = image.columns();
+    unsigned height = image.rows();
+    assert(scan_data.length() == width * height);
 
-    // FIXME eventually will always have at least 4 points
-    int n_pts = sym.get_location_size();
-    assert(n_pts);
-    if(n_pts == 1) {
-        int x = sym.get_location_x(0);
-        int y = sym.get_location_y(0);
-        cerr << "(" << x << "," << y << ")" << endl;
-        overlay.push_back(DrawablePoint(x, y));
-        overlay.push_back(DrawableCircle(x, y, x - 5, y - 5));
-    }
-    else if(n_pts == 2)
-        overlay.push_back(DrawableLine(sym.get_location_x(0),
-                                       sym.get_location_y(0),
-                                       sym.get_location_x(1),
-                                       sym.get_location_y(1)));
-    else {
-        list<Coordinate> poly;
-        for(int j = 0; j < n_pts; j++)
-            poly.push_back(Coordinate(sym.get_location_x(j),
-                                      sym.get_location_y(j)));
-        overlay.push_back(DrawablePolygon(poly));
-    }
-    img.draw(overlay);
-}
-
-static int scan_image (const char *filename)
-{
-    Image disp_img;
-    try {
-        disp_img.read(filename);
-    }
-    catch (Exception &e) {
-        cout << "ERROR: " << e.what() << endl
-             << "while reading " << filename << endl;
-        return(1);
-    }
-
-    {
-        // extract grayscale image pixels
-        Image scan_img = disp_img;
-        scan_img.modifyImage();
-        Blob scan_data;
-        scan_img.write(&scan_data, "GRAY", 8);
-        unsigned width = disp_img.columns();
-        unsigned height = disp_img.rows();
-        assert(scan_data.length() == width * height);
-        scanner.set_size(width, height);
-        scanner.scan_y(scan_data.data());
-    }
-
-    if(display) {
-        // FIXME overlay optional
-        disp_img.modifyImage();
-        disp_img.type(TrueColorType);
-        overlay_grid(disp_img);
-    }
+    Image zimage(width, height, "Y800",
+                 scan_data.data(), scan_data.length());
+    processor->process_image(zimage);
 
     // output result data
-    for(int i = 0; i < scanner.get_result_size(); i++) {
-        Symbol symbol = scanner.get_result(i);
-        cout << (string(symbol.get_type_name()) + 
-                 string(symbol.get_addon_name()) +
-                 ":" + symbol.get_data()) << endl;
-        cout.flush();
-
-        if(display)
-            overlay_symbol(disp_img, symbol);
+    bool found = false;
+    for(Image::SymbolIterator sym = zimage.symbol_begin();
+        sym != zimage.symbol_end();
+        ++sym)
+    {
+        cout << *sym << endl;
+        found = true;
+        num_symbols++;
     }
-
-    if(display) {
-#if (MagickLibVersion >= 0x632)
-        disp_img.display();
-#else
-        // workaround for "no window with specified ID exists" bug
-        // ref http://www.imagemagick.org/discourse-server/viewtopic.php?t=6315
-        // fixed in 6.3.1-25
-        char c = disp_img.imageInfo()->filename[0];
-        disp_img.imageInfo()->filename[0] = 0;
-        disp_img.display();
-        disp_img.imageInfo()->filename[0] = c;
-#endif
-    }
+    cout.flush();
+    if(!found)
+        notfound++;
     num_images++;
-    return(0);
+    if(processor->is_visible())
+        processor->user_wait();
 }
 
-int usage (int rc, const char *msg = NULL)
+int usage (int rc, const string& msg = "")
 {
     ostream &out = (rc) ? cerr : cout;
-    if(msg)
-        out << msg << endl;
-    out << "usage: zebraimg [-h|--help|-d|--display|--nodisplay] <image>..." << endl
-        << endl
-        << "scan and decode bar codes from one or more image files" << endl
-        << endl
-        << "options:" << endl
-        << "    -h, --help     display this help text" << endl
-        << "    --version      display version information and exit" << endl
-        << "    -d, --display  enable display of following images to the screen" << endl
-        << "    --nodisplay    disable display of following images (default)" << endl
-        << endl;
+    if(msg.length())
+        out << msg << endl << endl;
+    out << note_usage << endl;
     return(rc);
 }
 
 int main (int argc, const char *argv[])
 {
-    int i, rc = 0;
+    // option pre-scan
+    bool quiet = false;
+    int i;
     for(i = 1; i < argc; i++) {
-        if(!strcmp(argv[i], "-h") ||
-           !strcmp(argv[i], "--help"))
-            return(usage(rc));
-        if(!strcmp(argv[i], "--version")) {
-            cout << PACKAGE_VERSION << endl;
-            return(rc);
+        string arg(argv[i]);
+        if(arg[0] != '-')
+            // first pass, skip images
+            continue;
+        else if(arg[1] != '-') {
+            for(int j = 1; arg[j]; j++)
+                switch(arg[j]) {
+                case 'h': return(usage(0));
+                case 'q': quiet = true; break;
+                case 'v': zebra_increase_verbosity(); break;
+                case 'd':
+                case 'D': break;
+                default:
+                    return(usage(1, string("ERROR: unknown bundled option: -") +
+                                 arg[j]));
+                }
         }
-        if(!strcmp(argv[i], "-d") ||
-           !strcmp(argv[i], "--display"))
-            display = 1;
-        else if(!strcmp(argv[i], "--nodisplay"))
-            display = 0;
-        else if(!strcmp(argv[i], "--"))
+        else if(arg == "--help")
+            return(usage(0));
+        else if(arg == "--version") {
+            cout << PACKAGE_VERSION << endl;
+            return(0);
+        }
+        else if(arg == "--quiet") {
+            quiet = true;
+            argv[i] = NULL;
+        }
+        else if(arg == "--verbose")
+            zebra_increase_verbosity();
+        else if(arg.substr(0, 10) == "--verbose=") {
+            istringstream scan(arg.substr(10));
+            int level;
+            scan >> level;
+            zebra_set_verbosity(level);
+        }
+        else if(arg == "--display" ||
+                arg == "--nodisplay")
+            continue;
+        else if(arg == "--")
             break;
         else
-            rc |= scan_image(argv[i]);
+            return(usage(1, "ERROR: unknown option: " + arg));
     }
-    for(i++; i < argc; i++)
-        rc |= scan_image(argv[i]);
+
+    /* process and display images (no video) unthreaded */
+    processor = new Processor(false, NULL);
+
+    try {
+        for(i = 1; i < argc; i++) {
+            if(!argv[i])
+                continue;
+            string arg(argv[i]);
+            if(arg[0] != '-')
+                scan_image(arg);
+            else if(arg[1] != '-')
+                for(int j = 1; arg[j]; j++)
+                    switch(arg[j]) {
+                    case 'd': processor->set_visible(true); break;
+                    case 'D': processor->set_visible(false);
+                        break;
+                    }
+            else if(arg == "--display")
+                processor->set_visible(true);
+            else if(arg == "--nodisplay")
+                processor->set_visible(false);
+            else if(arg == "--")
+                break;
+        }
+        for(i++; i < argc; i++)
+            scan_image(argv[i]);
+    }
+    catch(Magick::Exception &e) {
+        cerr << "ERROR: " << e.what() << endl;
+        return(1);
+    }
 
     if(!num_images)
         return(usage(1, "ERROR: specify image file(s) to scan"));
 
-    return(rc);
+    else if(!quiet) {
+        cerr << "scanned " << num_symbols << " barcode symbols from "
+             << num_images << " images";
+#ifdef HAVE_SYS_TIMES_H
+#ifdef HAVE_UNISTD_H
+        long clk_tck = sysconf(_SC_CLK_TCK);
+        struct tms tms;
+        if(clk_tck > 0 && times(&tms) >= 0) {
+            double secs = tms.tms_utime + tms.tms_stime;
+            secs /= clk_tck;
+            cerr << " in " << secs << " seconds";
+        }
+#endif
+#endif
+        cerr << endl;
+        if(notfound)
+            cerr << endl << warning_not_found << endl;
+    }
+    return(0);
 }

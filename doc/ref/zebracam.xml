@@ -15,8 +15,19 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>zebracam</command>
-      <group>
-        <arg choice="plain"><option>-h</option>, <option>--help</option></arg>
+      <arg><option>-qv</option></arg>
+      <arg><option>--quiet</option></arg>
+      <arg><option>--nodisplay</option></arg>
+      <arg><option>--verbose<arg>=<replaceable
+      class="parameter">n</replaceable></arg></option></arg>
+      <arg><replaceable class="parameter">device</replaceable></arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis>
+      <command>zebracam</command>
+      <group choice="req">
+        <arg choice="plain"><option>-h</option></arg>
+        <arg choice="plain"><option>--help</option></arg>
         <arg choice="plain"><option>--version</option></arg>
       </group>
     </cmdsynopsis>
@@ -27,24 +38,29 @@
 
     <para><command>zebracam</command> scans a video4linux video source
     (eg, a webcam) for bar codes and prints any decoded data to the
-    standard output.  The video stream is also displayed to the screen
-    with the scan pattern overlay</para>
+    standard output.  The video stream is also displayed to the
+    screen. </para>
+
+    <para><replaceable class="parameter">device</replaceable> is the
+    path to the video4linux (version 1 or 2) character device special
+    file (major number 81 and minor number 0 thru 63).  It defaults to
+    <filename>/dev/video0</filename></para>
 
   </refsection>
 
   <refsection>
     <title>Options</title>
 
-    <para>This program follows the usual GNU command line syntax, with
-    long options starting with two dashes (`-').  A summary of options
-    is included below</para>
+    <para>This program follows the usual GNU command line syntax.
+    Single letter options may be bundled, long options start with two
+    dashes (`-').</para>
 
     <variablelist>
       <varlistentry>
         <term><option>-h</option>, <option>--help</option></term>
         <listitem>
           <simpara>Print a short help message describing command line
-          options to standard output</simpara>
+          options to standard output and exit</simpara>
         </listitem>
       </varlistentry>
 
@@ -55,6 +71,35 @@
           output and exit</simpara>
         </listitem>
       </varlistentry>
+
+      <varlistentry>
+        <term><option>-q</option>, <option>--quiet</option></term>
+        <listitem>
+          <simpara>Quiet operation; disable the audible beep otherwise
+          emitted when a symbol is decoded</simpara>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--nodisplay</option></term>
+        <listitem>
+          <simpara>Disable output video window.  Video input will be
+          scanned until the program is interrupted or signaled</simpara>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-v</option>, <option>--verbose<optional>=<replaceable
+        class="parameter">n</replaceable></optional></option></term>
+        <listitem>
+          <simpara>Increase debug output level.  Multiple
+          <option>-v</option> options create more spew.  Alternatively
+          specify <replaceable class="parameter">n</replaceable> to
+          set the debug level directly
+          </simpara>
+        </listitem>
+      </varlistentry>
+
     </variablelist>
   </refsection>
 

@@ -33,19 +33,17 @@ namespace zebra {
 
 class Scanner {
  public:
-    Scanner ()
-    {
-        _scanner = zebra_scanner_create(NULL);
-    }
-
     Scanner (Decoder& decoder)
     {
         _scanner = zebra_scanner_create(decoder._decoder);
     }
 
-    Scanner (Decoder* decoder)
+    Scanner (Decoder* decoder = NULL)
     {
-        _scanner = zebra_scanner_create(decoder->_decoder);
+        zebra_decoder_t *zdcode = NULL;
+        if(decoder)
+            zdcode = decoder->_decoder;
+        _scanner = zebra_scanner_create(zdcode);
     }
 
     ~Scanner ()
@@ -100,6 +98,11 @@ class Scanner {
     zebra_symbol_type_t get_type () const
     {
         return(_type);
+    }
+
+    operator zebra_scanner_t* () const
+    {
+        return(_scanner);
     }
 
     const zebra_scanner_t *get_c_scanner () const

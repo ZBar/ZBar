@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2007 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the Zebra Barcode Library.
 //
@@ -27,68 +27,49 @@
 # error "include zebra.h in your application, **not** zebra/ImageScanner.h"
 #endif
 
-#include "Symbol.h"
+#include "Image.h"
 
 namespace zebra {
 
 class ImageScanner {
- public:
-    class RangeException : public std::exception {
-        virtual const char* what () const throw()
-        {
-            return("index out of range");
-        }
-    };
 
-    ImageScanner ()
+public:
+    ImageScanner (zebra_image_scanner_t *scanner = NULL)
     {
-        _scanner = zebra_img_scanner_create();
-    }
-
-    ImageScanner (unsigned width, unsigned height)
-    {
-        _scanner = zebra_img_scanner_create();
-        set_size(width, height);
+        if(scanner)
+            _scanner = scanner;
+        else
+            _scanner = zebra_image_scanner_create();
     }
 
     ~ImageScanner ()
     {
-        zebra_img_scanner_destroy(_scanner);
+        zebra_image_scanner_destroy(_scanner);
     }
 
-    void set_size (unsigned width, unsigned height)
+    operator zebra_image_scanner_t* () const
     {
-        zebra_img_scanner_set_size(_scanner, width, height);
+        return(_scanner);
     }
 
-    int scan_y (const void *image)
+    void set_handler (Image::Handler &handler)
     {
-        return(zebra_img_scan_y(_scanner, image));
+        zebra_image_scanner_set_data_handler(_scanner, handler, &handler);
     }
 
-    int get_result_size ()
+    int scan (Image& image)
     {
-        return(zebra_img_scanner_get_result_size(_scanner));
+        return(zebra_scan_image(_scanner, image));
     }
 
-    Symbol get_result (unsigned index)
+    ImageScanner& operator<< (Image& image)
     {
-        zebra_symbol_t *sym = zebra_img_scanner_get_result(_scanner, index);
-        if(sym)
-            return(Symbol(sym));
-        throw RangeException();
+        scan(image);
+        return(*this);
     }
 
-    template <typename OutputIterator>
-    OutputIterator result_iter (OutputIterator out)
-    {
-        for(int i = get_result_size(); i; i--)
-            *out++ = get_result(i);
-        return(out);
-    }
-
- private:
-    zebra_img_scanner_t *_scanner;
+private:
+    zebra_image_scanner_t *_scanner;
 };
 
 }

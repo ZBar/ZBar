@@ -13,7 +13,7 @@ include $(srcdir)/zebra/Makefile.am.inc
 if HAVE_MAGICK
 include $(srcdir)/zebraimg/Makefile.am.inc
 endif
-if HAVE_SDL
+if HAVE_VIDEO
 include $(srcdir)/zebracam/Makefile.am.inc
 endif
 if HAVE_MOZILLA

@@ -1,23 +1,45 @@
-  * handle Code 128 function characters (FNC1-4)
-  * decoder needs symbology/feature enable/disable
-  * space lead in/out from each scan line
-  * reader skip uselessly short scan lines
-  * configurable reader pattern density
-  * support for other X visuals (16 bit depth)
-  * zebraimg features
-    * message when no result found (w/o -q)
-    * xml output format
-  * zebracam features
-    * support for v4l2 API
-    * support for other v4l image formats
-    * specify device
-    * hide cursor
-    * deactivate sound
-    * errors opening sound device
-    * simple image manipulations scale/mirror
-  * decode hook (program/script) to zebracam/(zebraimg?)
-  * finish UPC-E, EAN-8 and addon decoding
-  * add library version query interface
+pre-release:
+  * user_wait blocking w/w/o window still messed
+  * migrate result cache, inter-frame consistency check,
+    uncertainty filtering from zebracam to processor
+    => need separate reusable result cache
+  * output overlay
+  * finish error handling
+  * determine supported ximage formats
+  * add XShm support
+  * handle video destroyed w/images outstanding
+  * API to query used interface (video, window?) (/format?)
+  * force specific format (debug/test only?)
+  * verify support for other X visuals (16 bit depth)
+  * dbg_scan background image stretched (still...)
+  * update man pages
+  * update web page
+  * test_decode EAN broken?
+  * stats/fps at zebracam exit
+
+general:
+  * cleanup c++ error handling
+  * hook up doxygen (or robodoc?) for API docs
   * profile and weed out obvious oversights
-  * documentation
-    * hook up doxygen or robodoc for API docs
+  * windows port
+
+symbologies:
+  * Code 39
+  * handle Code 128 function characters (FNC1-4)
+  * finish UPC-E, EAN-8 and addon decoding
+
+decoder:
+  * symbology/feature enable/disable compile/runtime
+  * option to emit check digit (default?)
+
+image scanner:
+  * configurable pattern density
+  * space lead in/out from each scan line
+
+window:
+  * mode to preserve aspect ratio (default?)
+  * simple image manipulations scale(xv?)/mirror
+
+zebracam/zebraimg:
+  * xml output format
+  * decode hook (program/script)? (also zebraimg?)

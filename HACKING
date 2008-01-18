@@ -1,5 +1,5 @@
 if you're hacking at zebra, PLEASE send patches against the latest SVN!
-to get zebra from SVN (if you haven't already), run:
+if you haven't already, get zebra from SVN by running:
 
     svn co https://zebra.svn.sourceforge.net/svnroot/zebra/trunk zebra
     cd zebra
@@ -13,6 +13,13 @@ when you're done hacking and want to make your patch, run:
 
     svn diff > hacked.patch
 
-and go post this file in the patches section off the project page:
+from the toplevel directory, and go post this file in the patches
+section off the project page:
 
     https://sourceforge.net/tracker/?group_id=189236&atid=928517
+
+finally, some interesting reading if you want to increase your chances
+of patch acceptance:
+
+    http://www.faqs.org/docs/artu/ch19s02.html
+    http://www.catb.org/~esr/faqs/smart-questions.html

@@ -1,7 +1,32 @@
 current:
+  * major restructuring for improved modularity
+    NB not all changes are are backward compatible!
+    - modular support for v4l2 falling back to v4l1
+    - flexible support for more varied image formats (incomplete)
+    - added reusable abstractions for: an "image" object and associated
+      metadata, a "video" input object and a "window" output object
+    - added new "processor" API to wrap everything together, simplifying
+      trivial application usage (including zebracam and zebraimg)
+    - removed deprecated "img_walker" interface, completely replaced by
+      more integrated "image_scanner" (moving toward more image processing)
+    - updated/added c++ APIs, including improved iterator interfaces
+  * removed SDL dependency due to various usage incompatibilities
+    (most notably the inability to embed video window into a widget)
+  * cleaned up zebracam and zebraimg command line processing (bug #1838535)
+  * many useful enhancements thanks to proposal by mhirsch45 (req #1759923)
+    including:
+    - v4l2 support
+    - support for UYVY image format
+    - zebracam cursor hiding
+    - zebracam audio mute
+    - command line video device specification,
+  * significant error handling and debug improvements
+  * some associated documentation updates
+  * various new test programs (slowly working toward more formal test suite)
   * add missing xlink namespace to dbg_scan generated output (bug #1764188)
   * qualify char types as [un]signed to avoid non-portable C ambiguity
-    - thanks to mhirsch45@users.sf.net for the patch! (bug #1759914)
+    - thanks to mhirsch45@users.sf.net and Colin Leroy for the patches!
+      (bug #1759914)
   * add integrated 2D image scanning API
     - automatically ties to internal scanner and decoder
     - results reported via new symbol API

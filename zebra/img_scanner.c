@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -25,76 +25,103 @@
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #endif
-#ifdef DEBUG_IMG_SCANNER
-# include <stdio.h>     /* fprintf */
-#endif
 #include <stdlib.h>     /* malloc, free */
 #include <string.h>     /* strlen, strcmp, memset, memcpy */
 #include <assert.h>
 
-#include "zebra.h"
-#include "symbol.h"
+#include <zebra.h>
+#include "error.h"
+#include "image.h"
 
-#ifdef DEBUG_IMG_SCANNER
-# define dprintf(...) \
-    fprintf(stderr, __VA_ARGS__)
+#if 1
 # define ASSERT_POS \
-    assert(iscn->p == img + iscn->x + iscn->y * iscn->w);
+    assert(p == data + x + y * w)
 #else
-# define dprintf(...)
-#define ASSERT_POS
+# define ASSERT_POS
 #endif
 
 /* image scanner state */
-struct zebra_img_scanner_s {
+struct zebra_image_scanner_s {
     zebra_scanner_t *scn;       /* associated linear intensity scanner */
     zebra_decoder_t *dcode;     /* associated symbol decoder */
 
-    unsigned w, h;              /* configured width and height */
-    void *userdata;             /* application data */
+    const void *userdata;       /* application data */
+    /* user result callback */
+    zebra_image_data_handler_t *handler;
 
-    int x, y;                   /* current image location */
-    const unsigned char *p;
-
-    int nsyms;                  /* current syms entries */
-    unsigned symslen;           /* allocated size of syms */
-    zebra_symbol_t *syms;       /* decoded symbol data */
+    zebra_image_t *img;         /* currently scanning image *root* */
+    int nsyms;                  /* total cached symbols */
+    zebra_symbol_t *syms;       /* recycled symbols */
 };
 
-static void symbol_handler (zebra_decoder_t *dcode)
+static inline void recycle_syms (zebra_image_scanner_t *iscn,
+                                 zebra_image_t *img)
 {
-    zebra_img_scanner_t *iscn = zebra_decoder_get_userdata(dcode);
-    assert(iscn->dcode == dcode);
+    /* walk to root of clone tree */
+    while(img) {
+        img->nsyms = 0;
+        zebra_symbol_t *sym = img->syms;
+        if(sym) {
+            /* recycle image symbols */
+            iscn->nsyms++;
+            while(sym->next) {
+                sym = sym->next;
+                iscn->nsyms++;
+            }
+            sym->next = iscn->syms;
+            iscn->syms = img->syms;
+            img->syms = NULL;
+        }
+        /* save root */
+        iscn->img = img;
+        img = img->next;
+    }
+}
 
-    zebra_symbol_type_t type = zebra_decoder_get_type(dcode);
+static void symbol_handler (zebra_image_scanner_t *iscn,
+                            int x,
+                            int y)
+{
+    zebra_symbol_type_t type = zebra_decoder_get_type(iscn->dcode);
     /* FIXME assert(type == ZEBRA_PARTIAL) */
     /* FIXME debug flag to save/display all PARTIALs */
     if(type <= ZEBRA_PARTIAL)
         return;
 
-    /* FIXME check if (x, y) is inside existing polygon */
+    const char *data = zebra_decoder_get_data(iscn->dcode);
 
-    zebra_symbol_t *sym = &iscn->syms[iscn->nsyms];
-    sym->npts = 0;
-    /* FIXME extract bars from image and decode */
-
-    if(++sym->npts >= sym->ptslen)
-        sym->pts = realloc(sym->pts, ++sym->ptslen * sizeof(point_t));
-    sym->pts[0].x = iscn->x;
-    sym->pts[0].y = iscn->y;
-
-    const char *data = zebra_decoder_get_data(dcode);
-    int i;
-    for(i = 0; i < iscn->nsyms; i++) {
-        zebra_symbol_t *isym = &iscn->syms[i];
-        if(isym->type == type &&
-           !strcmp(isym->data, data)) {
-            isym->refcnt++;
+    /* FIXE deprecate - instead check (x, y) inside existing polygon */
+    zebra_symbol_t *sym;
+    for(sym = iscn->img->syms; sym; sym = sym->next)
+        if(sym->type == type &&
+           !strcmp(sym->data, data)) {
+            /* add new point to existing set */
+            /* FIXME should be polygon */
+            sym_add_point(sym, x, y);
             return;
         }
+
+    /* recycle old or alloc new symbol */
+    sym = iscn->syms;
+    if(sym) {
+        iscn->syms = sym->next;
+        iscn->nsyms--;
+    }
+    else {
+        sym = calloc(1, sizeof(zebra_symbol_t));
+        assert(!iscn->nsyms);
     }
 
-    /* save new symbol */
+    /* attach to current root image */
+    sym->next = iscn->img->syms;
+    iscn->img->syms = sym;
+    iscn->img->nsyms++;
+
+    sym->type = type;
+    sym->npts = 0;
+    sym_add_point(sym, x, y);
+
+    /* save new symbol data */
     int datalen = strlen(data) + 1;
     if(sym->datalen < datalen) {
         if(sym->data)
@@ -102,164 +129,157 @@ static void symbol_handler (zebra_decoder_t *dcode)
         sym->data = malloc(datalen);
         sym->datalen = datalen;
     }
-    sym->type = type;
     memcpy(sym->data, data, datalen);
-    sym->refcnt = 1;
-
-    if(++iscn->nsyms >= iscn->symslen) {
-        iscn->symslen++;
-        assert(iscn->nsyms < iscn->symslen);
-        iscn->syms = realloc(iscn->syms,
-                             iscn->symslen * sizeof(zebra_symbol_t));
-        sym = &iscn->syms[iscn->nsyms];
-        memset(sym, 0, sizeof(zebra_symbol_t));
-    }
 }
 
-zebra_img_scanner_t *zebra_img_scanner_create ()
+zebra_image_scanner_t *zebra_image_scanner_create ()
 {
-    zebra_img_scanner_t *iscn = calloc(1, sizeof(zebra_img_scanner_t));
-    assert(iscn);
+    zebra_image_scanner_t *iscn = calloc(1, sizeof(zebra_image_scanner_t));
+    if(!iscn)
+        return(NULL);
     iscn->dcode = zebra_decoder_create();
-    zebra_decoder_set_userdata(iscn->dcode, iscn);
-    zebra_decoder_set_handler(iscn->dcode, symbol_handler);
     iscn->scn = zebra_scanner_create(iscn->dcode);
-    iscn->symslen = 1;
-    iscn->syms = calloc(1, sizeof(zebra_symbol_t));
+    if(!iscn->dcode || !iscn->scn) {
+        zebra_image_scanner_destroy(iscn);
+        return(NULL);
+    }
     return(iscn);
 }
 
-void zebra_img_scanner_destroy (zebra_img_scanner_t *iscn)
+void zebra_image_scanner_destroy (zebra_image_scanner_t *iscn)
 {
-    assert(iscn);
-    zebra_scanner_destroy(iscn->scn);
-    zebra_decoder_destroy(iscn->dcode);
+    if(iscn->scn)
+        zebra_scanner_destroy(iscn->scn);
+    iscn->scn = NULL;
+    if(iscn->dcode)
+        zebra_decoder_destroy(iscn->dcode);
+    iscn->dcode = NULL;
+    while(iscn->syms) {
+        zebra_symbol_t *next = iscn->syms->next;
+        sym_destroy(iscn->syms);
+        iscn->syms = next;
+    }
     free(iscn);
 }
 
-void zebra_img_scanner_set_userdata (zebra_img_scanner_t *iscn,
-                                     void *userdata)
+zebra_image_data_handler_t*
+zebra_image_scanner_set_data_handler (zebra_image_scanner_t *iscn,
+                                      zebra_image_data_handler_t *handler,
+                                      const void *userdata)
 {
-    assert(iscn);
+    zebra_image_data_handler_t *result = iscn->handler;
+    iscn->handler = handler;
     iscn->userdata = userdata;
+    return(result);
 }
 
-void *zebra_img_scanner_get_userdata (const zebra_img_scanner_t *iscn)
-{
-    assert(iscn);
-    return(iscn->userdata);
-}
-
-void zebra_img_scanner_set_size (zebra_img_scanner_t *iscn,
-                                 unsigned width,
-                                 unsigned height)
-{
-    assert(iscn);
-    iscn->w = width;
-    iscn->h = height;
-}
-
-unsigned char
-zebra_img_scanner_get_result_size (const zebra_img_scanner_t *iscn)
-{
-    assert(iscn);
-    return(iscn->nsyms);
-}
-
-zebra_symbol_t*
-zebra_img_scanner_get_result (const zebra_img_scanner_t *iscn,
-                              unsigned char idx)
-{
-    assert(iscn);
-    if(idx < iscn->nsyms)
-        return(&iscn->syms[idx]);
-    else
-        return(NULL);
-}
-
-
-static inline void quiet_border (zebra_img_scanner_t *iscn,
-                                 unsigned samples)
+static inline void quiet_border (zebra_image_scanner_t *iscn,
+                                 unsigned samples,
+                                 int x,
+                                 int y)
 {
     unsigned i;
     for(i = samples; i; i--)
-        zebra_scan_y(iscn->scn, 0);
+        if(zebra_scan_y(iscn->scn, 255))
+            symbol_handler(iscn, x, y);
+    /* flush final transition with 2 black pixels */
+    for(i = 2; i; i--)
+        if(zebra_scan_y(iscn->scn, 0))
+            symbol_handler(iscn, x, y);
     zebra_scanner_new_scan(iscn->scn);
 }
 
-static inline void movedelta (zebra_img_scanner_t *iscn,
-                              int dx,
-                              int dy)
-{
-    iscn->x += dx;
-    iscn->y += dy;
-    iscn->p += dx + dy * iscn->w;
-}
+#define movedelta(dx, dy) {                     \
+        x += (dx);                              \
+        y += (dy);                              \
+        p += (dx) + ((dy) * w);                 \
+    } while(0);
 
-int zebra_img_scan_y (zebra_img_scanner_t *iscn,
-                      const void *img)
+int zebra_scan_image (zebra_image_scanner_t *iscn,
+                      zebra_image_t *img)
 {
-    int quiet;
-    if(!iscn || !iscn->w || !iscn->h)
+    recycle_syms(iscn, img);
+
+    /* get grayscale image, convert if necessary */
+    img = zebra_image_convert(img, fourcc('Y','8','0','0'));
+    if(!img)
         return(-1);
 
-    assert(iscn->symslen);
-    iscn->nsyms = 0;
+    unsigned w = zebra_image_get_width(img);
+    unsigned h = zebra_image_get_height(img);
+    const uint8_t *data = zebra_image_get_data(img);
+    const uint8_t *p = data;
+    int x = 0, y = 0;
+    movedelta(0, 8);
 
-    /* FIXME add density config api (calc optimal default) */
-    quiet = iscn->w / 32;
+    zebra_scanner_new_scan(iscn->scn);
+
+    /* FIXME add density config api */
+    /* FIXME less arbitrary lead-out default */
+    int quiet = w / 32;
     if(quiet < 8)
         quiet = 8;
 
-    zebra_scanner_new_scan(iscn->scn);
-
-    iscn->x = iscn->y = 0;
-    iscn->p = img;
-    for(movedelta(iscn, 0, 8); iscn->y < iscn->h; movedelta(iscn, 1, 16)) {
-        dprintf("img_x+: %03x,%03x (%p)\n", iscn->x, iscn->y, iscn->p);
-        for(; iscn->x < iscn->w; movedelta(iscn, 1, 0)) {
+    while(y < h) {
+        zprintf(32, "img_x+: %03x,%03x @%p\n", x, y, p);
+        while(x < w) {
             ASSERT_POS;
-            zebra_scan_y(iscn->scn, *iscn->p);
+            if(zebra_scan_y(iscn->scn, *p))
+                symbol_handler(iscn, x, y);
+            movedelta(1, 0);
         }
-        quiet_border(iscn, quiet);
+        quiet_border(iscn, quiet, x, y);
 
-        movedelta(iscn, -1, 16);
-        if(iscn->y >= iscn->h)
+        movedelta(-1, 16);
+        if(y >= h)
             break;
 
-        dprintf("img_x-: %03x,%03x (%p)\n", iscn->x, iscn->y, iscn->p);
-        for(; iscn->x > 0; movedelta(iscn, -1, 0)) {
+        zprintf(32, "img_x-: %03x,%03x @%p\n", x, y, p);
+        while(x > 0) {
             ASSERT_POS;
-            zebra_scan_y(iscn->scn, *iscn->p);
+            if(zebra_scan_y(iscn->scn, *p))
+                symbol_handler(iscn, x, y);
+            movedelta(-1, 0);
         }
-        quiet_border(iscn, quiet);
+        quiet_border(iscn, quiet, x, y);
+
+        movedelta(1, 16);
     }
 
-    iscn->x = iscn->y = 0;
-    iscn->p = img;
-    for(movedelta(iscn, 8, 0); iscn->x < iscn->w; movedelta(iscn, 16, 1)) {
-        dprintf("img_y+: %03x,%03x (%p)\n", iscn->x, iscn->y, iscn->p);
-        for(; iscn->y < iscn->h; movedelta(iscn, 0, 1)) {
-            ASSERT_POS;
-            zebra_scan_y(iscn->scn, *iscn->p);
-        }
-        quiet_border(iscn, quiet);
+    x = y = 0;
+    p = data;
+    movedelta(8, 0);
 
-        movedelta(iscn, 16, -1);
-        if(iscn->x >= iscn->w)
+    while(x < w) {
+        zprintf(32, "img_y+: %03x,%03x @%p\n", x, y, p);
+        while(y < h) {
+            ASSERT_POS;
+            if(zebra_scan_y(iscn->scn, *p))
+                symbol_handler(iscn, x, y);
+            movedelta(0, 1);
+        }
+        quiet_border(iscn, quiet, x, y);
+
+        movedelta(16, -1);
+        if(x >= w)
             break;
 
-        dprintf("img_y-: %03x,%03x (%p)\n", iscn->x, iscn->y, iscn->p);
-        for(; iscn->y >= 0; movedelta(iscn, 0, -1)) {
+        zprintf(32, "img_y-: %03x,%03x @%p\n", x, y, p);
+        while(y >= 0) {
             ASSERT_POS;
-            zebra_scan_y(iscn->scn, *iscn->p);
+            if(zebra_scan_y(iscn->scn, *p))
+                symbol_handler(iscn, x, y);
+            movedelta(0, -1);
         }
-        quiet_border(iscn, quiet);
+        quiet_border(iscn, quiet, x, y);
+
+        movedelta(16, 1);
     }
 
     /* flush scanner pipe */
     zebra_scanner_new_scan(iscn->scn);
 
-    assert(iscn->nsyms < iscn->symslen);
-    return(iscn->nsyms);
+    /* release reference */
+    zebra_image_destroy(img);
+    return(iscn->img->nsyms);
 }

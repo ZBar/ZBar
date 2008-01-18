@@ -20,46 +20,15 @@
  *
  *  http://sourceforge.net/projects/zebra
  *------------------------------------------------------------------------*/
-#ifndef _SYMBOL_H_
-#define _SYMBOL_H_
+#ifndef _TEST_IMAGES_H_
+#define _TEST_IMAGES_H_
 
-#include <stdlib.h>
-#include <zebra.h>
+/* adapted from v4l2 spec */
+#define fourcc(a, b, c, d)                      \
+    ((uint32_t)(a) | ((uint32_t)(b) << 8) |     \
+     ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
 
-typedef struct point_s {
-    int x, y;
-} point_t;
-
-struct zebra_symbol_s {
-    zebra_symbol_type_t type;   /* symbol type */
-    unsigned int datalen;       /* allocation size of data */
-    char *data;                 /* ascii symbol data */
-
-    unsigned ptslen;            /* allocation size of pts */
-    unsigned npts;              /* number of points in location polygon */
-    point_t *pts;               /* list of points in location polygon */
-
-    zebra_symbol_t *next;       /* linked list of results */
-};
-
-static inline void sym_add_point (zebra_symbol_t *sym,
-                                  int x,
-                                  int y)
-{
-    int i = sym->npts;
-    if(++sym->npts >= sym->ptslen)
-        sym->pts = realloc(sym->pts, ++sym->ptslen * sizeof(point_t));
-    sym->pts[i].x = x;
-    sym->pts[i].y = y;
-}
-
-static inline void sym_destroy (zebra_symbol_t *sym)
-{
-    if(sym->pts)
-        free(sym->pts);
-    if(sym->data)
-        free(sym->data);
-    free(sym);
-}
+int test_image_check_cleanup();
+int test_image_bars(zebra_image_t*);
 
 #endif

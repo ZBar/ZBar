@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -103,27 +103,6 @@ void *zebra_decoder_get_userdata (const zebra_decoder_t *dcode)
 zebra_symbol_type_t zebra_decoder_get_type (const zebra_decoder_t *dcode)
 {
     return(dcode->type);
-}
-
-const char *zebra_get_symbol_name (zebra_symbol_type_t sym)
-{
-    switch(sym & ZEBRA_SYMBOL) {
-    case ZEBRA_EAN8: return("EAN8");
-    case ZEBRA_UPCE: return("UPC-E");
-    case ZEBRA_UPCA: return("UPC-A");
-    case ZEBRA_EAN13: return("EAN-13");
-    case ZEBRA_CODE128: return("CODE-128");
-    default: return("UNKNOWN");
-    }
-}
-
-const char *zebra_get_addon_name (zebra_symbol_type_t sym)
-{
-    switch(sym & ZEBRA_ADDON) {
-    case ZEBRA_ADDON2: return("+2");
-    case ZEBRA_ADDON5: return("+5");
-    default: return("");
-    }
 }
 
 zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
