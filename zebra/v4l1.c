@@ -107,8 +107,10 @@ static zebra_image_t *v4l1_dq (zebra_video_t *vdo)
 {
     zebra_image_t *img = NULL;
     img = vdo->dq_image;
-    if(img)
+    if(img) {
         vdo->dq_image = img->next;
+        img->next = NULL;
+    }
     if(video_unlock(vdo))
         return(NULL);
 

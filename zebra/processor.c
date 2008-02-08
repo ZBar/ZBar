@@ -82,18 +82,6 @@ static inline void proc_destroy_thread (pthread_t thread,
 # define proc_destroy_thread(...)
 #endif
 
-static inline int process_symbol (zebra_processor_t *proc,
-                                  const zebra_symbol_t *sym)
-{
-    /* FIXME migrate uncertainty filtering from previous zebracam */
-    zebra_symbol_type_t type = zebra_symbol_get_type(sym);
-    zprintf(8, "%s%s: %s\n",
-            zebra_get_symbol_name(type),
-            zebra_get_addon_name(type),
-            zebra_symbol_get_data(sym));
-    return(0);
-}
-
 /* lock is already held */
 static inline int process_image (zebra_processor_t *proc,
                                  zebra_image_t *img)
@@ -113,10 +101,19 @@ static inline int process_image (zebra_processor_t *proc,
             return(err_capture(proc, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED,
                                __func__, "unknown image format"));
 
-        const zebra_symbol_t *sym = zebra_image_first_symbol(img);
-        while(sym) {
-            process_symbol(proc, sym);
-            sym = zebra_symbol_next(sym);
+        if(_zebra_verbosity >= 8) {
+            const zebra_symbol_t *sym = zebra_image_first_symbol(img);
+            while(sym) {
+                zebra_symbol_type_t type = zebra_symbol_get_type(sym);
+                int count = zebra_symbol_get_count(sym);
+                zprintf(8, "%s%s: %s (%s)\n",
+                        zebra_get_symbol_name(type),
+                        zebra_get_addon_name(type),
+                        zebra_symbol_get_data(sym),
+                        (count < 0) ? "uncertain" :
+                        (count > 0) ? "duplicate" : "new");
+                sym = zebra_symbol_next(sym);
+            }
         }
 
         if(nsyms) {
@@ -565,7 +562,9 @@ int zebra_processor_user_wait (zebra_processor_t *proc,
 {
     if(proc_lock(proc) < 0)
         return(-1);
-    int rc = proc_event_wait(proc, EVENT_INPUT, timeout);
+    int rc = -1;
+    if(proc->visible || proc->active || timeout > 0)
+        rc = proc_event_wait(proc, EVENT_INPUT, timeout);
     if(rc >= 0)
         rc = proc->input;
     proc_unlock(proc);
@@ -584,6 +583,7 @@ int zebra_processor_set_active (zebra_processor_t *proc,
         proc_unlock(proc);
         return(-1);
     }
+    zebra_image_scanner_enable_cache(proc->scanner, active);
     int rc = zebra_video_enable(proc->video, active);
     int vid_fd = zebra_video_get_fd(proc->video);
     if(vid_fd >= 0) {
@@ -616,6 +616,7 @@ int zebra_process_one (zebra_processor_t *proc,
         return(-1);
     int rc = 0;
     if(proc->video) {
+        zebra_image_scanner_enable_cache(proc->scanner, 1);
         rc = zebra_video_enable(proc->video, 1);
         /* FIXME failure recovery? */
         int vid_fd = zebra_video_get_fd(proc->video);
@@ -631,6 +632,7 @@ int zebra_process_one (zebra_processor_t *proc,
             remove_poll(proc, vid_fd);
         proc->active = 0;
         proc->events &= ~EVENT_INPUT;
+        zebra_image_scanner_enable_cache(proc->scanner, 0);
     }
     else
         rc = -1;
@@ -648,8 +650,12 @@ int zebra_process_image (zebra_processor_t *proc,
         rc = _zebra_window_resize(proc,
                                   zebra_image_get_width(img),
                                   zebra_image_get_height(img));
-    if(!rc)
+    if(!rc) {
+        zebra_image_scanner_enable_cache(proc->scanner, 0);
         rc = process_image(proc, img);
+        if(proc->active)
+            zebra_image_scanner_enable_cache(proc->scanner, 1);
+    }
     proc_unlock(proc);
     return(rc);
 }

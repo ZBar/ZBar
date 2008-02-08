@@ -1,4 +1,9 @@
 current:
+  * migrate inter-frame consistency check from old zebracam into image_scanner
+    - add API to enable/disable/flush result cache
+    - add API to retrieve cache status from returned symbol
+  * cleanup user_wait blocking semantics for various state combinations
+  * fix bug w/v4l1 not unlinking dequeued image
   * major restructuring for improved modularity
     NB not all changes are are backward compatible!
     - modular support for v4l2 falling back to v4l1

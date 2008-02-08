@@ -40,6 +40,8 @@ struct zebra_symbol_s {
     point_t *pts;               /* list of points in location polygon */
 
     zebra_symbol_t *next;       /* linked list of results */
+    unsigned long time;         /* relative symbol capture time */
+    int cache_count;            /* cache state */
 };
 
 static inline void sym_add_point (zebra_symbol_t *sym,

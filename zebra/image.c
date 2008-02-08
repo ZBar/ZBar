@@ -107,6 +107,9 @@ void zebra_image_set_data (zebra_image_t *img,
 
 const zebra_symbol_t *zebra_image_first_symbol (const zebra_image_t *img)
 {
+    /* symbols stored on root image */
+    while(img->next)
+        img = img->next;
     return(img->syms);
 }
 

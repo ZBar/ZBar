@@ -110,6 +110,13 @@ extern zebra_symbol_type_t zebra_symbol_get_type(const zebra_symbol_t *symbol);
 /* return ASCII data decoded from symbol */
 extern const char *zebra_symbol_get_data(const zebra_symbol_t *symbol);
 
+/* return current cache count
+ * returns < 0 if symbol is still uncertain.
+ * returns 0 if symbol is newly verified.
+ * returns > 0 for duplicate symbols
+ */
+extern int zebra_symbol_get_count(const zebra_symbol_t *symbol);
+
 /* return the number of points in the location polygon,
  * which defines the image area that the symbol was extracted from
  */
@@ -534,6 +541,15 @@ extern zebra_image_data_handler_t*
 zebra_image_scanner_set_data_handler(zebra_image_scanner_t *scanner,
                                      zebra_image_data_handler_t *handler,
                                      const void *userdata);
+
+/* enable or disable the inter-image result cache (default disabled).
+ * mostly useful for scanning video frames, the cache filters
+ * duplicate results from consecutive images, while adding some
+ * consistency checking and hysteresis to the results.
+ * this interface also clears the cache
+ */
+extern void zebra_image_scanner_enable_cache(zebra_image_scanner_t *scanner,
+                                             int enable);
 
 /* scan for symbols in provided image.
  * returns >0 if symbols were successfully decoded from the image,

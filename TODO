@@ -1,8 +1,4 @@
 pre-release:
-  * user_wait blocking w/w/o window still messed
-  * migrate result cache, inter-frame consistency check,
-    uncertainty filtering from zebracam to processor
-    => need separate reusable result cache
   * output overlay
   * finish error handling
   * determine supported ximage formats

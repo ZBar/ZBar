@@ -58,6 +58,11 @@ const char *zebra_symbol_get_data (const zebra_symbol_t *sym)
     return(sym->data);
 }
 
+int zebra_symbol_get_count (const zebra_symbol_t *sym)
+{
+    return(sym->cache_count);
+}
+
 unsigned zebra_symbol_get_loc_size (const zebra_symbol_t *sym)
 {
     return(sym->npts);

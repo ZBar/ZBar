@@ -26,6 +26,7 @@
 # include <inttypes.h>
 #endif
 #include <stdlib.h>     /* malloc, free */
+#include <time.h>       /* clock_gettime */
 #include <string.h>     /* strlen, strcmp, memset, memcpy */
 #include <assert.h>
 
@@ -40,6 +41,26 @@
 # define ASSERT_POS
 #endif
 
+/* FIXME cache setting configurability */
+
+/* number of times the same result must be detected
+ * in "nearby" images before being reported
+ */
+#define CACHE_CONSISTENCY    3 /* images */
+
+/* time interval for which two images are considered "nearby"
+ */
+#define CACHE_PROXIMITY   1000 /* ms */
+
+/* time that a result must *not* be detected before
+ * it will be reported again
+ */
+#define CACHE_HYSTERESIS  2000 /* ms */
+
+/* time after which cache entries are invalidated
+ */
+#define CACHE_TIMEOUT     (CACHE_HYSTERESIS * 2) /* ms */
+
 /* image scanner state */
 struct zebra_image_scanner_s {
     zebra_scanner_t *scn;       /* associated linear intensity scanner */
@@ -52,6 +73,9 @@ struct zebra_image_scanner_s {
     zebra_image_t *img;         /* currently scanning image *root* */
     int nsyms;                  /* total cached symbols */
     zebra_symbol_t *syms;       /* recycled symbols */
+
+    int enable_cache;           /* current result cache state */
+    zebra_symbol_t *cache;      /* inter-image result cache entries */
 };
 
 static inline void recycle_syms (zebra_image_scanner_t *iscn,
@@ -78,6 +102,59 @@ static inline void recycle_syms (zebra_image_scanner_t *iscn,
     }
 }
 
+static inline zebra_symbol_t *alloc_sym (zebra_image_scanner_t *iscn,
+                                         zebra_symbol_type_t type,
+                                         const char *data)
+{
+    /* recycle old or alloc new symbol */
+    zebra_symbol_t *sym = iscn->syms;
+    if(sym) {
+        iscn->syms = sym->next;
+        assert(iscn->nsyms);
+        iscn->nsyms--;
+    }
+    else {
+        sym = calloc(1, sizeof(zebra_symbol_t));
+        assert(!iscn->nsyms);
+    }
+
+    /* save new symbol data */
+    sym->type = type;
+    int datalen = strlen(data) + 1;
+    if(sym->datalen < datalen) {
+        if(sym->data)
+            free(sym->data);
+        sym->data = malloc(datalen);
+        sym->datalen = datalen;
+    }
+    memcpy(sym->data, data, datalen);
+
+    return(sym);
+}
+
+static inline zebra_symbol_t *cache_lookup (zebra_image_scanner_t *iscn,
+                                            zebra_symbol_t *sym)
+{
+    /* search for matching entry in cache */
+    zebra_symbol_t **entry = &iscn->cache;
+    while(*entry) {
+        if((*entry)->type == sym->type &&
+           !strcmp((*entry)->data, sym->data))
+            break;
+        if((sym->time - (*entry)->time) > CACHE_TIMEOUT) {
+            /* recycle stale cache entry */
+            zebra_symbol_t *next = (*entry)->next;
+            (*entry)->next = iscn->syms;
+            iscn->syms = *entry;
+            iscn->nsyms++;
+            *entry = next;
+        }
+        else
+            entry = &(*entry)->next;
+    }
+    return(*entry);
+}
+
 static void symbol_handler (zebra_image_scanner_t *iscn,
                             int x,
                             int y)
@@ -90,7 +167,7 @@ static void symbol_handler (zebra_image_scanner_t *iscn,
 
     const char *data = zebra_decoder_get_data(iscn->dcode);
 
-    /* FIXE deprecate - instead check (x, y) inside existing polygon */
+    /* FIXME deprecate - instead check (x, y) inside existing polygon */
     zebra_symbol_t *sym;
     for(sym = iscn->img->syms; sym; sym = sym->next)
         if(sym->type == type &&
@@ -101,35 +178,48 @@ static void symbol_handler (zebra_image_scanner_t *iscn,
             return;
         }
 
-    /* recycle old or alloc new symbol */
-    sym = iscn->syms;
-    if(sym) {
-        iscn->syms = sym->next;
-        iscn->nsyms--;
-    }
-    else {
-        sym = calloc(1, sizeof(zebra_symbol_t));
-        assert(!iscn->nsyms);
-    }
+    sym = alloc_sym(iscn, type, data);
+
+    /* FIXME config for this, maybe fallback to gettimeofday? */
+    struct timespec abstime;
+    clock_gettime(CLOCK_REALTIME, &abstime);
+    sym->time = (abstime.tv_sec * 1000) + ((abstime.tv_nsec / 500000) + 1) / 2;
+
+    /* initialize first point */
+    sym->npts = 0;
+    sym_add_point(sym, x, y);
 
     /* attach to current root image */
     sym->next = iscn->img->syms;
     iscn->img->syms = sym;
     iscn->img->nsyms++;
 
-    sym->type = type;
-    sym->npts = 0;
-    sym_add_point(sym, x, y);
+    if(iscn->enable_cache) {
+        zebra_symbol_t *entry = cache_lookup(iscn, sym);
+        if(!entry) {
+            entry = alloc_sym(iscn, sym->type, sym->data);
+            entry->time = sym->time - CACHE_HYSTERESIS;
+            entry->cache_count = -CACHE_CONSISTENCY;
+            /* add to cache */
+            entry->next = iscn->cache;
+            iscn->cache = entry;
+        }
 
-    /* save new symbol data */
-    int datalen = strlen(data) + 1;
-    if(sym->datalen < datalen) {
-        if(sym->data)
-            free(sym->data);
-        sym->data = malloc(datalen);
-        sym->datalen = datalen;
+        /* consistency check and hysteresis */
+        uint32_t age = sym->time - entry->time;
+        entry->time = sym->time;
+        int near = (age < CACHE_PROXIMITY);
+        int far = (age >= CACHE_HYSTERESIS);
+        int dup = (entry->cache_count >= 0);
+        if((!dup && !near) || far)
+            entry->cache_count = -CACHE_CONSISTENCY;
+        else if(dup || near)
+            entry->cache_count++;
+
+        sym->cache_count = entry->cache_count;
     }
-    memcpy(sym->data, data, datalen);
+    else
+        sym->cache_count = 0;
 }
 
 zebra_image_scanner_t *zebra_image_scanner_create ()
@@ -171,6 +261,22 @@ zebra_image_scanner_set_data_handler (zebra_image_scanner_t *iscn,
     iscn->handler = handler;
     iscn->userdata = userdata;
     return(result);
+}
+
+void zebra_image_scanner_enable_cache(zebra_image_scanner_t *iscn,
+                                      int enable)
+{
+    if(iscn->cache) {
+        /* recycle all cached syms */
+        zebra_symbol_t *entry;
+        for(entry = iscn->cache; entry->next; entry = entry->next)
+            iscn->nsyms++;
+        iscn->nsyms++;
+        entry->next = iscn->syms;
+        iscn->syms = iscn->cache;
+        iscn->cache = NULL;
+    }
+    iscn->enable_cache = enable;
 }
 
 static inline void quiet_border (zebra_image_scanner_t *iscn,

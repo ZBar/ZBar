@@ -62,6 +62,8 @@ void data_handler (zebra_image_t *img, const void *userdata)
     const zebra_symbol_t *sym = zebra_image_first_symbol(img);
     assert(sym);
     for(; sym; sym = zebra_symbol_next(sym)) {
+        if(zebra_symbol_get_count(sym))
+            continue;
         zebra_symbol_type_t type = zebra_symbol_get_type(sym);
         printf("%s%s: %s\n",
                zebra_get_symbol_name(type), zebra_get_addon_name(type),
