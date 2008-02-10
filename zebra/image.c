@@ -73,6 +73,8 @@ void zebra_image_set_size (zebra_image_t *img,
 
 inline void zebra_image_free_data (zebra_image_t *img)
 {
+    if(!img)
+        return;
     if(img->src) {
         /* replace video image w/new copy */
         assert(img->refcnt);

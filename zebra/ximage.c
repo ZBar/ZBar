@@ -34,12 +34,12 @@ static int ximage_cleanup (zebra_window_t *w)
 static inline int ximage_init (zebra_window_t *w,
                                zebra_image_t *img)
 {
-    if(w->img.x)
+    if(w->img.x) {
         free(w->img.x);
+        w->img.x = NULL;
+    }
     if(w->img_format != img->format) {
-        /* FIXME supported formats */
-        /*_zebra_best_format(img->format, &w->format, w->formats);*/
-        w->format = fourcc('R','G','B','3');
+        _zebra_best_format(img->format, &w->format, w->formats);
         if(!w->format) {
             err_capture_int(w, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
                             "no conversion from %08x to supported formats",
@@ -56,11 +56,29 @@ static inline int ximage_init (zebra_window_t *w,
     ximg->bitmap_unit = 8;
     ximg->bitmap_bit_order = MSBFirst;
     ximg->bitmap_pad = 8;
-    ximg->depth = ximg->bits_per_pixel = 24;
-    ximg->red_mask = 0x00ff0000L;
-    ximg->green_mask = 0x0000ff00L;
-    ximg->blue_mask = 0x000000ffL;
-    XInitImage(ximg);
+
+    const zebra_format_def_t *fmt = _zebra_format_lookup(w->format);
+    if(fmt->group == ZEBRA_FMT_RGB_PACKED) {
+        ximg->depth = ximg->bits_per_pixel = fmt->p.rgb.bpp << 3;
+        ximg->red_mask =
+            ((1 << (8 - RGB_SIZE(fmt->p.rgb.red))) - 1)
+            << RGB_OFFSET(fmt->p.rgb.red);
+        ximg->green_mask =
+            ((1 << (8 - RGB_SIZE(fmt->p.rgb.green))) - 1)
+            << RGB_OFFSET(fmt->p.rgb.green);
+        ximg->blue_mask =
+            ((1 << (8 - RGB_SIZE(fmt->p.rgb.blue))) - 1)
+            << RGB_OFFSET(fmt->p.rgb.blue);
+    }
+    else {
+        ximg->depth = ximg->bits_per_pixel = 8;
+        ximg->red_mask = ximg->green_mask = ximg->blue_mask = 0xff;
+    }
+
+    if(!XInitImage(ximg))
+        return(err_capture_int(w, SEV_ERROR, ZEBRA_ERR_XPROTO, __func__,
+                               "unable to init XImage for format %08x",
+                               w->format));
     return(0);
 }
 
@@ -111,9 +129,60 @@ static int ximage_draw (zebra_window_t *w,
     return(0);
 }
 
+static uint32_t ximage_formats[4][5] = {
+    {   /* 8bpp */
+        /* FIXME fourcc('Y','8','0','0'), */
+        fourcc('R','G','B','1'),
+        0
+    },
+    {   /* 16bpp */
+        fourcc('R','G','B','P'), fourcc('R','G','B','O'),
+        fourcc('R','G','B','R'), fourcc('R','G','B','Q'),
+        0
+    },
+    {   /* 24bpp */
+        fourcc('R','G','B','3'),
+        fourcc( 3 , 0 , 0 , 0 ),
+        fourcc('B','G','R','3'),
+        0
+    },
+    {   /* 32bpp */
+        fourcc('R','G','B','4'),
+        fourcc('B','G','R','4'),
+        0
+    },
+};
+
 int _zebra_window_probe_ximage (zebra_window_t *w)
 {
     /* FIXME determine supported formats/depths */
+    int n;
+    XPixmapFormatValues *formats = XListPixmapFormats(w->display, &n);
+    if(!formats)
+        return(err_capture(w, SEV_ERROR, ZEBRA_ERR_XPROTO, __func__,
+                           "unable to query XImage formats"));
+
+    int i;
+    for(i = 0; i < n; i++) {
+        if(formats[i].depth != formats[i].bits_per_pixel ||
+           formats[i].depth & 0x7 ||
+           formats[i].depth > 0x20) {
+            zprintf(2, "    [%d] depth=%d bpp=%d\n",
+                    i, formats[i].depth, formats[i].bits_per_pixel);
+            continue;
+        }
+        int fmtidx = formats[i].depth / 8 - 1;
+        int j;
+        for(j = 0; ximage_formats[fmtidx][j]; j++) {
+            zprintf(2, "    [%d] depth=%d bpp=%d: %.4s(%08x)\n",
+                    i, formats[i].depth, formats[i].bits_per_pixel,
+                    (char*)&ximage_formats[fmtidx][j],
+                    ximage_formats[fmtidx][j]);
+            _zebra_window_add_format(w, ximage_formats[fmtidx][j]);
+        }
+    }
+    XFree(formats);
+
     w->draw_image = ximage_draw;
     w->cleanup = ximage_cleanup;
     return(0);

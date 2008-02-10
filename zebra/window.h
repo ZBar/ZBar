@@ -78,8 +78,24 @@ struct zebra_window_s {
 # ifdef HAVE_X11_EXTENSIONS_XSHM_H
     XShmSegmentInfo shm;        /* shared memory segment */
 # endif
+
+    unsigned long colors[8];    /* pre-allocated colors */
 #endif
 };
+
+static inline int _zebra_window_add_format (zebra_window_t *w,
+                                            uint32_t fmt)
+{
+    int i;
+    for(i = 0; w->formats && w->formats[i]; i++)
+        if(w->formats[i] == fmt)
+            return(i);
+
+    w->formats = realloc(w->formats, (i + 2) * sizeof(uint32_t));
+    w->formats[i] = fmt;
+    w->formats[i + 1] = 0;
+    return(i);
+}
 
 extern int _zebra_window_probe_ximage(zebra_window_t*);
 extern int _zebra_window_probe_xshm(zebra_window_t*);
@@ -89,11 +105,15 @@ extern int _zebra_window_attach(zebra_window_t*, void*, unsigned long);
 
 extern int _zebra_window_clear(zebra_window_t*);
 
+extern int _zebra_window_draw_marker(zebra_window_t*, uint32_t,
+                                     const point_t*);
 #if 0
-extern int _zebra_draw_marker(zebra_window_t*, point_t*);
-extern int _zebra_draw_line(zebra_window_t*, point_t*, point_t*);
-extern int _zebra_draw_outline(zebra_window_t*, symbol_t*);
-extern int _zebra_draw_text(zebra_window_t*, point_t*, const char*);
+extern int _zebra_window_draw_line(zebra_window_t*, uint32_t,
+                                   const point_t*, const point_t*);
+extern int _zebra_window_draw_outline(zebra_window_t*, uint32_t,
+                                      const symbol_t*);
+extern int _zebra_window_draw_text(zebra_window_t*, uint32_t,
+                                   const point_t*, const char*);
 #endif
 
 #endif

@@ -77,6 +77,7 @@ static inline int xv_init (zebra_window_t *w,
     /* FIXME datalen check */
     if(xvimg->width != img->width || xvimg->height != img->height) {
         XFree(xvimg);
+        /* FIXME fallback to XImage... */
         return(err_capture(w, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
                            "output image size mismatch (XvCreateImage)"));
     }
@@ -88,6 +89,7 @@ static int xv_draw (zebra_window_t *w,
                     zebra_image_t *img)
 {
     XvImage *xvimg = w->img.xv;
+    /* FIXME preserve aspect ratio (config?) */
     if(!xvimg ||
        w->img_format != img->format ||
        xvimg->width != img->width ||
@@ -116,18 +118,13 @@ static inline int xv_add_format (zebra_window_t *w,
                                  uint32_t fmt,
                                  XvPortID port)
 {
-    int i;
-    for(i = 0; w->formats[i]; i++)
-        if(w->formats[i] == fmt) {
-            /* FIXME could prioritize by something (rate? size?) */
-            w->xv_ports[i] = port;
-            return(i);
-        }
-    w->xv_ports = realloc(w->xv_ports, (i + 1) * sizeof(uint32_t));
+    int i = _zebra_window_add_format(w, fmt);
+
+    if(!w->formats[i + 1])
+        w->xv_ports = realloc(w->xv_ports, (i + 1) * sizeof(uint32_t));
+
+    /* FIXME could prioritize by something (rate? size?) */
     w->xv_ports[i] = port;
-    w->formats = realloc(w->formats, (i + 2) * sizeof(uint32_t));
-    w->formats[i] = fmt;
-    w->formats[i + 1] = 0;
     return(i);
 }
 

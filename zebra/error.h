@@ -167,8 +167,10 @@ static inline void err_init (errinfo_t *err,
 static inline void err_cleanup (errinfo_t *err)
 {
     assert(err->magic == ERRINFO_MAGIC);
-    if(err->buf)
+    if(err->buf) {
         free(err->buf);
+        err->buf = NULL;
+    }
 }
 
 #endif

@@ -27,44 +27,14 @@
 
 /* pack bit size and location offset of a component into one byte
  */
-#define RGB_BITS(off, size) ((((size) & 0x7) << 5) | ((off) & 0x1f))
+#define RGB_BITS(off, size) ((((8 - (size)) & 0x7) << 5) | ((off) & 0x1f))
 
 extern int _zebra_video_init(zebra_video_t*, uint32_t);
 
-/* coarse format categorization.
- * to limit conversion variations
- */
-typedef enum zebra_format_group_e {
-    ZEBRA_FMT_GRAY,
-    ZEBRA_FMT_YUV_PLANAR,
-    ZEBRA_FMT_YUV_PACKED,
-    ZEBRA_FMT_RGB_PACKED,
-    ZEBRA_FMT_YUV_NV,
-} zebra_format_group_t;
-
-/* description of an image format */
-typedef struct format_def_s {
-    uint32_t format;                    /* fourcc */
-    zebra_format_group_t group;         /* coarse categorization */
-    union {
-        uint8_t gen[4];                 /* raw bytes */
-        struct {
-            uint8_t bpp;                /* bits per pixel */
-            uint8_t red, green, blue;   /* size/location a la RGB_BITS() */
-        } rgb;
-        struct {
-            uint8_t xsub2, ysub2;       /* chroma subsampling in each axis */
-            uint8_t packorder;          /* channel ordering flags
-                                         *   bit0: 0=UV, 1=VU
-                                         *   bit1: 0=Y/chroma, 1=chroma/Y
-                                         */
-        } yuv;
-        uint32_t cmp;                   /* quick compare equivalent formats */
-    } p;
-} format_def_t;
-
-typedef void (conversion_handler_t)(zebra_image_t*, const format_def_t*,
-                                    const zebra_image_t*, const format_def_t*);
+typedef void (conversion_handler_t)(zebra_image_t*,
+                                    const zebra_format_def_t*,
+                                    const zebra_image_t*,
+                                    const zebra_format_def_t*);
 
 typedef struct conversion_def_s {
     int cost;                           /* conversion "badness" */
@@ -139,10 +109,10 @@ static const uint32_t format_prefs[] = {
 };
 
 static const int num_format_prefs =
-    sizeof(format_prefs) / sizeof(format_def_t);
+    sizeof(format_prefs) / sizeof(zebra_format_def_t);
 
 /* format definitions */
-static const format_def_t format_defs[] = {
+static const zebra_format_def_t format_defs[] = {
 
     { fourcc('B','G','R','4'), ZEBRA_FMT_RGB_PACKED,
         { { 4, RGB_BITS(16, 8), RGB_BITS(8, 8), RGB_BITS(0, 8) } } },
@@ -161,7 +131,7 @@ static const format_def_t format_defs[] = {
         { { 2, RGB_BITS(8, 4), RGB_BITS(4, 4), RGB_BITS(0, 4) } } },
     { fourcc('Y','U','V','9'), ZEBRA_FMT_YUV_PLANAR, { { 2, 2, 0 /*UV*/ } } },
     { fourcc('R','G','B','P'), ZEBRA_FMT_RGB_PACKED,
-        { { 2, RGB_BITS(10, 6), RGB_BITS(5, 5), RGB_BITS(0, 5) } } },
+        { { 2, RGB_BITS(11, 5), RGB_BITS(5, 6), RGB_BITS(0, 5) } } },
     { fourcc('Y','U','Y','V'), ZEBRA_FMT_YUV_PACKED,
         { { 1, 0, 0, /*YUYV*/ } } },
     { fourcc('U','Y','V','Y'), ZEBRA_FMT_YUV_PACKED,
@@ -190,7 +160,7 @@ static const format_def_t format_defs[] = {
 };
 
 static const int num_format_defs =
-    sizeof(format_defs) / sizeof(format_def_t);
+    sizeof(format_defs) / sizeof(zebra_format_def_t);
 
 #ifdef DEBUG_CONVERT
 static int intsort (const void *a,
@@ -254,7 +224,7 @@ static inline int verify_format_sort ()
 }
 
 static inline void uv_roundup (zebra_image_t *img,
-                               const format_def_t *fmt)
+                               const zebra_format_def_t *fmt)
 {
     unsigned xmask = (1 << fmt->p.yuv.xsub2) - 1;
     if(img->width & xmask)
@@ -265,10 +235,45 @@ static inline void uv_roundup (zebra_image_t *img,
 }
 
 static inline size_t uvp_size (const zebra_image_t *img,
-                               const format_def_t *fmt)
+                               const zebra_format_def_t *fmt)
 {
     return((img->width >> fmt->p.yuv.xsub2) *
            (img->height >> fmt->p.yuv.ysub2));
+}
+
+static inline uint32_t convert_read_rgb (const uint8_t *srcp,
+                                         int bpp)
+{
+    uint32_t p;
+    if(bpp == 3) {
+        p = *srcp;
+        p |= *(srcp + 1) << 8;
+        p |= *(srcp + 2) << 16;
+    }
+    else if(bpp == 4)
+        p = *((uint32_t*)(srcp));
+    else if(bpp == 2)
+        p = *((uint16_t*)(srcp));
+    else
+        p = *srcp;
+    return(p);
+}
+
+static inline void convert_write_rgb (uint8_t *dstp,
+                                      uint32_t p,
+                                      int bpp)
+{
+    if(bpp == 3) {
+        *dstp = p & 0xff;
+        *(dstp + 1) = (p >> 8) & 0xff;
+        *(dstp + 2) = (p >> 16) & 0xff;
+    }
+    else if(bpp == 4)
+        *((uint32_t*)dstp) = p;
+    else if(bpp == 2)
+        *((uint16_t*)dstp) = p;
+    else
+        *dstp = p;
 }
 
 /* cleanup linked image by unrefing */
@@ -280,9 +285,9 @@ static void cleanup_ref (zebra_image_t *img)
 
 /* make new image w/reference to the same image data */
 static void convert_copy (zebra_image_t *dst,
-                          const format_def_t *dstfmt,
+                          const zebra_format_def_t *dstfmt,
                           const zebra_image_t *src,
-                          const format_def_t *srcfmt)
+                          const zebra_format_def_t *srcfmt)
 {
     dst->data = src->data;
     dst->datalen = src->datalen;
@@ -293,9 +298,9 @@ static void convert_copy (zebra_image_t *dst,
 
 /* append neutral UV plane to grayscale image */
 static void convert_uvp_append (zebra_image_t *dst,
-                                const format_def_t *dstfmt,
+                                const zebra_format_def_t *dstfmt,
                                 const zebra_image_t *src,
-                                const format_def_t *srcfmt)
+                                const zebra_format_def_t *srcfmt)
 {
     uv_roundup(dst, dstfmt);
     dst->datalen = uvp_size(dst, dstfmt) * 2;
@@ -311,9 +316,9 @@ static void convert_uvp_append (zebra_image_t *dst,
 #if 0
 /* rearrange Y and UV samples */
 static void convert_yc_swap (zebra_image_t *dst,
-                             const format_def_t *dstfmt,
+                             const zebra_format_def_t *dstfmt,
                              const zebra_image_t *src,
-                             const format_def_t *srcfmt)
+                             const zebra_format_def_t *srcfmt)
 {
     uv_roundup(dst, dstfmt);
     dst->datalen = (dst->width * dst->height) * 2;
@@ -332,9 +337,9 @@ static void convert_yc_swap (zebra_image_t *dst,
 
 /* interleave YUV planes into packed YUV */
 static void convert_yuv_pack (zebra_image_t *dst,
-                              const format_def_t *dstfmt,
+                              const zebra_format_def_t *dstfmt,
                               const zebra_image_t *src,
-                              const format_def_t *srcfmt)
+                              const zebra_format_def_t *srcfmt)
 {
     assert(0);
     uv_roundup(dst, dstfmt);
@@ -386,9 +391,9 @@ static void convert_yuv_pack (zebra_image_t *dst,
  * FIXME currently ignores color and grayscales the image
  */
 static void convert_yuv_unpack (zebra_image_t *dst,
-                                const format_def_t *dstfmt,
+                                const zebra_format_def_t *dstfmt,
                                 const zebra_image_t *src,
-                                const format_def_t *srcfmt)
+                                const zebra_format_def_t *srcfmt)
 {
     uv_roundup(dst, dstfmt);
     size_t dstn = dst->width * dst->height;
@@ -421,9 +426,9 @@ static void convert_yuv_unpack (zebra_image_t *dst,
  * FIXME currently ignores color and grayscales the image
  */
 static void convert_uvp_resample (zebra_image_t *dst,
-                                  const format_def_t *dstfmt,
+                                  const zebra_format_def_t *dstfmt,
                                   const zebra_image_t *src,
-                                  const format_def_t *srcfmt)
+                                  const zebra_format_def_t *srcfmt)
 {
     assert(0);
     uv_roundup(dst, dstfmt);
@@ -438,9 +443,9 @@ static void convert_uvp_resample (zebra_image_t *dst,
 
 /* rearrange interleaved UV componets */
 static void convert_uv_resample (zebra_image_t *dst,
-                                 const format_def_t *dstfmt,
+                                 const zebra_format_def_t *dstfmt,
                                  const zebra_image_t *src,
-                                 const format_def_t *srcfmt)
+                                 const zebra_format_def_t *srcfmt)
 {
     assert(0);
     uv_roundup(dst, dstfmt);
@@ -482,65 +487,138 @@ static void convert_uv_resample (zebra_image_t *dst,
  * FIXME currently ignores color and grayscales the image
  */
 static void convert_yuvp_to_rgb (zebra_image_t *dst,
-                                 const format_def_t *dstfmt,
+                                 const zebra_format_def_t *dstfmt,
                                  const zebra_image_t *src,
-                                 const format_def_t *srcfmt)
+                                 const zebra_format_def_t *srcfmt)
 {
-#if 0
-    assert(0);
     dst->datalen = dst->width * dst->height * dstfmt->p.rgb.bpp;
     dst->data = malloc(dst->datalen);
     if(!dst->data) return;
-    uint8_t *dstp = dst->data;
+    uint8_t *dstp = (void*)dst->data;
+
+    int drbits = RGB_SIZE(dstfmt->p.rgb.red);
+    int drbit0 = RGB_OFFSET(dstfmt->p.rgb.red);
+    int dgbits = RGB_SIZE(dstfmt->p.rgb.green);
+    int dgbit0 = RGB_OFFSET(dstfmt->p.rgb.green);
+    int dbbits = RGB_SIZE(dstfmt->p.rgb.blue);
+    int dbbit0 = RGB_OFFSET(dstfmt->p.rgb.blue);
 
     size_t srcm = uvp_size(src, srcfmt);
     size_t srcn = src->width * src->height;
-    assert(src->datalen >= srcn + 2 * srcn);
-    uint8_t *srcy = src->data;
+    assert(src->datalen >= srcn + 2 * srcm);
+    uint8_t *srcy = (void*)src->data;
 
-    if(dstfmt->p.rgb.bpp == 4)
-        *(dstp++) = 0xff;
     ssize_t i;
     for(i = srcn; i; i--) {
+        /* FIXME color space? */
         unsigned y = *(srcy++);
-        if(y < 16)
-            y = 0;
-        else if(y > 235)
-            y = 255;
-        else
-            y = ((y - 16) * 255 + 109) / 219;
-
-        *(dstp++) = (y + rrnd) >> rprec << roff;
-
-        if(i && dstfmt->p.rgb.bpp == 4)
-            dstp++;
+        uint32_t p = (((y >> drbits) << drbit0) |
+                      ((y >> dgbits) << dgbit0) |
+                      ((y >> dbbits) << dbbit0));
+        convert_write_rgb(dstp, p, dstfmt->p.rgb.bpp);
+        dstp += dstfmt->p.rgb.bpp;
     }
-#endif
 }
 
-/* packed RGB to YUV planes */
+/* packed RGB to YUV planes
+ * FIXME currently ignores color and grayscales the image
+ */
 static void convert_rgb_to_yuvp (zebra_image_t *dst,
-                                 const format_def_t *dstfmt,
+                                 const zebra_format_def_t *dstfmt,
                                  const zebra_image_t *src,
-                                 const format_def_t *srcfmt)
+                                 const zebra_format_def_t *srcfmt)
 {
-    assert(0);
+    uv_roundup(dst, dstfmt);
+    size_t dstn = dst->width * dst->height;
+    size_t dstm2 = 0;
+    if(dstfmt->format != ZEBRA_FMT_GRAY)
+        dstm2 = uvp_size(dst, dstfmt) * 2;
+    dst->datalen = dstn + dstm2;
+    dst->data = malloc(dst->datalen);
+    if(!dst->data) return;
+    if(dstm2)
+        memset((void*)dst->data + dstn, 0x80, dstm2);
+    uint8_t *dsty = (void*)dst->data;
+
+    assert(src->datalen >= (src->width * src->height * srcfmt->p.rgb.bpp));
+    const uint8_t *srcp = src->data;
+
+    int rbits = RGB_SIZE(srcfmt->p.rgb.red);
+    int rbit0 = RGB_OFFSET(srcfmt->p.rgb.red);
+    int gbits = RGB_SIZE(srcfmt->p.rgb.green);
+    int gbit0 = RGB_OFFSET(srcfmt->p.rgb.green);
+    int bbits = RGB_SIZE(srcfmt->p.rgb.blue);
+    int bbit0 = RGB_OFFSET(srcfmt->p.rgb.blue);
+
+    ssize_t i;
+    for(i = dstn; i; i--) {
+        uint8_t r, g, b;
+        uint32_t p = convert_read_rgb(srcp, srcfmt->p.rgb.bpp);
+        srcp += srcfmt->p.rgb.bpp;
+
+        /* FIXME endianness? */
+        r = ((p >> rbit0) << rbits) & 0xff;
+        g = ((p >> gbit0) << gbits) & 0xff;
+        b = ((p >> bbit0) << bbits) & 0xff;
+
+        /* FIXME color space? */
+        uint16_t y = ((77 * r + 150 * g + 29 * b) + 0x80) >> 8;
+        *(dsty++) = y;
+    }
 }
 
 /* packed YUV to packed RGB */
 static void convert_yuv_to_rgb (zebra_image_t *dst,
-                                const format_def_t *dstfmt,
+                                const zebra_format_def_t *dstfmt,
                                 const zebra_image_t *src,
-                                const format_def_t *srcfmt)
+                                const zebra_format_def_t *srcfmt)
 {
-    assert(0);
+    size_t dstn = dst->width * dst->height;
+    dst->datalen = dstn * dstfmt->p.rgb.bpp;
+    dst->data = malloc(dst->datalen);
+    if(!dst->data) return;
+    uint8_t *dstp = (void*)dst->data;
+
+    int drbits = RGB_SIZE(dstfmt->p.rgb.red);
+    int drbit0 = RGB_OFFSET(dstfmt->p.rgb.red);
+    int dgbits = RGB_SIZE(dstfmt->p.rgb.green);
+    int dgbit0 = RGB_OFFSET(dstfmt->p.rgb.green);
+    int dbbits = RGB_SIZE(dstfmt->p.rgb.blue);
+    int dbbit0 = RGB_OFFSET(dstfmt->p.rgb.blue);
+
+    assert(src->datalen >= (src->width * src->height +
+                            uvp_size(src, srcfmt) * 2));
+    uint8_t flags = srcfmt->p.yuv.packorder ^ dstfmt->p.yuv.packorder;
+    flags &= 2;
+    const uint8_t *srcp = src->data;
+    if(flags)
+        srcp++;
+
+    ssize_t i;
+    for(i = dstn; i; i--) {
+        uint8_t y = *(srcp++);
+        srcp++;
+
+        if(y <= 16)
+            y = 0;
+        else if(y >= 235)
+            y = 255;
+        else
+            y = (uint16_t)(y - 16) * 255 / 219;
+
+        uint32_t p = (((y >> drbits) << drbit0) |
+                      ((y >> dgbits) << dgbit0) |
+                      ((y >> dbbits) << dbbit0));
+        convert_write_rgb(dstp, p, dstfmt->p.rgb.bpp);
+        dstp += dstfmt->p.rgb.bpp;
+    }
 }
 
 /* packed RGB to packed YUV */
 static void convert_rgb_to_yuv (zebra_image_t *dst,
-                                const format_def_t *dstfmt,
+                                const zebra_format_def_t *dstfmt,
                                 const zebra_image_t *src,
-                                const format_def_t *srcfmt)
+                                const zebra_format_def_t *srcfmt)
 {
     assert(0);
 }
@@ -548,9 +626,9 @@ static void convert_rgb_to_yuv (zebra_image_t *dst,
 #if 0
 /* packed RGB to Y plane + packed UV */
 static void convert_rgb_to_nv (zebra_image_t *dst,
-                               const format_def_t *dstfmt,
+                               const zebra_format_def_t *dstfmt,
                                const zebra_image_t *src,
-                               const format_def_t *srcfmt)
+                               const zebra_format_def_t *srcfmt)
 {
     assert(0);
 }
@@ -558,11 +636,52 @@ static void convert_rgb_to_nv (zebra_image_t *dst,
 
 /* resample and resize packed RGB components */
 static void convert_rgb_resample (zebra_image_t *dst,
-                                  const format_def_t *dstfmt,
+                                  const zebra_format_def_t *dstfmt,
                                   const zebra_image_t *src,
-                                  const format_def_t *srcfmt)
+                                  const zebra_format_def_t *srcfmt)
 {
-    assert(0);
+    size_t dstn = dst->width * dst->height;
+    dst->datalen = dstn * dstfmt->p.rgb.bpp;
+    dst->data = malloc(dst->datalen);
+    if(!dst->data) return;
+    uint8_t *dstp = (void*)dst->data;
+
+    int drbits = RGB_SIZE(dstfmt->p.rgb.red);
+    int drbit0 = RGB_OFFSET(dstfmt->p.rgb.red);
+    int dgbits = RGB_SIZE(dstfmt->p.rgb.green);
+    int dgbit0 = RGB_OFFSET(dstfmt->p.rgb.green);
+    int dbbits = RGB_SIZE(dstfmt->p.rgb.blue);
+    int dbbit0 = RGB_OFFSET(dstfmt->p.rgb.blue);
+
+    assert(src->datalen >= (src->width * src->height * srcfmt->p.rgb.bpp));
+    const uint8_t *srcp = src->data;
+
+    int srbits = RGB_SIZE(srcfmt->p.rgb.red);
+    int srbit0 = RGB_OFFSET(srcfmt->p.rgb.red);
+    int sgbits = RGB_SIZE(srcfmt->p.rgb.green);
+    int sgbit0 = RGB_OFFSET(srcfmt->p.rgb.green);
+    int sbbits = RGB_SIZE(srcfmt->p.rgb.blue);
+    int sbbit0 = RGB_OFFSET(srcfmt->p.rgb.blue);
+
+    ssize_t i;
+    for(i = dstn; i; i--) {
+        uint32_t p;
+        uint8_t r, g, b;
+        p = convert_read_rgb(srcp, srcfmt->p.rgb.bpp);
+        srcp += srcfmt->p.rgb.bpp;
+
+        /* FIXME endianness? */
+        r = ((p >> srbit0) << srbits) & 0xff;
+        g = ((p >> sgbit0) << sgbits) & 0xff;
+        b = ((p >> sbbit0) << sbbits) & 0xff;
+
+        p = (((r >> drbits) << drbit0) |
+             ((g >> dgbits) << dgbit0) |
+             ((b >> dbbits) << dbbit0));
+
+        convert_write_rgb(dstp, p, dstfmt->p.rgb.bpp);
+        dstp += dstfmt->p.rgb.bpp;
+    }
 }
 
 /* group conversion matrix */
@@ -604,9 +723,9 @@ static conversion_def_t conversions[][5] = {
     }
 };
 
-static inline const format_def_t *format_lookup (uint32_t fmt)
+const zebra_format_def_t *_zebra_format_lookup (uint32_t fmt)
 {
-    const format_def_t *def = NULL;
+    const zebra_format_def_t *def = NULL;
     int i = 0;
     while(i < num_format_defs) {
         def = &format_defs[i];
@@ -631,8 +750,8 @@ zebra_image_t *zebra_image_convert (const zebra_image_t *src,
         return(dst);
     }
 
-    const format_def_t *srcfmt = format_lookup(src->format);
-    const format_def_t *dstfmt = format_lookup(dst->format);
+    const zebra_format_def_t *srcfmt = _zebra_format_lookup(src->format);
+    const zebra_format_def_t *dstfmt = _zebra_format_lookup(dst->format);
     if(!srcfmt || !dstfmt)
         return(NULL);
 
@@ -644,7 +763,8 @@ zebra_image_t *zebra_image_convert (const zebra_image_t *src,
 
     conversion_handler_t *func =
         conversions[srcfmt->group][dstfmt->group].func;
-    
+
+    dst->cleanup = zebra_image_free_data;
     func(dst, dstfmt, src, srcfmt);
     return(dst);
 }
@@ -671,14 +791,14 @@ int _zebra_best_format (uint32_t src,
     }
     if(dst)
         *dst = 0;
-    const format_def_t *srcfmt = format_lookup(src);
+    const zebra_format_def_t *srcfmt = _zebra_format_lookup(src);
     if(!srcfmt)
         return(-1);
 
     zprintf(8, "from %.4s(%08x) to", (char*)&src, src);
     unsigned min_cost = -1;
     for(; *dsts; dsts++) {
-        const format_def_t *dstfmt = format_lookup(*dsts);
+        const zebra_format_def_t *dstfmt = _zebra_format_lookup(*dsts);
         if(!dstfmt) {
             
             continue;

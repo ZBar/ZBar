@@ -69,14 +69,21 @@ int zebra_window_attach (zebra_window_t *w,
 
 static inline int window_draw_overlay (zebra_window_t *w)
 {
-    /* FIXME TBD */
-    /* _zebra_draw_marker, _zebra_draw_line,
-     * _zebra_draw_polygon, _zebra_draw_text, etc...
+    /* FIXME TBD
+     * _zebra_draw_line, _zebra_draw_polygon, _zebra_draw_text, etc...
      */
     if(!w->overlay)
         return(0);
     if(w->overlay >= 1) {
-        /* outline each symbol */
+        /* FIXME outline each symbol */
+        const zebra_symbol_t *sym = zebra_image_first_symbol(w->image);
+        for(; sym; sym = sym->next) {
+            int i;
+            for(i = 0; i < sym->npts; i++) {
+                uint32_t color = ((sym->cache_count < 0) ? 4 : 2);
+                _zebra_window_draw_marker(w, color, &sym->pts[i]);
+            }
+        }
     }
     if(w->overlay >= 2) {
         /* calculate/display frame rate */

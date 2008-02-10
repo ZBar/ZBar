@@ -25,13 +25,49 @@
 #include "processor.h"
 #include <X11/keysym.h>
 
+static inline int window_alloc_colors (zebra_window_t *w)
+{
+    Colormap cmap = DefaultColormap(w->display, DefaultScreen(w->display));
+    XColor color;
+    int i;
+    for(i = 0; i < 8; i++) {
+        color.red   = (i & 4) ? (0xcc * 0x101) : 0;
+        color.green = (i & 2) ? (0xcc * 0x101) : 0;
+        color.blue  = (i & 1) ? (0xcc * 0x101) : 0;
+        color.flags = 0;
+        XAllocColor(w->display, cmap, &color);
+        w->colors[i] = color.pixel;
+    }
+    return(0);
+}
+
+static inline int window_hide_cursor (zebra_window_t *w)
+{
+    /* FIXME this seems lame...there must be a better way */
+    Pixmap empty = XCreatePixmap(w->display, w->xwin, 1, 1, 1);
+    GC gc = XCreateGC(w->display, empty, 0, NULL);
+    XDrawPoint(w->display, empty, gc, 0, 0);
+    XColor black;
+    memset(&black, 0, sizeof(black));
+    int screen = DefaultScreen(w->display);
+    black.pixel = BlackPixel(w->display, screen);
+    Cursor cursor =
+        XCreatePixmapCursor(w->display, empty, empty, &black, &black, 0, 0);
+    XDefineCursor(w->display, w->xwin, cursor);
+    XFreeCursor(w->display, cursor);
+    XFreeGC(w->display, gc);
+    XFreePixmap(w->display, empty);
+    return(0);
+}
+
 int _zebra_window_attach (zebra_window_t *w,
                           void *display,
                           unsigned long win)
 {
-    if(w->display)
+    if(w->display) {
         /* FIXME cleanup existing resources? */
         w->display = NULL;
+    }
     w->xwin = 0;
 
     if(!display || !win)
@@ -45,19 +81,8 @@ int _zebra_window_attach (zebra_window_t *w,
     w->width = attr.width;
     w->height = attr.height;
 
-    /* FIXME this seems lame...there must be a better way */
-    Pixmap empty = XCreatePixmap(display, win, 1, 1, 1);
-    GC gc = XCreateGC(display, empty, 0, NULL);
-    XDrawPoint(display, empty, gc, 0, 0);
-    XColor black;
-    memset(&black, 0, sizeof(black));
-    int screen = DefaultScreen(w->display);
-    black.pixel = BlackPixel(w->display, screen);
-    Cursor cursor =
-        XCreatePixmapCursor(display, empty, empty, &black, &black, 0, 0);
-    XDefineCursor(display, win, cursor);
-    XFreeCursor(display, cursor);
-    XFreePixmap(display, empty);
+    window_alloc_colors(w);
+    window_hide_cursor(w);
 
     /* FIXME add interface preference override */
 #ifdef HAVE_X11_EXTENSIONS_XVLIB_H
@@ -252,43 +277,32 @@ int _zebra_window_clear (zebra_window_t *w)
     return(0);
 }
 
-#if 0
-
-/* FIXME draw to pixmap and use that */
-static const char marker[] = {  /* +--------------+ */
-    0x08,                       /* |      **      | */
-    0x3e,                       /* |  **********  | */
-    0x2a,                       /* |  **  **  **  | */
-    0x7f,                       /* |**************| */
-    0x2a,                       /* |  **  **  **  | */
-    0x3e,                       /* |  **********  | */
-    0x08,                       /* |      **      | */
-};                              /* +--------------+ */
-
-int _zebra_window_draw_marker (zebra_window_t *w,
-                               point_t *pt)
+int _zebra_window_draw_marker(zebra_window_t *w,
+                              uint32_t rgb,
+                              const point_t *p)
 {
-    int x = pt->x;
+    GC gc = DefaultGC(w->display, DefaultScreen(w->display));
+    XSetForeground(w->display, gc, w->colors[rgb]);
+
+    int x = p->x;
     if(x < 3)
         x = 3;
     else if(x > w->width - 4)
         x = w->width - 4;
 
-    int y = pt->y;
+    int y = p->y;
     if(y < 3)
         y = 3;
     else if(y > w->height - 4)
         y = w->height - 4;
 
-    uint8_t *p = screen->pixels + 3 * ((x - 3) + (y - 3) * vwin.width) + 2;
-    for(y = 0; y < 7; y++) {
-        char m = marker[y];
-        for(x = 0; x < 7; x++, p += 3, m >>= 1)
-            if(m & 1)
-                *p = 0xff;
-        p += (vwin.width - 7) * 3;
-    }
+    XDrawRectangle(w->display, w->xwin, gc, x - 2, y - 2, 4, 4);
+    XDrawLine(w->display, w->xwin, gc, x, y - 3, x, y + 3);
+    XDrawLine(w->display, w->xwin, gc, x - 3, y, x + 3, y);
+    return(0);
 }
+
+#if 0
 
 int _zebra_window_draw_line (zebra_window_t*, point_t*, point_t*)
 {

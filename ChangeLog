@@ -1,4 +1,10 @@
 current:
+  * add XImage formats
+    - basic support for 16-bit depths
+  * add some missing rgb format conversions
+  * add basic overlay
+    - currently only markers at detected scan locations (needs improved)
+  * fix memory leak for converted images w/new cleanup semantics
   * migrate inter-frame consistency check from old zebracam into image_scanner
     - add API to enable/disable/flush result cache
     - add API to retrieve cache status from returned symbol

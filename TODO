@@ -1,9 +1,4 @@
 pre-release:
-  * output overlay
-  * finish error handling
-  * determine supported ximage formats
-  * add XShm support
-  * handle video destroyed w/images outstanding
   * API to query used interface (video, window?) (/format?)
   * force specific format (debug/test only?)
   * verify support for other X visuals (16 bit depth)
@@ -11,9 +6,10 @@ pre-release:
   * update man pages
   * update web page
   * test_decode EAN broken?
-  * stats/fps at zebracam exit
 
 general:
+  * finish error handling
+  * handle video destroyed w/images outstanding
   * cleanup c++ error handling
   * hook up doxygen (or robodoc?) for API docs
   * profile and weed out obvious oversights
@@ -29,13 +25,17 @@ decoder:
   * option to emit check digit (default?)
 
 image scanner:
+  * extract and track symbol polygons
   * configurable pattern density
   * space lead in/out from each scan line
 
 window:
+  * add XShm support
+  * X protocol error handling
   * mode to preserve aspect ratio (default?)
   * simple image manipulations scale(xv?)/mirror
 
 zebracam/zebraimg:
+  * stats/fps at zebracam exit
   * xml output format
   * decode hook (program/script)? (also zebraimg?)

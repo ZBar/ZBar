@@ -22,6 +22,7 @@
  *------------------------------------------------------------------------*/
 
 #include "processor.h"
+#include <signal.h>
 #include <time.h>
 #include <assert.h>
 #include <errno.h>
@@ -292,10 +293,18 @@ static inline void proc_cache_polling (zebra_processor_t *proc)
     proc_unlock(proc);
 }
 
+static inline void proc_block_sigs ()
+{
+    sigset_t sigs;
+    sigfillset(&sigs);
+    pthread_sigmask(SIG_BLOCK, &sigs, NULL);
+}
+
 /* input handler thread to poll available inputs */
 static void *proc_input_thread (void *arg)
 {
     zebra_processor_t *proc = arg;
+    proc_block_sigs();
 
     /* wait for registered inputs and process using associated handler */
     while(1) {
@@ -319,6 +328,8 @@ static void *proc_input_thread (void *arg)
 static void *proc_video_thread (void *arg)
 {
     zebra_processor_t *proc = arg;
+    proc_block_sigs();
+
     proc_lock(proc);
     while(1) {
         /* wait for active to be set */
@@ -334,7 +345,8 @@ static void *proc_video_thread (void *arg)
 
         /* unlocked blocking image input */
         zebra_image_t *img = zebra_video_next_image(proc->video);
-        assert(img);
+        if(!img)
+            return(NULL);
         proc_lock(proc);
         if(proc->active)
             process_image(proc, img);
