@@ -20,8 +20,7 @@ BUILDING
 See 'INSTALL' for generic configuration and build instructions.
 
 The scanner/decoder library itself only requires a few standard
-library functions which should be avilable almost anywhere (and if
-they're not, you probably already know how to define them)
+library functions which should be avilable almost anywhere.
 
 The zebraimg program uses ImageMagick to read image files in many
 different formats, you can obtain it from
@@ -32,8 +31,8 @@ video device.  This interface is part of the linux kernel.  More
 information is available at
     http://linuxtv.org/v4lwiki/
 
-If required libraries are not available the corresponding program will
-not be built.
+If required libraries are not available you may disable building for
+the corresponding program using configure (see configure --help).
 
 
 RUNNING

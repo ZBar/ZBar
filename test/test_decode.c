@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -195,7 +195,7 @@ static const unsigned char ean_parity_encode[] = {
 static void encode_ean13 (unsigned char *data)
 {
     int i;
-    unsigned char par = ean_parity_encode[data[0]];
+    unsigned char par = ean_parity_encode[data[0] - '0'];
 
     printf("------------------------------------------------------------\n"
            "encode EAN-13: %s (%02x)\n"

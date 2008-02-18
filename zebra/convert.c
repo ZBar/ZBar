@@ -29,8 +29,6 @@
  */
 #define RGB_BITS(off, size) ((((8 - (size)) & 0x7) << 5) | ((off) & 0x1f))
 
-extern int _zebra_video_init(zebra_video_t*, uint32_t);
-
 typedef void (conversion_handler_t)(zebra_image_t*,
                                     const zebra_format_def_t*,
                                     const zebra_image_t*,
@@ -114,49 +112,51 @@ static const int num_format_prefs =
 /* format definitions */
 static const zebra_format_def_t format_defs[] = {
 
-    { fourcc('B','G','R','4'), ZEBRA_FMT_RGB_PACKED,
-        { { 4, RGB_BITS(16, 8), RGB_BITS(8, 8), RGB_BITS(0, 8) } } },
-    { fourcc('Y','U','1','2'), ZEBRA_FMT_YUV_PLANAR, { { 1, 1, 0 /*UV*/ } } },
-    { fourcc('R','G','B','R'), ZEBRA_FMT_RGB_PACKED,
-        { { 2, RGB_BITS(3, 5), RGB_BITS(13, 6), RGB_BITS(8, 5) } } },
+    { fourcc('R','G','B','4'), ZEBRA_FMT_RGB_PACKED,
+        { { 4, RGB_BITS(8, 8), RGB_BITS(16, 8), RGB_BITS(24, 8) } } },
+    { fourcc('B','G','R','1'), ZEBRA_FMT_RGB_PACKED,
+        { { 1, RGB_BITS(0, 3), RGB_BITS(3, 3), RGB_BITS(6, 2) } } },
+    { fourcc('R','G','B','Q'), ZEBRA_FMT_RGB_PACKED,
+        { { 2, RGB_BITS(2, 5), RGB_BITS(13, 5), RGB_BITS(8, 5) } } },
     { fourcc('Y','8','0','0'), ZEBRA_FMT_GRAY, },
-    { fourcc('R','G','B','3'), ZEBRA_FMT_RGB_PACKED,
-        { { 3, RGB_BITS(0, 8), RGB_BITS(8, 8), RGB_BITS(16, 8) } } },
-    { fourcc('4','1','1','P'), ZEBRA_FMT_YUV_PLANAR, { { 2, 0, 0 /*UV*/ } } },
+    { fourcc('Y','U','Y','2'), ZEBRA_FMT_YUV_PACKED,
+        { { 1, 0, 0, /*YUYV*/ } } },
+    { fourcc('R','G','B','O'), ZEBRA_FMT_RGB_PACKED,
+        { { 2, RGB_BITS(10, 5), RGB_BITS(5, 5), RGB_BITS(0, 5) } } },
     { fourcc('G','R','E','Y'), ZEBRA_FMT_GRAY, },
     { fourcc('Y','8', 0 , 0 ), ZEBRA_FMT_GRAY, },
     { fourcc('N','V','2','1'), ZEBRA_FMT_YUV_NV,     { { 1, 1, 1 /*VU*/ } } },
-    { fourcc('Y','V','1','2'), ZEBRA_FMT_YUV_PLANAR, { { 1, 1, 1 /*VU*/ } } },
-    { fourcc('R','4','4','4'), ZEBRA_FMT_RGB_PACKED,
-        { { 2, RGB_BITS(8, 4), RGB_BITS(4, 4), RGB_BITS(0, 4) } } },
-    { fourcc('Y','U','V','9'), ZEBRA_FMT_YUV_PLANAR, { { 2, 2, 0 /*UV*/ } } },
-    { fourcc('R','G','B','P'), ZEBRA_FMT_RGB_PACKED,
-        { { 2, RGB_BITS(11, 5), RGB_BITS(5, 6), RGB_BITS(0, 5) } } },
-    { fourcc('Y','U','Y','V'), ZEBRA_FMT_YUV_PACKED,
-        { { 1, 0, 0, /*YUYV*/ } } },
+    { fourcc('N','V','1','2'), ZEBRA_FMT_YUV_NV,     { { 1, 1, 0 /*UV*/ } } },
+    { fourcc('B','G','R','3'), ZEBRA_FMT_RGB_PACKED,
+        { { 3, RGB_BITS(16, 8), RGB_BITS(8, 8), RGB_BITS(0, 8) } } },
+    { fourcc('Y','V','U','9'), ZEBRA_FMT_YUV_PLANAR, { { 2, 2, 1 /*VU*/ } } },
+    { fourcc('4','2','2','P'), ZEBRA_FMT_YUV_PLANAR, { { 1, 0, 0 /*UV*/ } } },
+    { fourcc('Y','V','Y','U'), ZEBRA_FMT_YUV_PACKED,
+        { { 1, 0, 1, /*YVYU*/ } } },
     { fourcc('U','Y','V','Y'), ZEBRA_FMT_YUV_PACKED,
         { { 1, 0, 2, /*UYVY*/ } } },
     { fourcc( 3 , 0 , 0 , 0 ), ZEBRA_FMT_RGB_PACKED,
-        { { 4, RGB_BITS(8, 8), RGB_BITS(16, 8), RGB_BITS(24, 8) } } },
+        { { 4, RGB_BITS(16, 8), RGB_BITS(8, 8), RGB_BITS(0, 8) } } },
     { fourcc('Y','8',' ',' '), ZEBRA_FMT_GRAY, },
     { fourcc('I','4','2','0'), ZEBRA_FMT_YUV_PLANAR, { { 1, 1, 0 /*UV*/ } } },
     { fourcc('R','G','B','1'), ZEBRA_FMT_RGB_PACKED,
         { { 1, RGB_BITS(5, 3), RGB_BITS(2, 3), RGB_BITS(0, 2) } } },
-    { fourcc('N','V','1','2'), ZEBRA_FMT_YUV_NV,     { { 1, 1, 0 /*UV*/ } } },
-    { fourcc('Y','U','Y','2'), ZEBRA_FMT_YUV_PACKED,
+    { fourcc('Y','U','1','2'), ZEBRA_FMT_YUV_PLANAR, { { 1, 1, 0 /*UV*/ } } },
+    { fourcc('Y','V','1','2'), ZEBRA_FMT_YUV_PLANAR, { { 1, 1, 1 /*VU*/ } } },
+    { fourcc('R','G','B','3'), ZEBRA_FMT_RGB_PACKED,
+        { { 3, RGB_BITS(0, 8), RGB_BITS(8, 8), RGB_BITS(16, 8) } } },
+    { fourcc('R','4','4','4'), ZEBRA_FMT_RGB_PACKED,
+        { { 2, RGB_BITS(8, 4), RGB_BITS(4, 4), RGB_BITS(0, 4) } } },
+    { fourcc('B','G','R','4'), ZEBRA_FMT_RGB_PACKED,
+        { { 4, RGB_BITS(16, 8), RGB_BITS(8, 8), RGB_BITS(0, 8) } } },
+    { fourcc('Y','U','V','9'), ZEBRA_FMT_YUV_PLANAR, { { 2, 2, 0 /*UV*/ } } },
+    { fourcc('4','1','1','P'), ZEBRA_FMT_YUV_PLANAR, { { 2, 0, 0 /*UV*/ } } },
+    { fourcc('R','G','B','P'), ZEBRA_FMT_RGB_PACKED,
+        { { 2, RGB_BITS(11, 5), RGB_BITS(5, 6), RGB_BITS(0, 5) } } },
+    { fourcc('R','G','B','R'), ZEBRA_FMT_RGB_PACKED,
+        { { 2, RGB_BITS(3, 5), RGB_BITS(13, 6), RGB_BITS(8, 5) } } },
+    { fourcc('Y','U','Y','V'), ZEBRA_FMT_YUV_PACKED,
         { { 1, 0, 0, /*YUYV*/ } } },
-    { fourcc('B','G','R','3'), ZEBRA_FMT_RGB_PACKED,
-        { { 3, RGB_BITS(16, 8), RGB_BITS(8, 8), RGB_BITS(0, 8) } } },
-    { fourcc('R','G','B','4'), ZEBRA_FMT_RGB_PACKED,
-        { { 4, RGB_BITS(8, 8), RGB_BITS(16, 8), RGB_BITS(24, 8) } } },
-    { fourcc('Y','V','U','9'), ZEBRA_FMT_YUV_PLANAR, { { 2, 2, 1 /*VU*/ } } },
-    { fourcc('R','G','B','O'), ZEBRA_FMT_RGB_PACKED,
-        { { 2, RGB_BITS(10, 5), RGB_BITS(5, 5), RGB_BITS(0, 5) } } },
-    { fourcc('4','2','2','P'), ZEBRA_FMT_YUV_PLANAR, { { 1, 0, 0 /*UV*/ } } },
-    { fourcc('R','G','B','Q'), ZEBRA_FMT_RGB_PACKED,
-        { { 2, RGB_BITS(2, 5), RGB_BITS(13, 5), RGB_BITS(8, 5) } } },
-    { fourcc('Y','V','Y','U'), ZEBRA_FMT_YUV_PACKED,
-        { { 1, 0, 1, /*YVYU*/ } } },
 };
 
 static const int num_format_defs =
@@ -313,28 +313,6 @@ static void convert_uvp_append (zebra_image_t *dst,
     memset((void*)dst->data + n, 0x80, dst->datalen - n);
 }
 
-#if 0
-/* rearrange Y and UV samples */
-static void convert_yc_swap (zebra_image_t *dst,
-                             const zebra_format_def_t *dstfmt,
-                             const zebra_image_t *src,
-                             const zebra_format_def_t *srcfmt)
-{
-    uv_roundup(dst, dstfmt);
-    dst->datalen = (dst->width * dst->height) * 2;
-    dst->data = malloc(dst->datalen);
-    if(!dst->data) return;
-    uint32_t *dstp = dst->data;
-    uint32_t *srcp = src->data;
-    ssize_t i;
-    for(i = dst->datalen / 4; i; i--) {
-        /* NB this works for both LE and BE */
-        register uint32_t src = *(srcp++);
-        *(dstp++) = ((src & 0xff00ff00) >> 8) | ((src & 0x00ff00ff) << 8);
-    }
-}
-#endif
-
 /* interleave YUV planes into packed YUV */
 static void convert_yuv_pack (zebra_image_t *dst,
                               const zebra_format_def_t *dstfmt,
@@ -387,7 +365,7 @@ static void convert_yuv_pack (zebra_image_t *dst,
     }
 }
 
-/* join packed YUV samples into YUV planes
+/* split packed YUV samples and join into YUV planes
  * FIXME currently ignores color and grayscales the image
  */
 static void convert_yuv_unpack (zebra_image_t *dst,
@@ -447,7 +425,6 @@ static void convert_uv_resample (zebra_image_t *dst,
                                  const zebra_image_t *src,
                                  const zebra_format_def_t *srcfmt)
 {
-    assert(0);
     uv_roundup(dst, dstfmt);
     ssize_t dstn = dst->width * dst->height;
     dst->datalen = dstn + uvp_size(dst, dstfmt) * 2;
@@ -588,10 +565,8 @@ static void convert_yuv_to_rgb (zebra_image_t *dst,
 
     assert(src->datalen >= (src->width * src->height +
                             uvp_size(src, srcfmt) * 2));
-    uint8_t flags = srcfmt->p.yuv.packorder ^ dstfmt->p.yuv.packorder;
-    flags &= 2;
     const uint8_t *srcp = src->data;
-    if(flags)
+    if(srcfmt->p.yuv.packorder & 2)
         srcp++;
 
     ssize_t i;
@@ -622,17 +597,6 @@ static void convert_rgb_to_yuv (zebra_image_t *dst,
 {
     assert(0);
 }
-
-#if 0
-/* packed RGB to Y plane + packed UV */
-static void convert_rgb_to_nv (zebra_image_t *dst,
-                               const zebra_format_def_t *dstfmt,
-                               const zebra_image_t *src,
-                               const zebra_format_def_t *srcfmt)
-{
-    assert(0);
-}
-#endif
 
 /* resample and resize packed RGB components */
 static void convert_rgb_resample (zebra_image_t *dst,
@@ -671,9 +635,9 @@ static void convert_rgb_resample (zebra_image_t *dst,
         srcp += srcfmt->p.rgb.bpp;
 
         /* FIXME endianness? */
-        r = ((p >> srbit0) << srbits) & 0xff;
-        g = ((p >> sgbit0) << sgbits) & 0xff;
-        b = ((p >> sbbit0) << sbbits) & 0xff;
+        r = (p >> srbit0) << srbits;
+        g = (p >> sgbit0) << sgbits;
+        b = (p >> sbbit0) << sbbits;
 
         p = (((r >> drbits) << drbit0) |
              ((g >> dgbits) << dgbit0) |
@@ -871,5 +835,5 @@ int zebra_negotiate_format (zebra_video_t *vdo,
 
     zprintf(2, "setting best format %.4s(%08x) (%d)\n",
             (char*)&min_fmt, min_fmt, min_cost);
-    return(_zebra_video_init(vdo, min_fmt));
+    return(zebra_video_init(vdo, min_fmt));
 }

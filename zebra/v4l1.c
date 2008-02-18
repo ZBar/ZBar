@@ -59,10 +59,15 @@ static const v4l1_format_t v4l1_formats[17] = {
     { 0,                         0 },
     { fourcc('G','R','E','Y'),   8 }, /* GREY */
     { fourcc('H','I','2','4'),   8 }, /* HI240 (BT848) */
-    { fourcc('R','G','B','P'),  16 }, /* RGB565 (possibly RGBR) */
-    { fourcc('R','G','B','3'),  24 }, /* RGB24  (possibly BGR3) */
-    { fourcc('R','G','B','4'),  32 }, /* RGB32  (possibly BGR4) */
-    { fourcc('R','G','B','O'),  16 }, /* RGB555 (possibly RGBQ) */
+
+    /* component ordering for RGB palettes is unspecified,
+     * convention appears to place red in the most significant bits
+     * FIXME is this true for other drivers? big endian machines?
+     */
+    { fourcc('R','G','B','P'),  16 }, /* RGB565 */
+    { fourcc('B','G','R','3'),  24 }, /* RGB24 */
+    { fourcc('B','G','R','4'),  32 }, /* RGB32 */
+    { fourcc('R','G','B','O'),  16 }, /* RGB555 */
     { fourcc('Y','U','Y','2'),  16 }, /* YUV422 (8 bpp?!) */
     { fourcc('Y','U','Y','V'),  16 }, /* YUYV */
     { fourcc('U','Y','V','Y'),  16 }, /* UYVY */

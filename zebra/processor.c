@@ -123,6 +123,13 @@ static inline int process_image (zebra_processor_t *proc,
                 /* FIXME only call after filtering (unlocked...?) */
                 proc->handler(img, proc->userdata);
         }
+
+        if(proc->force_output) {
+            img = zebra_image_convert(img, proc->force_output);
+            if(!img)
+                return(err_capture(proc, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED,
+                                   __func__, "unknown image format"));
+        }
     }
 
     /* display to window if enabled */
@@ -131,6 +138,8 @@ static inline int process_image (zebra_processor_t *proc,
         /* FIXME still don't understand why we need this */
         _zebra_window_handle_events(proc, 0)))
         return(-1);
+    if(proc->force_output && img)
+        zebra_image_destroy(img);
     return(0);
 }
 
@@ -501,7 +510,11 @@ int zebra_processor_init (zebra_processor_t *proc,
         }
     }
 
-    if(proc->video)
+    if(proc->video && proc->force_input) {
+        if(zebra_video_init(proc->video, proc->force_input))
+            rc = err_copy(proc, proc->video);
+    }
+    else if(proc->video)
         while(zebra_negotiate_format(proc->video, proc->window)) {
             if(proc->video && proc->window) {
                 fprintf(stderr,
@@ -536,6 +549,15 @@ zebra_processor_set_data_handler (zebra_processor_t *proc,
     proc->userdata = userdata;
     proc_unlock(proc);
     return(result);
+}
+
+int zebra_processor_force_format (zebra_processor_t *proc,
+                                   unsigned long input,
+                                   unsigned long output)
+{
+    proc->force_input = input;
+    proc->force_output = output;
+    return(0);
 }
 
 int zebra_processor_is_visible (zebra_processor_t *proc)

@@ -274,6 +274,13 @@ extern int zebra_processor_init(zebra_processor_t *processor,
                                 const char *video_device,
                                 int enable_display);
 
+/* force specific input and output formats for debug/testing.
+ * must be called before zebra_processor_init()
+ */
+extern int zebra_processor_force_format (zebra_processor_t *processor,
+                                         unsigned long input_format,
+                                         unsigned long output_format);
+
 /* setup result handler callback.
  * the specified function will be called by the processor whenever
  * new results are available from the video stream or a static image.
@@ -401,6 +408,13 @@ extern int zebra_video_get_width(const zebra_video_t *video);
  * returns 0 if the video device is not open
  */
 extern int zebra_video_get_height(const zebra_video_t *video);
+
+/* initialize video using a specific format, used for debug.
+ * use zebra_negotiate_format() to automatically select and initialize
+ * the best available format
+ */
+extern int zebra_video_init(zebra_video_t *video,
+                            unsigned long format);
 
 /* start/stop video capture.
  * all buffered images are retired when capture is disabled.

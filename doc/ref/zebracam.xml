@@ -46,6 +46,10 @@
     file (major number 81 and minor number 0 thru 63).  It defaults to
     <filename>/dev/video0</filename></para>
 
+    <para>The underlying library currently supports EAN-13 (including
+    UPC-A) and Code 128 symbologies.  The specific type of each
+    detected symbol is printed with the decoded data.</para>
+
   </refsection>
 
   <refsection>
@@ -84,7 +88,8 @@
         <term><option>--nodisplay</option></term>
         <listitem>
           <simpara>Disable output video window.  Video input will be
-          scanned until the program is interrupted or signaled</simpara>
+          scanned until the program is interrupted or otherwise
+          signaled</simpara>
         </listitem>
       </varlistentry>
 
@@ -101,6 +106,22 @@
       </varlistentry>
 
     </variablelist>
+  </refsection>
+
+  <refsection>
+    <title>Examples</title>
+
+    <para>Scan for barcodes using the second video device and pipe the
+    resulting data through a script that searches for each code in a
+    database and does something useful with them:
+
+    <screen><command>zebracam</command> <filename>/dev/video1</filename> | <command>upcrpc.py</command></screen>
+
+    The <command>upcrpc.py</command> example script included in the
+    <filename>examples/</filename> subdirectory of the distribution
+    will make an XMLRPC call to a popular internet UPC database and
+    print the product description if found.</para>
+
   </refsection>
 
   <refsection>

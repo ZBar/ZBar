@@ -251,6 +251,7 @@ int _zebra_window_resize (zebra_processor_t *proc,
                           unsigned height)
 {
     XResizeWindow(proc->display, proc->xwin, width, height);
+    _zebra_window_clear(proc->window);
     XFlush(proc->display);
     return(0);
 }
@@ -301,19 +302,3 @@ int _zebra_window_draw_marker(zebra_window_t *w,
     XDrawLine(w->display, w->xwin, gc, x - 3, y, x + 3, y);
     return(0);
 }
-
-#if 0
-
-int _zebra_window_draw_line (zebra_window_t*, point_t*, point_t*)
-{
-}
-
-int _zebra_window_draw_outline (zebra_window_t*, symbol_t*)
-{
-}
-
-int _zebra_window_draw_text (zebra_window_t*, point_t*, const char*)
-{
-}
-
-#endif

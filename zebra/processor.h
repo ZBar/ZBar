@@ -62,6 +62,9 @@ struct zebra_processor_s {
 
     zebra_image_data_handler_t *handler; /* application data handler */
 
+    uint32_t force_input;               /* force input format (debug) */
+    uint32_t force_output;              /* force format conversion (debug) */
+
     /* state flags */
     unsigned threaded      : 1;         /* threading requested */
     unsigned visible       : 1;         /* output window mapped to display */

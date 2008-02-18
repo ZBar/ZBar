@@ -48,6 +48,10 @@
     prints any decoded data to stdout.  Images may optionally be
     displayed to the screen</para>
 
+    <para>The underlying library currently supports EAN-13 (including
+    UPC-A) and Code 128 symbologies.  The specific type of each
+    detected symbol is printed with the decoded data.</para>
+
   </refsection>
 
   <refsection>
@@ -125,13 +129,19 @@
   </refsection>
 
   <refsection>
-    <title>Example</title>
+    <title>Examples</title>
 
     <para>Scan a JPEG image of a UPC bar code symbol and pass
-    resulting data to another program (not provided) that searches for
-    the code in a database and does something useful with it:
+    resulting data to a script that searches for the code in a
+    database and does something useful with it:
 
-    <screen><command>zebraimg</command> <filename>product.jpg</filename> | <command>lookup_upc.pl</command></screen></para>
+    <screen><command>zebraimg</command> <filename>product.jpg</filename> | <command>upcrpc.py</command></screen>
+
+    The <command>upcrpc.py</command> example script included in the
+    <filename>examples/</filename> subdirectory of the distribution
+    will make an XMLRPC call to a popular internet UPC database and
+    print the product description if found.</para>
+
   </refsection>
 
   <refsection>

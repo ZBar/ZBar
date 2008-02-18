@@ -38,7 +38,8 @@ static inline int ximage_init (zebra_window_t *w,
         free(w->img.x);
         w->img.x = NULL;
     }
-    if(w->img_format != img->format) {
+    if(w->img_format != img->format &&
+       w->format != img->format) {
         _zebra_best_format(img->format, &w->format, w->formats);
         if(!w->format) {
             err_capture_int(w, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
@@ -61,13 +62,13 @@ static inline int ximage_init (zebra_window_t *w,
     if(fmt->group == ZEBRA_FMT_RGB_PACKED) {
         ximg->depth = ximg->bits_per_pixel = fmt->p.rgb.bpp << 3;
         ximg->red_mask =
-            ((1 << (8 - RGB_SIZE(fmt->p.rgb.red))) - 1)
+            (0xff >> RGB_SIZE(fmt->p.rgb.red))
             << RGB_OFFSET(fmt->p.rgb.red);
         ximg->green_mask =
-            ((1 << (8 - RGB_SIZE(fmt->p.rgb.green))) - 1)
+            (0xff >> RGB_SIZE(fmt->p.rgb.green))
             << RGB_OFFSET(fmt->p.rgb.green);
         ximg->blue_mask =
-            ((1 << (8 - RGB_SIZE(fmt->p.rgb.blue))) - 1)
+            (0xff >> RGB_SIZE(fmt->p.rgb.blue))
             << RGB_OFFSET(fmt->p.rgb.blue);
     }
     else {
@@ -79,6 +80,11 @@ static inline int ximage_init (zebra_window_t *w,
         return(err_capture_int(w, SEV_ERROR, ZEBRA_ERR_XPROTO, __func__,
                                "unable to init XImage for format %08x",
                                w->format));
+    zprintf(3, "new XImage %.4s(%08x) %dx%d from %.4s(%08x) %dx%d\n",
+            (char*)&w->format, w->format, ximg->width, ximg->height,
+            (char*)&img->format, img->format, img->width, img->height);
+    zprintf(4, "    masks: %08lx %08lx %08lx\n",
+            ximg->red_mask, ximg->green_mask, ximg->blue_mask);
     return(0);
 }
 
@@ -87,9 +93,10 @@ static int ximage_draw (zebra_window_t *w,
 {
     XImage *ximg = w->img.x;
     if(!ximg ||
-       w->img_format != img->format ||
-       ximg->width != w->width || ximg->height != w->height ||
-       ximg->width != img->width || ximg->height != img->height) {
+       (w->img_format != img->format &&
+        w->format != img->format) ||
+       ximg->width != img->width ||
+       ximg->height != img->height) {
         if(ximage_init(w, img))
             return(-1);
         ximg = w->img.x;
@@ -133,6 +140,7 @@ static uint32_t ximage_formats[4][5] = {
     {   /* 8bpp */
         /* FIXME fourcc('Y','8','0','0'), */
         fourcc('R','G','B','1'),
+        fourcc('B','G','R','1'),
         0
     },
     {   /* 16bpp */
@@ -153,6 +161,36 @@ static uint32_t ximage_formats[4][5] = {
     },
 };
 
+static int ximage_probe_format (zebra_window_t *w,
+                                uint32_t format)
+{
+    const zebra_format_def_t *fmt = _zebra_format_lookup(format);
+
+    XVisualInfo visreq, *visuals = NULL;
+    memset(&visreq, 0, sizeof(XVisualInfo));
+
+    visreq.depth = fmt->p.rgb.bpp << 3;
+    visreq.red_mask =
+        (0xff >> RGB_SIZE(fmt->p.rgb.red)) << RGB_OFFSET(fmt->p.rgb.red);
+    visreq.green_mask =
+        (0xff >> RGB_SIZE(fmt->p.rgb.green)) << RGB_OFFSET(fmt->p.rgb.green);
+    visreq.blue_mask =
+        (0xff >> RGB_SIZE(fmt->p.rgb.blue)) << RGB_OFFSET(fmt->p.rgb.blue);
+
+    int n;
+    visuals = XGetVisualInfo(w->display,
+                             VisualDepthMask | VisualRedMaskMask |
+                             VisualGreenMaskMask | VisualBlueMaskMask,
+                             &visreq, &n);
+    if(!visuals)
+        return(1);
+    XFree(visuals);
+    if(!n)
+        return(-1);
+
+    return(0);
+}
+
 int _zebra_window_probe_ximage (zebra_window_t *w)
 {
     /* FIXME determine supported formats/depths */
@@ -172,14 +210,18 @@ int _zebra_window_probe_ximage (zebra_window_t *w)
             continue;
         }
         int fmtidx = formats[i].depth / 8 - 1;
-        int j;
-        for(j = 0; ximage_formats[fmtidx][j]; j++) {
-            zprintf(2, "    [%d] depth=%d bpp=%d: %.4s(%08x)\n",
-                    i, formats[i].depth, formats[i].bits_per_pixel,
-                    (char*)&ximage_formats[fmtidx][j],
-                    ximage_formats[fmtidx][j]);
-            _zebra_window_add_format(w, ximage_formats[fmtidx][j]);
-        }
+        int j, n = 0;
+        for(j = 0; ximage_formats[fmtidx][j]; j++)
+            if(!ximage_probe_format(w, ximage_formats[fmtidx][j])) {
+                zprintf(2, "    [%d] depth=%d bpp=%d: %.4s(%08x)\n",
+                        i, formats[i].depth, formats[i].bits_per_pixel,
+                        (char*)&ximage_formats[fmtidx][j],
+                        ximage_formats[fmtidx][j]);
+                _zebra_window_add_format(w, ximage_formats[fmtidx][j]);
+            }
+        if(!n)
+            zprintf(2, "    [%d] depth=%d bpp=%d: no visuals\n",
+                    i, formats[i].depth, formats[i].bits_per_pixel);
     }
     XFree(formats);
 

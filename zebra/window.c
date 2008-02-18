@@ -133,5 +133,6 @@ int zebra_window_resize (zebra_window_t *w,
 {
     w->width = width;
     w->height = height;
-    return(0);
+    _zebra_window_clear(w);
+    return(zebra_window_redraw(w));
 }

@@ -1,4 +1,12 @@
 current:
+  * fix zebracam beeps
+  * fix some RGB component ordering and XImage format problems
+  * fix window resize and redraw state problems
+  * fix EAN testcase in test_decode - thanks to Steffen Kube for the patch!
+  * add APIs and (hidden) zebracam options to force specific formats for debug
+  * add example scripts
+  * documentation updates
+  * remove implementation of deprecated img_walker
   * add XImage formats
     - basic support for 16-bit depths
   * add some missing rgb format conversions

@@ -135,6 +135,11 @@ int zebra_video_get_height (const zebra_video_t *vdo)
     return(vdo->height);
 }
 
+uint32_t zebra_video_get_format (const zebra_video_t *vdo)
+{
+    return(vdo->format);
+}
+
 static inline int video_init_images (zebra_video_t *vdo)
 {
     
@@ -171,13 +176,13 @@ static inline int video_init_images (zebra_video_t *vdo)
     return(0);
 }
 
-int _zebra_video_init (zebra_video_t *vdo,
-                       uint32_t fmt)
+int zebra_video_init (zebra_video_t *vdo,
+                      unsigned long fmt)
 {
     if(vdo->initialized)
-        /* FIXME re-init different format? (and export api) */
+        /* FIXME re-init different format? */
         return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,
-                           "already initialized, can't re-init"));
+                           "already initialized, re-init unimplemented"));
 
     if(vdo->init(vdo, fmt))
         return(-1);

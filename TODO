@@ -1,16 +1,8 @@
-pre-release:
-  * API to query used interface (video, window?) (/format?)
-  * force specific format (debug/test only?)
-  * verify support for other X visuals (16 bit depth)
-  * dbg_scan background image stretched (still...)
-  * update man pages
-  * update web page
-  * test_decode EAN broken?
-
 general:
   * finish error handling
   * handle video destroyed w/images outstanding
   * cleanup c++ error handling
+  * dbg_scan background image stretched (still...)
   * hook up doxygen (or robodoc?) for API docs
   * profile and weed out obvious oversights
   * windows port
@@ -32,6 +24,7 @@ image scanner:
 window:
   * add XShm support
   * X protocol error handling
+  * API to query used interface (video, window?) (/format?)
   * mode to preserve aspect ratio (default?)
   * simple image manipulations scale(xv?)/mirror
 

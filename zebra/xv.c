@@ -49,7 +49,8 @@ static inline int xv_init (zebra_window_t *w,
         XFree(w->img.xv);
         w->img.xv = NULL;
     }
-    if(w->img_format != img->format) {
+    if(w->img_format != img->format &&
+       w->format != img->format) {
         _zebra_best_format(img->format, &w->format, w->formats);
         if(!w->format) {
             err_capture_int(w, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
@@ -91,7 +92,8 @@ static int xv_draw (zebra_window_t *w,
     XvImage *xvimg = w->img.xv;
     /* FIXME preserve aspect ratio (config?) */
     if(!xvimg ||
-       w->img_format != img->format ||
+       (w->img_format != img->format &&
+        w->format != img->format)||
        xvimg->width != img->width ||
        xvimg->height != img->height) {
         if(xv_init(w, img))

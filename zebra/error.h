@@ -77,9 +77,10 @@ typedef struct errinfo_s {
 
 extern int _zebra_verbosity;
 
-#define zprintf(level, format, ...)                                     \
+#define zprintf(level, format, ...) {                                   \
     if(_zebra_verbosity >= level)                                       \
-        fprintf(stderr, "%s: " format, __func__ , ##__VA_ARGS__)
+        fprintf(stderr, "%s: " format, __func__ , ##__VA_ARGS__);       \
+}
 
 static inline int err_copy (void *dst_c,
                             void *src_c)

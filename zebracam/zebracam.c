@@ -61,16 +61,18 @@ void data_handler (zebra_image_t *img, const void *userdata)
 {
     const zebra_symbol_t *sym = zebra_image_first_symbol(img);
     assert(sym);
+    int n = 0;
     for(; sym; sym = zebra_symbol_next(sym)) {
         if(zebra_symbol_get_count(sym))
             continue;
         zebra_symbol_type_t type = zebra_symbol_get_type(sym);
-        printf("%s%s: %s\n",
+        printf("%s%s:%s\n",
                zebra_get_symbol_name(type), zebra_get_addon_name(type),
                zebra_symbol_get_data(sym));
+        n++;
     }
-    if(!quiet)
-        printf(BELL);
+    if(!quiet && n)
+        fprintf(stderr, BELL);
     fflush(stdout);
 }
 
@@ -78,6 +80,7 @@ int main (int argc, const char *argv[])
 {
     const char *video_device = "/dev/video0";
     int display = 1;
+    unsigned long infmt = 0, outfmt = 0;
     int i;
     for(i = 1; i < argc; i++) {
         if(argv[i][0] != '-')
@@ -113,6 +116,14 @@ int main (int argc, const char *argv[])
             zebra_increase_verbosity();
         else if(!strncmp(argv[i], "--verbose=", 10))
             zebra_set_verbosity(strtol(argv[i] + 10, NULL, 0));
+        else if(!strncmp(argv[i], "--infmt=", 8) &&
+                strlen(argv[i]) == 12)
+            infmt = (argv[i][8] | (argv[i][9] << 8) |
+                     (argv[i][10] << 16) | (argv[i][11] << 24));
+        else if(!strncmp(argv[i], "--outfmt=", 9) &&
+                strlen(argv[i]) == 13)
+            outfmt = (argv[i][9] | (argv[i][10] << 8) |
+                      (argv[i][11] << 16) | (argv[i][12] << 24));
         else {
             fprintf(stderr, "ERROR: unknown option argument: %s\n\n",
                     argv[i]);
@@ -129,6 +140,9 @@ int main (int argc, const char *argv[])
         return(1);
     }
     zebra_processor_set_data_handler(proc, data_handler, NULL);
+
+    if(infmt || outfmt)
+        zebra_processor_force_format(proc, infmt, outfmt);
 
     /* open video device, open window */
     if(zebra_processor_init(proc, video_device, display) ||
