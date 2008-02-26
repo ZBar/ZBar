@@ -1,7 +1,6 @@
 general:
   * finish error handling
   * handle video destroyed w/images outstanding
-  * cleanup c++ error handling
   * dbg_scan background image stretched (still...)
   * hook up doxygen (or robodoc?) for API docs
   * profile and weed out obvious oversights
@@ -20,6 +19,11 @@ image scanner:
   * extract and track symbol polygons
   * configurable pattern density
   * space lead in/out from each scan line
+
+image formats:
+  * add missing format conversions
+  * add color support to conversions
+  * add support for scanline pad throughout
 
 window:
   * add XShm support

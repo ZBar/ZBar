@@ -133,19 +133,20 @@ int main (int argc, const char *argv[])
 {
     // option pre-scan
     bool quiet = false;
+    bool display = false;
     int i;
     for(i = 1; i < argc; i++) {
         string arg(argv[i]);
         if(arg[0] != '-')
             // first pass, skip images
-            continue;
+            num_images++;
         else if(arg[1] != '-') {
             for(int j = 1; arg[j]; j++)
                 switch(arg[j]) {
                 case 'h': return(usage(0));
                 case 'q': quiet = true; break;
                 case 'v': zebra_increase_verbosity(); break;
-                case 'd':
+                case 'd': display = true; break;
                 case 'D': break;
                 default:
                     return(usage(1, string("ERROR: unknown bundled option: -") +
@@ -170,19 +171,26 @@ int main (int argc, const char *argv[])
             scan >> level;
             zebra_set_verbosity(level);
         }
-        else if(arg == "--display" ||
-                arg == "--nodisplay")
+        else if(arg == "--display")
+            display = true;
+        else if(arg == "--nodisplay")
             continue;
-        else if(arg == "--")
+        else if(arg == "--") {
+            num_images += argc - i - 1;
             break;
+        }
         else
             return(usage(1, "ERROR: unknown option: " + arg));
     }
 
-    /* process and display images (no video) unthreaded */
-    processor = new Processor(false, NULL);
+    if(!num_images)
+        return(usage(1, "ERROR: specify image file(s) to scan"));
+    num_images = 0;
 
     try {
+        /* process and optionally display images (no video) unthreaded */
+        processor = new Processor(false, NULL, display);
+
         for(i = 1; i < argc; i++) {
             if(!argv[i])
                 continue;
@@ -206,15 +214,16 @@ int main (int argc, const char *argv[])
         for(i++; i < argc; i++)
             scan_image(argv[i]);
     }
-    catch(Magick::Exception &e) {
+    catch(Exception &e) {
+        cerr << e.what() << endl;
+        return(1);
+    }
+    catch(std::exception &e) {
         cerr << "ERROR: " << e.what() << endl;
         return(1);
     }
 
-    if(!num_images)
-        return(usage(1, "ERROR: specify image file(s) to scan"));
-
-    else if(!quiet) {
+    if(num_images && !quiet) {
         cerr << "scanned " << num_symbols << " barcode symbols from "
              << num_images << " images";
 #ifdef HAVE_SYS_TIMES_H

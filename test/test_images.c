@@ -270,11 +270,12 @@ static inline uint8_t *fill_bars_rgb (uint8_t *p,
     for(y = y0; y < h - y0; y++)
         for(x = 0, i = 0; x < w; i++) {
             assert(i < 8);
+            /* FIXME clean this up... */
             unsigned x0 = (((i + 1) * w) + 7) >> 3;
             assert(x0 <= w);
             unsigned yi = (i & 1) ? y : h - y;
             unsigned v1, v0;
-            if(yi < h / 2) {
+            if(yi < h / 2 - 1) {
                 v1 = ((yi * 0x180) + h - 1) / h + 0x40;
                 v0 = 0x00;
             } else {
@@ -282,9 +283,9 @@ static inline uint8_t *fill_bars_rgb (uint8_t *p,
                 v0 = (((yi - (h / 2)) * 0x180) + h - 1) / h + 0x40;
             }
 
-            uint8_t r = 0; //(RGB[i] & 4) ? v1 : v0;
-            uint8_t g = 0; //(RGB[i] & 2) ? v1 : v0;
-            uint8_t b = 0; //(RGB[i] & 1) ? v1 : v0;
+            uint8_t r = (i & 4) ? v1 : v0;
+            uint8_t g = (i & 2) ? v1 : v0;
+            uint8_t b = (i & 1) ? v1 : v0;
             if(bpp == 32) {
                 if(order == RGB888) {
                     rgb.u8[0] = 0xff;
@@ -348,11 +349,11 @@ int test_image_bars (zebra_image_t *img)
     if(!fmt->format)
         return(-1);
 
-    size_t planelen = w * h;
-    size_t datalen = planelen * fmt->bpp / 8;
+    unsigned long planelen = w * h;
+    unsigned long datalen = planelen * fmt->bpp / 8;
     uint8_t *data = malloc(datalen);
     zebra_image_set_data(img, data, datalen, test_cleanup_handler);
-    fprintf(stderr, "create %.4s(%08x) image data %x bytes @%p\n",
+    fprintf(stderr, "create %.4s(%08x) image data %lx bytes @%p\n",
             (char*)&fmt->format, fmt->format, datalen, data);
 
     uint8_t *p = data;

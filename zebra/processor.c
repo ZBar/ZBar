@@ -27,7 +27,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
 
 static inline void proc_mutex_unlock (void *arg)
 {
@@ -133,10 +133,10 @@ static inline int process_image (zebra_processor_t *proc,
     }
 
     /* display to window if enabled */
-    if(proc->window &&
-       (zebra_window_draw(proc->window, img) ||
-        /* FIXME still don't understand why we need this */
-        _zebra_window_handle_events(proc, 0)))
+    if(proc->window && (zebra_window_draw(proc->window, img)))
+        return(err_copy(proc, proc->window));
+    /* FIXME still don't understand why we need this */
+    if(proc->window && _zebra_window_handle_events(proc, 0))
         return(-1);
     if(proc->force_output && img)
         zebra_image_destroy(img);
@@ -200,7 +200,7 @@ static inline int proc_calc_abstime (struct timespec *abstime,
     return(0);
 }
 
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
 static inline int proc_event_wait_threaded (zebra_processor_t *proc,
                                             unsigned event,
                                             int timeout,
@@ -225,7 +225,11 @@ static inline int proc_event_wait_threaded (zebra_processor_t *proc,
     proc->sem--;
     proc->sem_owner = pthread_self();
     pthread_cleanup_pop(1);
-    return((!rc && !(proc->events & event)) ? 1 : rc);
+    if(rc)
+        return(-1); /* error */
+    if(proc->events & event)
+        return(1); /* got event */
+    return(0); /* timed out */
 }
 #endif
 
@@ -252,7 +256,7 @@ static inline int proc_event_wait_unthreaded (zebra_processor_t *proc,
             reltime = ((abstime->tv_sec - now.tv_sec) * 1000 +
                        (abstime->tv_nsec - now.tv_nsec) / 1000000);
             if(reltime <= 0)
-                return(1);
+                return(0);
         }
         if(blocking && (reltime < 0 || reltime > 10))
             reltime = 10;
@@ -266,10 +270,10 @@ static inline int proc_event_wait_unthreaded (zebra_processor_t *proc,
             while(nanosleep(&sleepns, &remns) && errno == EINTR)
                 sleepns = remns;
             proc_lock(proc);
-            return(1);
+            return(0);
         }
     }
-    return(0);
+    return(1);
 }
 
 static inline int proc_event_wait (zebra_processor_t *proc,
@@ -278,7 +282,7 @@ static inline int proc_event_wait (zebra_processor_t *proc,
 {
     struct timespec abstime;
     proc_calc_abstime(&abstime, timeout);
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
     if(proc->threaded)
         return(proc_event_wait_threaded(proc, event, timeout, &abstime));
     else
@@ -286,7 +290,7 @@ static inline int proc_event_wait (zebra_processor_t *proc,
         return(proc_event_wait_unthreaded(proc, event, timeout, &abstime));
 }
 
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
 /* make a thread-local copy of polling data */
 static inline void proc_cache_polling (zebra_processor_t *proc)
 {
@@ -379,7 +383,7 @@ zebra_processor_t *zebra_processor_create (int threaded)
     }
 
     if(threaded) {
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
         proc->threaded = 1;
         proc->sem = 1;
         /* FIXME check errors */
@@ -411,7 +415,7 @@ void zebra_processor_destroy (zebra_processor_t *proc)
     }
     proc_unlock(proc);
     err_cleanup(&proc->err);
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
     pthread_cond_destroy(&proc->event);
     pthread_cond_destroy(&proc->cond);
     pthread_mutex_destroy(&proc->mutex);
@@ -463,7 +467,7 @@ int zebra_processor_init (zebra_processor_t *proc,
             goto done;
         }
         if(zebra_video_get_fd(proc->video) < 0 && proc->threaded) {
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
             /* spawn blocking video thread */
             if((rc = pthread_create(&proc->video_thread, NULL,
                                     proc_video_thread, proc))) {
@@ -477,7 +481,7 @@ int zebra_processor_init (zebra_processor_t *proc,
         }
     }
 
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
     if(proc->threaded && (proc->window ||
                           (proc->video && !proc->video_started))) {
         /* spawn input monitor thread */
@@ -504,7 +508,7 @@ int zebra_processor_init (zebra_processor_t *proc,
             rc = -1;
             goto done;
         }
-        if(zebra_window_attach(proc->window, proc->display, proc->xwin)) {
+        else if(zebra_window_attach(proc->window, proc->display, proc->xwin)) {
             rc = err_copy(proc, proc->window);
             goto done;
         }
@@ -599,7 +603,7 @@ int zebra_processor_user_wait (zebra_processor_t *proc,
     int rc = -1;
     if(proc->visible || proc->active || timeout > 0)
         rc = proc_event_wait(proc, EVENT_INPUT, timeout);
-    if(rc >= 0)
+    if(rc > 0)
         rc = proc->input;
     proc_unlock(proc);
     if(!proc->visible)
@@ -629,7 +633,7 @@ int zebra_processor_set_active (zebra_processor_t *proc,
     /* FIXME failure recovery? */
     proc->active = active;
     proc->events &= ~EVENT_INPUT;
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
     if(proc->threaded) {
         assert(!proc->sem);
         assert(pthread_equal(proc->sem_owner, pthread_self()));
@@ -657,7 +661,7 @@ int zebra_process_one (zebra_processor_t *proc,
         if(vid_fd >= 0)
             add_poll(proc, vid_fd, proc_video_handler);
         proc->active = 1;
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
         pthread_cond_broadcast(&proc->event);
 #endif
         proc_event_wait(proc, EVENT_OUTPUT, timeout);

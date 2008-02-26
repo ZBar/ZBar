@@ -80,7 +80,7 @@ struct zebra_processor_s {
     poll_desc_t thr_polling;            /* thread copy */
     int kick_fds[2];                    /* poll kicker */
 
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
     int sem;                            /* window access semaphore */
     pthread_t sem_owner;                /* semaphore owner */
     pthread_mutex_t mutex;              /* semaphore lock */
@@ -95,6 +95,9 @@ struct zebra_processor_s {
 #ifdef HAVE_X
     Display *display;                   /* X display connection */
     Window xwin;                        /* toplevel window */
+#else
+    void *display;                      /* generic placeholder */
+    unsigned long xwin;                 /* unused */
 #endif
 };
 
@@ -118,7 +121,7 @@ static inline int add_poll (zebra_processor_t *proc,
     proc->polling.fds[i].fd = fd;
     proc->polling.fds[i].events = POLLIN;
     proc->polling.handlers[i] = handler;
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
     if(proc->input_started) {
         assert(proc->kick_fds[1] >= 0);
         write(proc->kick_fds[1], &i /* unused */, sizeof(unsigned));
@@ -147,7 +150,7 @@ static inline int remove_poll (zebra_processor_t *proc,
     }
     proc->polling.num--;
     int rc = alloc_polls(&proc->polling);
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
     if(proc->input_started) {
         write(proc->kick_fds[1], &i /* unused */, sizeof(unsigned));
         /* FIXME should sync */
@@ -160,7 +163,7 @@ static inline void emit (zebra_processor_t *proc,
                          unsigned mask)
 {
     proc->events |= mask;
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
     if(!proc->threaded)
         return;
     pthread_cond_broadcast(&proc->event);

@@ -234,9 +234,11 @@ static inline void uv_roundup (zebra_image_t *img,
         img->height = (img->height + ymask) & ~ymask;
 }
 
-static inline size_t uvp_size (const zebra_image_t *img,
-                               const zebra_format_def_t *fmt)
+static inline unsigned long uvp_size (const zebra_image_t *img,
+                                      const zebra_format_def_t *fmt)
 {
+    if(fmt->group == ZEBRA_FMT_GRAY)
+        return(0);
     return((img->width >> fmt->p.yuv.xsub2) *
            (img->height >> fmt->p.yuv.ysub2));
 }
@@ -304,7 +306,7 @@ static void convert_uvp_append (zebra_image_t *dst,
 {
     uv_roundup(dst, dstfmt);
     dst->datalen = uvp_size(dst, dstfmt) * 2;
-    size_t n = dst->width * dst->height;
+    unsigned long n = dst->width * dst->height;
     dst->datalen += n;
     assert(src->datalen >= n);
     dst->data = malloc(dst->datalen);
@@ -326,8 +328,8 @@ static void convert_yuv_pack (zebra_image_t *dst,
     if(!dst->data) return;
     uint8_t *dstp = (void*)dst->data;
 
-    size_t srcm = uvp_size(src, srcfmt);
-    size_t srcn = src->width * src->height;
+    unsigned long srcm = uvp_size(src, srcfmt);
+    unsigned long srcn = src->width * src->height;
     assert(src->datalen >= srcn + 2 * srcn);
     uint8_t flags = dstfmt->p.yuv.packorder ^ srcfmt->p.yuv.packorder;
     uint8_t *srcy = (void*)src->data;
@@ -374,10 +376,8 @@ static void convert_yuv_unpack (zebra_image_t *dst,
                                 const zebra_format_def_t *srcfmt)
 {
     uv_roundup(dst, dstfmt);
-    size_t dstn = dst->width * dst->height;
-    size_t dstm2 = 0;
-    if(dstfmt->format != ZEBRA_FMT_GRAY)
-        dstm2 = uvp_size(dst, dstfmt) * 2;
+    unsigned long dstn = dst->width * dst->height;
+    unsigned long dstm2 = uvp_size(dst, dstfmt) * 2;
     dst->datalen = dstn + dstm2;
     dst->data = malloc(dst->datalen);
     if(!dst->data) return;
@@ -393,7 +393,7 @@ static void convert_yuv_unpack (zebra_image_t *dst,
     if(flags)
         srcp++;
 
-    ssize_t i;
+    unsigned long i;
     for(i = dstn / 2; i; i--) {
         *(dsty++) = *(srcp++);  srcp++;
         *(dsty++) = *(srcp++);  srcp++;
@@ -410,8 +410,8 @@ static void convert_uvp_resample (zebra_image_t *dst,
 {
     assert(0);
     uv_roundup(dst, dstfmt);
-    size_t dstn = dst->width * dst->height;
-    size_t dstm = uvp_size(dst, dstfmt);
+    unsigned long dstn = dst->width * dst->height;
+    unsigned long dstm = uvp_size(dst, dstfmt);
     dst->datalen = dstn + dstm * 2;
     dst->data = malloc(dst->datalen);
     if(!dst->data) return;
@@ -426,7 +426,7 @@ static void convert_uv_resample (zebra_image_t *dst,
                                  const zebra_format_def_t *srcfmt)
 {
     uv_roundup(dst, dstfmt);
-    ssize_t dstn = dst->width * dst->height;
+    unsigned long dstn = dst->width * dst->height;
     dst->datalen = dstn + uvp_size(dst, dstfmt) * 2;
     dst->data = malloc(dst->datalen);
     if(!dst->data) return;
@@ -436,7 +436,7 @@ static void convert_uv_resample (zebra_image_t *dst,
     const uint8_t *srcp = src->data;
 
     uint8_t y0, y1, u, v, tmp;
-    ssize_t i;
+    unsigned long i;
     for(i = dstn / 2; i; i--) {
         if(!(srcfmt->p.yuv.packorder & 2)) {
             y0 = *(srcp++);  u = *(srcp++);
@@ -480,12 +480,12 @@ static void convert_yuvp_to_rgb (zebra_image_t *dst,
     int dbbits = RGB_SIZE(dstfmt->p.rgb.blue);
     int dbbit0 = RGB_OFFSET(dstfmt->p.rgb.blue);
 
-    size_t srcm = uvp_size(src, srcfmt);
-    size_t srcn = src->width * src->height;
+    unsigned long srcm = uvp_size(src, srcfmt);
+    unsigned long srcn = src->width * src->height;
     assert(src->datalen >= srcn + 2 * srcm);
     uint8_t *srcy = (void*)src->data;
 
-    ssize_t i;
+    unsigned long i;
     for(i = srcn; i; i--) {
         /* FIXME color space? */
         unsigned y = *(srcy++);
@@ -506,10 +506,8 @@ static void convert_rgb_to_yuvp (zebra_image_t *dst,
                                  const zebra_format_def_t *srcfmt)
 {
     uv_roundup(dst, dstfmt);
-    size_t dstn = dst->width * dst->height;
-    size_t dstm2 = 0;
-    if(dstfmt->format != ZEBRA_FMT_GRAY)
-        dstm2 = uvp_size(dst, dstfmt) * 2;
+    unsigned long dstn = dst->width * dst->height;
+    unsigned long dstm2 = uvp_size(dst, dstfmt) * 2;
     dst->datalen = dstn + dstm2;
     dst->data = malloc(dst->datalen);
     if(!dst->data) return;
@@ -527,7 +525,7 @@ static void convert_rgb_to_yuvp (zebra_image_t *dst,
     int bbits = RGB_SIZE(srcfmt->p.rgb.blue);
     int bbit0 = RGB_OFFSET(srcfmt->p.rgb.blue);
 
-    ssize_t i;
+    unsigned long i;
     for(i = dstn; i; i--) {
         uint8_t r, g, b;
         uint32_t p = convert_read_rgb(srcp, srcfmt->p.rgb.bpp);
@@ -550,7 +548,7 @@ static void convert_yuv_to_rgb (zebra_image_t *dst,
                                 const zebra_image_t *src,
                                 const zebra_format_def_t *srcfmt)
 {
-    size_t dstn = dst->width * dst->height;
+    unsigned long dstn = dst->width * dst->height;
     dst->datalen = dstn * dstfmt->p.rgb.bpp;
     dst->data = malloc(dst->datalen);
     if(!dst->data) return;
@@ -604,7 +602,7 @@ static void convert_rgb_resample (zebra_image_t *dst,
                                   const zebra_image_t *src,
                                   const zebra_format_def_t *srcfmt)
 {
-    size_t dstn = dst->width * dst->height;
+    unsigned long dstn = dst->width * dst->height;
     dst->datalen = dstn * dstfmt->p.rgb.bpp;
     dst->data = malloc(dst->datalen);
     if(!dst->data) return;
@@ -747,14 +745,16 @@ int _zebra_best_format (uint32_t src,
                         uint32_t *dst,
                         const uint32_t *dsts)
 {
+    if(dst)
+        *dst = 0;
+    if(!dsts)
+        return(-1);
     if(has_format(src, dsts)) {
         zprintf(8, "shared format: %4.4s\n", (char*)&src);
         if(dst)
             *dst = src;
         return(0);
     }
-    if(dst)
-        *dst = 0;
     const zebra_format_def_t *srcfmt = _zebra_format_lookup(src);
     if(!srcfmt)
         return(-1);
@@ -774,7 +774,7 @@ int _zebra_best_format (uint32_t src,
         else
             cost = conversions[srcfmt->group][dstfmt->group].cost;
         if(_zebra_verbosity >= 8)
-        fprintf(stderr, " %.4s(%08x)=%d", (char*)dsts, *dsts, cost);
+            fprintf(stderr, " %.4s(%08x)=%d", (char*)dsts, *dsts, cost);
         if(min_cost > cost) {
             min_cost = cost;
             if(dst)

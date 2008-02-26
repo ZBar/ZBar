@@ -313,8 +313,8 @@ extern int zebra_processor_set_active(zebra_processor_t *processor,
                                       int active);
 
 /* wait for input to the display window from the user
- * (via mouse or keyboard). returns 0 when input is received,
- * 1 if timeout ms expired with no input or -1 in case of an error
+ * (via mouse or keyboard). returns >0 when input is received,
+ * 0 if timeout ms expired with no input or -1 in case of an error
  */
 extern int zebra_processor_user_wait(zebra_processor_t *processor,
                                      int timeout);
@@ -713,7 +713,7 @@ extern zebra_color_t zebra_scanner_get_color(const zebra_scanner_t *scanner);
 # include "zebra/Image.h"
 # include "zebra/ImageScanner.h"
 # include "zebra/Video.h"
-//# include "zebra/Window.h"
+# include "zebra/Window.h"
 # include "zebra/Processor.h"
 #endif
 

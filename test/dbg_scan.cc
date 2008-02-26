@@ -61,7 +61,7 @@ void scan_image (const char *filename)
     Magick::Image image;
     image.read(filename);
     string file = image.baseFilename();
-    unsigned baseidx = file.rfind('/');
+    size_t baseidx = file.rfind('/');
     if(baseidx != string::npos)
         file = file.substr(baseidx + 1, file.length() - baseidx - 1);
     ofstream svg((file + ".svg").c_str());

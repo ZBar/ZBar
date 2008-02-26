@@ -32,82 +32,84 @@ namespace zebra {
 class Exception : public std::exception {
 
 public:
-    Exception (const char *msg = "zebra library unspecified generic error")
+    Exception (const void *obj = NULL)
         : std::exception(),
-          _msg(msg)
+          _obj(obj)
     { }
 
     ~Exception () throw() { }
 
     virtual const char* what () const throw()
     {
-        return(_msg.c_str());
+        if(!_obj)
+            return("zebra library unspecified generic error");
+        return(_zebra_error_string(_obj, 0));
     }
 
 protected:
-    std::string _msg;
+    const void *_obj;
 };
 
 class InternalError : public Exception {
 public:
-    InternalError (const char *msg = "internal library error")
-        : Exception(msg)
+    InternalError (const void *obj)
+        : Exception(obj)
     { }
 };
 
 class UnsupportedError : public Exception {
 public:
-    UnsupportedError (const char *msg = "unsupported request")
-        : Exception(msg)
+    UnsupportedError (const void *obj)
+        : Exception(obj)
     { }
 };
 
 class InvalidError : public Exception {
 public:
-    InvalidError (const char *msg = "invalid request")
-        : Exception(msg)
+    InvalidError (const void *obj)
+        : Exception(obj)
     { }
 };
 
 class SystemError : public Exception {
 public:
-    SystemError (const char *msg = "system error")
-        : Exception(msg)
+    SystemError (const void *obj)
+        : Exception(obj)
     { }
 };
 
 class LockingError : public Exception {
 public:
-    LockingError (const char *msg = "locking error")
-        : Exception(msg)
+    LockingError (const void *obj)
+        : Exception(obj)
     { }
 };
 
 class BusyError : public Exception {
 public:
-    BusyError (const char *msg = "all resources busy")
-        : Exception(msg)
+    BusyError (const void *obj)
+        : Exception(obj)
     { }
 };
 
 class XDisplayError : public Exception {
 public:
-    XDisplayError (const char *msg = "X11 display error")
-        : Exception(msg)
+    XDisplayError (const void *obj)
+        : Exception(obj)
     { }
 };
 
 class XProtoError : public Exception {
 public:
-    XProtoError (const char *msg = "X11 protocol error")
-        : Exception(msg)
+    XProtoError (const void *obj)
+        : Exception(obj)
     { }
 };
 
 class ClosedError : public Exception {
 public:
-    ClosedError (const char *msg = "output window is closed")
-        : Exception(msg)
+    ClosedError (const void *obj)
+        : Exception(obj)
     { }
 };
 
@@ -121,32 +123,31 @@ class FormatError : public Exception {
     }
 };
 
-static inline std::exception create_exception (zebra_error_t code,
-                                               const char *msg)
+static inline std::exception throw_exception (const void *obj)
 {
-    switch(code) {
+    switch(_zebra_get_error_code(obj)) {
     case ZEBRA_ERR_NOMEM:
-        return(std::bad_alloc());
+        throw std::bad_alloc();
     case ZEBRA_ERR_INTERNAL:
-        return(InternalError(msg));
+        throw InternalError(obj);
     case ZEBRA_ERR_UNSUPPORTED:
-        return(UnsupportedError(msg));
+        throw UnsupportedError(obj);
     case ZEBRA_ERR_INVALID:
-        return(InvalidError(msg));
+        throw InvalidError(obj);
     case ZEBRA_ERR_SYSTEM:
-        return(SystemError(msg));
+        throw SystemError(obj);
     case ZEBRA_ERR_LOCKING:
-        return(LockingError(msg));
+        throw LockingError(obj);
     case ZEBRA_ERR_BUSY:
-        return(BusyError(msg));
+        throw BusyError(obj);
     case ZEBRA_ERR_XDISPLAY:
-        return(XDisplayError(msg));
+        throw XDisplayError(obj);
     case ZEBRA_ERR_XPROTO:
-        return(XProtoError(msg));
+        throw XProtoError(obj);
     case ZEBRA_ERR_CLOSED:
-        return(ClosedError(msg));
+        throw ClosedError(obj);
     default:
-        return(Exception(msg));
+        throw Exception(obj);
     }
 }
 

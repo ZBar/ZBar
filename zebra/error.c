@@ -22,6 +22,7 @@
  *------------------------------------------------------------------------*/
 
 #include "error.h"
+#include <string.h>
 
 int _zebra_verbosity = 0;
 
@@ -132,7 +133,7 @@ const char *_zebra_error_string (const void *container,
         int newlen = len + strlen(err->detail) + 1;
         if(strstr(err->detail, "%s")) {
             if(!err->arg_str)
-                err->arg_str = "<?>";
+                err->arg_str = strdup("<?>");
             err->buf = realloc(err->buf, newlen + strlen(err->arg_str));
             len += sprintf(err->buf + len, err->detail, err->arg_str);
         }

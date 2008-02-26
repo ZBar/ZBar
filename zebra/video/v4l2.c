@@ -129,14 +129,14 @@ static zebra_image_t *v4l2_dq (zebra_video_t *vdo)
         }
 
         /* FIXME should read entire image */
-        size_t datalen = read(vdo->fd, (void*)img->data, img->datalen);
+        unsigned long datalen = read(vdo->fd, (void*)img->data, img->datalen);
         if(datalen < 0) {
             err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                         "reading video image");
             return(NULL);
         }
         else if(datalen != img->datalen)
-            zprintf(0, "WARNING: read() size mismatch: 0x%x != 0x%x\n",
+            zprintf(0, "WARNING: read() size mismatch: 0x%lx != 0x%lx\n",
                     datalen, img->datalen);
     }
     return(img);
@@ -249,7 +249,8 @@ static int v4l2_mmap_buffers (zebra_video_t *vdo)
             /* FIXME cleanup */
             return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                                "mapping video frame buffers"));
-        zprintf(2, "    buf[%d] 0x%x bytes @%p\n", i, img->datalen, img->data);
+        zprintf(2, "    buf[%d] 0x%lx bytes @%p\n",
+                i, img->datalen, img->data);
     }
     return(0);
 }
@@ -291,7 +292,7 @@ static int v4l2_set_format (zebra_video_t *vdo,
     vdo->height = newpix->height;
     vdo->datalen = newpix->sizeimage;
 
-    zprintf(1, "set new format: %.4s(%08x) %u x %u (0x%x)\n",
+    zprintf(1, "set new format: %.4s(%08x) %u x %u (0x%lx)\n",
             (char*)&vdo->format, vdo->format, vdo->width, vdo->height,
             vdo->datalen);
     return(0);

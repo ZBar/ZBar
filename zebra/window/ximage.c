@@ -43,7 +43,7 @@ static inline int ximage_init (zebra_window_t *w,
         _zebra_best_format(img->format, &w->format, w->formats);
         if(!w->format) {
             err_capture_int(w, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
-                            "no conversion from %08x to supported formats",
+                            "no conversion from %x to supported formats",
                             img->format);
             return(-1);
         }
@@ -150,7 +150,6 @@ static uint32_t ximage_formats[4][5] = {
     },
     {   /* 24bpp */
         fourcc('R','G','B','3'),
-        fourcc( 3 , 0 , 0 , 0 ),
         fourcc('B','G','R','3'),
         0
     },
@@ -182,6 +181,10 @@ static int ximage_probe_format (zebra_window_t *w,
                              VisualDepthMask | VisualRedMaskMask |
                              VisualGreenMaskMask | VisualBlueMaskMask,
                              &visreq, &n);
+
+    zprintf(8, "bits=%d r=%08lx g=%08lx b=%08lx: n=%d visuals=%p\n",
+            visreq.depth, visreq.red_mask, visreq.green_mask,
+            visreq.blue_mask, n, visuals);
     if(!visuals)
         return(1);
     XFree(visuals);
@@ -202,10 +205,9 @@ int _zebra_window_probe_ximage (zebra_window_t *w)
 
     int i;
     for(i = 0; i < n; i++) {
-        if(formats[i].depth != formats[i].bits_per_pixel ||
-           formats[i].depth & 0x7 ||
+        if(formats[i].depth & 0x7 ||
            formats[i].depth > 0x20) {
-            zprintf(2, "    [%d] depth=%d bpp=%d\n",
+            zprintf(2, "    [%d] depth=%d bpp=%d: not supported\n",
                     i, formats[i].depth, formats[i].bits_per_pixel);
             continue;
         }
@@ -218,12 +220,17 @@ int _zebra_window_probe_ximage (zebra_window_t *w)
                         (char*)&ximage_formats[fmtidx][j],
                         ximage_formats[fmtidx][j]);
                 _zebra_window_add_format(w, ximage_formats[fmtidx][j]);
+                n++;
             }
         if(!n)
             zprintf(2, "    [%d] depth=%d bpp=%d: no visuals\n",
                     i, formats[i].depth, formats[i].bits_per_pixel);
     }
     XFree(formats);
+
+    if(!w->formats || !w->formats[0])
+        return(err_capture(w, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
+                           "no usable XImage formats found"));
 
     w->draw_image = ximage_draw;
     w->cleanup = ximage_cleanup;

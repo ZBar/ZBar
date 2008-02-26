@@ -27,6 +27,7 @@
 # error "include zebra.h in your application, **not** zebra/Image.h"
 #endif
 
+#include <assert.h>
 #include <iterator>
 #include "Symbol.h"
 #include "Exception.h"
@@ -151,7 +152,7 @@ public:
     void set_format (const std::string& format)
     {
         if(format.length() != 4)
-            throw(FormatError());
+            throw FormatError();
         unsigned long fourcc = ((format[0] & 0xff) |
                                 ((format[1] & 0xff) << 8) |
                                 ((format[2] & 0xff) << 16) |
@@ -191,7 +192,7 @@ public:
         zebra_image_t *img = zebra_image_convert(_img, format);
         if(img)
             return(Image(img));
-        throw(FormatError());
+        throw FormatError();
     }
 
     SymbolIterator symbol_begin() const {
@@ -206,8 +207,7 @@ protected:
     static void _cleanup (zebra_image_t *img)
     {
         // by default nothing is cleaned
-        if(!img)
-            throw(InternalError());
+        assert(img);
     }
 
 private:

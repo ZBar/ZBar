@@ -69,8 +69,8 @@ struct zebra_video_s {
     unsigned palette;           /* v4l1 format index corresponding to format */
     uint32_t *formats;          /* 0 terminated list of supported formats */
 
-    size_t datalen;             /* size of image data for selected format */
-    size_t buflen;              /* total size of image data buffer */
+    unsigned long datalen;      /* size of image data for selected format */
+    unsigned long buflen;       /* total size of image data buffer */
     void *buf;                  /* image data buffer */
 
     int num_images;             /* number of allocated images */
@@ -78,7 +78,7 @@ struct zebra_video_s {
     zebra_image_t *nq_image;    /* last image enqueued */
     zebra_image_t *dq_image;    /* first image to dequeue (when ordered) */
 
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
     pthread_mutex_t qlock;      /* lock image queue */
 #endif
 
@@ -92,7 +92,7 @@ struct zebra_video_s {
 };
 
 
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
 
 /* video.next_image and video.recycle_image have to be thread safe
  * wrt/other apis

@@ -236,7 +236,7 @@ static inline int v4l1_set_format (zebra_video_t *vdo,
     vdo->palette = ifmt;
     vdo->datalen = (vdo->width * vdo->height * vpic.depth + 7) >> 3;
 
-    zprintf(1, "set new format: %.4s(%08x) depth=%d palette=%d size=0x%d\n",
+    zprintf(1, "set new format: %.4s(%08x) depth=%d palette=%d size=0x%lx\n",
             (char*)&vdo->format, vdo->format, vpic.depth, vdo->palette,
             vdo->datalen);
     return(0);

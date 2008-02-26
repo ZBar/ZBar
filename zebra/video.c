@@ -46,7 +46,7 @@ zebra_video_t *zebra_video_create ()
     err_init(&vdo->err, ZEBRA_MOD_VIDEO);
     vdo->fd = -1;
 
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
     if(pthread_mutex_init(&vdo->qlock, NULL)) {
         free(vdo);
         return(NULL);
@@ -93,7 +93,7 @@ void zebra_video_destroy (zebra_video_t *vdo)
     if(vdo->formats)
         free(vdo->formats);
     err_cleanup(&vdo->err);
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
     pthread_mutex_destroy(&vdo->qlock);
 #endif
     free(vdo);
@@ -102,14 +102,7 @@ void zebra_video_destroy (zebra_video_t *vdo)
 int zebra_video_open (zebra_video_t *vdo,
                       const char *dev)
 {
-#if !defined(HAVE_LINUX_VIDEODEV_H)
-    err_capture(vdo, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
-                "not compiled with video support");
-    _zebra_spew_error(vdo);
-    return(-1);
-#else
     return(_zebra_video_open(vdo, dev));
-#endif    
 }
 
 int zebra_video_get_fd (const zebra_video_t *vdo)
@@ -151,7 +144,7 @@ static inline int video_init_images (zebra_video_t *vdo)
         if(!vdo->buf)
             return(err_capture(vdo, SEV_FATAL, ZEBRA_ERR_NOMEM, __func__,
                                "unable to allocate image buffers"));
-        zprintf(1, "pre-allocated %d %s buffers size=0x%x\n", vdo->num_images,
+        zprintf(1, "pre-allocated %d %s buffers size=0x%lx\n", vdo->num_images,
                 (vdo->iomode == VIDEO_READWRITE) ? "READ" : "USERPTR",
                 vdo->buflen);
     }
@@ -163,9 +156,9 @@ static inline int video_init_images (zebra_video_t *vdo)
         img->height = vdo->height;
         if(vdo->iomode != VIDEO_MMAP) {
             img->datalen = vdo->datalen;
-            size_t offset = i * vdo->datalen;
+            unsigned long offset = i * vdo->datalen;
             img->data = vdo->buf + offset;
-            zprintf(2, "    [%02d] @%08x\n", i, offset);
+            zprintf(2, "    [%02d] @%08lx\n", i, offset);
         }
         else {
             assert(img->data);

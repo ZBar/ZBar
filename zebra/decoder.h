@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -26,8 +26,8 @@
 #include <stdlib.h>     /* realloc */
 
 #include <zebra.h>
-#include "ean.h"
-#include "code128.h"
+#include "decoder/ean.h"
+#include "decoder/code128.h"
 
 /* size of bar width history (implementation assumes power of two) */
 #ifndef DECODE_WINDOW

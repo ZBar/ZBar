@@ -1,4 +1,13 @@
-current:
+version 0.3:
+  * fix wait timeouts
+  * fix XImage format filtering
+  * fix several error handling corner cases
+  * fix c++ error handling
+  * add missing Window.h
+  * add better hierarchy to library sources
+  * build configuration fixes
+  * portability fixes
+  * packaging updates
   * fix zebracam beeps
   * fix some RGB component ordering and XImage format problems
   * fix window resize and redraw state problems

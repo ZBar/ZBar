@@ -27,6 +27,7 @@
 # error "include zebra.h in your application, **not** zebra/Processor.h"
 #endif
 
+#include "Exception.h"
 #include "Image.h"
 
 namespace zebra {
@@ -38,6 +39,8 @@ class Processor {
     Processor (bool threaded = true)
     {
         _processor = zebra_processor_create(threaded);
+        if(!_processor)
+            throw std::bad_alloc();
     }
 
     Processor (bool threaded = true,
@@ -45,6 +48,8 @@ class Processor {
                bool enable_display = true)
     {
         _processor = zebra_processor_create(threaded);
+        if(!_processor)
+            throw std::bad_alloc();
         init(video_device, enable_display);
     }
 
@@ -61,7 +66,8 @@ class Processor {
     void init (const char *video_device = "",
                bool enable_display = true)
     {
-        zebra_processor_init(_processor, video_device, enable_display);
+        if(zebra_processor_init(_processor, video_device, enable_display))
+            throw_exception(_processor);
     }
 
     void set_handler (Image::Handler& handler)
@@ -71,32 +77,42 @@ class Processor {
 
     bool is_visible ()
     {
-        return(zebra_processor_is_visible(_processor));
+        int rc = zebra_processor_is_visible(_processor);
+        if(rc < 0)
+            throw_exception(_processor);
+        return(rc);
     }
 
     void set_visible (bool visible = true)
     {
-        zebra_processor_set_visible(_processor, visible);
+        if(zebra_processor_set_visible(_processor, visible) < 0)
+            throw_exception(_processor);
     }
 
     void set_active (bool active = true)
     {
-        zebra_processor_set_active(_processor, active);
+        if(zebra_processor_set_active(_processor, active) < 0)
+            throw_exception(_processor);
     }
 
-    void user_wait (int timeout = FOREVER)
+    int user_wait (int timeout = FOREVER)
     {
-        zebra_processor_user_wait(_processor, timeout);
+        int rc = zebra_processor_user_wait(_processor, timeout);
+        if(rc < 0)
+            throw_exception(_processor);
+        return(rc);
     }
 
     void process_one (int timeout = FOREVER)
     {
-        zebra_process_one(_processor, timeout);
+        if(zebra_process_one(_processor, timeout) < 0)
+            throw_exception(_processor);
     }
 
     void process_image (Image& image)
     {
-        zebra_process_image(_processor, image);
+        if(zebra_process_image(_processor, image) < 0)
+            throw_exception(_processor);
     }
 
     Processor& operator<< (Image& image)

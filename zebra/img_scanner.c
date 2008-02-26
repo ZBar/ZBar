@@ -295,10 +295,10 @@ static inline void quiet_border (zebra_image_scanner_t *iscn,
     zebra_scanner_new_scan(iscn->scn);
 }
 
-#define movedelta(dx, dy) {                     \
+#define movedelta(dx, dy) do {                  \
         x += (dx);                              \
         y += (dy);                              \
-        p += (dx) + ((dy) * w);                 \
+        p += (dx) + ((intptr_t)(dy) * w);       \
     } while(0);
 
 int zebra_scan_image (zebra_image_scanner_t *iscn,

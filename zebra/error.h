@@ -126,12 +126,12 @@ static inline int err_capture_str (const void *container,
                                    const char *detail,
                                    const char *arg)
 {
-    err_capture(container, sev, type, func, detail);
     errinfo_t *err = (errinfo_t*)container;
+    assert(err->magic == ERRINFO_MAGIC);
     if(err->arg_str)
         free(err->arg_str);
     err->arg_str = strdup(arg);
-    return(-1);
+    return(err_capture(container, sev, type, func, detail));
 }
 
 static inline int err_capture_int (const void *container,
@@ -141,9 +141,10 @@ static inline int err_capture_int (const void *container,
                                    const char *detail,
                                    int arg)
 {
-    err_capture(container, sev, type, func, detail);
-    ((errinfo_t*)container)->arg_int = arg;
-    return(-1);
+    errinfo_t *err = (errinfo_t*)container;
+    assert(err->magic == ERRINFO_MAGIC);
+    err->arg_int = arg;
+    return(err_capture(container, sev, type, func, detail));
 }
 
 static inline int err_capture_num (const void *container,
@@ -153,9 +154,10 @@ static inline int err_capture_num (const void *container,
                                    const char *detail,
                                    int num)
 {
-    err_capture(container, sev, type, func, detail);
-    ((errinfo_t*)container)->errnum = num;
-    return(-1);
+    errinfo_t *err = (errinfo_t*)container;
+    assert(err->magic == ERRINFO_MAGIC);
+    err->errnum = num;
+    return(err_capture(container, sev, type, func, detail));
 }
 
 static inline void err_init (errinfo_t *err,
@@ -171,6 +173,10 @@ static inline void err_cleanup (errinfo_t *err)
     if(err->buf) {
         free(err->buf);
         err->buf = NULL;
+    }
+    if(err->arg_str) {
+        free(err->arg_str);
+        err->arg_str = NULL;
     }
 }
 

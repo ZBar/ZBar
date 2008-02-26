@@ -1,5 +1,14 @@
 Zebra Barcode Reader
 
+version 0.3 (2008-02-25):
+  this is a beta release of the enhanced internal architecture.
+  support has been added for version 2 of the video4linux API and many
+  more image formats.  several other feature enhancements and bug
+  fixes are also included.  image scanning is slightly improved for
+  some images, but the base scan/decode function is relatively
+  untouched.  significant new code is represented in this release
+  - all bug reports are welcome and will be addressed promptly!
+
 version 0.2 (2007-05-16):
   this release introduces significant enhancements, bug fixes and new
   features!  basic EAN-13/UPC-A reading has been improved and should

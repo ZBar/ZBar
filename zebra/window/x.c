@@ -250,9 +250,11 @@ int _zebra_window_resize (zebra_processor_t *proc,
                           unsigned width,
                           unsigned height)
 {
-    XResizeWindow(proc->display, proc->xwin, width, height);
-    _zebra_window_clear(proc->window);
-    XFlush(proc->display);
+    if(proc->display) {
+        XResizeWindow(proc->display, proc->xwin, width, height);
+        _zebra_window_clear(proc->window);
+        XFlush(proc->display);
+    }
     return(0);
 }
 

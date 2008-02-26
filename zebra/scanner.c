@@ -267,5 +267,6 @@ void zebra_scanner_get_state (const zebra_scanner_t *scn,
     if(y1) *y1 = y0_1 - y0_2;
     if(y2) *y2 = y0_0 - (y0_1 * 2) + y0_2;
     /* NB not quite accurate (uses updated x) */
-    if(y1_thresh) *y1_thresh = calc_thresh((zebra_scanner_t*)scn);
+    zebra_scanner_t *mut_scn = (zebra_scanner_t*)scn;
+    if(y1_thresh) *y1_thresh = calc_thresh(mut_scn);
 }

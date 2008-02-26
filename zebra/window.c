@@ -46,12 +46,6 @@ int zebra_window_attach (zebra_window_t *w,
                          void *display,
                          unsigned long drawable)
 {
-#if !defined(HAVE_X)
-    err_capture(vdo, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
-                "not compiled with output window support");
-    _zebra_spew_error(vdo);
-    return(-1);
-#else
     /* release image */
     zebra_window_draw(w, NULL);
     if(w->cleanup) {
@@ -64,7 +58,6 @@ int zebra_window_attach (zebra_window_t *w,
         w->formats = NULL;
     }
     return(_zebra_window_attach(w, display, drawable));
-#endif
 }
 
 static inline int window_draw_overlay (zebra_window_t *w)

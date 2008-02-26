@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.61])
-AC_INIT([zebra], [0.2], [spadix@users.sourceforge.net])
+AC_INIT([zebra], [0.3], [spadix@users.sourceforge.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AM_INIT_AUTOMAKE([1.10 -Wall -Werror foreign subdir-objects std-options dist-bzip2])
@@ -18,8 +18,8 @@ dnl   - If any interfaces have been added since the last public release,
 dnl     then increment age.
 dnl   - If any interfaces have been removed since the last public release,
 dnl     then set age to 0. 
-AC_SUBST([LIB_VERSION], [2:0:2])
-AC_SUBST([RELDATE], [2007-05-16])
+AC_SUBST([LIB_VERSION], [3:0:0])
+AC_SUBST([RELDATE], [2008-02-25])
 
 AC_DEFINE_UNQUOTED([ZEBRA_VERSION_MAJOR],
   [[`echo "$PACKAGE_VERSION" | sed -e 's/\..*$//'`]],
@@ -46,6 +46,26 @@ AC_CHECK_TOOL([PKG_CONFIG], [pkg-config], [:])
 dnl libraries
 
 AC_SEARCH_LIBS([clock_gettime], [rt])
+
+dnl pthreads
+dnl FIXME this doesn't port well, integrate something like this:
+dnl     http://autoconf-archive.cryp.to/acx_pthread.html
+
+AC_ARG_ENABLE([pthread],
+  [AS_HELP_STRING([--disable-pthread],
+    [omit support for threaded applications])],
+  [],
+  [enable_pthread="yes"])
+
+AS_IF([test "x$enable_pthread" != "xno"],
+  [AC_CHECK_HEADERS([pthread.h], [],
+     [AC_MSG_FAILURE([test for pthread support failed!
+configure --disable-pthread to skip threaded support.])])
+   AC_CHECK_LIB([pthread], [pthread_create], [],
+     [AC_MSG_FAILURE([unable to link against -lpthread, although you
+appear to have pthread.h? set LDFLAGS and/or LIBS to help the linker,
+or configure --disable-pthread to skip threaded support.])])
+])
 
 dnl video
 AC_ARG_ENABLE([video],
@@ -80,7 +100,6 @@ AH_BOTTOM([#ifndef X_DISPLAY_MISSING
 ])
 AS_IF([test "x$no_x" != "xyes"], [with_x="yes"], [with_x="no"])
 AM_CONDITIONAL([HAVE_X], [test "x$with_x" = "xyes"])
-X_LIBS="$X_LIBS -lX11"
 
 AC_ARG_VAR([XSHM_LIBS], [linker flags for X shared memory extension])
 AS_IF([test "x$XSHM_LIBS" = "x"], [XSHM_LIBS="-lXext"])
@@ -104,10 +123,10 @@ configure --without-xshm to disable the extension])])],
 ]])
    AS_IF([test "x$with_xshm" != "xno"],
      [AC_CHECK_LIB([Xext], [XShmQueryVersion],
-       [],
+       [with_xshm="yes"],
        [AC_MSG_FAILURE([unable to find XShmQueryVersion in $XSHM_LIBS!
 specify XSHM_LIBS or configure --without-xshm to disable the extension])],
-       ["$X_LIBS" "$XSHM_LIBS"])
+       ["$X_LIBS" "$X_PRE_LIBS" -lX11 "$X_EXTRA_LIBS" "$XSHM_LIBS"])
    ])
 ])
 AM_CONDITIONAL([HAVE_XSHM], [test "x$with_xshm" = "xyes"])
@@ -132,10 +151,10 @@ configure --without-xv to disable the extension])])],
 ]])
    AS_IF([test "x$with_xv" != "xno"],
      [AC_CHECK_LIB([Xv], [XvQueryExtension],
-       [],
+       [with_xv="yes"],
        [AC_MSG_FAILURE([unable to find XvQueryExtension in $XV_LIBS!
 specify XV_LIBS or configure --without-xv to disable the extension])],
-       ["$X_LIBS" "$XV_LIBS"])
+       ["$X_LIBS" "$X_PRE_LIBS" -lX11 "$X_EXTRA_LIBS" "$XV_LIBS"])
    ])
 ])
 AM_CONDITIONAL([HAVE_XV], [test "x$with_xv" = "xyes"])
@@ -176,7 +195,7 @@ upgrade ImageMagick or configure --without-imagemagick
 to skip building programs that use ImageMagick.])])
 ])
     
-AM_CONDITIONAL([HAVE_MAGICK], [test "x$MAGICKXX_CONFIG" != "x:"])
+AM_CONDITIONAL([HAVE_MAGICK], [test "x$with_imagemagick" = "xyes"])
 AC_SUBST([MAGICK_CPPFLAGS], [`$MAGICKXX_CONFIG --cppflags`])
 AC_SUBST([MAGICK_CXXFLAGS], [`$MAGICKXX_CONFIG --cxxflags`])
 AC_SUBST([MAGICK_LDFLAGS], [`$MAGICKXX_CONFIG --ldflags`])
@@ -186,7 +205,7 @@ AC_ARG_WITH([mozilla],
   [AS_HELP_STRING([--without-mozilla],
     [disable support for Firefox/Mozilla/OpenOffice NPAPI plugin])],
   [],
-  [with_mozilla="yes"])
+  [with_mozilla="no"])
 
 AC_ARG_VAR([MOZILLA_CFLAGS],
   [C compiler flags for Firefox/Mozilla plugin (overrides pkg-config)])
@@ -218,10 +237,10 @@ AM_CONDITIONAL([HAVE_MOZILLA], [test "x$with_mozilla" != "xno"])
 
 dnl header files
 
-dnl FIXME switches for pthread, shm, mmap
+dnl FIXME switches for shm, mmap
 AC_HEADER_ASSERT
 AC_CHECK_HEADERS([fcntl.h inttypes.h stdlib.h string.h unistd.h \
-  sys/ioctl.h sys/time.h sys/times.h sys/ipc.h sys/shm.h sys/mman.h pthread.h])
+  sys/ioctl.h sys/time.h sys/times.h sys/ipc.h sys/shm.h sys/mman.h])
 
 dnl types
 
@@ -277,8 +296,8 @@ AS_IF([test "x$with_imagemagick" != "xyes"],
   [echo "       => the zebraimg file scanner will *NOT* be built"],
   [echo "       => zebraimg image file scanner will be built"])
 echo ""
-echo "Mozilla Plugin    --with-mozilla=$with_mozilla"
-AS_IF([test "x$with_x" != "xyes" || test "x$with_mozilla" != "xyes"],
-  [echo "       => the Mozilla/Firefox/OpenOffice plugin will *NOT* be built"],
-  [echo "       => the Mozilla/Firefox/OpenOffice plugin will be built"])
-echo ""
+#echo "Mozilla Plugin    --with-mozilla=$with_mozilla"
+#AS_IF([test "x$with_mozilla" != "xyes"],
+#  [echo "       => the Mozilla/Firefox/OpenOffice plugin will *NOT* be built"],
+#  [echo "       => the Mozilla/Firefox/OpenOffice plugin will be built"])
+#echo ""

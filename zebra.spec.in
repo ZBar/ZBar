@@ -7,8 +7,8 @@ Group: Applications/Multimedia
 URL: http://zebra.sourceforge.net
 Packager: Vit Hrachovy <fangorn34@users.sourceforge.net>
 Source: zebra-%{version}.tar.gz
-Requires: ImageMagick-c++, SDL
-BuildPreReq: ImageMagick-c++-devel, SDL-devel
+Requires: ImageMagick-c++
+BuildPreReq: ImageMagick-c++-devel
 Prefix: %{_prefix}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
@@ -60,8 +60,8 @@ ldconfig
 %doc %{_docdir}/%{name}-%{version}/README
 %doc %{_docdir}/%{name}-%{version}/TODO
 %{_datadir}/man/man1/*
-%{_libdir}/libzebra.so.0.2.0
-%{_libdir}/libzebra.so.0
+%{_libdir}/libzebra.so.3.0.0
+%{_libdir}/libzebra.so.3
 %{_libdir}/libzebra.so
 %{_bindir}/zebraimg
 %{_bindir}/zebracam
@@ -71,11 +71,20 @@ ldconfig
 %{_libdir}/libzebra.la
 %{_libdir}/libzebra.a
 %{_includedir}/zebra.h
+%{_includedir}/zebra/Exception.h
+%{_includedir}/zebra/Symbol.h
+%{_includedir}/zebra/Image.h
 %{_includedir}/zebra/Scanner.h
 %{_includedir}/zebra/Decoder.h
-%{_includedir}/zebra/ImageWalker.h
+%{_includedir}/zebra/ImageScanner.h
+%{_includedir}/zebra/Video.h
+%{_includedir}/zebra/Window.h
+%{_includedir}/zebra/Processor.h
 
 %changelog
+* Tue Feb 19 2007 spadix <spadix@users.sourceforge.net>
+- version 0.3 updates (dependencies and files)
+
 * Fri Jun 08 2007 spadix <spadix@users.sourceforge.net>
 - first release
 

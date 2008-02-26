@@ -58,7 +58,7 @@ struct zebra_image_s {
     uint32_t format;            /* fourcc image format code */
     unsigned width, height;     /* image size */
     const void *data;           /* image sample data */
-    size_t datalen;             /* allocated/mapped size of data */
+    unsigned long datalen;      /* allocated/mapped size of data */
 
     /* cleanup handler */
     zebra_image_cleanup_handler_t *cleanup;

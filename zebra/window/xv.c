@@ -54,7 +54,7 @@ static inline int xv_init (zebra_window_t *w,
         _zebra_best_format(img->format, &w->format, w->formats);
         if(!w->format) {
             err_capture_int(w, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
-                            "no conversion from %08x to supported Xv formats",
+                            "no conversion from %x to supported Xv formats",
                             img->format);
             return(-1);
         }

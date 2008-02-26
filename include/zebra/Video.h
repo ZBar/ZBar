@@ -58,16 +58,10 @@ public:
         return(_video);
     }
 
-    std::exception get_error () const
-    {
-        return(create_exception(zebra_video_get_error_code(_video),
-                                zebra_video_error_string(_video, 0)));
-    }
-
     void open (std::string& device)
     {
         if(zebra_video_open(_video, device.c_str()))
-            throw(get_error());
+            throw_exception(_video);
     }
 
     int get_fd ()
@@ -88,7 +82,7 @@ public:
     void enable (bool enable = true)
     {
         if(zebra_video_enable(_video, enable))
-            throw(get_error());
+            throw_exception(_video);
     }
 
     Image next_image ()
@@ -97,7 +91,7 @@ public:
         zebra_image_t *img = zebra_video_next_image(_video);
         if(img)
             return(Image(img));
-        throw(get_error());
+        throw_exception(_video);
     }
 
 private:

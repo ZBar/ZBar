@@ -49,6 +49,7 @@ int main (int argc, char *argv[])
 {
     zebra_set_verbosity(10);
 
+    err_init(&proc.err, ZEBRA_MOD_PROCESSOR);
     proc.window = zebra_window_create();
     if(!proc.window) {
         fprintf(stderr, "unable to allocate memory?!\n");
@@ -66,6 +67,7 @@ int main (int argc, char *argv[])
     zebra_image_t *img = zebra_image_create();
     zebra_image_set_size(img, 640, 480);
     zebra_image_set_format(img, fourcc('I','4','2','0'));
+    /*fourcc('I','4','2','0')*/
     /*fourcc('Y','V','1','2')*/
     /*fourcc('U','Y','V','Y')*/
     /*fourcc('Y','U','Y','V')*/
