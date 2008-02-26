@@ -1,4 +1,5 @@
 version 0.3:
+  * add interface stub files
   * fix wait timeouts
   * fix XImage format filtering
   * fix several error handling corner cases
