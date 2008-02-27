@@ -316,7 +316,11 @@ int zebra_scan_image (zebra_image_scanner_t *iscn,
     const uint8_t *data = zebra_image_get_data(img);
     const uint8_t *p = data;
     int x = 0, y = 0;
+#ifdef DEBUG_IMG_SCANNER
+    movedelta(0, (h + 1) / 2);
+#else
     movedelta(0, 8);
+#endif
 
     zebra_scanner_new_scan(iscn->scn);
 
@@ -350,8 +354,12 @@ int zebra_scan_image (zebra_image_scanner_t *iscn,
         quiet_border(iscn, quiet, x, y);
 
         movedelta(1, 16);
+#ifdef DEBUG_IMG_SCANNER
+        break;
+#endif
     }
 
+#ifndef DEBUG_IMG_SCANNER
     x = y = 0;
     p = data;
     movedelta(8, 0);
@@ -381,6 +389,7 @@ int zebra_scan_image (zebra_image_scanner_t *iscn,
 
         movedelta(16, 1);
     }
+#endif
 
     /* flush scanner pipe */
     zebra_scanner_new_scan(iscn->scn);

@@ -34,6 +34,9 @@ typedef struct ean_pass_s {
 /* EAN/UPC specific decode state */
 typedef struct ean_decoder_s {
     ean_pass_t pass[4];         /* state of each parallel decode attempt */
+    zebra_symbol_type_t left;   /* current holding buffer contents */
+    zebra_symbol_type_t right;
+    zebra_symbol_type_t addon;
     signed char buf[18];        /* holding buffer */
 } ean_decoder_t;
 
@@ -48,7 +51,7 @@ static inline void ean_new_scan (ean_decoder_t *ean)
 static inline void ean_reset (ean_decoder_t *ean)
 {
     ean_new_scan(ean);
-    ean->buf[0] = ean->buf[7] = ean->buf[13] = ean->buf[15] = -1;
+    ean->left = ean->right = ean->addon = ZEBRA_NONE;
 }
 
 /* decode EAN/UPC symbols */

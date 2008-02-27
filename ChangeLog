@@ -1,3 +1,6 @@
+current:
+  * add support for EAN-8!
+
 version 0.3:
   * add interface stub files
   * fix wait timeouts

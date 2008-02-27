@@ -9,7 +9,7 @@ general:
 symbologies:
   * Code 39
   * handle Code 128 function characters (FNC1-4)
-  * finish UPC-E, EAN-8 and addon decoding
+  * finish UPC-E and addon decoding
 
 decoder:
   * symbology/feature enable/disable compile/runtime

@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(srcdir)/include
-AM_CFLAGS = -Wall
+AM_CFLAGS = -Wall -Werror
 AM_CXXFLAGS = $(AM_CFLAGS)
 bin_PROGRAMS =
 check_PROGRAMS =

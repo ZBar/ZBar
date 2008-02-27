@@ -34,10 +34,11 @@ static void symbol_handler (zebra_decoder_t *decoder)
     zebra_symbol_type_t sym = zebra_decoder_get_type(decoder);
     if(sym <= ZEBRA_PARTIAL)
         return;
-    printf("%s%s: %s\n",
+    printf("%s%s:%s\n",
            zebra_get_symbol_name(sym),
            zebra_get_addon_name(sym),
            zebra_decoder_get_data(decoder));
+    /* FIXME add check! */
 }
 
 static void encode_junk (int n)
@@ -114,7 +115,7 @@ static const unsigned int code128[107] = {
     0x111143, 0x111341, 0x131141, 0x114113,
     0x114311, 0x411113, 0x411311, 0x113141, /* 60 */
     0x114131, 0x311141, 0x411131,
-    0x211412, 0x211214, 0x211232,           /* 67 */
+    0xa211412, 0xa211214, 0xa211232,        /* START_A-START_C (67-69) */
     0x2331112a,                             /* STOP (6a) */
 };
 
@@ -192,6 +193,21 @@ static const unsigned char ean_parity_encode[] = {
     0x25,       /* ABBABA = 9 */
 };
 
+static void calc_ean_parity (unsigned char *data,
+                             int n)
+{
+    int i, chk = 0;
+    for(i = 0; i < n; i++) {
+        unsigned char c = data[i] - '0';
+        chk += ((i ^ n) & 1) ? c * 3 : c;
+    }
+    chk %= 10;
+    if(chk)
+        chk = 10 - chk;
+    data[i++] = '0' + chk;
+    data[i] = 0;
+}
+
 static void encode_ean13 (unsigned char *data)
 {
     int i;
@@ -217,6 +233,29 @@ static void encode_ean13 (unsigned char *data)
     printf("------------------------------------------------------------\n");
 }
 
+static void encode_ean8 (unsigned char *data)
+{
+    int i;
+    printf("------------------------------------------------------------\n"
+           "encode EAN-8: %s\n"
+           "    encode start guard:",
+           data);
+    encode(ean_guard[3], FWD);
+    for(i = 0; i < 4; i++) {
+        printf("    encode %c:", data[i]);
+        encode(ean_digits[data[i] - '0'], FWD);
+    }
+    printf("    encode center guard:");
+    encode(ean_guard[5], FWD);
+    for(; i < 8; i++) {
+        printf("    encode %c:", data[i]);
+        encode(ean_digits[data[i] - '0'], FWD);
+    }
+    printf("    encode end guard:");
+    encode(ean_guard[3], REV);
+    printf("------------------------------------------------------------\n");
+}
+
 
 /*------------------------------------------------------------*/
 /* main test flow */
@@ -224,7 +263,7 @@ static void encode_ean13 (unsigned char *data)
 int main (int argc, char **argv)
 {
     int i;
-    int rnd_size = 10; /* should be even */
+    int rnd_size = 9;           /* should be odd */
     srand(0xbabeface);
 
     /* FIXME TBD:
@@ -236,27 +275,24 @@ int main (int argc, char **argv)
     decoder = zebra_decoder_create();
     zebra_decoder_set_handler(decoder, symbol_handler);
 
-    encode_junk(rnd_size);
+    encode_junk(rnd_size + 1);
 
     unsigned char data[32] = { 0 };
-    int chk = 0;
-    for(i = 0; i < 12; i++) {
-        unsigned char c = (rand() >> 16) % 10;
-        data[i] = c + '0';
-        chk += (i & 1) ? c * 3 : c;
-    }
-    data[i] = chk % 10;
-    if(data[i])
-        data[i] = 10 - data[i];
-    data[i] += '0';
-    data[++i] = 0;
+    for(i = 0; i < 12; i++)
+        data[i] = ((rand() >> 16) % 10) + '0';
 
+    calc_ean_parity(data, 12);
     encode_ean13(data);
 
     encode_junk(rnd_size);
 
-    data[--i] = 0;
+    data[i] = 0;
     encode_code128c(data);
+
+    encode_junk(rnd_size);
+
+    calc_ean_parity(data, 7);
+    encode_ean8(data);
 
     encode_junk(rnd_size);
 
