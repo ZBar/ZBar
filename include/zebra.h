@@ -43,6 +43,7 @@ typedef enum zebra_symbol_type_e {
     ZEBRA_UPCE        =     11,   /* UPC-E */
     ZEBRA_UPCA        =     12,   /* UPC-A */
     ZEBRA_EAN13       =     13,   /* EAN-13 */
+    ZEBRA_CODE39      =     39,   /* Code 39 */
     ZEBRA_CODE128     =    128,   /* Code 128 */
     ZEBRA_SYMBOL      = 0x00ff,   /* mask for base symbol type */
     ZEBRA_ADDON2      = 0x0200,   /* 2-digit add-on flag */

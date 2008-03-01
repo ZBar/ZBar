@@ -7,11 +7,13 @@ general:
   * windows port
 
 symbologies:
-  * Code 39
+  * PDF417
+  * Code 39 optional features (check digit and ASCII escapes)
   * handle Code 128 function characters (FNC1-4)
   * finish UPC-E and addon decoding
 
 decoder:
+  * option configuration API
   * symbology/feature enable/disable compile/runtime
   * option to emit check digit (default?)
 

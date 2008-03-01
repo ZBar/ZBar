@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2008 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -20,25 +20,27 @@
  *
  *  http://sourceforge.net/projects/zebra
  *------------------------------------------------------------------------*/
-#ifndef _CODE128_H_
-#define _CODE128_H_
+#ifndef _CODE39_H_
+#define _CODE39_H_
 
-/* Code 128 specific decode state */
-typedef struct code128_decoder_s {
+/* Code 39 specific decode state */
+typedef struct code39_decoder_s {
     unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
-    unsigned element : 3;       /* element offset 0-5 */
+    unsigned element : 4;       /* element offset 0-8 */
     int character : 12;         /* character position in symbol */
-} code128_decoder_t;
+    unsigned w8;                /* one more history (FIXME hack) */
+    unsigned width;             /* negedge width of last character */
+} code39_decoder_t;
 
-/* reset Code 128 specific state */
-static inline void code128_reset (code128_decoder_t *dcode128)
+/* reset Code 39 specific state */
+static inline void code39_reset (code39_decoder_t *dcode39)
 {
-    dcode128->direction = 0;
-    dcode128->element = 0;
-    dcode128->character = -1;
+    dcode39->direction = 0;
+    dcode39->element = 0;
+    dcode39->character = -1;
 }
 
-/* decode Code 128 symbols */
-zebra_symbol_type_t zebra_decode_code128(zebra_decoder_t *dcode);
+/* decode Code 39 symbols */
+zebra_symbol_type_t zebra_decode_code39(zebra_decoder_t *dcode);
 
 #endif

@@ -420,6 +420,11 @@ zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
             dprintf(2, " [invalid]\n");
             return(0);
         }
+        /* lock shared resources */
+        if(get_lock(dcode)) {
+            dprintf(2, " [locked]\n");
+            return(0);
+        }
         /* decoded valid start/stop */
         /* initialize state */
         dcode128->character = 0;
@@ -429,8 +434,6 @@ zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
         }
         else
             dcode128->direction = ZEBRA_SPACE;
-        /* lock shared resources */
-        dcode->lock = 1;
         dprintf(2, " dir=%x [valid start]", dcode128->direction);
     }
     else if((c < 0) ||

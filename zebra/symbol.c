@@ -34,6 +34,7 @@ const char *zebra_get_symbol_name (zebra_symbol_type_t sym)
     case ZEBRA_UPCE: return("UPC-E");
     case ZEBRA_UPCA: return("UPC-A");
     case ZEBRA_EAN13: return("EAN-13");
+    case ZEBRA_CODE39: return("CODE-39");
     case ZEBRA_CODE128: return("CODE-128");
     default: return("UNKNOWN");
     }

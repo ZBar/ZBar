@@ -1,4 +1,6 @@
 current:
+  * add base support for Code 39 (no check digit or full ASCII options yet)
+  * cleanup decoder locking
   * add support for EAN-8!
 
 version 0.3:

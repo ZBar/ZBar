@@ -162,6 +162,57 @@ static void encode_code128c (unsigned char *data)
     printf("------------------------------------------------------------\n");
 }
 
+/*------------------------------------------------------------*/
+/* Code 39 encoding */
+
+static const unsigned int code39[91-32] = {
+    0x0c4, 0x000, 0x000, 0x000,  0x0a8, 0x02a, 0x000, 0x000, /* 20 */
+    0x000, 0x000, 0x094, 0x08a,  0x000, 0x085, 0x184, 0x0a2, /* 28 */
+    0x034, 0x121, 0x061, 0x160,  0x031, 0x130, 0x070, 0x025, /* 30 */
+    0x124, 0x064, 0x000, 0x000,  0x000, 0x000, 0x000, 0x000, /* 38 */
+    0x000, 0x109, 0x049, 0x148,  0x019, 0x118, 0x058, 0x00d, /* 40 */
+    0x10c, 0x04c, 0x01c, 0x103,  0x043, 0x142, 0x013, 0x112, /* 48 */
+    0x052, 0x007, 0x106, 0x046,  0x016, 0x181, 0x0c1, 0x1c0, /* 50 */
+    0x091, 0x190, 0x0d0,                                     /* 58 */
+};
+
+/* FIXME configurable/randomized ratio, ics */
+/* FIXME check digit option, ASCII escapes */
+
+static void encode_char39 (unsigned char c)
+{
+    if(c < 0x20 || c > 0x5a)
+        return; /* skip (FIXME) */
+
+    unsigned int raw = code39[c - 0x20];
+    if(!raw)
+        return; /* skip (FIXME) */
+
+    unsigned int hi = 0;
+    int j;
+    for(j = 0; j < 8; j++) {
+        hi = (hi << 4) | ((raw & 0x100) ? 2 : 1);
+        raw <<= 1;
+    }
+    unsigned int lo = (((raw & 0x100) ? 2 : 1) << 4) | 1;
+    printf("    encode '%c': %08x%02x: ", c, hi, lo);
+    encode(hi, REV);
+    encode(lo, REV);
+}
+
+static void encode_code39 (unsigned char *data)
+{
+    printf("------------------------------------------------------------\n"
+           "encode CODE-39: %s\n", data);
+    encode(0xa, 0);  /* leading quiet */
+    encode_char39('*');
+    int i;
+    for(i = 0; data[i]; i++)
+        encode_char39(data[i]);
+    encode_char39('*');
+    encode(0xa, 0);  /* trailing quiet */
+    printf("------------------------------------------------------------\n");
+}
 
 /*------------------------------------------------------------*/
 /* EAN/UPC encoding */
@@ -301,6 +352,11 @@ int main (int argc, char **argv)
     data[i] = 0;
 
     encode_code128b(data);
+
+    encode_junk(rnd_size);
+
+    /*encode_code39("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%");*/
+    encode_code39(data);
 
     encode_junk(rnd_size);
 

@@ -26,8 +26,21 @@
 #include <stdlib.h>     /* realloc */
 
 #include <zebra.h>
-#include "decoder/ean.h"
-#include "decoder/code128.h"
+
+/* FIXME this should be configured */
+#define ENABLE_EAN 1
+#define ENABLE_CODE128 1
+#define ENABLE_CODE39 1
+
+#ifdef ENABLE_EAN
+# include "decoder/ean.h"
+#endif
+#ifdef ENABLE_CODE39
+# include "decoder/code39.h"
+#endif
+#ifdef ENABLE_CODE128
+# include "decoder/code128.h"
+#endif
 
 /* size of bar width history (implementation assumes power of two) */
 #ifndef DECODE_WINDOW
@@ -65,8 +78,15 @@ struct zebra_decoder_s {
     zebra_decoder_handler_t *handler;   /* application callback */
 
     /* symbology specific state */
+#ifdef ENABLE_EAN
     ean_decoder_t ean;                  /* EAN/UPC parallel decode attempts */
+#endif
+#ifdef ENABLE_CODE39
+    code39_decoder_t code39;            /* Code 39 decode state */
+#endif
+#ifdef ENABLE_CODE128
     code128_decoder_t code128;          /* Code 128 decode state */
+#endif
 };
 
 /* return current element color */
@@ -76,10 +96,17 @@ static inline char get_color (const zebra_decoder_t *dcode)
 }
 
 /* retrieve i-th previous element width */
-static inline unsigned get_width(const zebra_decoder_t *dcode,
-                                 unsigned char offset)
+static inline unsigned get_width (const zebra_decoder_t *dcode,
+                                  unsigned char offset)
 {
     return(dcode->w[(dcode->idx - offset) & (DECODE_WINDOW - 1)]);
+}
+
+/* retrieve bar+space pair width starting at offset i */
+static inline unsigned pair_width (const zebra_decoder_t *dcode,
+                                   unsigned char offset)
+{
+    return(get_width(dcode, offset) + get_width(dcode, offset + 1));
 }
 
 /* calculate total character width "s"
