@@ -23,6 +23,9 @@
 #ifndef _ZEBRA_IMAGE_SCANNER_H_
 #define _ZEBRA_IMAGE_SCANNER_H_
 
+/// @file
+/// Image Scanner C++ wrapper
+
 #ifndef _ZEBRA_H_
 # error "include zebra.h in your application, **not** zebra/ImageScanner.h"
 #endif
@@ -31,9 +34,12 @@
 
 namespace zebra {
 
-class ImageScanner {
+/// mid-level image scanner interface.
+/// reads barcodes from a 2-D Image
 
+class ImageScanner {
 public:
+    /// constructor.
     ImageScanner (zebra_image_scanner_t *scanner = NULL)
     {
         if(scanner)
@@ -47,21 +53,34 @@ public:
         zebra_image_scanner_destroy(_scanner);
     }
 
+    /// cast to C image_scanner object
     operator zebra_image_scanner_t* () const
     {
         return(_scanner);
     }
 
+    /// setup result handler callback.
     void set_handler (Image::Handler &handler)
     {
         zebra_image_scanner_set_data_handler(_scanner, handler, &handler);
     }
 
+    /// enable or disable the inter-image result cache.
+    /// see zebra_image_scanner_enable_cache()
+    void enable_cache (int enable = 1)
+    {
+        zebra_image_scanner_enable_cache(_scanner, enable);
+    }
+
+    /// scan for symbols in provided image.
+    /// see zebra_scan_image()
     int scan (Image& image)
     {
         return(zebra_scan_image(_scanner, image));
     }
 
+    /// scan for symbols in provided image.
+    /// see zebra_scan_image()
     ImageScanner& operator<< (Image& image)
     {
         scan(image);

@@ -108,8 +108,7 @@ static int xv_draw (zebra_window_t *w,
     }
 
     xvimg->data = (void*)img->data;
-    GC gc = DefaultGC(w->display, DefaultScreen(w->display));
-    XvPutImage(w->display, w->img_port, w->xwin, gc, xvimg,
+    XvPutImage(w->display, w->img_port, w->xwin, w->gc, xvimg,
                0, 0, img->width, img->height,
                0, 0, w->width, w->height);
     xvimg->data = NULL;  /* FIXME hold shm image until completion */

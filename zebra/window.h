@@ -62,6 +62,7 @@ struct zebra_window_s {
 #ifdef HAVE_X
     Display *display;           /* display connection */
     Drawable xwin;              /* platform window handle */
+    GC gc;                      /* graphics context */
     union {
         XImage *x;
 #ifdef HAVE_X11_EXTENSIONS_XVLIB_H

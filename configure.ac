@@ -277,7 +277,7 @@ AC_CONFIG_COMMANDS([doc/reldate.xml],
   [RELDATE="$RELDATE"]
 )
 
-AC_CONFIG_FILES([Makefile zebra.spec])
+AC_CONFIG_FILES([Makefile zebra.spec doc/doxygen.conf])
 AC_OUTPUT
 
 dnl summary log

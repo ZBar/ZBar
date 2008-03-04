@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2007 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the Zebra Barcode Library.
 //
@@ -23,6 +23,9 @@
 #ifndef _ZEBRA_DECODER_H_
 #define _ZEBRA_DECODER_H_
 
+/// @file
+/// Decoder C++ wrapper
+
 #ifndef _ZEBRA_H_
 # error "include zebra.h in your application, **not** zebra/Decoder.h"
 #endif
@@ -31,14 +34,24 @@
 
 namespace zebra {
 
+/// low-level bar width stream decoder interface.
+/// identifies symbols and extracts encoded data
+
 class Decoder {
  public:
+
+    /// Decoder result handler.
+    /// applications should subtype this and pass an instance to
+    /// set_handler() to implement result processing
     class Handler {
     public:
         virtual ~Handler() { }
+
+        /// invoked by the Decoder as decode results become available.
         virtual void decode_callback(Decoder &decoder) = 0;
     };
 
+    /// constructor.
     Decoder ()
         : _handler(NULL)
     {
@@ -50,62 +63,85 @@ class Decoder {
         zebra_decoder_destroy(_decoder);
     }
 
+    /// clear all decoder state.
+    /// see zebra_decoder_reset()
     void reset ()
     {
         zebra_decoder_reset(_decoder);
     }
 
+    /// mark start of a new scan pass.
+    /// see zebra_decoder_new_scan()
     void new_scan ()
     {
         zebra_decoder_new_scan(_decoder);
     }
 
+    /// process next bar/space width from input stream.
+    /// see zebra_decode_width()
     zebra_symbol_type_t decode_width (unsigned width)
     {
         return(zebra_decode_width(_decoder, width));
     }
 
+    /// process next bar/space width from input stream.
+    /// see zebra_decode_width()
     Decoder& operator<< (unsigned width)
     {
         zebra_decode_width(_decoder, width);
         return(*this);
     }
 
+    /// retrieve color of @em next element passed to Decoder.
+    /// see zebra_decoder_get_color()
     zebra_color_t get_color () const
     {
         return(zebra_decoder_get_color(_decoder));
     }
 
+    /// retrieve last decoded symbol type.
+    /// see zebra_decoder_get_type()
     zebra_symbol_type_t get_type () const
     {
         return(zebra_decoder_get_type(_decoder));
     }
 
+    /// retrieve string name of last decoded symbol type.
+    /// see zebra_get_symbol_name()
     const char *get_symbol_name () const
     {
         return(zebra_get_symbol_name(zebra_decoder_get_type(_decoder)));
     }
 
+    /// retrieve string name for last decode addon.
+    /// see zebra_get_addon_name()
     const char *get_addon_name () const
     {
         return(zebra_get_addon_name(zebra_decoder_get_type(_decoder)));
     }
 
+    /// retrieve last decoded data in ASCII format as a char array.
+    /// see zebra_decoder_get_data()
     const char *get_data_chars() const
     {
         return(zebra_decoder_get_data(_decoder));
     }
 
+    /// retrieve last decoded data in ASCII format as a std::string.
+    /// see zebra_decoder_get_data()
     const std::string get_data_string() const
     {
         return(zebra_decoder_get_data(_decoder));
     }
 
+    /// retrieve last decoded data in ASCII format as a std::string.
+    /// see zebra_decoder_get_data()
     const std::string get_data() const
     {
         return(zebra_decoder_get_data(_decoder));
     }
 
+    /// setup callback to handle result data.
     void set_handler (Handler &handler)
     {
         _handler = &handler;

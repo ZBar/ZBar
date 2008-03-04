@@ -23,6 +23,9 @@
 #ifndef _ZEBRA_WINDOW_H_
 #define _ZEBRA_WINDOW_H_
 
+/// @file
+/// Output Window C++ wrapper
+
 #ifndef _ZEBRA_H_
 # error "include zebra.h in your application, **not** zebra/Window.h"
 #endif
@@ -31,9 +34,12 @@
 
 namespace zebra {
 
-class Window {
+/// mid-level output window abstraction.
+/// displays images to user-specified platform specific output window
 
+class Window {
 public:
+    /// constructor.
     Window (zebra_window_t *window = NULL)
     {
         if(window)
@@ -42,6 +48,7 @@ public:
             _window = zebra_window_create();
     }
 
+    /// constructor.
     Window (void *x11_display_w32_hwnd,
             unsigned long x11_drawable)
     {
@@ -54,11 +61,14 @@ public:
         zebra_window_destroy(_window);
     }
 
+    /// cast to C window object.
     operator zebra_window_t* () const
     {
         return(_window);
     }
 
+    /// associate reader with an existing platform window.
+    /// see zebra_window_attach()
     void attach (void *x11_display_w32_hwnd,
                  unsigned long x11_drawable)
     {
@@ -67,23 +77,31 @@ public:
             throw_exception(_window);
     }
 
+    /// control content level of the reader overlay.
+    /// see zebra_window_set_overlay()
     void set_overlay (int level)
     {
         zebra_window_set_overlay(_window, level);
     }
 
+    /// draw a new image into the output window.
+    /// see zebra_window_draw()
     void draw (Image& image)
     {
         if(zebra_window_draw(_window, image) < 0)
             throw_exception(_window);
     }
 
+    /// redraw the last image.
+    /// zebra_window_redraw()
     void redraw ()
     {
         if(zebra_window_redraw(_window) < 0)
             throw_exception(_window);
     }
 
+    /// resize the image window.
+    /// zebra_window_resize()
     void resize (unsigned width, unsigned height)
     {
         if(zebra_window_resize(_window, width, height) < 0)
@@ -94,6 +112,8 @@ private:
     zebra_window_t *_window;
 };
 
+/// select a compatible format between video input and output window.
+/// see zebra_negotiate_format()
 void negotiate_format (Video& video, Window &window)
 {
     if(zebra_negotiate_format(video, window) < 0)

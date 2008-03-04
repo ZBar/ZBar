@@ -2,7 +2,6 @@ general:
   * finish error handling
   * handle video destroyed w/images outstanding
   * dbg_scan background image stretched (still...)
-  * hook up doxygen (or robodoc?) for API docs
   * profile and weed out obvious oversights
   * windows port
 
@@ -23,6 +22,7 @@ image scanner:
   * space lead in/out from each scan line
 
 image formats:
+  * fix image data inheritance
   * add missing format conversions
   * add color support to conversions
   * add support for scanline pad throughout

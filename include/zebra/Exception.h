@@ -23,15 +23,20 @@
 #ifndef _ZEBRA_EXCEPTION_H_
 #define _ZEBRA_EXCEPTION_H_
 
+/// @file
+/// C++ Exception definitions
+
 #ifndef _ZEBRA_H_
 # error "include zebra.h in your application, **not** zebra/Exception.h"
 #endif
 
 namespace zebra {
 
+/// base class for exceptions defined by this API.
 class Exception : public std::exception {
 
 public:
+    /// create exception from C library error
     Exception (const void *obj = NULL)
         : std::exception(),
           _obj(obj)
@@ -39,6 +44,7 @@ public:
 
     ~Exception () throw() { }
 
+    /// retrieve error message
     virtual const char* what () const throw()
     {
         if(!_obj)
@@ -46,76 +52,95 @@ public:
         return(_zebra_error_string(_obj, 0));
     }
 
-protected:
+private:
     const void *_obj;
 };
 
+/// internal library error.
 class InternalError : public Exception {
 public:
+    /// create exception from C library error
     InternalError (const void *obj)
         : Exception(obj)
     { }
 };
 
+/// unsupported request.
 class UnsupportedError : public Exception {
 public:
+    /// create exception from C library error
     UnsupportedError (const void *obj)
         : Exception(obj)
     { }
 };
 
+/// invalid request.
 class InvalidError : public Exception {
 public:
+    /// create exception from C library error
     InvalidError (const void *obj)
         : Exception(obj)
     { }
 };
 
+/// failed system call.
 class SystemError : public Exception {
 public:
+    /// create exception from C library error
     SystemError (const void *obj)
         : Exception(obj)
     { }
 };
 
+/// locking error.
 class LockingError : public Exception {
 public:
+    /// create exception from C library error
     LockingError (const void *obj)
         : Exception(obj)
     { }
 };
 
+/// all resources busy.
 class BusyError : public Exception {
 public:
+    /// create exception from C library error
     BusyError (const void *obj)
         : Exception(obj)
     { }
 };
 
+/// X11 display error.
 class XDisplayError : public Exception {
 public:
+    /// create exception from C library error
     XDisplayError (const void *obj)
         : Exception(obj)
     { }
 };
 
+/// X11 protocol error.
 class XProtoError : public Exception {
 public:
+    /// create exception from C library error
     XProtoError (const void *obj)
         : Exception(obj)
     { }
 };
 
+/// output window is closed.
 class ClosedError : public Exception {
 public:
+    /// create exception from C library error
     ClosedError (const void *obj)
         : Exception(obj)
     { }
 };
 
-
-// FIXME needs c equivalent
+/// image format error
 class FormatError : public Exception {
+    // FIXME needs c equivalent
+
     virtual const char* what () const throw()
     {
         // FIXME what format?

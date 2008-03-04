@@ -75,6 +75,7 @@ int _zebra_window_attach (zebra_window_t *w,
 
     w->display = display;
     w->xwin = win;
+    w->gc = XCreateGC(display, win, 0, NULL);
 
     XWindowAttributes attr;
     XGetWindowAttributes(w->display, w->xwin, &attr);
@@ -274,9 +275,8 @@ int _zebra_window_clear (zebra_window_t *w)
     if(!w->display)
         return(0);
     int screen = DefaultScreen(w->display);
-    GC gc = DefaultGC(w->display, screen);
-    XSetForeground(w->display, gc, BlackPixel(w->display, screen));
-    XFillRectangle(w->display, w->xwin, gc, 0, 0, w->width, w->height);
+    XSetForeground(w->display, w->gc, BlackPixel(w->display, screen));
+    XFillRectangle(w->display, w->xwin, w->gc, 0, 0, w->width, w->height);
     return(0);
 }
 
@@ -284,8 +284,7 @@ int _zebra_window_draw_marker(zebra_window_t *w,
                               uint32_t rgb,
                               const point_t *p)
 {
-    GC gc = DefaultGC(w->display, DefaultScreen(w->display));
-    XSetForeground(w->display, gc, w->colors[rgb]);
+    XSetForeground(w->display, w->gc, w->colors[rgb]);
 
     int x = p->x;
     if(x < 3)
@@ -299,8 +298,8 @@ int _zebra_window_draw_marker(zebra_window_t *w,
     else if(y > w->height - 4)
         y = w->height - 4;
 
-    XDrawRectangle(w->display, w->xwin, gc, x - 2, y - 2, 4, 4);
-    XDrawLine(w->display, w->xwin, gc, x, y - 3, x, y + 3);
-    XDrawLine(w->display, w->xwin, gc, x - 3, y, x + 3, y);
+    XDrawRectangle(w->display, w->xwin, w->gc, x - 2, y - 2, 4, 4);
+    XDrawLine(w->display, w->xwin, w->gc, x, y - 3, x, y + 3);
+    XDrawLine(w->display, w->xwin, w->gc, x - 3, y, x + 3, y);
     return(0);
 }

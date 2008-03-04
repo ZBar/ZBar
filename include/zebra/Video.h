@@ -23,6 +23,9 @@
 #ifndef _ZEBRA_VIDEO_H_
 #define _ZEBRA_VIDEO_H_
 
+/// @file
+/// Video Input C++ wrapper
+
 #ifndef _ZEBRA_H_
 # error "include zebra.h in your application, **not** zebra/Video.h"
 #endif
@@ -31,9 +34,12 @@
 
 namespace zebra {
 
-class Video {
+/// mid-level video source abstraction.
+/// captures images from a video device
 
+class Video {
 public:
+    /// constructor.
     Video (zebra_video_t *video = NULL)
     {
         if(video)
@@ -42,6 +48,7 @@ public:
             _video = zebra_video_create();
     }
 
+    /// constructor.
     Video (std::string& device)
     {
         _video = zebra_video_create();
@@ -53,41 +60,52 @@ public:
         zebra_video_destroy(_video);
     }
 
+    /// cast to C video object.
     operator zebra_video_t* () const
     {
         return(_video);
     }
 
+    /// open and probe a video device.
     void open (std::string& device)
     {
         if(zebra_video_open(_video, device.c_str()))
             throw_exception(_video);
     }
 
+    /// retrieve file descriptor associated with open *nix video device.
+    /// see zebra_video_get_fd()
     int get_fd ()
     {
         return(zebra_video_get_fd(_video));
     }
 
+    /// retrieve current output image width.
+    /// see zebra_video_get_width()
     int get_width ()
     {
         return(zebra_video_get_width(_video));
     }
 
+    /// retrieve current output image height.
+    /// see zebra_video_get_height()
     int get_height ()
     {
         return(zebra_video_get_height(_video));
     }
 
+    /// start/stop video capture.
+    /// see zebra_video_enable()
     void enable (bool enable = true)
     {
         if(zebra_video_enable(_video, enable))
             throw_exception(_video);
     }
 
+    /// retrieve next captured image.
+    /// see zebra_video_next_image()
     Image next_image ()
     {
-        /* FIXME propagate image caching */
         zebra_image_t *img = zebra_video_next_image(_video);
         if(img)
             return(Image(img));

@@ -23,6 +23,9 @@
 #ifndef _ZEBRA_SYMBOL_H_
 #define _ZEBRA_SYMBOL_H_
 
+/// @file
+/// Symbol C++ wrapper
+
 #ifndef _ZEBRA_H_
 # error "include zebra.h in your application, **not** zebra/Symbol.h"
 #endif
@@ -32,15 +35,21 @@
 
 namespace zebra {
 
-class Symbol {
+/// decoded barcode symbol result object.  stores type, data, and
+/// image location of decoded symbol
 
+class Symbol {
 public:
+
+    /// image pixel location (x, y) coordinate tuple.
     class Point {
     public:
-        int x, y;
+        int x;  ///< x-coordinate.
+        int y;  ///< y-coordinate.
 
         Point () { }
 
+        /// copy constructor.
         Point (const Point& pt)
         {
             x = pt.x;
@@ -48,11 +57,12 @@ public:
         }
     };
 
-
+    /// iteration over Point objects in a symbol location polygon.
     class PointIterator
         : public std::iterator<std::input_iterator_tag, Point> {
 
     public:
+        /// constructor.
         PointIterator (const Symbol *sym = NULL,
                        int index = 0)
             : _sym(sym),
@@ -63,11 +73,13 @@ public:
                 _index = -1;
         }
 
+        /// constructor.
         PointIterator (const PointIterator& iter)
             : _sym(iter._sym),
               _index(iter._index)
         { }
 
+        /// advance iterator to next Point.
         PointIterator& operator++ ()
         {
             if(_index >= 0) {
@@ -79,17 +91,22 @@ public:
             return(*this);
         }
 
+        /// retrieve currently referenced Point.
         const Point& operator* () const
         {
             return(_pt);
         }
 
+        /// test if two iterators refer to the same Point in the same
+        /// Symbol.
         bool operator== (const PointIterator& iter) const
         {
             return(_index == iter._index &&
                    ((_index < 0) || _sym == iter._sym));
         }
 
+        /// test if two iterators refer to the same Point in the same
+        /// Symbol.
         bool operator!= (const PointIterator& iter) const
         {
             return(!(*this == iter));
@@ -101,7 +118,7 @@ public:
         Point _pt;
     };
 
-
+    /// constructor.
     Symbol (const zebra_symbol_t *sym = NULL)
     {
         init(sym);
@@ -109,7 +126,7 @@ public:
 
     ~Symbol () { }
 
-
+    /// initialize Symbol from C symbol object.
     void init (const zebra_symbol_t *sym)
     {
         _sym = sym;
@@ -123,63 +140,74 @@ public:
         }
     }
 
+    /// cast to C symbol.
     operator const zebra_symbol_t* () const
     {
         return(_sym);
     }
 
+    /// test if two Symbol objects refer to the same C symbol.
     bool operator== (const Symbol& sym) const
     {
         return(_sym == sym._sym);
     }
 
+    /// test if two Symbol objects refer to the same C symbol.
     bool operator!= (const Symbol& sym) const
     {
         return(!(*this == sym));
     }
 
-
+    /// retrieve type of decoded symbol.
     zebra_symbol_type_t get_type () const
     {
         return(_type);
     }
 
+    /// retrieve the string name of the symbol type.
     const std::string get_type_name () const
     {
         return(zebra_get_symbol_name(_type));
     }
 
+    /// retrieve the string name for any addon.
     const std::string get_addon_name () const
     {
         return(zebra_get_addon_name(_type));
     }
 
+    /// retrieve ASCII data decoded from symbol.
     const std::string get_data () const
     {
         return(_data);
     }
 
-
+    /// create a new PointIterator at the start of the location
+    /// polygon.
     PointIterator point_begin() const
     {
         return(PointIterator(this));
     }
 
+    /// return a PointIterator suitable for ending iteration.
     const PointIterator& point_end() const
     {
         return(_point_iter_end);
     }
 
+    /// see zebra_symbol_get_loc_size().
     int get_location_size () const
     {
         return(zebra_symbol_get_loc_size(_sym));
     }
 
+    /// see zebra_symbol_get_loc_x().
     int get_location_x (unsigned index) const
     {
         return(zebra_symbol_get_loc_x(_sym, index));
     }
 
+    /// see zebra_symbol_get_loc_y().
     int get_location_y (unsigned index) const
     {
         return(zebra_symbol_get_loc_y(_sym, index));
@@ -192,6 +220,8 @@ private:
     PointIterator _point_iter_end;
 };
 
+/// @relates Symbol
+/// stream the string representation of a Symbol.
 std::ostream& operator<< (std::ostream& out,
                           const Symbol& sym)
 {

@@ -128,9 +128,7 @@ static int ximage_draw (zebra_window_t *w,
     else
         dst_y = (w->height - img->height) >> 1;
 
-    int screen = DefaultScreen(w->display);
-    GC gc = DefaultGC(w->display, screen);
-    XPutImage(w->display, w->xwin, gc, ximg,
+    XPutImage(w->display, w->xwin, w->gc, ximg,
               src_x, src_y, dst_x, dst_y, width, height);
     ximg->data = NULL;
     return(0);

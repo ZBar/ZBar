@@ -23,6 +23,9 @@
 #ifndef _ZEBRA_IMAGE_H_
 #define _ZEBRA_IMAGE_H_
 
+/// @file
+/// Image C++ wrapper
+
 #ifndef _ZEBRA_H_
 # error "include zebra.h in your application, **not** zebra/Image.h"
 #endif
@@ -34,15 +37,23 @@
 
 namespace zebra {
 
-class Image {
+/// stores image data samples along with associated format and size
+/// metadata
 
+class Image {
 public:
+
+    /// general Image result handler.
+    /// applications should subtype this and pass an instance to
+    /// eg. ImageScanner::set_handler() to implement result processing
     class Handler {
     public:
         virtual ~Handler() { }
+
+        /// invoked by library when Image should be processed
         virtual void image_callback(Image &image) = 0;
 
-        // FIXME bogus
+        /// cast this handler to the C handler
         operator zebra_image_data_handler_t* () const {
             return(_cb);
         }
@@ -58,10 +69,12 @@ public:
         }
     };
 
+    /// iteration over Symbol result objects in a scanned Image.
     class SymbolIterator
         : public std::iterator<std::input_iterator_tag, Symbol> {
 
     public:
+        /// constructor.
         SymbolIterator (const Image *img = NULL)
         {
             if(img) {
@@ -70,10 +83,12 @@ public:
             }
         }
 
+        /// constructor.
         SymbolIterator (const SymbolIterator& iter)
             : _sym(iter._sym)
         { }
 
+        /// advance iterator to next Symbol.
         SymbolIterator& operator++ ()
         {
             const zebra_symbol_t *zsym = _sym;
@@ -84,16 +99,19 @@ public:
             return(*this);
         }
 
+        /// retrieve currently referenced Symbol.
         const Symbol& operator* () const
         {
             return(_sym);
         }
 
+        /// test if two iterators refer to the same Symbol
         bool operator== (const SymbolIterator& iter) const
         {
             return(_sym == iter._sym);
         }
 
+        /// test if two iterators refer to the same Symbol
         bool operator!= (const SymbolIterator& iter) const
         {
             return(!(*this == iter));
@@ -104,6 +122,8 @@ public:
     };
 
 
+    /// constructor.
+    /// create a new Image with the specified parameters
     Image (unsigned width = 0,
            unsigned height = 0,
            const std::string& format = "",
@@ -119,6 +139,8 @@ public:
             set_data(data, length);
     }
 
+    /// constructor.
+    /// create a new Image from a zebra_image_t C object
     Image (zebra_image_t *src)
         : _img(src)
     { }
@@ -128,27 +150,34 @@ public:
         zebra_image_destroy(_img);
     }
 
+    /// cast to C image object
     operator const zebra_image_t* () const
     {
         return(_img);
     }
 
+    /// cast to C image object
     operator zebra_image_t* ()
     {
         return(_img);
     }
 
-
+    /// retrieve the image format.
+    /// see zebra_image_get_format()
     unsigned long get_format () const
     {
         return(zebra_image_get_format(_img));
     }
 
+    /// specify the fourcc image format code for image sample data.
+    /// see zebra_image_set_format()
     void set_format (unsigned long format)
     {
         zebra_image_set_format(_img, format);
     }
 
+    /// specify the fourcc image format code for image sample data.
+    /// see zebra_image_set_format()
     void set_format (const std::string& format)
     {
         if(format.length() != 4)
@@ -160,33 +189,45 @@ public:
         zebra_image_set_format(_img, fourcc);
     }
 
+    /// retrieve the width of the image.
+    /// see zebra_image_get_width()
     unsigned get_width () const
     {
         return(zebra_image_get_width(_img));
     }
 
+    /// retrieve the height of the image.
+    /// see zebra_image_get_height()
     unsigned get_height () const
     {
         return(zebra_image_get_height(_img));
     }
 
+    /// specify the pixel size of the image.
+    /// see zebra_image_set_size()
     void set_size (unsigned width,
                    unsigned height)
     {
         zebra_image_set_size(_img, width, height);
     }
 
+    /// return the image sample data.
+    /// see zebra_image_get_data()
     const void *get_data () const
     {
         return(zebra_image_get_data(_img));
     }
 
+    /// specify image sample data.
+    /// see zebra_image_set_data()
     void set_data (const void *data,
                    unsigned long length)
     {
         zebra_image_set_data(_img, data, length, _cleanup);
     }
 
+    /// image format conversion.
+    /// see zebra_image_convert()
     Image convert (unsigned long format) const
     {
         zebra_image_t *img = zebra_image_convert(_img, format);
@@ -195,15 +236,19 @@ public:
         throw FormatError();
     }
 
+    /// create a new SymbolIterator over decoded results.
     SymbolIterator symbol_begin() const {
         return(SymbolIterator(this));
     }
 
+    /// return a SymbolIterator suitable for ending iteration.
     SymbolIterator symbol_end() const {
         return(SymbolIterator(_sym_iter_end));
     }
 
 protected:
+    /// default data cleanup (noop)
+    /// @internal
     static void _cleanup (zebra_image_t *img)
     {
         // by default nothing is cleaned

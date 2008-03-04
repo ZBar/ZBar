@@ -23,6 +23,9 @@
 #ifndef _ZEBRA_PROCESSOR_H_
 #define _ZEBRA_PROCESSOR_H_
 
+/// @file
+/// Processor C++ wrapper
+
 #ifndef _ZEBRA_H_
 # error "include zebra.h in your application, **not** zebra/Processor.h"
 #endif
@@ -32,10 +35,16 @@
 
 namespace zebra {
 
+/// high-level self-contained image processor.
+/// processes video and images for barcodes, optionally displaying
+/// images to a library owned output window
+
 class Processor {
  public:
+    /// value to pass for no timeout.
     static const int FOREVER = -1;
 
+    /// constructor.
     Processor (bool threaded = true)
     {
         _processor = zebra_processor_create(threaded);
@@ -43,6 +52,7 @@ class Processor {
             throw std::bad_alloc();
     }
 
+    /// constructor.
     Processor (bool threaded = true,
                const char *video_device = "",
                bool enable_display = true)
@@ -58,11 +68,14 @@ class Processor {
         zebra_processor_destroy(_processor);
     }
 
+    /// cast to C processor object.
     operator zebra_processor_t* ()
     {
         return(_processor);
     }
 
+    /// opens a video input device and/or prepares to display output.
+    /// see zebra_processor_init()
     void init (const char *video_device = "",
                bool enable_display = true)
     {
@@ -70,11 +83,15 @@ class Processor {
             throw_exception(_processor);
     }
 
+    /// setup result handler callback.
+    /// see zebra_processor_set_data_handler()
     void set_handler (Image::Handler& handler)
     {
         zebra_processor_set_data_handler(_processor, handler, &handler);
     }
 
+    /// retrieve the current state of the ouput window.
+    /// see zebra_processor_is_visible()
     bool is_visible ()
     {
         int rc = zebra_processor_is_visible(_processor);
@@ -83,18 +100,24 @@ class Processor {
         return(rc);
     }
 
+    /// show or hide the display window owned by the library.
+    /// see zebra_processor_set_visible()
     void set_visible (bool visible = true)
     {
         if(zebra_processor_set_visible(_processor, visible) < 0)
             throw_exception(_processor);
     }
 
+    /// control the processor in free running video mode.
+    /// see zebra_processor_set_active()
     void set_active (bool active = true)
     {
         if(zebra_processor_set_active(_processor, active) < 0)
             throw_exception(_processor);
     }
 
+    /// wait for input to the display window from the user.
+    /// see zebra_processor_user_wait()
     int user_wait (int timeout = FOREVER)
     {
         int rc = zebra_processor_user_wait(_processor, timeout);
@@ -103,18 +126,24 @@ class Processor {
         return(rc);
     }
 
+    /// process from the video stream until a result is available.
+    /// see zebra_process_one()
     void process_one (int timeout = FOREVER)
     {
         if(zebra_process_one(_processor, timeout) < 0)
             throw_exception(_processor);
     }
 
+    /// process the provided image for barcodes.
+    /// see zebra_process_image()
     void process_image (Image& image)
     {
         if(zebra_process_image(_processor, image) < 0)
             throw_exception(_processor);
     }
 
+    /// process the provided image for barcodes.
+    /// see zebra_process_image()
     Processor& operator<< (Image& image)
     {
         process_image(image);
