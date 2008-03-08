@@ -29,11 +29,15 @@
 
 /* FIXME this should be configured */
 #define ENABLE_EAN 1
-#define ENABLE_CODE128 1
+#define ENABLE_I25 1
 #define ENABLE_CODE39 1
+#define ENABLE_CODE128 1
 
 #ifdef ENABLE_EAN
 # include "decoder/ean.h"
+#endif
+#ifdef ENABLE_I25
+# include "decoder/i25.h"
 #endif
 #ifdef ENABLE_CODE39
 # include "decoder/code39.h"
@@ -44,7 +48,7 @@
 
 /* size of bar width history (implementation assumes power of two) */
 #ifndef DECODE_WINDOW
-# define DECODE_WINDOW  8
+# define DECODE_WINDOW  16
 #endif
 
 /* initial data buffer allocation */
@@ -80,6 +84,9 @@ struct zebra_decoder_s {
     /* symbology specific state */
 #ifdef ENABLE_EAN
     ean_decoder_t ean;                  /* EAN/UPC parallel decode attempts */
+#endif
+#ifdef ENABLE_I25
+    i25_decoder_t i25;                  /* Interleaved 2 of 5 decode state */
 #endif
 #ifdef ENABLE_CODE39
     code39_decoder_t code39;            /* Code 39 decode state */

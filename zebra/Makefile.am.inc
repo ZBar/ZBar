@@ -15,6 +15,7 @@ zebra_libzebra_la_SOURCES = \
 zebra_libzebra_la_SOURCES += zebra/decoder/ean.h zebra/decoder/ean.c
 zebra_libzebra_la_SOURCES += zebra/decoder/code128.h zebra/decoder/code128.c
 zebra_libzebra_la_SOURCES += zebra/decoder/code39.h zebra/decoder/code39.c
+zebra_libzebra_la_SOURCES += zebra/decoder/i25.h zebra/decoder/i25.c
 
 if HAVE_V4L1
 zebra_libzebra_la_SOURCES += zebra/video/v4l1.c

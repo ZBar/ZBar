@@ -143,22 +143,21 @@ static inline signed char aux_end (zebra_decoder_t *dcode,
 /* determine possible auxiliary pattern
  * using current 4 as possible character
  */
-static inline signed char aux_start (zebra_decoder_t *dcode,
-                                     unsigned s)
+static inline signed char aux_start (zebra_decoder_t *dcode)
 {
     /* FIXME NB add-on has no guard in reverse */
     unsigned e2 = get_width(dcode, 5) + get_width(dcode, 6);
-    if(decode_e(e2, s, 7)) {
+    if(decode_e(e2, dcode->ean.s4, 7)) {
         dprintf(2, " [invalid any]");
         return(/*FIXME (get_color(dcode) == ZEBRA_SPACE) ? STATE_ADDON : */-1);
     }
 
     unsigned e1 = get_width(dcode, 4) + get_width(dcode, 5);
-    unsigned char E1 = decode_e(e1, s, 7);
+    unsigned char E1 = decode_e(e1, dcode->ean.s4, 7);
 
     if(get_color(dcode) == ZEBRA_BAR) {
         /* check for quiet-zone */
-        if((get_width(dcode, 7) * 14 + 1) / s >= 3) {
+        if((get_width(dcode, 7) * 14 + 1) / dcode->ean.s4 >= 3) {
             if(!E1) {
                 dprintf(2, " [valid normal]");
                 return(0); /* normal symbol start */
@@ -175,7 +174,7 @@ static inline signed char aux_start (zebra_decoder_t *dcode,
     if(!E1) {
         /* attempting decode from SPACE => validate center guard */
         unsigned e3 = get_width(dcode, 6) + get_width(dcode, 7);
-        if(!decode_e(e3, s, 7)) {
+        if(!decode_e(e3, dcode->ean.s4, 7)) {
             dprintf(2, " [valid center]");
             return(0); /* start after center guard */
         }
@@ -185,8 +184,7 @@ static inline signed char aux_start (zebra_decoder_t *dcode,
 }
 
 /* attempt to decode previous 4 widths (2 bars and 2 spaces) as a character */
-static inline signed char decode4 (zebra_decoder_t *dcode,
-                                   unsigned s)
+static inline signed char decode4 (zebra_decoder_t *dcode)
 {
     /* calculate similar edge measurements */
     unsigned e1 = ((get_color(dcode) == ZEBRA_BAR)
@@ -196,7 +194,8 @@ static inline signed char decode4 (zebra_decoder_t *dcode,
     dprintf(2, "\n        e1=%d e2=%d", e1, e2);
 
     /* create compacted encoding for direct lookup */
-    signed char code = (decode_e(e1, s, 7) << 2) | decode_e(e2, s, 7);
+    signed char code = ((decode_e(e1, dcode->ean.s4, 7) << 2) |
+                        decode_e(e2, dcode->ean.s4, 7));
     if(code < 0)
         return(-1);
     dprintf(2, " code=%x", code);
@@ -216,10 +215,10 @@ static inline signed char decode4 (zebra_decoder_t *dcode,
         unsigned char mid = (((1 << code) & 0x0420)
                              ? 3     /* E1E2 in 33,44 */
                              : 4);   /* E1E2 in 34,43 */
-        unsigned char alt = d2 > (mid * s);
+        unsigned char alt = d2 > (mid * dcode->ean.s4);
         if(alt)
             code = ((code >> 1) & 3) | 0x10; /* compress code space */
-        dprintf(2, " (d2=%d(%d) alt=%d)", d2, mid * s, alt);
+        dprintf(2, " (d2=%d(%d) alt=%d)", d2, mid * dcode->ean.s4, alt);
     }
     dprintf(2, " char=%02x", digits[(unsigned char)code]);
     assert(code < 0x14);
@@ -330,18 +329,16 @@ static inline zebra_symbol_type_t decode_pass (zebra_decoder_t *dcode,
     }
 
     if(!(idx & 0x03) && idx <= 0x14) {
-        unsigned s = calc_s(dcode, 0, 4);
-        if(!s)
+        if(!dcode->ean.s4)
             return(0);
-        dprintf(2, " s=%d", s);
         /* validate guard bars before decoding first char of symbol */
         if(!pass->state) {
-            pass->state = aux_start(dcode, s);
+            pass->state = aux_start(dcode);
             if(pass->state < 0)
                 return(0);
             idx = pass->state & STATE_IDX;
         }
-        signed char code = decode4(dcode, s);
+        signed char code = decode4(dcode);
         if(code < 0)
             pass->state = -1;
         else {
@@ -445,7 +442,7 @@ static inline zebra_symbol_type_t integrate_partial (ean_decoder_t *ean,
         }
         else /* EAN_LEFT or entire UPC-E symbol */ {
             j = (part == ZEBRA_EAN13) ? 6 : 3;
-            for(i = (part == ZEBRA_EAN13) ? 6 : 4; i >= 0; i--, j--) {
+            for(i = (part == ZEBRA_EAN13) ? 6 : 4; j >= 0; i--, j--) {
                 unsigned char digit = pass->raw[i] & 0xf;
                 if(ean->left && ean->buf[j] != digit) {
                     /* partial mismatch - reset collected parts */
@@ -495,14 +492,18 @@ zebra_symbol_type_t zebra_decode_ean (zebra_decoder_t *dcode)
     zebra_symbol_type_t sym = ZEBRA_NONE;
     unsigned char pass_idx = dcode->idx & 3;
 
+    /* update latest character width */
+    dcode->ean.s4 -= get_width(dcode, 4);
+    dcode->ean.s4 += get_width(dcode, 0);
+
     unsigned char i;
     for(i = 0; i < 4; i++) {
         ean_pass_t *pass = &dcode->ean.pass[i];
         if(pass->state >= 0 ||
            i == pass_idx)
         {
-            dprintf(2, "      ean[%x/%x]: idx=%x st=%d",
-                    pass_idx, i, dcode->idx, pass->state);
+            dprintf(2, "      ean[%x/%x]: idx=%x st=%d s=%d",
+                    pass_idx, i, dcode->idx, pass->state, dcode->ean.s4);
             zebra_symbol_type_t part = decode_pass(dcode, pass);
             if(part) {
                 /* update accumulated data from new partial decode */
@@ -510,7 +511,8 @@ zebra_symbol_type_t zebra_decode_ean (zebra_decoder_t *dcode)
                 if(sym) {
                     /* this pass valid => _reset_ all passes */
                     dprintf(2, " sym=%x", sym);
-                    ean_new_scan(&dcode->ean);
+                    dcode->ean.pass[0].state = dcode->ean.pass[1].state = -1;
+                    dcode->ean.pass[2].state = dcode->ean.pass[3].state = -1;
                     if(sym > ZEBRA_PARTIAL) {
                         if(!get_lock(dcode))
                             postprocess(dcode, sym);

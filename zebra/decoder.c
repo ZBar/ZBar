@@ -59,6 +59,9 @@ void zebra_decoder_reset (zebra_decoder_t *dcode)
 #ifdef ENABLE_EAN
     ean_reset(&dcode->ean);
 #endif
+#ifdef ENABLE_I25
+    i25_reset(&dcode->i25);
+#endif
 #ifdef ENABLE_CODE39
     code39_reset(&dcode->code39);
 #endif
@@ -75,6 +78,9 @@ void zebra_decoder_new_scan (zebra_decoder_t *dcode)
     dcode->idx = 0;
 #ifdef ENABLE_EAN
     ean_new_scan(&dcode->ean);
+#endif
+#ifdef ENABLE_I25
+    i25_reset(&dcode->i25);
 #endif
 #ifdef ENABLE_CODE39
     code39_reset(&dcode->code39);
@@ -123,7 +129,7 @@ zebra_symbol_type_t zebra_decoder_get_type (const zebra_decoder_t *dcode)
 zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
                                         unsigned w)
 {
-    dcode->w[dcode->idx & 7] = w;
+    dcode->w[dcode->idx & (DECODE_WINDOW - 1)] = w;
     dprintf("    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
 
     /* each decoder processes width stream in parallel */
@@ -139,6 +145,10 @@ zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
 #endif
 #ifdef ENABLE_CODE128
     if((sym = zebra_decode_code128(dcode)) > ZEBRA_PARTIAL)
+        dcode->type = sym;
+#endif
+#ifdef ENABLE_I25
+    if((sym = zebra_decode_i25(dcode)) > ZEBRA_PARTIAL)
         dcode->type = sym;
 #endif
 

@@ -21,8 +21,10 @@
  *  http://sourceforge.net/projects/zebra
  *------------------------------------------------------------------------*/
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 #include <zebra.h>
@@ -52,16 +54,16 @@ static void encode_junk (int n)
 #define FWD 1
 #define REV 0
 
-static void encode (unsigned int units,
+static void encode (uint64_t units,
                     int fwd)
 {
-    printf(" raw=%x%c\n", units, (fwd) ? '<' : '>');
+    printf(" raw=%"PRIx64"%c\n", units, (fwd) ? '<' : '>');
     if(!fwd)
-        while(units && !(units >> 0x1c))
+        while(units && !(units >> 0x3c))
             units <<= 4;
 
     while(units) {
-        unsigned char w = (fwd) ? units & 0xf : units >> 0x1c;
+        unsigned char w = (fwd) ? units & 0xf : units >> 0x3c;
         zebra_decode_width(decoder, w);
         if(fwd)
             units >>= 4;
@@ -181,23 +183,24 @@ static const unsigned int code39[91-32] = {
 
 static void encode_char39 (unsigned char c)
 {
-    if(c < 0x20 || c > 0x5a)
+    if(c >= 'a' && c <= 'z')
+        c -= 'a' - 'A';
+    else if(c < 0x20 || c > 0x5a)
         return; /* skip (FIXME) */
 
     unsigned int raw = code39[c - 0x20];
     if(!raw)
         return; /* skip (FIXME) */
 
-    unsigned int hi = 0;
+    uint64_t enc = 0;
     int j;
-    for(j = 0; j < 8; j++) {
-        hi = (hi << 4) | ((raw & 0x100) ? 2 : 1);
+    for(j = 0; j < 9; j++) {
+        enc = (enc << 4) | ((raw & 0x100) ? 2 : 1);
         raw <<= 1;
     }
-    unsigned int lo = (((raw & 0x100) ? 2 : 1) << 4) | 1;
-    printf("    encode '%c': %08x%02x: ", c, hi, lo);
-    encode(hi, REV);
-    encode(lo, REV);
+    enc = (enc << 4) | 1;
+    printf("    encode '%c': %010"PRIx64": ", c, enc);
+    encode(enc, REV);
 }
 
 static void encode_code39 (unsigned char *data)
@@ -211,6 +214,52 @@ static void encode_code39 (unsigned char *data)
         encode_char39(data[i]);
     encode_char39('*');
     encode(0xa, 0);  /* trailing quiet */
+    printf("------------------------------------------------------------\n");
+}
+
+/*------------------------------------------------------------*/
+/* Interleaved 2 of 5 encoding */
+
+static const unsigned char i25[10] = {
+    0x06, 0x11, 0x09, 0x18, 0x05, 0x14, 0x0c, 0x03, 0x12, 0x0a,
+};
+
+static void encode_i25 (unsigned char *data,
+                        int dir)
+{
+    printf("------------------------------------------------------------\n"
+           "encode Interleaved 2 of 5: %s\n"
+           "    encode start:", data);
+    encode((dir) ? 0xa1111 : 0xa112, 0);
+
+    /* FIXME rev case data reversal */
+    int i;
+    for(i = (strlen(data) & 1) ? -1 : 0; i < 0 || data[i]; i += 2) {
+        /* encode 2 digits */
+        unsigned char c0 = (i < 0) ? 0 : data[i] - '0';
+        unsigned char c1 = data[i + 1] - '0';
+        printf("    encode '%d%d':", c0, c1);
+        assert(c0 < 10);
+        assert(c1 < 10);
+
+        c0 = i25[c0];
+        c1 = i25[c1];
+
+        /* interleave */
+        uint64_t enc = 0;
+        int j;
+        for(j = 0; j < 5; j++) {
+            enc <<= 8;
+            enc |= (c0 & 1) ? 0x02 : 0x01;
+            enc |= (c1 & 1) ? 0x20 : 0x10;
+            c0 >>= 1;
+            c1 >>= 1;
+        }
+        encode(enc, dir);
+    }
+
+    printf("    encode end:");
+    encode((dir) ? 0x211a : 0x1111a, 0);
     printf("------------------------------------------------------------\n");
 }
 
@@ -339,6 +388,14 @@ int main (int argc, char **argv)
 
     data[i] = 0;
     encode_code128c(data);
+
+    encode_junk(rnd_size);
+
+    encode_i25(data, FWD);
+
+    encode_junk(rnd_size);
+
+    encode_i25(data, REV);
 
     encode_junk(rnd_size);
 

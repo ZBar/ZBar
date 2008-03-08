@@ -52,6 +52,7 @@ typedef enum zebra_symbol_type_e {
     ZEBRA_UPCE        =     11,   /**< UPC-E */
     ZEBRA_UPCA        =     12,   /**< UPC-A */
     ZEBRA_EAN13       =     13,   /**< EAN-13 */
+    ZEBRA_I25         =     25,   /**< Interleaved 2 of 5 */
     ZEBRA_CODE39      =     39,   /**< Code 39 */
     ZEBRA_CODE128     =    128,   /**< Code 128 */
     ZEBRA_SYMBOL      = 0x00ff,   /**< mask for base symbol type */
@@ -779,7 +780,10 @@ extern void zebra_scanner_destroy(zebra_scanner_t *scanner);
 extern zebra_symbol_type_t zebra_scanner_reset(zebra_scanner_t *scanner);
 
 /** mark start of a new scan pass. resets color to ::ZEBRA_SPACE.
- * also updates an associated decoder
+ * also updates an associated decoder.
+ * @returns any decode results flushed from the pipeline
+ * @note when not using callback handlers, the return value should
+ * be checked the same as zebra_scan_y()
  */
 extern zebra_symbol_type_t zebra_scanner_new_scan(zebra_scanner_t *scanner);
 

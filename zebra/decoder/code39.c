@@ -154,16 +154,14 @@ static inline signed char code39_decode9 (zebra_decoder_t *dcode)
 {
     code39_decoder_t *dcode39 = &dcode->code39;
 
-    /* heuristic s (FIXME?) */
-    unsigned s = calc_s(dcode, 0, 8) + dcode39->w8;
-    dprintf(2, " s=%d ", s);
-    if(s < 8)
+    dprintf(2, " s=%d ", dcode39->s9);
+    if(dcode39->s9 < 9)
         return(-1);
 
     /* threshold bar width ratios */
     unsigned char i, enc = 0;
     for(i = 0; i < 5; i++) {
-        enc = code39_decode1(enc, get_width(dcode, i), s);
+        enc = code39_decode1(enc, get_width(dcode, i), dcode39->s9);
         if(enc == 0xff)
             return(-1);
     }
@@ -175,15 +173,11 @@ static inline signed char code39_decode9 (zebra_decoder_t *dcode)
         return(-1);
 
     /* encode remaining widths (NB first encoded width is lost) */
-    for(; i < 8; i++) {
-        enc = code39_decode1(enc, get_width(dcode, i), s);
+    for(; i < 9; i++) {
+        enc = code39_decode1(enc, get_width(dcode, i), dcode39->s9);
         if(enc == 0xff)
             return(-1);
     }
-    /* special case "extra" bar */
-    enc = code39_decode1(enc, dcode39->w8, s);
-    if(enc == 0xff)
-        return(-1);
 
     if((idx & 0xc0) == 0x80)
         idx = (idx & 0x3f) + ((enc >> 3) & 1);
@@ -198,7 +192,7 @@ static inline signed char code39_decode9 (zebra_decoder_t *dcode)
     if(enc != c->chk)
         return(-1);
 
-    dcode39->width = s;
+    dcode39->width = dcode39->s9;
     return((dcode39->direction) ? c->rev : c->fwd);
 }
 
@@ -213,7 +207,14 @@ static inline signed char code39_decode_start (zebra_decoder_t *dcode)
         dprintf(2, "\n");
         return(ZEBRA_NONE);
     }
-    /* FIXME check leading quiet zone */
+
+    /* check leading quiet zone -  spec is 10x, we require at least 3x */
+    unsigned quiet = get_width(dcode, 9);
+    if(quiet && get_width(dcode, 10) &&
+       quiet < dcode39->s9 / 4) {
+        dprintf(2, " [invalid quiet]\n");
+        return(ZEBRA_NONE);
+    }
 
     dcode39->element = 9;
     dcode39->character = 0;
@@ -247,24 +248,19 @@ zebra_symbol_type_t zebra_decode_code39 (zebra_decoder_t *dcode)
 {
     code39_decoder_t *dcode39 = &dcode->code39;
 
+    /* update latest character width */
+    dcode39->s9 -= get_width(dcode, 9);
+    dcode39->s9 += get_width(dcode, 0);
+
     if(dcode39->character < 0) {
-        if(get_color(dcode) != ZEBRA_BAR) {
-            /* save one more bar */
-            dcode39->w8 = get_width(dcode, 7);
+        if(get_color(dcode) != ZEBRA_BAR)
             return(ZEBRA_NONE);
-        }
         dprintf(2, "      code39:");
         return(code39_decode_start(dcode));
     }
 
-    if(++dcode39->element < 8)
+    if(++dcode39->element < 9)
         return(ZEBRA_NONE);
-
-    if(dcode39->element == 8) {
-        /* save one more bar */
-        dcode39->w8 = get_width(dcode, 7);
-        return(ZEBRA_NONE);
-    }
 
     dprintf(2, "      code39[%c%02d+%x]",
             (dcode39->direction) ? '<' : '>',
@@ -274,7 +270,7 @@ zebra_symbol_type_t zebra_decode_code39 (zebra_decoder_t *dcode)
         if(get_width(dcode, 0) > dcode39->width * 2) {
             /* inter-character space check failure */
             dcode->lock = 0;
-            code39_reset(dcode39);
+            dcode39->character = -1;
             dprintf(2, " ics>%d [invalid ics]", dcode39->width);
         }
         dcode39->element = 0;
@@ -287,7 +283,7 @@ zebra_symbol_type_t zebra_decode_code39 (zebra_decoder_t *dcode)
 
     /* lock shared resources */
     if(!dcode39->character && get_lock(dcode)) {
-        code39_reset(dcode39);
+        dcode39->character = -1;
         dprintf(1, " [locked]\n");
         return(ZEBRA_PARTIAL);
     }
@@ -296,7 +292,7 @@ zebra_symbol_type_t zebra_decode_code39 (zebra_decoder_t *dcode)
         /* FIXME checksum (needs config enable) */
         /* FIXME check trailing quiet zone */
         code39_postprocess(dcode);
-        code39_reset(dcode39);
+        dcode39->character = -1;
         dprintf(2, " [valid end]\n");
         return(ZEBRA_CODE39);
     }
@@ -305,7 +301,7 @@ zebra_symbol_type_t zebra_decode_code39 (zebra_decoder_t *dcode)
              size_buf(dcode, dcode39->character + 1))) {
         dprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
         dcode->lock = 0;
-        code39_reset(dcode39);
+        dcode39->character = -1;
         return(ZEBRA_NONE);
     }
     else {

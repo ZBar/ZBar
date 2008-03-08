@@ -7,7 +7,7 @@ general:
 
 symbologies:
   * PDF417
-  * Code 39 optional features (check digit and ASCII escapes)
+  * Code 39, i25 optional features (check digit and ASCII escapes)
   * handle Code 128 function characters (FNC1-4)
   * finish UPC-E and addon decoding
 

@@ -28,6 +28,7 @@ typedef struct code128_decoder_s {
     unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
     unsigned element : 3;       /* element offset 0-5 */
     int character : 12;         /* character position in symbol */
+    unsigned s6;                /* character width */
 } code128_decoder_t;
 
 /* reset Code 128 specific state */
@@ -36,6 +37,7 @@ static inline void code128_reset (code128_decoder_t *dcode128)
     dcode128->direction = 0;
     dcode128->element = 0;
     dcode128->character = -1;
+    dcode128->s6 = 0;
 }
 
 /* decode Code 128 symbols */

@@ -292,7 +292,8 @@ static inline void quiet_border (zebra_image_scanner_t *iscn,
     for(i = 2; i; i--)
         if(zebra_scan_y(iscn->scn, 0))
             symbol_handler(iscn, x, y);
-    zebra_scanner_new_scan(iscn->scn);
+    if(zebra_scanner_new_scan(iscn->scn))
+        symbol_handler(iscn, x, y);
 }
 
 #define movedelta(dx, dy) do {                  \
@@ -322,7 +323,8 @@ int zebra_scan_image (zebra_image_scanner_t *iscn,
     movedelta(0, 8);
 #endif
 
-    zebra_scanner_new_scan(iscn->scn);
+    if(zebra_scanner_new_scan(iscn->scn))
+        symbol_handler(iscn, x, y);
 
     /* FIXME add density config api */
     /* FIXME less arbitrary lead-out default */
@@ -392,7 +394,8 @@ int zebra_scan_image (zebra_image_scanner_t *iscn,
 #endif
 
     /* flush scanner pipe */
-    zebra_scanner_new_scan(iscn->scn);
+    if(zebra_scanner_new_scan(iscn->scn))
+        symbol_handler(iscn, x, y);
 
     /* release reference */
     zebra_image_destroy(img);

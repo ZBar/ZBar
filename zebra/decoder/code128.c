@@ -196,7 +196,7 @@ static inline unsigned char calc_check (unsigned char c)
 static inline signed char decode6 (zebra_decoder_t *dcode)
 {
     /* build edge signature of character */
-    unsigned s = calc_s(dcode, 0, 6);
+    unsigned s = dcode->code128.s6;
     dprintf(2, " s=%d", s);
     if(s < 5)
         return(-1);
@@ -401,6 +401,11 @@ static inline unsigned char postprocess (zebra_decoder_t *dcode)
 zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
 {
     code128_decoder_t *dcode128 = &dcode->code128;
+
+    /* update latest character width */
+    dcode128->s6 -= get_width(dcode, 6);
+    dcode128->s6 += get_width(dcode, 0);
+
     if(/* process every 6th element of active symbol */
        (dcode128->character >= 0 &&
         (++dcode128->element) != 6) ||
@@ -423,6 +428,7 @@ zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
         /* lock shared resources */
         if(get_lock(dcode)) {
             dprintf(2, " [locked]\n");
+            dcode128->character = -1;
             return(0);
         }
         /* decoded valid start/stop */
@@ -441,7 +447,7 @@ zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
              size_buf(dcode, dcode128->character + 1))) {
         dprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
         dcode->lock = 0;
-        code128_reset(dcode128);
+        dcode128->character = -1;
         return(0);
     }
 
@@ -460,7 +466,7 @@ zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
         }
         else
             dprintf(2, " [valid end]\n");
-        code128_reset(dcode128);
+        dcode128->character = -1;
         return(sym);
     }
 

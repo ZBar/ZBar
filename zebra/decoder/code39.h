@@ -25,11 +25,11 @@
 
 /* Code 39 specific decode state */
 typedef struct code39_decoder_s {
-    unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
+    unsigned direction : 1;     /* scan direction: 0=fwd, 1=rev */
     unsigned element : 4;       /* element offset 0-8 */
     int character : 12;         /* character position in symbol */
-    unsigned w8;                /* one more history (FIXME hack) */
-    unsigned width;             /* negedge width of last character */
+    unsigned s9;                /* current character width */
+    unsigned width;             /* last character width */
 } code39_decoder_t;
 
 /* reset Code 39 specific state */
@@ -38,6 +38,7 @@ static inline void code39_reset (code39_decoder_t *dcode39)
     dcode39->direction = 0;
     dcode39->element = 0;
     dcode39->character = -1;
+    dcode39->s9 = 0;
 }
 
 /* decode Code 39 symbols */
