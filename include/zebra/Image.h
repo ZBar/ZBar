@@ -236,6 +236,19 @@ public:
         throw FormatError();
     }
 
+    /// image format conversion with crop/pad.
+    /// see zebra_image_convert_resize()
+    Image convert (unsigned long format,
+                   unsigned width,
+                   unsigned height) const
+    {
+        zebra_image_t *img =
+            zebra_image_convert_resize(_img, format, width, height);
+        if(img)
+            return(Image(img));
+        throw FormatError();
+    }
+
     /// create a new SymbolIterator over decoded results.
     SymbolIterator symbol_begin() const {
         return(SymbolIterator(this));

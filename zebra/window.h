@@ -69,7 +69,10 @@ struct zebra_window_s {
         XvImage *xv;
 #endif
     } img;
-    uint32_t img_format;        /* current input format */
+    uint32_t src_format;        /* current input format */
+    unsigned src_width;         /* last displayed image size */
+    unsigned src_height;
+    unsigned dst_width;         /* conversion target */
     XID img_port;               /* current format port */
 
     XID *xv_ports;              /* best port for format */

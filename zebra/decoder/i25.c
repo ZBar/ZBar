@@ -22,9 +22,6 @@
  *------------------------------------------------------------------------*/
 
 #include <config.h>
-#ifdef DEBUG_I25
-# include <stdio.h>     /* fprintf */
-#endif
 #include <string.h>     /* memmove */
 #include <assert.h>
 
@@ -32,12 +29,9 @@
 #include "decoder.h"
 
 #ifdef DEBUG_I25
-# define dprintf(level, ...) \
-    if(level <= DEBUG_I25) \
-        fprintf(stderr, __VA_ARGS__)
-#else
-# define dprintf(...)
+# define DEBUG_LEVEL (DEBUG_I25)
 #endif
+#include "debug.h"
 
 static inline unsigned char i25_decode1 (unsigned char enc,
                                          unsigned e,

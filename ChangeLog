@@ -1,4 +1,19 @@
 current:
+  * image format conversion fixes
+    - fix format size roundoff (NB now rounds *down*)
+    - add convert and resize API to pad/crop image to specific size
+      (eg, to handle Xv min/max image size)
+      NB this is still not implemented for many conversions
+  * fix window deletion visibility inconsistency
+  * add couple processor commands
+    - 'q' to delete window
+    - 'd' to dump displayed image for debug
+  * remove problematic includes used for v4l2 configure test
+  * address compiler portability concerns w/debug print vararg macro
+  * workaround v4l1_set_format() failed consistency check for broken drivers
+    - change from error to warning w/more useful message
+    - calc expected image size using expected value instead of driver value
+  * add missing example scripts to distribution
   * add missing files for Interleaved 2 of 5
   * add support for Interleaved 2 of 5 symbology!
     - again no check digit option yet

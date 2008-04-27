@@ -82,9 +82,7 @@ rebuild your kernel to include video4linux support or
 configure --disable-video to skip building video support.])])
    AC_CHECK_HEADERS([linux/videodev2.h], [with_video="v4l2"],
      [AC_MSG_WARN([v4l2 API not detected, upgrade your kernel!])],
-     [[#include <linux/types.h>
-#include <linux/time.h>
-#include <linux/videodev.h>
+     [[#include <linux/videodev.h>
 ]])
 ])
 AM_CONDITIONAL([HAVE_VIDEO], [test "x$enable_video" != "xno"])

@@ -584,9 +584,8 @@ int zebra_processor_set_visible (zebra_processor_t *proc,
             rc = _zebra_window_resize(proc,
                                       zebra_video_get_width(proc->video),
                                       zebra_video_get_height(proc->video));
-        if(!rc &&
-           !(rc = _zebra_window_set_visible(proc, visible)))
-            proc->visible = visible != 0;
+        if(!rc)
+            rc = _zebra_window_set_visible(proc, visible);
     }
     else if(visible)
         rc = err_capture(proc, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,

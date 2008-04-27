@@ -22,21 +22,15 @@
  *------------------------------------------------------------------------*/
 
 #include <config.h>
-#ifdef DEBUG_EAN
-# include <stdio.h>     /* fprintf */
-#endif
 #include <assert.h>
 
 #include <zebra.h>
 #include "decoder.h"
 
 #ifdef DEBUG_EAN
-# define dprintf(level, ...) \
-    if(level <= DEBUG_EAN) \
-        fprintf(stderr, __VA_ARGS__)
-#else
-# define dprintf(...)
+# define DEBUG_LEVEL (DEBUG_EAN)
 #endif
+#include "debug.h"
 
 /* partial decode symbol location */
 typedef enum symbol_partial_e {

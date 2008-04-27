@@ -223,6 +223,15 @@ static inline int verify_format_sort ()
     return(-1);
 }
 
+static inline void uv_round (zebra_image_t *img,
+                             const zebra_format_def_t *fmt)
+{
+    img->width >>= fmt->p.yuv.xsub2;
+    img->width <<= fmt->p.yuv.xsub2;
+    img->height >>= fmt->p.yuv.ysub2;
+    img->height <<= fmt->p.yuv.ysub2;
+}
+
 static inline void uv_roundup (zebra_image_t *img,
                                const zebra_format_def_t *fmt)
 {
@@ -291,11 +300,47 @@ static void convert_copy (zebra_image_t *dst,
                           const zebra_image_t *src,
                           const zebra_format_def_t *srcfmt)
 {
+    assert(src->width == dst->width);
+    assert(src->height == dst->height);
     dst->data = src->data;
     dst->datalen = src->datalen;
     dst->cleanup = cleanup_ref;
     dst->next = (zebra_image_t*)src;
     ((zebra_image_t*)src)->refcnt++;
+}
+
+/* resize y plane, drop extra columns/rows from the right/bottom,
+ * or duplicate last column/row to pad missing data
+ */
+static inline void convert_y_resize (zebra_image_t *dst,
+                                     const zebra_format_def_t *dstfmt,
+                                     const zebra_image_t *src,
+                                     const zebra_format_def_t *srcfmt)
+{
+    uint8_t *psrc = (void*)src->data;
+    uint8_t *pdst = (void*)dst->data;
+    unsigned width = (dst->width > src->width) ? src->width : dst->width;
+    unsigned xpad = (dst->width > src->width) ? dst->width - src->width : 0;
+    unsigned height = (dst->height > src->height) ? src->height : dst->height;
+    unsigned y;
+    for(y = 0; y < height; y++) {
+        memcpy(pdst, psrc, width);
+        pdst += width;
+        psrc += src->width;
+        if(xpad) {
+            memset(pdst, *(psrc - 1), xpad);
+            pdst += xpad;
+        }
+    }
+    psrc -= src->width;
+    for(; y < dst->height; y++) {
+        memcpy(pdst, psrc, width);
+        pdst += width;
+        if(xpad) {
+            memset(pdst, *(psrc - 1), xpad);
+            pdst += xpad;
+        }
+    }
 }
 
 /* append neutral UV plane to grayscale image */
@@ -308,10 +353,16 @@ static void convert_uvp_append (zebra_image_t *dst,
     dst->datalen = uvp_size(dst, dstfmt) * 2;
     unsigned long n = dst->width * dst->height;
     dst->datalen += n;
-    assert(src->datalen >= n);
+    assert(src->datalen >= src->width * src->height);
+    zprintf(24, "dst=%dx%d (%lx) %lx src=%dx%d %lx\n",
+            dst->width, dst->height, n, dst->datalen,
+            src->width, src->height, src->datalen);
     dst->data = malloc(dst->datalen);
     if(!dst->data) return;
-    memcpy((void*)dst->data, src->data, n);
+    if(dst->width == src->width && dst->height == src->height)
+        memcpy((void*)dst->data, src->data, n);
+    else
+        convert_y_resize(dst, dstfmt, src, srcfmt);
     memset((void*)dst->data + n, 0x80, dst->datalen - n);
 }
 
@@ -347,21 +398,32 @@ static void convert_yuv_pack (zebra_image_t *dst,
     unsigned xmask = (1 << srcfmt->p.yuv.xsub2) - 1;
     unsigned ymask = (1 << srcfmt->p.yuv.ysub2) - 1;
     unsigned x, y;
-    signed u, v;
+    uint8_t y0, y1, u, v;
     for(y = 0; y < src->height; y++) {
+        if(y >= dst->height)
+            break;
         if(y & ymask) {
             srcu -= srcl;  srcv -= srcl;
         }
-        for(x = 0; x < src->width; x += 2) {
-            if(!(x & xmask)) {
-                u = *(srcu++);  v = *(srcv++);
+        for(x = 0; x < dst->width; x += 2) {
+            if(x < src->width) {
+                y0 = *(srcy++);  y1 = *(srcy++);
+                if(!(x & xmask)) {
+                    u = *(srcu++);  v = *(srcv++);
+                }
             }
             if(flags) {
-                *(dstp++) = *(srcy++);  *(dstp++) = u;
-                *(dstp++) = *(srcy++);  *(dstp++) = v;
+                *(dstp++) = y0;  *(dstp++) = u;
+                *(dstp++) = y1;  *(dstp++) = v;
             } else {
-                *(dstp++) = u;  *(dstp++) = *(srcy++);
-                *(dstp++) = v;  *(dstp++) = *(srcy++);
+                *(dstp++) = u;  *(dstp++) = y0;
+                *(dstp++) = v;  *(dstp++) = y1;
+            }
+        }
+        for(; x < src->width; x += 2) {
+            y0 = *(srcy++);  y1 = *(srcy++);
+            if(!(x & xmask)) {
+                u = *(srcu++);  v = *(srcv++);
             }
         }
     }
@@ -393,6 +455,7 @@ static void convert_yuv_unpack (zebra_image_t *dst,
     if(flags)
         srcp++;
 
+    /* FIXME handle resize */
     unsigned long i;
     for(i = dstn / 2; i; i--) {
         *(dsty++) = *(srcp++);  srcp++;
@@ -700,14 +763,18 @@ const zebra_format_def_t *_zebra_format_lookup (uint32_t fmt)
     return(NULL);
 }
 
-zebra_image_t *zebra_image_convert (const zebra_image_t *src,
-                                    unsigned long fmt)
+zebra_image_t *zebra_image_convert_resize (const zebra_image_t *src,
+                                           unsigned long fmt,
+                                           unsigned width,
+                                           unsigned height)
 {
     zebra_image_t *dst = zebra_image_create();
     dst->format = fmt;
-    dst->width = src->width;
-    dst->height = src->height;
-    if(src->format == fmt) {
+    dst->width = width;
+    dst->height = height;
+    if(src->format == fmt &&
+       src->width == width &&
+       src->height == height) {
         convert_copy(dst, NULL, src, NULL);
         return(dst);
     }
@@ -715,10 +782,13 @@ zebra_image_t *zebra_image_convert (const zebra_image_t *src,
     const zebra_format_def_t *srcfmt = _zebra_format_lookup(src->format);
     const zebra_format_def_t *dstfmt = _zebra_format_lookup(dst->format);
     if(!srcfmt || !dstfmt)
+        /* FIXME free dst */
         return(NULL);
 
     if(srcfmt->group == dstfmt->group &&
-       srcfmt->p.cmp == dstfmt->p.cmp) {
+       srcfmt->p.cmp == dstfmt->p.cmp &&
+       src->width == width &&
+       src->height == height) {
         convert_copy(dst, NULL, src, NULL);
         return(dst);
     }
@@ -729,6 +799,12 @@ zebra_image_t *zebra_image_convert (const zebra_image_t *src,
     dst->cleanup = zebra_image_free_data;
     func(dst, dstfmt, src, srcfmt);
     return(dst);
+}
+
+zebra_image_t *zebra_image_convert (const zebra_image_t *src,
+                                    unsigned long fmt)
+{
+    return(zebra_image_convert_resize(src, fmt, src->width, src->height));
 }
 
 static inline int has_format (uint32_t fmt,

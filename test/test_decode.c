@@ -211,7 +211,8 @@ static void encode_code39 (unsigned char *data)
     encode_char39('*');
     int i;
     for(i = 0; data[i]; i++)
-        encode_char39(data[i]);
+        if(data[i] != '*') /* skip (FIXME) */
+            encode_char39(data[i]);
     encode_char39('*');
     encode(0xa, 0);  /* trailing quiet */
     printf("------------------------------------------------------------\n");

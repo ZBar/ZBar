@@ -22,9 +22,6 @@
  *------------------------------------------------------------------------*/
 
 #include <config.h>
-#ifdef DEBUG_SCANNER
-# include <stdio.h>     /* fprintf */
-#endif
 #include <stdlib.h>     /* malloc, free, abs */
 #include <string.h>     /* memset */
 #include <assert.h>
@@ -32,11 +29,9 @@
 #include <zebra.h>
 
 #ifdef DEBUG_SCANNER
-# define dprintf(...) \
-    fprintf(stderr, __VA_ARGS__)
-#else
-# define dprintf(...)
+# define DEBUG_LEVEL (DEBUG_SCANNER)
 #endif
+#include "debug.h"
 
 #ifndef ZEBRA_FIXED
 # define ZEBRA_FIXED 5
@@ -118,7 +113,7 @@ static inline unsigned calc_thresh (zebra_scanner_t *scn)
     /* threshold 1st to improve noise rejection */
     unsigned thresh = scn->y1_thresh;
     if((thresh <= scn->y1_min_thresh) || !scn->width) {
-        dprintf(" tmin=%d", scn->y1_min_thresh);
+        dprintf(1, " tmin=%d", scn->y1_min_thresh);
         return(scn->y1_min_thresh);
     }
     /* slowly return threshold to min */
@@ -126,7 +121,7 @@ static inline unsigned calc_thresh (zebra_scanner_t *scn)
     unsigned long t = thresh * dx;
     t /= scn->width;
     t /= ZEBRA_SCANNER_THRESH_FADE;
-    dprintf(" thr=%d t=%ld x=%d last=%d.%d (%d)",
+    dprintf(1, " thr=%d t=%ld x=%d last=%d.%d (%d)",
             thresh, t, scn->x, scn->last_edge >> ZEBRA_FIXED,
             scn->last_edge & ((1 << ZEBRA_FIXED) - 1), dx);
     if(thresh > t) {
@@ -142,7 +137,7 @@ static inline zebra_symbol_type_t process_edge (zebra_scanner_t *scn,
                                                 int y1)
 {
     scn->width = scn->cur_edge - scn->last_edge;
-    dprintf(" sgn=%d cur=%d.%d w=%d (%s)\n",
+    dprintf(1, " sgn=%d cur=%d.%d w=%d (%s)\n",
             scn->y1_sign, scn->cur_edge >> ZEBRA_FIXED,
             scn->cur_edge & ((1 << ZEBRA_FIXED) - 1), scn->width,
             ((y1 > 0) ? "SPACE" : "BAR"));
@@ -202,7 +197,7 @@ zebra_symbol_type_t zebra_scan_y (zebra_scanner_t *scn,
     register int y2_1 = y0_0 - (y0_1 * 2) + y0_2;
     register int y2_2 = y0_1 - (y0_2 * 2) + y0_3;
 
-    dprintf("scan: y=%d y0=%d y1=%d y2=%d", y, y0_1, y1_1, y2_1);
+    dprintf(1, "scan: y=%d y0=%d y1=%d y2=%d", y, y0_1, y1_1, y2_1);
 
     zebra_symbol_type_t edge = ZEBRA_NONE;
     /* 2nd zero-crossing is 1st local min/max - could be edge */
@@ -216,7 +211,7 @@ zebra_symbol_type_t zebra_scan_y (zebra_scanner_t *scn,
             /* intensity change reversal - finalize previous edge */
             edge = process_edge(scn, y1_1);
         else
-            dprintf("\n");
+            dprintf(1, "\n");
 
         if(y1_rev || (abs(scn->y1_sign) < abs(y1_1))) {
             scn->y1_sign = y1_1;
@@ -224,7 +219,7 @@ zebra_symbol_type_t zebra_scan_y (zebra_scanner_t *scn,
             /* adaptive thresholding */
             /* start at multiple of new min/max */
             scn->y1_thresh = (abs(y1_1) * THRESH_INIT + ROUND) >> ZEBRA_FIXED;
-            dprintf(" thr=%d", scn->y1_thresh);
+            dprintf(1, " thr=%d", scn->y1_thresh);
             if(scn->y1_thresh < scn->y1_min_thresh)
                 scn->y1_thresh = scn->y1_min_thresh;
 
@@ -240,7 +235,7 @@ zebra_symbol_type_t zebra_scan_y (zebra_scanner_t *scn,
         }
     }
     else
-        dprintf("\n");
+        dprintf(1, "\n");
     /* FIXME add fall-thru pass to decoder after heuristic "idle" period
        (eg, 6-8 * last width) */
     scn->x++;

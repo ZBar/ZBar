@@ -22,7 +22,8 @@ endif
 include $(srcdir)/test/Makefile.am.inc
 include $(srcdir)/doc/Makefile.am.inc
 
-EXTRA_DIST += zebra.spec.in zebra.spec \
+EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py \
+    zebra.spec.in zebra.spec \
     debian/changelog debian/compat debian/control debian/copyright \
     debian/docs debian/libzebra0.install debian/libzebra-dev.install \
     debian/rules debian/shlibs.local debian/zebra-tools.install

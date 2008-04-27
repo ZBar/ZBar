@@ -22,9 +22,6 @@
  *------------------------------------------------------------------------*/
 
 #include <config.h>
-#ifdef DEBUG_CODE128
-# include <stdio.h>     /* fprintf */
-#endif
 #include <string.h>     /* memmove */
 #include <assert.h>
 
@@ -32,12 +29,9 @@
 #include "decoder.h"
 
 #ifdef DEBUG_CODE128
-# define dprintf(level, ...) \
-    if(level <= DEBUG_CODE128) \
-        fprintf(stderr, __VA_ARGS__)
-#else
-# define dprintf(...)
+# define DEBUG_LEVEL (DEBUG_CODE128)
 #endif
+#include "debug.h"
 
 #define NUM_CHARS 108           /* total number of character codes */
 

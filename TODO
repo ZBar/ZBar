@@ -1,3 +1,6 @@
+next release:
+  * finish format conversion resize cases
+
 general:
   * finish error handling
   * handle video destroyed w/images outstanding
@@ -12,9 +15,10 @@ symbologies:
   * finish UPC-E and addon decoding
 
 decoder:
-  * option configuration API
   * symbology/feature enable/disable compile/runtime
+  * option configuration API
   * option to emit check digit (default?)
+  * option to return UPC-A
 
 image scanner:
   * extract and track symbol polygons

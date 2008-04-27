@@ -229,12 +229,18 @@ static inline int v4l1_set_format (zebra_video_t *vdo,
         return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                            "querying video format (VIDIOCGPICT)"));
 
-    if(vpic.palette != ifmt || vpic.depth != v4l1_formats[ifmt].bpp)
-        return(err_capture_int(vdo, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,
-                               "failed to set format (%08x)", fmt));
+    if(vpic.palette != ifmt || vpic.depth != v4l1_formats[ifmt].bpp) {
+        fprintf(stderr,
+                "WARNING: set v4l1 palette %d which should have depth %d bpp\n"
+                "    but probed palette %d with depth %d bpp?"
+                "  ...continuing anyway\n",
+                ifmt, v4l1_formats[ifmt].bpp, vpic.palette, vpic.depth);
+        err_capture_int(vdo, SEV_WARNING, ZEBRA_ERR_INVALID, __func__,
+                        "driver format (%x) inconsistency", fmt);
+    }
     vdo->format = fmt;
     vdo->palette = ifmt;
-    vdo->datalen = (vdo->width * vdo->height * vpic.depth + 7) >> 3;
+    vdo->datalen = (vdo->width * vdo->height * v4l1_formats[ifmt].bpp + 7) >> 3;
 
     zprintf(1, "set new format: %.4s(%08x) depth=%d palette=%d size=0x%lx\n",
             (char*)&vdo->format, vdo->format, vpic.depth, vdo->palette,

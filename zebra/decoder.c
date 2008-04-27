@@ -22,9 +22,6 @@
  *------------------------------------------------------------------------*/
 
 #include <config.h>
-#ifdef DEBUG_DECODER
-# include <stdio.h>     /* fprintf */
-#endif
 #include <stdlib.h>     /* malloc, free */
 #include <string.h>     /* memset */
 #include <assert.h>
@@ -32,12 +29,11 @@
 #include <zebra.h>
 #include "decoder.h"
 
-#ifdef DEBUG_DECODER
-# define dprintf(...) \
-    fprintf(stderr, __VA_ARGS__)
-#else
-# define dprintf(...)
+#if defined(DEBUG_DECODER) || defined(DEBUG_EAN) || defined(DEBUG_CODE128) || \
+    defined(DEBUG_CODE39) || defined(DEBUG_I25)
+# define DEBUG_LEVEL 1
 #endif
+#include "debug.h"
 
 zebra_decoder_t *zebra_decoder_create ()
 {
@@ -130,7 +126,7 @@ zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
                                         unsigned w)
 {
     dcode->w[dcode->idx & (DECODE_WINDOW - 1)] = w;
-    dprintf("    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
+    dprintf(1, "    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
 
     /* each decoder processes width stream in parallel */
     zebra_symbol_type_t sym = dcode->type = ZEBRA_NONE;

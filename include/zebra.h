@@ -225,12 +225,32 @@ extern void zebra_image_destroy(zebra_image_t *image);
 
 /** image format conversion.  refer to the documentation for supported
  * image formats
- * @returns a *new* image with the sample data from the original image
+ * @returns a @em new image with the sample data from the original image
  * converted to the requested format.  the original image is
  * unaffected.
+ * @note the converted image size may be rounded (up) due to format
+ * constraints
  */
 extern zebra_image_t *zebra_image_convert(const zebra_image_t *image,
                                           unsigned long format);
+
+/** image format conversion with crop/pad.
+ * if the requested size is larger than the image, the last row/column
+ * are duplicated to cover the difference.  if the requested size is
+ * smaller than the image, the extra rows/columns are dropped from the
+ * right/bottom.
+ * @returns a @em new image with the sample data from the original
+ * image converted to the requested format and size.
+ * @note the image is @em not scaled
+ * @note both the crop and pad will be changed to center the image in
+ * a future release
+ * @version 0.4
+ * @see zebra_image_convert()
+ */
+extern zebra_image_t *zebra_image_convert_resize(const zebra_image_t *image,
+                                                 unsigned long format,
+                                                 unsigned width,
+                                                 unsigned height);
 
 /** retrieve the image format.
  * @returns the fourcc describing the format of the image sample data
@@ -304,7 +324,7 @@ extern void zebra_image_free_data(zebra_image_t *image);
  * ImageMagick, eg:
  * @verbatim
        display -size 640x480+16 [-depth ?] [-sampling-factor ?x?] \
-           {GRAY,RGB,UYUV,YUV}:[file]
+           {GRAY,RGB,UYVY,YUV}:[file]
 @endverbatim
  *
  * @param image the image object to dump

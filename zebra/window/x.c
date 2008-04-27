@@ -121,7 +121,7 @@ static int x_handle_event (zebra_processor_t *proc)
            (ev.xclient.data.l[0] ==
             XInternAtom(proc->display, "WM_DELETE_WINDOW", 0))) {
             zprintf(3, "WM_DELETE_WINDOW\n");
-            XUnmapWindow(proc->display, proc->xwin);
+            _zebra_window_set_visible(proc, 0);
             return(err_capture(proc, SEV_WARNING, ZEBRA_ERR_CLOSED, __func__,
                                "user closed display window"));
         }
@@ -156,6 +156,23 @@ int _zebra_window_handle_events (zebra_processor_t *proc,
         proc->input = x_handle_event(proc);
         rc = proc->input;
     }
+
+    switch(rc) {
+    case 'q':
+        _zebra_window_set_visible(proc, 0);
+        rc = err_capture(proc, SEV_WARNING, ZEBRA_ERR_CLOSED, __func__,
+                         "user closed display window");
+        break;
+
+    case 'd': {
+        /* FIXME localtime not threadsafe */
+        /* FIXME need ms resolution */
+        /*struct tm *t = localtime(time(NULL));*/
+        zebra_image_write(proc->window->image, "zebra");
+        break;
+    }
+    }
+
     if(rc)
         emit(proc, EVENT_INPUT);
     return(rc);
@@ -267,6 +284,7 @@ int _zebra_window_set_visible (zebra_processor_t *proc,
     else
         XUnmapWindow(proc->display, proc->xwin);
     XFlush(proc->display);
+    proc->visible = visible != 0;
     return(0);
 }
 

@@ -22,9 +22,6 @@
  *------------------------------------------------------------------------*/
 
 #include <config.h>
-#ifdef DEBUG_CODE39
-# include <stdio.h>     /* fprintf */
-#endif
 #include <string.h>     /* memmove */
 #include <assert.h>
 
@@ -32,12 +29,9 @@
 #include "decoder.h"
 
 #ifdef DEBUG_CODE39
-# define dprintf(level, ...) \
-    if(level <= DEBUG_CODE39) \
-        fprintf(stderr, __VA_ARGS__)
-#else
-# define dprintf(...)
+# define DEBUG_LEVEL (DEBUG_CODE39)
 #endif
+#include "debug.h"
 
 #define NUM_CHARS (0x2c)
 

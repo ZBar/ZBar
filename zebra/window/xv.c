@@ -49,7 +49,7 @@ static inline int xv_init (zebra_window_t *w,
         XFree(w->img.xv);
         w->img.xv = NULL;
     }
-    if(w->img_format != img->format &&
+    if(w->src_format != img->format &&
        w->format != img->format) {
         _zebra_best_format(img->format, &w->format, w->formats);
         if(!w->format) {
@@ -58,7 +58,7 @@ static inline int xv_init (zebra_window_t *w,
                             img->format);
             return(-1);
         }
-        w->img_format = img->format;
+        w->src_format = img->format;
         /* lookup port for format */
         w->img_port = -1;
         int i;
@@ -69,20 +69,31 @@ static inline int xv_init (zebra_window_t *w,
             }
         assert(w->img_port >= 0);
     }
+    w->src_width = img->width;
+    w->src_height = img->height;
     XvImage *xvimg = XvCreateImage(w->display, w->img_port, w->format,
                                    NULL, img->width, img->height);
-    zprintf(3, "new XvImage %.4s(%08x) %dx%d from %.4s(%08x) %dx%d\n",
-            (char*)&w->format, w->format, xvimg->width, xvimg->height,
+    zprintf(3, "new XvImage %.4s(%08x) %dx%d(%d) from %.4s(%08x) %dx%d\n",
+            (char*)&w->format, w->format,
+            xvimg->width, xvimg->height, xvimg->pitches[0],
             (char*)&img->format, img->format, img->width, img->height);
 
     /* FIXME datalen check */
-    if(xvimg->width != img->width || xvimg->height != img->height) {
+    if(xvimg->width < img->width || xvimg->height < img->height) {
         XFree(xvimg);
         /* FIXME fallback to XImage... */
         return(err_capture(w, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
                            "output image size mismatch (XvCreateImage)"));
     }
     w->img.xv = xvimg;
+
+    /* FIXME not sure this simple check is always correct
+     * should lookup format to decode/sanitize target width from pitch & bpp
+     */
+    w->dst_width = ((xvimg->num_planes <= 1)
+                    ? xvimg->width
+                    : xvimg->pitches[0]);
+
     return(0);
 }
 
@@ -92,24 +103,28 @@ static int xv_draw (zebra_window_t *w,
     XvImage *xvimg = w->img.xv;
     /* FIXME preserve aspect ratio (config?) */
     if(!xvimg ||
-       (w->img_format != img->format &&
+       (w->src_format != img->format &&
         w->format != img->format)||
-       xvimg->width != img->width ||
-       xvimg->height != img->height) {
+       w->src_width != img->width ||
+       w->src_height != img->height) {
         if(xv_init(w, img))
             return(-1);
         xvimg = w->img.xv;
     }
-    if(img->format != w->format) {
+    if(img->format != w->format ||
+       img->width != xvimg->pitches[0] ||
+       img->height != xvimg->height) {
         /* save *converted* image for redraw */
-        w->image = zebra_image_convert(img, w->format);
+        w->image = zebra_image_convert_resize(img, w->format,
+                                              w->dst_width,
+                                              xvimg->height);
         zebra_image_destroy(img);
         img = w->image;
     }
 
     xvimg->data = (void*)img->data;
     XvPutImage(w->display, w->img_port, w->xwin, w->gc, xvimg,
-               0, 0, img->width, img->height,
+               0, 0, w->src_width, w->src_height,
                0, 0, w->width, w->height);
     xvimg->data = NULL;  /* FIXME hold shm image until completion */
     return(0);

@@ -38,7 +38,7 @@ static inline int ximage_init (zebra_window_t *w,
         free(w->img.x);
         w->img.x = NULL;
     }
-    if(w->img_format != img->format &&
+    if(w->src_format != img->format &&
        w->format != img->format) {
         _zebra_best_format(img->format, &w->format, w->formats);
         if(!w->format) {
@@ -47,7 +47,7 @@ static inline int ximage_init (zebra_window_t *w,
                             img->format);
             return(-1);
         }
-        w->img_format = img->format;
+        w->src_format = img->format;
     }
     XImage *ximg = w->img.x = calloc(1, sizeof(XImage));
     ximg->width = img->width;
@@ -93,7 +93,7 @@ static int ximage_draw (zebra_window_t *w,
 {
     XImage *ximg = w->img.x;
     if(!ximg ||
-       (w->img_format != img->format &&
+       (w->src_format != img->format &&
         w->format != img->format) ||
        ximg->width != img->width ||
        ximg->height != img->height) {
