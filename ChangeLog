@@ -1,4 +1,5 @@
 current:
+  * fallback to gettimeofday when POSIX timers are not available
   * image format conversion fixes
     - fix format size roundoff (NB now rounds *down*)
     - add convert and resize API to pad/crop image to specific size

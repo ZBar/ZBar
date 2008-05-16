@@ -22,11 +22,13 @@
  *------------------------------------------------------------------------*/
 
 #include <config.h>
+#include <unistd.h>
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #endif
 #include <stdlib.h>     /* malloc, free */
 #include <time.h>       /* clock_gettime */
+#include <sys/time.h>   /* gettimeofday */
 #include <string.h>     /* strlen, strcmp, memset, memcpy */
 #include <assert.h>
 
@@ -180,10 +182,16 @@ static void symbol_handler (zebra_image_scanner_t *iscn,
 
     sym = alloc_sym(iscn, type, data);
 
-    /* FIXME config for this, maybe fallback to gettimeofday? */
+    /* timestamp symbol */
+#if _POSIX_TIMERS > 0
     struct timespec abstime;
     clock_gettime(CLOCK_REALTIME, &abstime);
     sym->time = (abstime.tv_sec * 1000) + ((abstime.tv_nsec / 500000) + 1) / 2;
+#else
+    struct timeval abstime;
+    gettimeofday(&abstime, NULL);
+    sym->time = (abstime.tv_sec * 1000) + ((abstime.tv_usec / 500) + 1) / 2;
+#endif
 
     /* initialize first point */
     sym->npts = 0;

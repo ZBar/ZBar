@@ -22,8 +22,10 @@
  *------------------------------------------------------------------------*/
 
 #include "processor.h"
+#include <unistd.h>
 #include <signal.h>
 #include <time.h>
+#include <sys/time.h>   /* gettimeofday */
 #include <assert.h>
 #include <errno.h>
 
@@ -191,8 +193,14 @@ static inline int proc_calc_abstime (struct timespec *abstime,
                                      int timeout)
 {
     if(timeout >= 0) {
-        /* FIXME config for this, maybe fallback to gettimeofday? */
+#if _POSIX_TIMERS > 0
         clock_gettime(CLOCK_REALTIME, abstime);
+#else
+        struct timeval ustime;
+        gettimeofday(&ustime, NULL);
+        abstime->tv_nsec = ustime.tv_usec * 1000;
+        abstime->tv_sec = ustime.tv_sec;
+#endif
         abstime->tv_nsec += (timeout % 1000) * 1000000;
         abstime->tv_sec += (timeout / 1000) + (abstime->tv_nsec / 1000000000);
         abstime->tv_nsec %= 1000000000;
@@ -252,7 +260,14 @@ static inline int proc_event_wait_unthreaded (zebra_processor_t *proc,
         int reltime = timeout;
         if(reltime >= 0) {
             struct timespec now;
+#if _POSIX_TIMERS > 0
             clock_gettime(CLOCK_REALTIME, &now);
+#else
+            struct timeval ustime;
+            gettimeofday(&ustime, NULL);
+            now.tv_nsec = ustime.tv_usec * 1000;
+            now.tv_sec = ustime.tv_sec;
+#endif
             reltime = ((abstime->tv_sec - now.tv_sec) * 1000 +
                        (abstime->tv_nsec - now.tv_nsec) / 1000000);
             if(reltime <= 0)
