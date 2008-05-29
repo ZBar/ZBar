@@ -65,6 +65,23 @@ public:
         zebra_image_scanner_set_data_handler(_scanner, handler, &handler);
     }
 
+    /// set config for indicated symbology (0 for all) to specified value.
+    /// @see zebra_image_scanner_set_config()
+    int set_config (zebra_symbol_type_t symbology,
+                    zebra_config_t config,
+                    int value)
+    {
+        return(zebra_image_scanner_set_config(_scanner, symbology,
+                                              config, value));
+    }
+
+    /// set config parsed from configuration string.
+    /// @see zebra_image_scanner_parse_config()
+    int set_config (std::string cfgstr)
+    {
+        return(zebra_image_scanner_parse_config(_scanner, cfgstr.c_str()));
+    }
+
     /// enable or disable the inter-image result cache.
     /// see zebra_image_scanner_enable_cache()
     void enable_cache (int enable = 1)

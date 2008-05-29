@@ -47,8 +47,9 @@
     <filename>/dev/video0</filename></para>
 
     <para>The underlying library currently supports EAN-13 (including
-    UPC-A) and Code 128 symbologies.  The specific type of each
-    detected symbol is printed with the decoded data.</para>
+    UPC-A and ISBN subsets), EAN-8, Code 128, Code 39, and Interleaved
+    2 of 5 symbologies.  The specific type of each detected symbol is
+    printed with the decoded data.</para>
 
   </refsection>
 
@@ -60,24 +61,11 @@
     dashes (`-').</para>
 
     <variablelist>
-      <varlistentry>
-        <term><option>-h</option>, <option>--help</option></term>
-        <listitem>
-          <simpara>Print a short help message describing command line
-          options to standard output and exit</simpara>
-        </listitem>
-      </varlistentry>
+      &refcommonoptions;
 
       <varlistentry>
-        <term><option>--version</option></term>
-        <listitem>
-          <simpara>Print program version information to standard
-          output and exit</simpara>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><option>-q</option>, <option>--quiet</option></term>
+        <term><option>-q</option></term>
+        <term><option>--quiet</option></term>
         <listitem>
           <simpara>Quiet operation; disable the audible beep otherwise
           emitted when a symbol is decoded</simpara>
@@ -90,18 +78,6 @@
           <simpara>Disable output video window.  Video input will be
           scanned until the program is interrupted or otherwise
           signaled</simpara>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><option>-v</option>, <option>--verbose<optional>=<replaceable
-        class="parameter">n</replaceable></optional></option></term>
-        <listitem>
-          <simpara>Increase debug output level.  Multiple
-          <option>-v</option> options create more spew.  Alternatively
-          specify <replaceable class="parameter">n</replaceable> to
-          set the debug level directly
-          </simpara>
         </listitem>
       </varlistentry>
 

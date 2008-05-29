@@ -6,6 +6,7 @@
   <!ENTITY version SYSTEM "version.xml">
   <!ENTITY date SYSTEM "reldate.xml">
 
+  <!ENTITY refcommonoptions SYSTEM "ref/commonoptions.xml">
   <!ENTITY refzebraimg SYSTEM "ref/zebraimg.xml">
   <!ENTITY refzebracam SYSTEM "ref/zebracam.xml">
 ]>

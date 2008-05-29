@@ -49,8 +49,9 @@
     displayed to the screen</para>
 
     <para>The underlying library currently supports EAN-13 (including
-    UPC-A) and Code 128 symbologies.  The specific type of each
-    detected symbol is printed with the decoded data.</para>
+    UPC-A and ISBN subsets), EAN-8, Code 128, Code 39, and Interleaved
+    2 of 5 symbologies.  The specific type of each detected symbol is
+    printed with the decoded data.</para>
 
   </refsection>
 
@@ -62,48 +63,11 @@
     dashes (`-').</para>
 
     <variablelist>
-      <varlistentry>
-        <term><option>-h</option>, <option>--help</option></term>
-        <listitem>
-          <simpara>Print a short help message describing command line
-          options to standard output and exit</simpara>
-        </listitem>
-      </varlistentry>
+      &refcommonoptions;
 
       <varlistentry>
-        <term><option>--version</option></term>
-        <listitem>
-          <simpara>Print program version information to standard
-          output and exit</simpara>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><option>-d</option>, <option>--display</option></term>
-        <listitem>
-          <simpara>Enable display of subsequent
-          <filename><replaceable>image</replaceable></filename> files
-          to the screen, until <option>--nodisplay</option> is
-          encountered.  This option may appear multiple times to
-          enable display of specific images.  Image display is
-          disabled by default</simpara>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><option>-D</option>, <option>--nodisplay</option></term>
-        <listitem>
-          <simpara>Disable display of subsequent
-          <filename><replaceable>image</replaceable></filename> files,
-          until <option>--display</option> is encountered.  This
-          option may appear multiple times to enable display of
-          specific images.  Image display is disabled by
-          default</simpara>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><option>-q</option>, <option>--quiet</option></term>
+        <term><option>-q</option></term>
+        <term><option>--quiet</option></term>
         <listitem>
           <simpara>Quiet operation; only output decoded symbol data.
           specifically this disables the statistics line printed (to
@@ -114,14 +78,15 @@
       </varlistentry>
 
       <varlistentry>
-        <term><option>-v</option>, <option>--verbose<optional>=<replaceable
-        class="parameter">n</replaceable></optional></option></term>
+        <term><option>-D</option></term>
+        <term><option>--nodisplay</option></term>
         <listitem>
-          <simpara>Increase debug output level.  Multiple
-          <option>-v</option> options create more spew.  Alternatively
-          specify <replaceable class="parameter">n</replaceable> to
-          set the debug level directly
-          </simpara>
+          <simpara>Disable display of subsequent
+          <filename><replaceable>image</replaceable></filename> files,
+          until <option>--display</option> is encountered.  This
+          option may appear multiple times to enable display of
+          specific images.  Image display is disabled by
+          default</simpara>
         </listitem>
       </varlistentry>
 

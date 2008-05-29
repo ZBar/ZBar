@@ -315,6 +315,7 @@ static inline zebra_symbol_type_t decode_pass (zebra_decoder_t *dcode,
 
     if(get_color(dcode) == ZEBRA_BAR &&
        (idx == 0x10 || idx == 0x0f) &&
+       TEST_CFG(dcode->ean.ean8_config, ZEBRA_CFG_ENABLE) &&
        !aux_end(dcode, (rev) ? 3 : 4)) {
         dprintf(2, " rev=%x", rev);
         zebra_symbol_type_t part = ean_part_end4(pass, rev);
@@ -351,18 +352,20 @@ static inline zebra_symbol_type_t decode_pass (zebra_decoder_t *dcode,
        (idx == 0x18 || idx == 0x17)) {
         zebra_symbol_type_t part = ZEBRA_NONE;
         dprintf(2, " rev=%x", rev);
-        if(!aux_end(dcode, (rev) ? 3 : 4))
-            part = ean_part_end7(pass, rev);
-        else
-            dprintf(2, " [invalid end guard]");
+        if(TEST_CFG(dcode->ean.ean13_config, ZEBRA_CFG_ENABLE)) {
+            if(!aux_end(dcode, (rev) ? 3 : 4))
+                part = ean_part_end7(pass, rev);
+            else
+                dprintf(2, " [invalid end guard]");
+        }
         pass->state = -1;
         return(part);
     }
     return(0);
 }
 
-static inline signed char ean_check_parity (ean_decoder_t *ean,
-                                            int n)
+static inline signed char ean_verify_checksum (ean_decoder_t *ean,
+                                               int n)
 {
     unsigned char chk = 0;
     unsigned char i;
@@ -389,6 +392,24 @@ static inline signed char ean_check_parity (ean_decoder_t *ean,
         return(-1);
     }
     return(0);
+}
+
+static inline unsigned char isbn10_calc_checksum (ean_decoder_t *ean)
+{
+    unsigned int chk = 0;
+    unsigned char w;
+    for(w = 10; w > 1; w--) {
+        unsigned char d = ean->buf[13 - w];
+        assert(d < 10);
+        chk += d * w;
+    }
+    chk = chk % 11;
+    if(!chk)
+        return('0');
+    chk = 11 - chk;
+    if(chk < 10)
+        return(chk + '0');
+    return('X');
 }
 
 static inline zebra_symbol_type_t integrate_partial (ean_decoder_t *ean,
@@ -453,13 +474,29 @@ static inline zebra_symbol_type_t integrate_partial (ean_decoder_t *ean,
     if(!part)
         part = ZEBRA_PARTIAL;
 
-    if((part == ZEBRA_EAN13 && ean_check_parity(ean, 12)) ||
-       (part == ZEBRA_EAN8 && ean_check_parity(ean, 7)))
+    if((part == ZEBRA_EAN13 && ean_verify_checksum(ean, 12)) ||
+       (part == ZEBRA_EAN8 && ean_verify_checksum(ean, 7)))
         /* invalid parity */
         part = ZEBRA_NONE;
 
+    if(part == ZEBRA_EAN13) {
+        /* special case EAN-13 subsets */
+        if(!ean->buf[0] && TEST_CFG(ean->upca_config, ZEBRA_CFG_ENABLE))
+            part = ZEBRA_UPCA;
+        else if(ean->buf[0] == 9 && ean->buf[1] == 7) {
+            /* ISBN-10 has priority over ISBN-13(?) */
+            if(ean->buf[2] == 8 &&
+               TEST_CFG(ean->isbn10_config, ZEBRA_CFG_ENABLE))
+                part = ZEBRA_ISBN10;
+            else if((ean->buf[2] == 8 || ean->buf[2] == 9) &&
+               TEST_CFG(ean->isbn13_config, ZEBRA_CFG_ENABLE))
+                part = ZEBRA_ISBN13;
+        }
+    }
+        
     if(part > ZEBRA_PARTIAL)
         part |= ean->addon;
+
     dprintf(2, " %x/%x=%x", ean->left, ean->right, part);
     return(part);
 }
@@ -469,14 +506,35 @@ static inline void postprocess (zebra_decoder_t *dcode,
                                 zebra_symbol_type_t sym)
 {
     ean_decoder_t *ean = &dcode->ean;
-    int i = 0;
-    if((sym & ZEBRA_SYMBOL) > ZEBRA_PARTIAL)
-        for(; i < ((sym & ZEBRA_SYMBOL) - 1) && ean->buf[i] >= 0; i++)
-            dcode->buf[i] = ean->buf[i] + '0';
-    int j = i;
+    zebra_symbol_type_t base = sym & ZEBRA_SYMBOL;
+    int i = 0, j = 0;
+    if(base > ZEBRA_PARTIAL) {
+        if(base == ZEBRA_ISBN10) {
+            i = 3;
+            base--;
+        }
+        else {
+            if(base == ZEBRA_UPCA)
+                i = 1;
+            else if(base == ZEBRA_ISBN13)
+                base = ZEBRA_EAN13;
+            if(!TEST_CFG(ean_get_config(ean, sym), ZEBRA_CFG_EMIT_CHECK))
+                base--;
+        }
+
+        for(; j < base && ean->buf[i] >= 0; i++, j++)
+            dcode->buf[j] = ean->buf[i] + '0';
+
+        if((sym & ZEBRA_SYMBOL) == ZEBRA_ISBN10 &&
+           TEST_CFG(ean->isbn10_config, ZEBRA_CFG_EMIT_CHECK)) {
+            assert(j == 9);
+            /* recalculate ISBN-10 check digit */
+            dcode->buf[j++] = isbn10_calc_checksum(ean);
+        }
+    }
     if(sym & ZEBRA_ADDON)
-        for(i = 13; ean->buf[i] >= 0; i++)
-            dcode->buf[j++] = ean->buf[i] + '0';
+        for(i = 13; ean->buf[i] >= 0; i++, j++)
+            dcode->buf[j] = ean->buf[i] + '0';
     dcode->buf[j] = '\0';
 }
 

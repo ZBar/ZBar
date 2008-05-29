@@ -40,6 +40,29 @@ zebra_decoder_t *zebra_decoder_create ()
     zebra_decoder_t *dcode = malloc(sizeof(zebra_decoder_t));
     dcode->buflen = BUFFER_MIN;
     dcode->buf = malloc(dcode->buflen);
+
+    /* initialize default configs */
+#ifdef ENABLE_EAN
+    dcode->ean.enable = 1;
+    dcode->ean.ean13_config = ((1 << ZEBRA_CFG_ENABLE) |
+                                (1 << ZEBRA_CFG_EMIT_CHECK));
+    dcode->ean.ean8_config = ((1 << ZEBRA_CFG_ENABLE) |
+                               (1 << ZEBRA_CFG_EMIT_CHECK));
+    dcode->ean.upca_config = 1 << ZEBRA_CFG_EMIT_CHECK;
+    dcode->ean.upce_config = 1 << ZEBRA_CFG_EMIT_CHECK;
+    dcode->ean.isbn10_config = 1 << ZEBRA_CFG_EMIT_CHECK;
+    dcode->ean.isbn13_config = 1 << ZEBRA_CFG_EMIT_CHECK;
+#endif
+#ifdef ENABLE_I25
+    dcode->i25.config = 1 << ZEBRA_CFG_ENABLE;
+#endif
+#ifdef ENABLE_CODE39
+    dcode->code39.config = 1 << ZEBRA_CFG_ENABLE;
+#endif
+#ifdef ENABLE_CODE128
+    dcode->code128.config = 1 << ZEBRA_CFG_ENABLE;
+#endif
+
     zebra_decoder_reset(dcode);
     return(dcode);
 }
@@ -132,19 +155,23 @@ zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
     zebra_symbol_type_t sym = dcode->type = ZEBRA_NONE;
 
 #ifdef ENABLE_EAN
-    if((sym = zebra_decode_ean(dcode)))
+    if((dcode->ean.enable) &&
+       (sym = zebra_decode_ean(dcode)))
         dcode->type = sym;
 #endif
 #ifdef ENABLE_CODE39
-    if((sym = zebra_decode_code39(dcode)) > ZEBRA_PARTIAL)
+    if(TEST_CFG(dcode->code39.config, ZEBRA_CFG_ENABLE) &&
+       (sym = zebra_decode_code39(dcode)) > ZEBRA_PARTIAL)
         dcode->type = sym;
 #endif
 #ifdef ENABLE_CODE128
-    if((sym = zebra_decode_code128(dcode)) > ZEBRA_PARTIAL)
+    if(TEST_CFG(dcode->code128.config, ZEBRA_CFG_ENABLE) &&
+       (sym = zebra_decode_code128(dcode)) > ZEBRA_PARTIAL)
         dcode->type = sym;
 #endif
 #ifdef ENABLE_I25
-    if((sym = zebra_decode_i25(dcode)) > ZEBRA_PARTIAL)
+    if(TEST_CFG(dcode->i25.config, ZEBRA_CFG_ENABLE) &&
+       (sym = zebra_decode_i25(dcode)) > ZEBRA_PARTIAL)
         dcode->type = sym;
 #endif
 
@@ -156,4 +183,95 @@ zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
             dcode->lock = 0;
     }
     return(dcode->type);
+}
+
+int zebra_decoder_set_config (zebra_decoder_t *dcode,
+                              zebra_symbol_type_t sym,
+                              zebra_config_t cfg,
+                              int val)
+{
+    unsigned *config = NULL;
+    switch(sym) {
+    case ZEBRA_NONE:
+        zebra_decoder_set_config(dcode, ZEBRA_EAN13, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_EAN8, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_UPCA, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_UPCE, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_ISBN10, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_ISBN13, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_I25, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_CODE39, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_CODE128, cfg, val);
+        return(0);
+
+#ifdef ENABLE_EAN
+    case ZEBRA_EAN13:
+        config = &dcode->ean.ean13_config;
+        break;
+
+    case ZEBRA_EAN8:
+        config = &dcode->ean.ean8_config;
+        break;
+
+    case ZEBRA_UPCA:
+        config = &dcode->ean.upca_config;
+        break;
+
+    case ZEBRA_UPCE:
+        config = &dcode->ean.upce_config;
+        break;
+
+    case ZEBRA_ISBN10:
+        config = &dcode->ean.isbn10_config;
+        break;
+
+    case ZEBRA_ISBN13:
+        config = &dcode->ean.isbn13_config;
+        break;
+#endif
+
+#ifdef ENABLE_I25
+    case ZEBRA_I25:
+        config = &dcode->i25.config;
+        break;
+#endif
+
+#ifdef ENABLE_CODE39
+    case ZEBRA_CODE39:
+        config = &dcode->code39.config;
+        break;
+#endif
+
+#ifdef ENABLE_CODE128
+    case ZEBRA_CODE128:
+        config = &dcode->code128.config;
+        break;
+#endif
+
+    /* FIXME handle addons */
+
+    default:
+        return(1);
+    }
+    if(!config || cfg >= ZEBRA_CFG_NUM)
+        return(1);
+
+    if(!val)
+        *config &= ~(1 << cfg);
+    else if(val == 1)
+        *config |= (1 << cfg);
+    else
+        return(1);
+
+#ifdef ENABLE_EAN
+    dcode->ean.enable = TEST_CFG(dcode->ean.ean13_config |
+                                 dcode->ean.ean8_config |
+                                 dcode->ean.upca_config |
+                                 dcode->ean.upce_config |
+                                 dcode->ean.isbn10_config |
+                                 dcode->ean.isbn13_config,
+                                 ZEBRA_CFG_ENABLE);
+#endif
+
+    return(0);
 }

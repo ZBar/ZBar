@@ -149,6 +149,22 @@ class Decoder {
         zebra_decoder_set_userdata(_decoder, this);
     }
 
+    /// set config for indicated symbology (0 for all) to specified value.
+    /// @see zebra_decoder_set_config()
+    int set_config (zebra_symbol_type_t symbology,
+                    zebra_config_t config,
+                    int value)
+    {
+        return(zebra_decoder_set_config(_decoder, symbology, config, value));
+    }
+
+    /// set config parsed from configuration string.
+    /// @see zebra_decoder_parse_config()
+    int set_config (std::string cfgstr)
+    {
+        return(zebra_decoder_parse_config(_decoder, cfgstr.c_str()));
+    }
+
  private:
     friend class Scanner;
     zebra_decoder_t *_decoder;

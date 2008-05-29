@@ -68,6 +68,8 @@
 # define BUFFER_INCR  0x10
 #endif
 
+#define TEST_CFG(config, cfg) (((config) >> cfg) & 1)
+
 /* symbology independent decoder state */
 struct zebra_decoder_s {
     unsigned char idx;                  /* current width index */

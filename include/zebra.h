@@ -49,9 +49,11 @@ typedef enum zebra_symbol_type_e {
     ZEBRA_NONE        =      0,   /**< no symbol decoded */
     ZEBRA_PARTIAL     =      1,   /**< intermediate status */
     ZEBRA_EAN8        =      8,   /**< EAN-8 */
+    ZEBRA_ISBN10      =     10,   /**< ISBN-10 (decoded from EAN-13) */
     ZEBRA_UPCE        =     11,   /**< UPC-E */
     ZEBRA_UPCA        =     12,   /**< UPC-A */
     ZEBRA_EAN13       =     13,   /**< EAN-13 */
+    ZEBRA_ISBN13      =     14,   /**< ISBN-13 (decoded from EAN-13) */
     ZEBRA_I25         =     25,   /**< Interleaved 2 of 5 */
     ZEBRA_CODE39      =     39,   /**< Code 39 */
     ZEBRA_CODE128     =    128,   /**< Code 128 */
@@ -77,6 +79,14 @@ typedef enum zebra_error_e {
     ZEBRA_ERR_NUM               /**< number of error codes */
 } zebra_error_t;
 
+/** decoder configuration options. */
+typedef enum zebra_config_e {
+    ZEBRA_CFG_ENABLE = 0,       /**< enable symbology/feature */
+    ZEBRA_CFG_ADD_CHECK,        /**< enable check digit when optional */
+    ZEBRA_CFG_EMIT_CHECK,       /**< return check digit when present */
+    ZEBRA_CFG_ASCII,            /**< enable full ASCII character set */
+    ZEBRA_CFG_NUM               /**< number of configs */
+} zebra_config_t;
 
 /** retrieve runtime library version information.
  * @param major set to the running major version (unless NULL)
@@ -109,6 +119,18 @@ extern const char *zebra_get_symbol_name(zebra_symbol_type_t sym);
  * if no addons were decoded
  */
 extern const char *zebra_get_addon_name(zebra_symbol_type_t sym);
+
+/** parse a configuration string of the form "[symbology.]config[=value]".
+ * the config must match one of the recognized names.
+ * the symbology, if present, must match one of the recognized names.
+ * if symbology is unspecified, it will be set to 0.
+ * if value is unspecified it will be set to 1.
+ * @returns 0 if the config is parsed successfully, 1 otherwise
+ */
+extern int zebra_parse_config(const char *config_string,
+                              zebra_symbol_type_t *symbology,
+                              zebra_config_t *config,
+                              int *value);
 
 /** @internal type unsafe error API (don't use) */
 extern int _zebra_error_spew(const void *object,
@@ -389,6 +411,32 @@ extern zebra_image_data_handler_t*
 zebra_processor_set_data_handler(zebra_processor_t *processor,
                                  zebra_image_data_handler_t *handler,
                                  const void *userdata);
+
+/** set config for indicated symbology (0 for all) to specified value.
+ * @returns 0 for success, non-0 for failure (config does not apply to
+ * specified symbology, or value out of range)
+ * @see zebra_decoder_set_config()
+ */
+extern int zebra_processor_set_config(zebra_processor_t *processor,
+                                      zebra_symbol_type_t symbology,
+                                      zebra_config_t config,
+                                      int value);
+
+/** parse configuration string using zebra_parse_config()
+ * and apply to processor using zebra_processor_set_config().
+ * @returns 0 for success, non-0 for failure
+ * @see zebra_parse_config()
+ * @see zebra_processor_set_config()
+ */
+static inline int zebra_processor_parse_config (zebra_processor_t *processor,
+                                                const char *config_string)
+{
+    zebra_symbol_type_t sym;
+    zebra_config_t cfg;
+    int val;
+    return(zebra_parse_config(config_string, &sym, &cfg, &val) ||
+           zebra_processor_set_config(processor, sym, cfg, val));
+}
 
 /** retrieve the current state of the ouput window.
  * @returns 1 if the output window is currently displayed, 0 if not.
@@ -672,6 +720,34 @@ zebra_image_scanner_set_data_handler(zebra_image_scanner_t *scanner,
                                      zebra_image_data_handler_t *handler,
                                      const void *userdata);
 
+
+/** set config for indicated symbology (0 for all) to specified value.
+ * @returns 0 for success, non-0 for failure (config does not apply to
+ * specified symbology, or value out of range)
+ * @see zebra_decoder_set_config()
+ */
+extern int zebra_image_scanner_set_config(zebra_image_scanner_t *scanner,
+                                          zebra_symbol_type_t symbology,
+                                          zebra_config_t config,
+                                          int value);
+
+/** parse configuration string using zebra_parse_config()
+ * and apply to image scanner using zebra_image_scanner_set_config().
+ * @returns 0 for success, non-0 for failure
+ * @see zebra_parse_config()
+ * @see zebra_image_scanner_set_config()
+ */
+static inline int
+zebra_image_scanner_parse_config (zebra_image_scanner_t *scanner,
+                                  const char *config_string)
+{
+    zebra_symbol_type_t sym;
+    zebra_config_t cfg;
+    int val;
+    return(zebra_parse_config(config_string, &sym, &cfg, &val) ||
+           zebra_image_scanner_set_config(scanner, sym, cfg, val));
+}
+
 /** enable or disable the inter-image result cache (default disabled).
  * mostly useful for scanning video frames, the cache filters
  * duplicate results from consecutive images, while adding some
@@ -711,6 +787,31 @@ extern zebra_decoder_t *zebra_decoder_create();
 
 /** destructor. */
 extern void zebra_decoder_destroy(zebra_decoder_t *decoder);
+
+/** set config for indicated symbology (0 for all) to specified value.
+ * @returns 0 for success, non-0 for failure (config does not apply to
+ * specified symbology, or value out of range)
+ */
+extern int zebra_decoder_set_config(zebra_decoder_t *decoder,
+                                    zebra_symbol_type_t symbology,
+                                    zebra_config_t config,
+                                    int value);
+
+/** parse configuration string using zebra_parse_config()
+ * and apply to decoder using zebra_decoder_set_config().
+ * @returns 0 for success, non-0 for failure
+ * @see zebra_parse_config()
+ * @see zebra_decoder_set_config()
+ */
+static inline int zebra_decoder_parse_config (zebra_decoder_t *decoder,
+                                              const char *config_string)
+{
+    zebra_symbol_type_t sym;
+    zebra_config_t cfg;
+    int val;
+    return(zebra_parse_config(config_string, &sym, &cfg, &val) ||
+           zebra_decoder_set_config(decoder, sym, cfg, val));
+}
 
 /** clear all decoder state.
  * any partial symbols are flushed

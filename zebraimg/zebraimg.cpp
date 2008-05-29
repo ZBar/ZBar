@@ -65,6 +65,8 @@ const char *note_usage =
     "    --verbose=N     set specific debug output level\n"
     "    -d, --display   enable display of following images to the screen\n"
     "    -D, --nodisplay disable display of following images (default)\n"
+    "    -S<CONFIG>[=<VALUE>], --set <CONFIG>[=<VALUE>]\n"
+    "                    set decoder/scanner <CONFIG> to <VALUE> (or 1)\n"
     // FIXME overlay level
     // FIXME xml output
     ;
@@ -129,6 +131,18 @@ int usage (int rc, const string& msg = "")
     return(rc);
 }
 
+static inline int parse_config (const string& cfgstr, const string& arg)
+{
+    if(!cfgstr.length())
+        return(usage(1, string("ERROR: need argument for option: " + arg)));
+
+    if(processor->set_config(cfgstr.c_str()))
+        return(usage(1, string("ERROR: invalid configuration setting: " +
+                               cfgstr)));
+
+    return(0);
+}
+
 int main (int argc, const char *argv[])
 {
     // option pre-scan
@@ -141,7 +155,12 @@ int main (int argc, const char *argv[])
             // first pass, skip images
             num_images++;
         else if(arg[1] != '-') {
-            for(int j = 1; arg[j]; j++)
+            for(int j = 1; arg[j]; j++) {
+                if(arg[j] == 'S') {
+                    if(!arg[++j] && ++i >= argc)
+                        return(parse_config("", "-S"));
+                    break;
+                }
                 switch(arg[j]) {
                 case 'h': return(usage(0));
                 case 'q': quiet = true; break;
@@ -152,6 +171,7 @@ int main (int argc, const char *argv[])
                     return(usage(1, string("ERROR: unknown bundled option: -") +
                                  arg[j]));
                 }
+            }
         }
         else if(arg == "--help")
             return(usage(0));
@@ -173,7 +193,9 @@ int main (int argc, const char *argv[])
         }
         else if(arg == "--display")
             display = true;
-        else if(arg == "--nodisplay")
+        else if(arg == "--nodisplay" ||
+                arg == "--set" ||
+                arg.substr(0, 6) == "--set=")
             continue;
         else if(arg == "--") {
             num_images += argc - i - 1;
@@ -198,16 +220,31 @@ int main (int argc, const char *argv[])
             if(arg[0] != '-')
                 scan_image(arg);
             else if(arg[1] != '-')
-                for(int j = 1; arg[j]; j++)
-                    switch(arg[j]) {
-                    case 'd': processor->set_visible(true); break;
-                    case 'D': processor->set_visible(false);
+                for(int j = 1; arg[j]; j++) {
+                    if(arg[j] == 'S') {
+                        if((arg[++j])
+                           ? parse_config(arg.substr(j), "-S")
+                           : parse_config(string(argv[++i]), "-S"))
+                            return(1);
                         break;
                     }
+                    switch(arg[j]) {
+                    case 'd': processor->set_visible(true);  break;
+                    case 'D': processor->set_visible(false);  break;
+                    }
+                }
             else if(arg == "--display")
                 processor->set_visible(true);
             else if(arg == "--nodisplay")
                 processor->set_visible(false);
+            else if(arg == "--set") {
+                if(parse_config(string(argv[++i]), "--set"))
+                    return(1);
+            }
+            else if(arg.substr(0, 6) == "--set=") {
+                if(parse_config(arg.substr(6), "--set="))
+                    return(1);
+            }
             else if(arg == "--")
                 break;
         }

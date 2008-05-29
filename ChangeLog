@@ -1,4 +1,14 @@
 current:
+  * add decoder configuration API
+    - only boolean configs currently implemented
+    - integrate config option parsing w/zebracam and zebraimg
+    - add config to enable/disable each symbology type
+    - add optional conversions from EAN-13 to UPC-A, ISBN-10 and ISBN-13
+      (disabled by default)
+    - add config to emit/suppress check digit
+      NB behavior change!  check digit is now emitted by default
+  * related documentation updates
+    - split common options to a separate entity
   * fallback to gettimeofday when POSIX timers are not available
   * image format conversion fixes
     - fix format size roundoff (NB now rounds *down*)

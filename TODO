@@ -1,5 +1,6 @@
 next release:
   * finish format conversion resize cases
+  * example of script spawned zebracam w/non-blocking wait
 
 general:
   * finish error handling
@@ -15,10 +16,14 @@ symbologies:
   * finish UPC-E and addon decoding
 
 decoder:
-  * symbology/feature enable/disable compile/runtime
-  * option configuration API
-  * option to emit check digit (default?)
-  * option to return UPC-A
+  * symbology/feature compile time enable/disable
+  * more configuration options
+    * expand UPC-E (after finishing UPC-E implementation)
+    * Code-39/i25 check digit (after implementation)
+    * Code-39 full ASCII (after implementation)
+    * require min/max length (for variable length symbologies)
+    * set consistency requirements
+    * set scanner filter params
 
 image scanner:
   * extract and track symbol polygons
@@ -41,4 +46,5 @@ window:
 zebracam/zebraimg:
   * stats/fps at zebracam exit
   * xml output format
+  * option to use standard symbology identifiers (which standard?)
   * decode hook (program/script)? (also zebraimg?)

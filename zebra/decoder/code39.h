@@ -30,6 +30,8 @@ typedef struct code39_decoder_s {
     int character : 12;         /* character position in symbol */
     unsigned s9;                /* current character width */
     unsigned width;             /* last character width */
+
+    unsigned config;
 } code39_decoder_t;
 
 /* reset Code 39 specific state */

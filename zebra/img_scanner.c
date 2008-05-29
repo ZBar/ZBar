@@ -271,6 +271,14 @@ zebra_image_scanner_set_data_handler (zebra_image_scanner_t *iscn,
     return(result);
 }
 
+int zebra_image_scanner_set_config (zebra_image_scanner_t *iscn,
+                                    zebra_symbol_type_t sym,
+                                    zebra_config_t cfg,
+                                    int val)
+{
+    return(zebra_decoder_set_config(iscn->dcode, sym, cfg, val));
+}
+
 void zebra_image_scanner_enable_cache(zebra_image_scanner_t *iscn,
                                       int enable)
 {

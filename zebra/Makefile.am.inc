@@ -3,7 +3,7 @@ zebra_libzebra_la_CPPFLAGS = -I$(srcdir)/zebra $(AM_CPPFLAGS)
 zebra_libzebra_la_LDFLAGS = -version-info $(LIB_VERSION)
 zebra_libzebra_la_LIBADD =
 
-zebra_libzebra_la_SOURCES = \
+zebra_libzebra_la_SOURCES = zebra/debug.h zebra/config.c \
     zebra/error.h zebra/error.c zebra/symbol.h zebra/symbol.c \
     zebra/image.h zebra/image.c zebra/convert.c \
     zebra/window.h zebra/window.c zebra/video.h zebra/video.c \

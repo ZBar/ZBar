@@ -570,6 +570,14 @@ zebra_processor_set_data_handler (zebra_processor_t *proc,
     return(result);
 }
 
+int zebra_processor_set_config (zebra_processor_t *proc,
+                                zebra_symbol_type_t sym,
+                                zebra_config_t cfg,
+                                int val)
+{
+    return(zebra_image_scanner_set_config(proc->scanner, sym, cfg, val));
+}
+
 int zebra_processor_force_format (zebra_processor_t *proc,
                                    unsigned long input,
                                    unsigned long output)

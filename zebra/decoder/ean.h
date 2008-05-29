@@ -39,6 +39,14 @@ typedef struct ean_decoder_s {
     zebra_symbol_type_t addon;
     unsigned s4;                /* character width */
     signed char buf[18];        /* holding buffer */
+
+    signed char enable;
+    unsigned ean13_config;
+    unsigned ean8_config;
+    unsigned upca_config;
+    unsigned upce_config;
+    unsigned isbn10_config;
+    unsigned isbn13_config;
 } ean_decoder_t;
 
 /* reset EAN/UPC pass specific state */
@@ -54,6 +62,20 @@ static inline void ean_reset (ean_decoder_t *ean)
 {
     ean_new_scan(ean);
     ean->left = ean->right = ean->addon = ZEBRA_NONE;
+}
+
+static inline unsigned ean_get_config (ean_decoder_t *ean,
+                                       zebra_symbol_type_t sym)
+{
+    switch(sym & ZEBRA_SYMBOL) {
+    case ZEBRA_EAN13:  return(ean->ean13_config);
+    case ZEBRA_EAN8:   return(ean->ean8_config);
+    case ZEBRA_UPCA:   return(ean->upca_config);
+    case ZEBRA_UPCE:   return(ean->upce_config);
+    case ZEBRA_ISBN10: return(ean->isbn10_config);
+    case ZEBRA_ISBN13: return(ean->isbn13_config);
+    default:           return(0);
+    }
 }
 
 /* decode EAN/UPC symbols */

@@ -43,8 +43,10 @@ static const char *note_usage =
     "    -v, --verbose   increase debug output level\n"
     "    --verbose=N     set specific debug output level\n"
     "    --nodisplay     disable video display window\n"
-    // FIXME overlay level
-    // FIXME xml output
+    "    -S<CONFIG>[=<VALUE>], --set <CONFIG>[=<VALUE>]\n"
+    "                    set decoder/scanner <CONFIG> to <VALUE> (or 1)\n"
+    /* FIXME overlay level */
+    /* FIXME xml output */
     "\n";
 
 zebra_processor_t *proc;
@@ -55,6 +57,20 @@ static int usage (int rc)
     FILE *out = (rc) ? stderr : stdout;
     fprintf(out, note_usage);
     return(rc);
+}
+
+static inline int parse_config (const char *cfgstr, int i, int n, char *arg)
+{
+    if(i >= n || !*cfgstr) {
+        fprintf(stderr, "ERROR: need argument for option: %s\n", arg);
+        return(1);
+    }
+    
+    if(zebra_processor_parse_config(proc, cfgstr)) {
+        fprintf(stderr, "ERROR: invalid configuration setting: %s\n", cfgstr);
+        return(1);
+    }
+    return(0);
 }
 
 void data_handler (zebra_image_t *img, const void *userdata)
@@ -78,6 +94,16 @@ void data_handler (zebra_image_t *img, const void *userdata)
 
 int main (int argc, const char *argv[])
 {
+    /* setup zebra library standalone processor,
+     * threads will be used if available
+     */
+    proc = zebra_processor_create(1);
+    if(!proc) {
+        fprintf(stderr, "ERROR: unable to allocate memory?\n");
+        return(1);
+    }
+    zebra_processor_set_data_handler(proc, data_handler, NULL);
+
     const char *video_device = "/dev/video0";
     int display = 1;
     unsigned long infmt = 0, outfmt = 0;
@@ -88,12 +114,19 @@ int main (int argc, const char *argv[])
         else if(argv[i][1] != '-') {
             int j;
             for(j = 1; argv[i][j]; j++) {
+                if(argv[i][j] == 'S') {
+                    if((argv[i][++j])
+                       ? parse_config(&argv[i][j], i, argc, "-S")
+                       : parse_config(argv[++i], i, argc, "-S"))
+                        return(usage(1));
+                    break;
+                }
                 switch(argv[i][j]) {
                 case 'h': return(usage(0));
                 case 'v': zebra_increase_verbosity(); break;
                 case 'q': quiet = 1; break;
                 default:
-                    fprintf(stderr, "ERROR: unknown bundled option: -%c\n\n",
+                    fprintf(stderr, "ERROR: unknown bundled config: -%c\n\n",
                             argv[i][j]);
                     return(usage(1));
                 }
@@ -108,6 +141,14 @@ int main (int argc, const char *argv[])
             return(usage(0));
         else if(!strcmp(argv[i], "--version"))
             return(printf(PACKAGE_VERSION "\n") <= 0);
+        else if(!strcmp(argv[i], "--set")) {
+            if(parse_config(argv[++i], i, argc, "--set"))
+                return(usage(1));
+        }
+        else if(!strncmp(argv[i], "--set=", 6)) {
+            if(parse_config(&argv[i][6], i, argc, "--set="))
+                return(usage(1));
+        }
         else if(!strcmp(argv[i], "--quiet"))
             quiet = 1;
         else if(!strcmp(argv[i], "--nodisplay"))
@@ -130,16 +171,6 @@ int main (int argc, const char *argv[])
             return(usage(1));
         }
     }
-
-    /* setup zebra library standalone processor,
-     * threads will be used if available
-     */
-    proc = zebra_processor_create(1);
-    if(!proc) {
-        fprintf(stderr, "ERROR: unable to allocate memory?\n");
-        return(1);
-    }
-    zebra_processor_set_data_handler(proc, data_handler, NULL);
 
     if(infmt || outfmt)
         zebra_processor_force_format(proc, infmt, outfmt);

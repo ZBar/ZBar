@@ -90,6 +90,23 @@ class Processor {
         zebra_processor_set_data_handler(_processor, handler, &handler);
     }
 
+    /// set config for indicated symbology (0 for all) to specified value.
+    /// @see zebra_processor_set_config()
+    int set_config (zebra_symbol_type_t symbology,
+                    zebra_config_t config,
+                    int value)
+    {
+        return(zebra_processor_set_config(_processor, symbology,
+                                          config, value));
+    }
+
+    /// set config parsed from configuration string.
+    /// @see zebra_processor_parse_config()
+    int set_config (std::string cfgstr)
+    {
+        return(zebra_processor_parse_config(_processor, cfgstr.c_str()));
+    }
+
     /// retrieve the current state of the ouput window.
     /// see zebra_processor_is_visible()
     bool is_visible ()

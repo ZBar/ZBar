@@ -30,6 +30,8 @@ typedef struct i25_decoder_s {
     int character : 12;         /* character position in symbol */
     unsigned s10;               /* current character width */
     unsigned width;             /* last character width */
+
+    unsigned config;
 } i25_decoder_t;
 
 /* reset interleaved 2 of 5 specific state */

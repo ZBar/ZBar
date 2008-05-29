@@ -1,6 +1,7 @@
 # documentation sources
-DOCSOURCES = doc/manual.xml doc/ref/zebraimg.xml doc/ref/zebracam.xml \
-    doc/version.xml doc/reldate.xml
+DOCSOURCES = doc/manual.xml doc/version.xml doc/reldate.xml \
+    doc/ref/zebraimg.xml doc/ref/zebracam.xml doc/ref/commonoptions.xml
+   
 
 # man page targets to distribute and install
 dist_man_MANS = doc/man/zebraimg.1 doc/man/zebracam.1
