@@ -235,6 +235,8 @@ static inline void uv_round (zebra_image_t *img,
 static inline void uv_roundup (zebra_image_t *img,
                                const zebra_format_def_t *fmt)
 {
+    if(fmt->group == ZEBRA_FMT_GRAY)
+        return;
     unsigned xmask = (1 << fmt->p.yuv.xsub2) - 1;
     if(img->width & xmask)
         img->width = (img->width + xmask) & ~xmask;
@@ -294,29 +296,19 @@ static void cleanup_ref (zebra_image_t *img)
         _zebra_image_refcnt(img->next, -1);
 }
 
-/* make new image w/reference to the same image data */
-static void convert_copy (zebra_image_t *dst,
-                          const zebra_format_def_t *dstfmt,
-                          const zebra_image_t *src,
-                          const zebra_format_def_t *srcfmt)
-{
-    assert(src->width == dst->width);
-    assert(src->height == dst->height);
-    dst->data = src->data;
-    dst->datalen = src->datalen;
-    dst->cleanup = cleanup_ref;
-    dst->next = (zebra_image_t*)src;
-    ((zebra_image_t*)src)->refcnt++;
-}
-
 /* resize y plane, drop extra columns/rows from the right/bottom,
  * or duplicate last column/row to pad missing data
  */
 static inline void convert_y_resize (zebra_image_t *dst,
                                      const zebra_format_def_t *dstfmt,
                                      const zebra_image_t *src,
-                                     const zebra_format_def_t *srcfmt)
+                                     const zebra_format_def_t *srcfmt,
+                                     size_t n)
 {
+    if(dst->width == src->width && dst->height == src->height) {
+        memcpy((void*)dst->data, src->data, n);
+        return;
+    }
     uint8_t *psrc = (void*)src->data;
     uint8_t *pdst = (void*)dst->data;
     unsigned width = (dst->width > src->width) ? src->width : dst->width;
@@ -343,6 +335,25 @@ static inline void convert_y_resize (zebra_image_t *dst,
     }
 }
 
+/* make new image w/reference to the same image data */
+static void convert_copy (zebra_image_t *dst,
+                          const zebra_format_def_t *dstfmt,
+                          const zebra_image_t *src,
+                          const zebra_format_def_t *srcfmt)
+{
+    if(src->width == dst->width &&
+       src->height == dst->height) {
+        dst->data = src->data;
+        dst->datalen = src->datalen;
+        dst->cleanup = cleanup_ref;
+        dst->next = (zebra_image_t*)src;
+        ((zebra_image_t*)src)->refcnt++;
+    }
+    else
+        /* NB only for GRAY/YUV_PLANAR formats */
+        convert_y_resize(dst, dstfmt, src, srcfmt, dst->width * dst->height);
+}
+
 /* append neutral UV plane to grayscale image */
 static void convert_uvp_append (zebra_image_t *dst,
                                 const zebra_format_def_t *dstfmt,
@@ -359,10 +370,7 @@ static void convert_uvp_append (zebra_image_t *dst,
             src->width, src->height, src->datalen);
     dst->data = malloc(dst->datalen);
     if(!dst->data) return;
-    if(dst->width == src->width && dst->height == src->height)
-        memcpy((void*)dst->data, src->data, n);
-    else
-        convert_y_resize(dst, dstfmt, src, srcfmt);
+    convert_y_resize(dst, dstfmt, src, srcfmt, n);
     memset((void*)dst->data + n, 0x80, dst->datalen - n);
 }
 
@@ -372,7 +380,6 @@ static void convert_yuv_pack (zebra_image_t *dst,
                               const zebra_image_t *src,
                               const zebra_format_def_t *srcfmt)
 {
-    assert(0);
     uv_roundup(dst, dstfmt);
     dst->datalen = dst->width * dst->height + uvp_size(dst, dstfmt) * 2;
     dst->data = malloc(dst->datalen);
@@ -392,17 +399,19 @@ static void convert_yuv_pack (zebra_image_t *dst,
         srcu = src->data + srcn;
         srcv = srcu + srcm;
     }
-    flags &= 2;
+    flags = dstfmt->p.yuv.packorder & 2;
 
-    unsigned srcl = src->width >> srcfmt->p.yuv.ysub2;
+    unsigned srcl = src->width >> srcfmt->p.yuv.xsub2;
     unsigned xmask = (1 << srcfmt->p.yuv.xsub2) - 1;
     unsigned ymask = (1 << srcfmt->p.yuv.ysub2) - 1;
     unsigned x, y;
-    uint8_t y0, y1, u, v;
-    for(y = 0; y < src->height; y++) {
-        if(y >= dst->height)
-            break;
-        if(y & ymask) {
+    uint8_t y0 = 0, y1 = 0, u = 0x80, v = 0x80;
+    for(y = 0; y < dst->height; y++) {
+        if(y >= src->height) {
+            srcy -= src->width;
+            srcu -= srcl;  srcv -= srcl;
+        }
+        else if(y & ymask) {
             srcu -= srcl;  srcv -= srcl;
         }
         for(x = 0; x < dst->width; x += 2) {
@@ -413,17 +422,17 @@ static void convert_yuv_pack (zebra_image_t *dst,
                 }
             }
             if(flags) {
-                *(dstp++) = y0;  *(dstp++) = u;
-                *(dstp++) = y1;  *(dstp++) = v;
-            } else {
                 *(dstp++) = u;  *(dstp++) = y0;
                 *(dstp++) = v;  *(dstp++) = y1;
+            } else {
+                *(dstp++) = y0;  *(dstp++) = u;
+                *(dstp++) = y1;  *(dstp++) = v;
             }
         }
         for(; x < src->width; x += 2) {
-            y0 = *(srcy++);  y1 = *(srcy++);
+            srcy += 2;
             if(!(x & xmask)) {
-                u = *(srcu++);  v = *(srcv++);
+                srcu++;  srcv++;
             }
         }
     }
@@ -447,19 +456,28 @@ static void convert_yuv_unpack (zebra_image_t *dst,
         memset((void*)dst->data + dstn, 0x80, dstm2);
     uint8_t *dsty = (void*)dst->data;
 
-    assert(src->datalen >= (src->width * src->height +
-                            uvp_size(src, srcfmt) * 2));
     uint8_t flags = srcfmt->p.yuv.packorder ^ dstfmt->p.yuv.packorder;
     flags &= 2;
     const uint8_t *srcp = src->data;
     if(flags)
         srcp++;
 
-    /* FIXME handle resize */
-    unsigned long i;
-    for(i = dstn / 2; i; i--) {
-        *(dsty++) = *(srcp++);  srcp++;
-        *(dsty++) = *(srcp++);  srcp++;
+    unsigned srcl = src->width + (src->width >> srcfmt->p.yuv.xsub2);
+    unsigned x, y;
+    uint8_t y0 = 0, y1 = 0;
+    for(y = 0; y < dst->height; y++) {
+        if(y >= src->height)
+            srcp -= srcl;
+        for(x = 0; x < dst->width; x += 2) {
+            if(x < src->width) {
+                y0 = *(srcp++);  srcp++;
+                y1 = *(srcp++);  srcp++;
+            }
+            *(dsty++) = y0;
+            *(dsty++) = y1;
+        }
+        if(x < src->width)
+            srcp += (src->width - x) * 2;
     }
 }
 
@@ -471,15 +489,15 @@ static void convert_uvp_resample (zebra_image_t *dst,
                                   const zebra_image_t *src,
                                   const zebra_format_def_t *srcfmt)
 {
-    assert(0);
     uv_roundup(dst, dstfmt);
     unsigned long dstn = dst->width * dst->height;
-    unsigned long dstm = uvp_size(dst, dstfmt);
-    dst->datalen = dstn + dstm * 2;
+    unsigned long dstm2 = uvp_size(dst, dstfmt) * 2;
+    dst->datalen = dstn + dstm2;
     dst->data = malloc(dst->datalen);
     if(!dst->data) return;
-    memcpy((void*)dst->data, src->data, dstn);
-    memset((void*)dst->data + dstn, 0x80, dstm * 2);
+    convert_y_resize(dst, dstfmt, src, srcfmt, dstn);
+    if(dstm2)
+        memset((void*)dst->data + dstn, 0x80, dstm2);
 }
 
 /* rearrange interleaved UV componets */
@@ -498,28 +516,37 @@ static void convert_uv_resample (zebra_image_t *dst,
     uint8_t flags = (srcfmt->p.yuv.packorder ^ dstfmt->p.yuv.packorder) & 1;
     const uint8_t *srcp = src->data;
 
-    uint8_t y0, y1, u, v, tmp;
-    unsigned long i;
-    for(i = dstn / 2; i; i--) {
-        if(!(srcfmt->p.yuv.packorder & 2)) {
-            y0 = *(srcp++);  u = *(srcp++);
-            y1 = *(srcp++);  v = *(srcp++);
+    unsigned srcl = src->width + (src->width >> srcfmt->p.yuv.xsub2);
+    unsigned x, y;
+    uint8_t y0 = 0, y1 = 0, u = 0x80, v = 0x80;
+    for(y = 0; y < dst->height; y++) {
+        if(y >= src->height)
+            srcp -= srcl;
+        for(x = 0; x < dst->width; x += 2) {
+            if(x < src->width) {
+                if(!(srcfmt->p.yuv.packorder & 2)) {
+                    y0 = *(srcp++);  u = *(srcp++);
+                    y1 = *(srcp++);  v = *(srcp++);
+                }
+                else {
+                    u = *(srcp++);  y0 = *(srcp++);
+                    v = *(srcp++);  y1 = *(srcp++);
+                }
+                if(flags) {
+                    uint8_t tmp = u;  u = v;  v = tmp;
+                }
+            }
+            if(!(dstfmt->p.yuv.packorder & 2)) {
+                *(dstp++) = y0;  *(dstp++) = u;
+                *(dstp++) = y1;  *(dstp++) = v;
+            }
+            else {
+                *(dstp++) = u;  *(dstp++) = y0;
+                *(dstp++) = v;  *(dstp++) = y1;
+            }
         }
-        else {
-            u = *(srcp++);  y0 = *(srcp++);
-            v = *(srcp++);  y1 = *(srcp++);
-        }
-        if(flags) {
-            tmp = u;  u = v;  v = tmp;
-        }
-        if(!(dstfmt->p.yuv.packorder & 2)) {
-            *(dstp++) = y0;  *(dstp++) = u;
-            *(dstp++) = y1;  *(dstp++) = v;
-        }
-        else {
-            *(dstp++) = u;  *(dstp++) = y0;
-            *(dstp++) = v;  *(dstp++) = y1;
-        }
+        if(x < src->width)
+            srcp += (src->width - x) * 2;
     }
 }
 
@@ -548,15 +575,24 @@ static void convert_yuvp_to_rgb (zebra_image_t *dst,
     assert(src->datalen >= srcn + 2 * srcm);
     uint8_t *srcy = (void*)src->data;
 
-    unsigned long i;
-    for(i = srcn; i; i--) {
-        /* FIXME color space? */
-        unsigned y = *(srcy++);
-        uint32_t p = (((y >> drbits) << drbit0) |
-                      ((y >> dgbits) << dgbit0) |
-                      ((y >> dbbits) << dbbit0));
-        convert_write_rgb(dstp, p, dstfmt->p.rgb.bpp);
-        dstp += dstfmt->p.rgb.bpp;
+    unsigned x, y;
+    uint32_t p = 0;
+    for(y = 0; y < dst->height; y++) {
+        if(y >= src->height)
+            srcy -= src->width;
+        for(x = 0; x < dst->width; x++) {
+            if(x < src->width) {
+                /* FIXME color space? */
+                unsigned y0 = *(srcy++);
+                p = (((y0 >> drbits) << drbit0) |
+                     ((y0 >> dgbits) << dgbit0) |
+                     ((y0 >> dbbits) << dbbit0));
+            }
+            convert_write_rgb(dstp, p, dstfmt->p.rgb.bpp);
+            dstp += dstfmt->p.rgb.bpp;
+        }
+        if(x < src->width)
+            srcy += (src->width - x);
     }
 }
 
@@ -588,20 +624,30 @@ static void convert_rgb_to_yuvp (zebra_image_t *dst,
     int bbits = RGB_SIZE(srcfmt->p.rgb.blue);
     int bbit0 = RGB_OFFSET(srcfmt->p.rgb.blue);
 
-    unsigned long i;
-    for(i = dstn; i; i--) {
-        uint8_t r, g, b;
-        uint32_t p = convert_read_rgb(srcp, srcfmt->p.rgb.bpp);
-        srcp += srcfmt->p.rgb.bpp;
+    unsigned srcl = src->width * srcfmt->p.rgb.bpp;
+    unsigned x, y;
+    uint16_t y0 = 0;
+    for(y = 0; y < dst->height; y++) {
+        if(y >= src->height)
+            srcp -= srcl;
+        for(x = 0; x < dst->width; x++) {
+            if(x < src->width) {
+                uint8_t r, g, b;
+                uint32_t p = convert_read_rgb(srcp, srcfmt->p.rgb.bpp);
+                srcp += srcfmt->p.rgb.bpp;
 
-        /* FIXME endianness? */
-        r = ((p >> rbit0) << rbits) & 0xff;
-        g = ((p >> gbit0) << gbits) & 0xff;
-        b = ((p >> bbit0) << bbits) & 0xff;
+                /* FIXME endianness? */
+                r = ((p >> rbit0) << rbits) & 0xff;
+                g = ((p >> gbit0) << gbits) & 0xff;
+                b = ((p >> bbit0) << bbits) & 0xff;
 
-        /* FIXME color space? */
-        uint16_t y = ((77 * r + 150 * g + 29 * b) + 0x80) >> 8;
-        *(dsty++) = y;
+                /* FIXME color space? */
+                y0 = ((77 * r + 150 * g + 29 * b) + 0x80) >> 8;
+            }
+            *(dsty++) = y0;
+        }
+        if(x < src->width)
+            srcp += (src->width - x) * srcfmt->p.rgb.bpp;
     }
 }
 
@@ -630,33 +676,92 @@ static void convert_yuv_to_rgb (zebra_image_t *dst,
     if(srcfmt->p.yuv.packorder & 2)
         srcp++;
 
-    ssize_t i;
-    for(i = dstn; i; i--) {
-        uint8_t y = *(srcp++);
-        srcp++;
+    assert(srcfmt->p.yuv.xsub2 == 1);
+    unsigned srcl = src->width + (src->width >> 1);
+    unsigned x, y;
+    uint32_t p = 0;
+    for(y = 0; y < dst->height; y++) {
+        if(y >= src->height)
+            srcp -= srcl;
+        for(x = 0; x < dst->width; x++) {
+            if(x < src->width) {
+                uint8_t y0 = *(srcp++);
+                srcp++;
 
-        if(y <= 16)
-            y = 0;
-        else if(y >= 235)
-            y = 255;
-        else
-            y = (uint16_t)(y - 16) * 255 / 219;
+                if(y0 <= 16)
+                    y0 = 0;
+                else if(y0 >= 235)
+                    y0 = 255;
+                else
+                    y0 = (uint16_t)(y0 - 16) * 255 / 219;
 
-        uint32_t p = (((y >> drbits) << drbit0) |
-                      ((y >> dgbits) << dgbit0) |
-                      ((y >> dbbits) << dbbit0));
-        convert_write_rgb(dstp, p, dstfmt->p.rgb.bpp);
-        dstp += dstfmt->p.rgb.bpp;
+                p = (((y0 >> drbits) << drbit0) |
+                     ((y0 >> dgbits) << dgbit0) |
+                     ((y0 >> dbbits) << dbbit0));
+            }
+            convert_write_rgb(dstp, p, dstfmt->p.rgb.bpp);
+            dstp += dstfmt->p.rgb.bpp;
+        }
+        if(x < src->width)
+            srcp += (src->width - x) * 2;
     }
 }
 
-/* packed RGB to packed YUV */
+/* packed RGB to packed YUV
+ * FIXME currently ignores color and grayscales the image
+ */
 static void convert_rgb_to_yuv (zebra_image_t *dst,
                                 const zebra_format_def_t *dstfmt,
                                 const zebra_image_t *src,
                                 const zebra_format_def_t *srcfmt)
 {
-    assert(0);
+    uv_roundup(dst, dstfmt);
+    dst->datalen = dst->width * dst->height + uvp_size(dst, dstfmt) * 2;
+    dst->data = malloc(dst->datalen);
+    if(!dst->data) return;
+    uint8_t *dstp = (void*)dst->data;
+    uint8_t flags = dstfmt->p.yuv.packorder & 2;
+
+    assert(src->datalen >= (src->width * src->height * srcfmt->p.rgb.bpp));
+    const uint8_t *srcp = src->data;
+
+    int rbits = RGB_SIZE(srcfmt->p.rgb.red);
+    int rbit0 = RGB_OFFSET(srcfmt->p.rgb.red);
+    int gbits = RGB_SIZE(srcfmt->p.rgb.green);
+    int gbit0 = RGB_OFFSET(srcfmt->p.rgb.green);
+    int bbits = RGB_SIZE(srcfmt->p.rgb.blue);
+    int bbit0 = RGB_OFFSET(srcfmt->p.rgb.blue);
+
+    unsigned srcl = src->width * srcfmt->p.rgb.bpp;
+    unsigned x, y;
+    uint16_t y0 = 0;
+    for(y = 0; y < dst->height; y++) {
+        if(y >= src->height)
+            srcp -= srcl;
+        for(x = 0; x < dst->width; x++) {
+            if(x < src->width) {
+                uint8_t r, g, b;
+                uint32_t p = convert_read_rgb(srcp, srcfmt->p.rgb.bpp);
+                srcp += srcfmt->p.rgb.bpp;
+
+                /* FIXME endianness? */
+                r = ((p >> rbit0) << rbits) & 0xff;
+                g = ((p >> gbit0) << gbits) & 0xff;
+                b = ((p >> bbit0) << bbits) & 0xff;
+
+                /* FIXME color space? */
+                y0 = ((77 * r + 150 * g + 29 * b) + 0x80) >> 8;
+            }
+            if(flags) {
+                *(dstp++) = 0x80;  *(dstp++) = y0;
+            }
+            else {
+                *(dstp++) = y0;  *(dstp++) = 0x80;
+            }
+        }
+        if(x < src->width)
+            srcp += (src->width - x) * srcfmt->p.rgb.bpp;
+    }
 }
 
 /* resample and resize packed RGB components */
@@ -688,24 +793,32 @@ static void convert_rgb_resample (zebra_image_t *dst,
     int sbbits = RGB_SIZE(srcfmt->p.rgb.blue);
     int sbbit0 = RGB_OFFSET(srcfmt->p.rgb.blue);
 
-    ssize_t i;
-    for(i = dstn; i; i--) {
-        uint32_t p;
-        uint8_t r, g, b;
-        p = convert_read_rgb(srcp, srcfmt->p.rgb.bpp);
-        srcp += srcfmt->p.rgb.bpp;
+    unsigned srcl = src->width * srcfmt->p.rgb.bpp;
+    unsigned x, y;
+    uint32_t p = 0;
+    for(y = 0; y < dst->height; y++) {
+        if(y >= src->height)
+            y -= srcl;
+        for(x = 0; x < dst->width; x++) {
+            if(x < src->width) {
+                uint8_t r, g, b;
+                p = convert_read_rgb(srcp, srcfmt->p.rgb.bpp);
+                srcp += srcfmt->p.rgb.bpp;
 
-        /* FIXME endianness? */
-        r = (p >> srbit0) << srbits;
-        g = (p >> sgbit0) << sgbits;
-        b = (p >> sbbit0) << sbbits;
+                /* FIXME endianness? */
+                r = (p >> srbit0) << srbits;
+                g = (p >> sgbit0) << sgbits;
+                b = (p >> sbbit0) << sbbits;
 
-        p = (((r >> drbits) << drbit0) |
-             ((g >> dgbits) << dgbit0) |
-             ((b >> dbbits) << dbbit0));
-
-        convert_write_rgb(dstp, p, dstfmt->p.rgb.bpp);
-        dstp += dstfmt->p.rgb.bpp;
+                p = (((r >> drbits) << drbit0) |
+                     ((g >> dgbits) << dgbit0) |
+                     ((b >> dbbits) << dbbit0));
+            }
+            convert_write_rgb(dstp, p, dstfmt->p.rgb.bpp);
+            dstp += dstfmt->p.rgb.bpp;
+        }
+        if(x < src->width)
+            srcp += (src->width - x) * srcfmt->p.rgb.bpp;
     }
 }
 

@@ -78,21 +78,21 @@ static inline int xv_init (zebra_window_t *w,
             xvimg->width, xvimg->height, xvimg->pitches[0],
             (char*)&img->format, img->format, img->width, img->height);
 
-    /* FIXME datalen check */
-    if(xvimg->width < img->width || xvimg->height < img->height) {
-        XFree(xvimg);
-        /* FIXME fallback to XImage... */
-        return(err_capture(w, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
-                           "output image size mismatch (XvCreateImage)"));
-    }
-    w->img.xv = xvimg;
-
     /* FIXME not sure this simple check is always correct
      * should lookup format to decode/sanitize target width from pitch & bpp
      */
     w->dst_width = ((xvimg->num_planes <= 1)
                     ? xvimg->width
                     : xvimg->pitches[0]);
+
+    /* FIXME datalen check */
+    if(w->dst_width < img->width || xvimg->height < img->height) {
+        XFree(xvimg);
+        /* FIXME fallback to XImage... */
+        return(err_capture(w, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
+                           "output image size mismatch (XvCreateImage)"));
+    }
+    w->img.xv = xvimg;
 
     return(0);
 }
@@ -103,17 +103,21 @@ static int xv_draw (zebra_window_t *w,
     XvImage *xvimg = w->img.xv;
     /* FIXME preserve aspect ratio (config?) */
     if(!xvimg ||
-       (w->src_format != img->format &&
-        w->format != img->format)||
-       w->src_width != img->width ||
-       w->src_height != img->height) {
+       (img->format != w->src_format &&
+        img->format != w->format) ||
+       (img->width != w->src_width  &&
+        img->width != w->dst_width) ||
+       (img->height != w->src_height  &&
+        img->height != xvimg->height)) {
         if(xv_init(w, img))
             return(-1);
         xvimg = w->img.xv;
     }
     if(img->format != w->format ||
-       img->width != xvimg->pitches[0] ||
+       img->width != w->dst_width ||
        img->height != xvimg->height) {
+        w->src_width = img->width;
+        w->src_height = img->height;
         /* save *converted* image for redraw */
         w->image = zebra_image_convert_resize(img, w->format,
                                               w->dst_width,
@@ -123,6 +127,8 @@ static int xv_draw (zebra_window_t *w,
     }
 
     xvimg->data = (void*)img->data;
+    zprintf(24, "XvPutImage(%dx%d -> %dx%d)\n",
+            w->src_width, w->src_height, w->width, w->height);
     XvPutImage(w->display, w->img_port, w->xwin, w->gc, xvimg,
                0, 0, w->src_width, w->src_height,
                0, 0, w->width, w->height);

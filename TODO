@@ -1,10 +1,7 @@
-next release:
-  * finish format conversion resize cases
-  * example of script spawned zebracam w/non-blocking wait
-
 general:
   * finish error handling
   * handle video destroyed w/images outstanding
+  * reconsider async X/toolkit interaction
   * dbg_scan background image stretched (still...)
   * profile and weed out obvious oversights
   * windows port
@@ -32,9 +29,9 @@ image scanner:
 
 image formats:
   * fix image data inheritance
-  * add missing format conversions
   * add color support to conversions
   * add support for scanline pad throughout
+  * factor conversion redundancy
 
 window:
   * add XShm support
@@ -42,6 +39,9 @@ window:
   * API to query used interface (video, window?) (/format?)
   * mode to preserve aspect ratio (default?)
   * simple image manipulations scale(xv?)/mirror
+  * more overlay details
+    * decoded result(?)
+    * stats
 
 zebracam/zebraimg:
   * stats/fps at zebracam exit

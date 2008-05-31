@@ -1,4 +1,8 @@
 current:
+  * finish format conversion resize cases
+  * add missing conversions
+  * fix some broken conversions
+  * fix some broken redraw and Xv checks
   * add decoder configuration API
     - only boolean configs currently implemented
     - integrate config option parsing w/zebracam and zebraimg

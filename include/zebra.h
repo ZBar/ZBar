@@ -651,7 +651,9 @@ extern int zebra_window_draw(zebra_window_t *window,
 /** redraw the last image (exposure handler). */
 extern int zebra_window_redraw(zebra_window_t *window);
 
-/** resize the image window (reconfigure handler). */
+/** resize the image window (reconfigure handler).
+ * this does @em not update the contents of the window
+ */
 extern int zebra_window_resize(zebra_window_t *window,
                                unsigned width,
                                unsigned height);
