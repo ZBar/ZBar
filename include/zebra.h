@@ -49,13 +49,13 @@ typedef enum zebra_symbol_type_e {
     ZEBRA_NONE        =      0,   /**< no symbol decoded */
     ZEBRA_PARTIAL     =      1,   /**< intermediate status */
     ZEBRA_EAN8        =      8,   /**< EAN-8 */
-    ZEBRA_ISBN10      =     10,   /**< ISBN-10 (decoded from EAN-13) */
+    ZEBRA_ISBN10      =     10,   /**< ISBN-10 (from EAN-13). @since 0.4 */
     ZEBRA_UPCE        =     11,   /**< UPC-E */
     ZEBRA_UPCA        =     12,   /**< UPC-A */
     ZEBRA_EAN13       =     13,   /**< EAN-13 */
-    ZEBRA_ISBN13      =     14,   /**< ISBN-13 (decoded from EAN-13) */
-    ZEBRA_I25         =     25,   /**< Interleaved 2 of 5 */
-    ZEBRA_CODE39      =     39,   /**< Code 39 */
+    ZEBRA_ISBN13      =     14,   /**< ISBN-13 (from EAN-13). @since 0.4 */
+    ZEBRA_I25         =     25,   /**< Interleaved 2 of 5. @since 0.4 */
+    ZEBRA_CODE39      =     39,   /**< Code 39. @since 0.4 */
     ZEBRA_CODE128     =    128,   /**< Code 128 */
     ZEBRA_SYMBOL      = 0x00ff,   /**< mask for base symbol type */
     ZEBRA_ADDON2      = 0x0200,   /**< 2-digit add-on flag */
@@ -79,7 +79,9 @@ typedef enum zebra_error_e {
     ZEBRA_ERR_NUM               /**< number of error codes */
 } zebra_error_t;
 
-/** decoder configuration options. */
+/** decoder configuration options.
+ * @since 0.4
+ */
 typedef enum zebra_config_e {
     ZEBRA_CFG_ENABLE = 0,       /**< enable symbology/feature */
     ZEBRA_CFG_ADD_CHECK,        /**< enable check digit when optional */
@@ -126,6 +128,7 @@ extern const char *zebra_get_addon_name(zebra_symbol_type_t sym);
  * if symbology is unspecified, it will be set to 0.
  * if value is unspecified it will be set to 1.
  * @returns 0 if the config is parsed successfully, 1 otherwise
+ * @since 0.4
  */
 extern int zebra_parse_config(const char *config_string,
                               zebra_symbol_type_t *symbology,
@@ -264,10 +267,8 @@ extern zebra_image_t *zebra_image_convert(const zebra_image_t *image,
  * @returns a @em new image with the sample data from the original
  * image converted to the requested format and size.
  * @note the image is @em not scaled
- * @note both the crop and pad will be changed to center the image in
- * a future release
- * @version 0.4
  * @see zebra_image_convert()
+ * @since 0.4
  */
 extern zebra_image_t *zebra_image_convert_resize(const zebra_image_t *image,
                                                  unsigned long format,
@@ -416,6 +417,7 @@ zebra_processor_set_data_handler(zebra_processor_t *processor,
  * @returns 0 for success, non-0 for failure (config does not apply to
  * specified symbology, or value out of range)
  * @see zebra_decoder_set_config()
+ * @since 0.4
  */
 extern int zebra_processor_set_config(zebra_processor_t *processor,
                                       zebra_symbol_type_t symbology,
@@ -427,6 +429,7 @@ extern int zebra_processor_set_config(zebra_processor_t *processor,
  * @returns 0 for success, non-0 for failure
  * @see zebra_parse_config()
  * @see zebra_processor_set_config()
+ * @since 0.4
  */
 static inline int zebra_processor_parse_config (zebra_processor_t *processor,
                                                 const char *config_string)
@@ -653,6 +656,7 @@ extern int zebra_window_redraw(zebra_window_t *window);
 
 /** resize the image window (reconfigure handler).
  * this does @em not update the contents of the window
+ * @since 0.3, changed in 0.4 to not redraw window
  */
 extern int zebra_window_resize(zebra_window_t *window,
                                unsigned width,
@@ -727,6 +731,7 @@ zebra_image_scanner_set_data_handler(zebra_image_scanner_t *scanner,
  * @returns 0 for success, non-0 for failure (config does not apply to
  * specified symbology, or value out of range)
  * @see zebra_decoder_set_config()
+ * @since 0.4
  */
 extern int zebra_image_scanner_set_config(zebra_image_scanner_t *scanner,
                                           zebra_symbol_type_t symbology,
@@ -738,6 +743,7 @@ extern int zebra_image_scanner_set_config(zebra_image_scanner_t *scanner,
  * @returns 0 for success, non-0 for failure
  * @see zebra_parse_config()
  * @see zebra_image_scanner_set_config()
+ * @since 0.4
  */
 static inline int
 zebra_image_scanner_parse_config (zebra_image_scanner_t *scanner,
@@ -793,6 +799,7 @@ extern void zebra_decoder_destroy(zebra_decoder_t *decoder);
 /** set config for indicated symbology (0 for all) to specified value.
  * @returns 0 for success, non-0 for failure (config does not apply to
  * specified symbology, or value out of range)
+ * @since 0.4
  */
 extern int zebra_decoder_set_config(zebra_decoder_t *decoder,
                                     zebra_symbol_type_t symbology,
@@ -804,6 +811,7 @@ extern int zebra_decoder_set_config(zebra_decoder_t *decoder,
  * @returns 0 for success, non-0 for failure
  * @see zebra_parse_config()
  * @see zebra_decoder_set_config()
+ * @since 0.4
  */
 static inline int zebra_decoder_parse_config (zebra_decoder_t *decoder,
                                               const char *config_string)

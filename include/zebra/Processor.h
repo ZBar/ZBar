@@ -92,6 +92,7 @@ class Processor {
 
     /// set config for indicated symbology (0 for all) to specified value.
     /// @see zebra_processor_set_config()
+    /// @since 0.4
     int set_config (zebra_symbol_type_t symbology,
                     zebra_config_t config,
                     int value)
@@ -102,6 +103,7 @@ class Processor {
 
     /// set config parsed from configuration string.
     /// @see zebra_processor_parse_config()
+    /// @since 0.4
     int set_config (std::string cfgstr)
     {
         return(zebra_processor_parse_config(_processor, cfgstr.c_str()));

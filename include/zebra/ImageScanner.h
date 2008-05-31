@@ -67,6 +67,7 @@ public:
 
     /// set config for indicated symbology (0 for all) to specified value.
     /// @see zebra_image_scanner_set_config()
+    /// @since 0.4
     int set_config (zebra_symbol_type_t symbology,
                     zebra_config_t config,
                     int value)
@@ -77,6 +78,7 @@ public:
 
     /// set config parsed from configuration string.
     /// @see zebra_image_scanner_parse_config()
+    /// @since 0.4
     int set_config (std::string cfgstr)
     {
         return(zebra_image_scanner_parse_config(_scanner, cfgstr.c_str()));

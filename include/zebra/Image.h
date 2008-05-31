@@ -238,6 +238,7 @@ public:
 
     /// image format conversion with crop/pad.
     /// see zebra_image_convert_resize()
+    /// @since 0.4
     Image convert (unsigned long format,
                    unsigned width,
                    unsigned height) const

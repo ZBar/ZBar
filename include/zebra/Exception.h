@@ -148,6 +148,9 @@ class FormatError : public Exception {
     }
 };
 
+/// @internal
+
+/// extract error information and create exception.
 static inline std::exception throw_exception (const void *obj)
 {
     switch(_zebra_get_error_code(obj)) {
