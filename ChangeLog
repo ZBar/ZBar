@@ -1,4 +1,6 @@
-current:
+version 0.4:
+  * release updates (version, NEWS, packaging, examples)
+  * couple of portability tweaks
   * finish format conversion resize cases
   * add missing conversions
   * fix some broken conversions

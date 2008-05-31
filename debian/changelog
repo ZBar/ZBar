@@ -1,3 +1,9 @@
+libzebra (0.4-1) unstable; urgency=low
+
+  * update to release 0.4
+
+ -- Jeff Brown <spadix@users.sourceforge.net>  Fri, 30 May 3008 09:00:00 +0500
+
 libzebra (0.2-1) unstable; urgency=low
 
   * Added libsdl dependency

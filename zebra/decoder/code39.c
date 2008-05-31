@@ -231,7 +231,6 @@ static inline void code39_postprocess (zebra_decoder_t *dcode)
         }
     }
     for(i = 0; i < dcode39->character; i++) {
-        assert(dcode->buf[i] >= 0);
         assert(dcode->buf[i] < 0x2b);
         dcode->buf[i] = code39_characters[(unsigned)dcode->buf[i]];
     }

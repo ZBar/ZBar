@@ -78,7 +78,7 @@ struct zebra_decoder_s {
     unsigned lock : 1;                  /* buffer lock */
 
     /* everything above here is automatically reset */
-    char *buf;                          /* decoded characters */
+    unsigned char *buf;                 /* decoded characters */
     unsigned buflen;                    /* dynamic buffer allocation */
     void *userdata;                     /* application data */
     zebra_decoder_handler_t *handler;   /* application callback */
@@ -179,7 +179,7 @@ static inline char size_buf (zebra_decoder_t *dcode,
         if(len > BUFFER_MAX)
             len = BUFFER_MAX;
     }
-    char *buf = realloc(dcode->buf, len);
+    unsigned char *buf = realloc(dcode->buf, len);
     if(!buf)
         return(1);
     dcode->buf = buf;

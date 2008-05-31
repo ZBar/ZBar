@@ -13,10 +13,11 @@ Prefix: %{_prefix}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
-Zebra is a layered barcode (EAN/UPC/Code 128) scanning and decoding
-library.  Includes applications for decoding captured barcode images
-and using a video device (eg, webcam) as a barcode scanner.  Features
-a fast streaming interface with minimal memory footprint.
+Zebra is a layered barcode scanning and decoding library.  Supports
+EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5.  Includes
+applications for decoding captured barcode images and using a video
+device (eg, webcam) as a barcode scanner.  Features a fast streaming
+interface with minimal memory footprint.
 
 %package devel
 Group: Development/Libraries
@@ -60,7 +61,7 @@ ldconfig
 %doc %{_docdir}/%{name}-%{version}/README
 %doc %{_docdir}/%{name}-%{version}/TODO
 %{_datadir}/man/man1/*
-%{_libdir}/libzebra.so.3.0.0
+%{_libdir}/libzebra.so.3.1.0
 %{_libdir}/libzebra.so.3
 %{_libdir}/libzebra.so
 %{_bindir}/zebraimg
@@ -82,7 +83,10 @@ ldconfig
 %{_includedir}/zebra/Processor.h
 
 %changelog
-* Tue Feb 19 2007 spadix <spadix@users.sourceforge.net>
+* Sat May 31 2008 spadix <spadix@users.sourceforge.net>
+- version 0.4 updates (description and library version)
+
+* Tue Feb 19 2008 spadix <spadix@users.sourceforge.net>
 - version 0.3 updates (dependencies and files)
 
 * Fri Jun 08 2007 spadix <spadix@users.sourceforge.net>

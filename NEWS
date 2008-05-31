@@ -1,5 +1,10 @@
 Zebra Barcode Reader
 
+version 0.4 (2008-05-31):
+  new support for EAN-8, Code 39 and Interleaved 2 of 5!
+  this release also introduces the long awaited decoder configuration
+  options and fixes several bugs
+
 version 0.3 (2008-02-25):
   this is a beta release of the enhanced internal architecture.
   support has been added for version 2 of the video4linux API and many

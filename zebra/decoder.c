@@ -117,7 +117,7 @@ zebra_color_t zebra_decoder_get_color (const zebra_decoder_t *dcode)
 
 const char *zebra_decoder_get_data (const zebra_decoder_t *dcode)
 {
-    return(dcode->buf);
+    return((char*)dcode->buf);
 }
 
 zebra_decoder_handler_t *

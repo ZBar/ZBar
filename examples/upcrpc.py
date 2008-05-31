@@ -3,7 +3,7 @@ from xmlrpclib import ServerProxy
 import sys, re
 
 server = ServerProxy("http://dev.upcdatabase.com/rpc")
-ean_re = re.compile(r'^(EAN-13:)?(\d{12,13})$', re.M)
+ean_re = re.compile(r'^(UPC-A:|EAN-13:)?(\d{11,13})$', re.M)
 
 def lookup(decode):
     match = ean_re.search(decode)
@@ -11,9 +11,14 @@ def lookup(decode):
         print decode,
         return
     ean = match.group(2)
+    if match.group(1) == "UPC-A:":
+        ean = "0" + ean;
+    elif len(ean) < 12:
+        print decode,
+        return
     if len(ean) == 12:
         ean = server.calculateCheckDigit(ean + "C")
-    print "[EAN-13:" + ean + "]",
+    print "[" + match.group(1) + ean + "]",
     result = server.lookupEAN(ean)
     if isinstance(result, dict):
         if "found" not in result or not result["found"] or \
