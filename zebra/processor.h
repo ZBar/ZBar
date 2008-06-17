@@ -173,6 +173,7 @@ static inline void emit (zebra_processor_t *proc,
 extern int _zebra_window_open(zebra_processor_t*, char*, unsigned, unsigned);
 extern int _zebra_window_close(zebra_processor_t*);
 extern int _zebra_window_set_visible(zebra_processor_t*, int);
+extern int _zebra_window_invalidate(zebra_window_t*);
 extern int _zebra_window_resize(zebra_processor_t*, unsigned, unsigned);
 extern int _zebra_window_handle_events(zebra_processor_t*, int);
 

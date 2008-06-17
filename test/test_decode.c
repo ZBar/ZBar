@@ -235,7 +235,7 @@ static void encode_i25 (unsigned char *data,
 
     /* FIXME rev case data reversal */
     int i;
-    for(i = (strlen(data) & 1) ? -1 : 0; i < 0 || data[i]; i += 2) {
+    for(i = (strlen((char*)data) & 1) ? -1 : 0; i < 0 || data[i]; i += 2) {
         /* encode 2 digits */
         unsigned char c0 = (i < 0) ? 0 : data[i] - '0';
         unsigned char c1 = data[i + 1] - '0';

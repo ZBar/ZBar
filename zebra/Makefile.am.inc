@@ -37,3 +37,6 @@ endif
 else
 zebra_libzebra_la_SOURCES += zebra/window/null.c
 endif
+
+zebra_libzebra_la_LDFLAGS += $(AM_LDFLAGS)
+zebra_libzebra_la_LIBADD += $(AM_LIBADD)

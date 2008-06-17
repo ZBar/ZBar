@@ -193,7 +193,8 @@ static int v4l2_cleanup (zebra_video_t *vdo)
         int i;
         for(i = 0; i < vdo->num_images; i++) {
             zebra_image_t *img = vdo->images[i];
-            if(munmap((void*)img->data, img->datalen))
+            if(img->data &&
+               munmap((void*)img->data, img->datalen))
                 err_capture(vdo, SEV_WARNING, ZEBRA_ERR_SYSTEM, __func__,
                             "unmapping video frame buffers");
             img->data = NULL;

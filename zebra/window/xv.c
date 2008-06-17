@@ -32,8 +32,10 @@ static int xv_cleanup (zebra_window_t *w)
     }
     int i;
     for(i = 0; i < w->num_xv_adaptors; i++)
-        if(w->xv_adaptors[i] > 0)
+        if(w->xv_adaptors[i]) {
             XvUngrabPort(w->display, w->xv_adaptors[i], CurrentTime);
+            w->xv_adaptors[i] = 0;
+        }
     free(w->xv_ports);
     free(w->xv_adaptors);
     w->xv_ports = NULL;
@@ -60,14 +62,14 @@ static inline int xv_init (zebra_window_t *w,
         }
         w->src_format = img->format;
         /* lookup port for format */
-        w->img_port = -1;
+        w->img_port = 0;
         int i;
         for(i = 0; w->formats[i]; i++)
             if(w->formats[i] == w->format) {
                 w->img_port = w->xv_ports[i];
                 break;
             }
-        assert(w->img_port >= 0);
+        assert(w->img_port > 0);
     }
     w->src_width = img->width;
     w->src_height = img->height;
@@ -267,7 +269,7 @@ int _zebra_window_probe_xv (zebra_window_t *w)
     for(i = 0; i < w->num_xv_adaptors; i++)
         if(xv_probe_port(w, w->xv_adaptors[i])) {
             XvUngrabPort(w->display, w->xv_adaptors[i], CurrentTime);
-            w->xv_adaptors[i] = -1;
+            w->xv_adaptors[i] = 0;
         }
     if(!w->formats[0] || w->max_width == 65536 || w->max_height == 65536) {
         xv_cleanup(w);
@@ -282,7 +284,7 @@ int _zebra_window_probe_xv (zebra_window_t *w)
                 break;
         if(!w->formats[j]) {
             XvUngrabPort(w->display, w->xv_adaptors[i], CurrentTime);
-            w->xv_adaptors[i] = -1;
+            w->xv_adaptors[i] = 0;
         }
     }
 

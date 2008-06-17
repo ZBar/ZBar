@@ -234,10 +234,13 @@ static inline unsigned char validate_checksum (zebra_decoder_t *dcode)
     /* add in irregularly weighted start character */
     unsigned idx = (dcode128->direction) ? dcode128->character - 1 : 0;
     unsigned sum = dcode->buf[idx];
+    if(sum >= 103)
+        sum -= 103;
 
     /* calculate sum in reverse to avoid multiply operations */
     unsigned i, acc = 0;
     for(i = dcode128->character - 3; i; i--) {
+        assert(sum < 103);
         idx = (dcode128->direction) ? dcode128->character - 1 - i : i;
         acc += dcode->buf[idx];
         if(acc >= 103)
@@ -246,7 +249,6 @@ static inline unsigned char validate_checksum (zebra_decoder_t *dcode)
         sum += acc;
         if(sum >= 103)
             sum -= 103;
-        assert(sum < 103);
     }
 
     /* and compare to check character */
@@ -452,7 +454,7 @@ zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
        ((dcode128->direction)
         ? c >= START_A && c <= START_C
         : c == STOP_FWD)) {
-        /* FIXME STOP_FWD should check extra bar */
+        /* FIXME STOP_FWD should check extra bar (and QZ!) */
         zebra_symbol_type_t sym = ZEBRA_CODE128;
         if(validate_checksum(dcode) || postprocess(dcode)) {
             dcode->lock = 0;

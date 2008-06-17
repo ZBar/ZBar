@@ -135,11 +135,15 @@ static inline int process_image (zebra_processor_t *proc,
     }
 
     /* display to window if enabled */
-    if(proc->window && (zebra_window_draw(proc->window, img)))
+    if(proc->window &&
+       (zebra_window_draw(proc->window, img) ||
+        _zebra_window_invalidate(proc->window)))
         return(err_copy(proc, proc->window));
+#if 0
     /* FIXME still don't understand why we need this */
     if(proc->window && _zebra_window_handle_events(proc, 0))
         return(-1);
+#endif
     if(proc->force_output && img)
         zebra_image_destroy(img);
     return(0);

@@ -35,13 +35,13 @@ AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 
+PKG_PROG_PKG_CONFIG
+
 AC_ARG_VAR([XMLTO], [location of xmlto, used for optional \
 documentation generation])
 AC_ARG_VAR([XMLTOFLAGS], [additional arguments for xmlto])
-AC_CHECK_TOOL([XMLTO], [xmlto], [:])
+AC_CHECK_PROGS([XMLTO], [xmlto], [:])
 
-AC_ARG_VAR([PKG_CONFIG], [full path to pkg-config utility])
-AC_CHECK_TOOL([PKG_CONFIG], [pkg-config], [:])
 
 dnl libraries
 
@@ -87,8 +87,8 @@ configure --disable-video to skip building video support.])])
 ])
 AM_CONDITIONAL([HAVE_VIDEO], [test "x$enable_video" != "xno"])
 AM_CONDITIONAL([HAVE_V4L1],
-  [test "x$with_video" == "xv4l1" || test "x$with_video" == "xv4l2"])
-AM_CONDITIONAL([HAVE_V4L2], [test "x$with_video" == "xv4l2"])
+  [test "x$with_video" = "xv4l1" || test "x$with_video" = "xv4l2"])
+AM_CONDITIONAL([HAVE_V4L2], [test "x$with_video" = "xv4l2"])
 
 dnl X
 AC_PATH_XTRA
@@ -165,73 +165,82 @@ AC_ARG_WITH([imagemagick],
   [],
   [with_imagemagick="yes"])
 
-AC_ARG_VAR([MAGICKXX_CONFIG], [full path to Magick++-config program])
-AC_CHECK_TOOL([MAGICKXX_CONFIG], [Magick++-config], [:])
-AS_IF([test "x$with_imagemagick" != "xno" && \
-       test "x$MAGICKXX_CONFIG" = "x:"],
-  [AC_CHECK_TOOL([CONVERT], [convert])
-   AS_IF([test "x$CONVERT" != "x" && \
-          convert -version | grep ImageMagick >/dev/null 2>&1],
-     [AC_MSG_FAILURE([test for Magick++ interface failed!
-although ImageMagick programs appear to be installed?
-make sure you install any ImageMagick development packages
-provided by your distribution or configure --without-imagemagick
-to skip building programs that use ImageMagick.])],
-     [AC_MSG_FAILURE([test for ImageMagick failed!
-install imagemagick or configure --without-imagemagick
-to skip building programs that use ImageMagick.])]
-)])
-
 AS_IF([test "x$with_imagemagick" != "xno"],
-  [AC_MSG_CHECKING([ImageMagick version])
-   MAGICK_VERSION=`$MAGICKXX_CONFIG --version`
-   AC_MSG_RESULT([$MAGICK_VERSION])
-   AS_CASE([$MAGICK_VERSION],
-     [[[0-5].* | 6.[0-1].* | 6.2.[0-5]]],
-     [AC_MSG_FAILURE([test for ImageMagick version >= 6.2.6 failed!
-upgrade ImageMagick or configure --without-imagemagick
-to skip building programs that use ImageMagick.])])
-])
-    
-AM_CONDITIONAL([HAVE_MAGICK], [test "x$with_imagemagick" = "xyes"])
-AC_SUBST([MAGICK_CPPFLAGS], [`$MAGICKXX_CONFIG --cppflags`])
-AC_SUBST([MAGICK_CXXFLAGS], [`$MAGICKXX_CONFIG --cxxflags`])
-AC_SUBST([MAGICK_LDFLAGS], [`$MAGICKXX_CONFIG --ldflags`])
-AC_SUBST([MAGICK_LIBS], [`$MAGICKXX_CONFIG --libs`])
+  [PKG_CHECK_MODULES([MAGICK], [ImageMagick++ >= 6.2.6])
+   MAGICK_VERSION=`$PKG_CONFIG ImageMagick++ --modversion`
+   AC_MSG_NOTICE([using ImageMagick version $MAGICK_VERSION])])
 
-AC_ARG_WITH([mozilla],
-  [AS_HELP_STRING([--without-mozilla],
+AM_CONDITIONAL([HAVE_MAGICK], [test "x$with_imagemagick" = "xyes"])
+
+dnl Mozilla NPAPI
+AC_ARG_WITH([npapi],
+  [AS_HELP_STRING([--without-npapi],
     [disable support for Firefox/Mozilla/OpenOffice NPAPI plugin])],
   [],
-  [with_mozilla="no"])
+  [with_npapi="no"])
 
-AC_ARG_VAR([MOZILLA_CFLAGS],
-  [C compiler flags for Firefox/Mozilla plugin (overrides pkg-config)])
-AS_IF([test "x$MOZILLA_CFLAGS" = "x"],
-  [MOZILLA_CFLAGS=`$PKG_CONFIG --cflags firefox-plugin`])
+AS_IF([test "x$with_npapi" != "xno"],
+  [PKG_CHECK_MODULES([NPAPI], [firefox-plugin])
+   NPAPI_VERSION=`$PKG_CONFIG firefox-plugin --modversion`
+   AC_MSG_NOTICE([using firefox-plugin version $NPAPI_VERSION])])
 
-AC_ARG_VAR([MOZILLA_LIBS],
-  [linker flags for Firefox/Mozilla plugin (overrides pkg-config)])
-AS_IF([test "x$MOZILLA_LIBS" = "x"],
-  [MOZILLA_LIBS=`$PKG_CONFIG --libs firefox-plugin`])
+AM_CONDITIONAL([HAVE_NPAPI], [test "x$with_npapi" = "xyes"])
 
-AS_IF([test "x$with_mozilla" = "xno"],
+dnl GTK
+AC_ARG_WITH([gtk],
+  [AS_HELP_STRING([--without-gtk],
+    [disable support for GTK+ widget])],
   [],
-  [test "x$MOZILLA_CFLAGS" = "x" || \
-   test "x$MOZILLA_LIBS" = "x"],
-  [AC_MSG_FAILURE([test for Firefox/Mozilla plugin (NPAPI) interface failed!
-  - install pkg-config and Firefox
-  - *or* install Firefox or the Mozilla SDK and manually specify
-      MOZILLA_CFLAGS and MOZILLA_LIBS
-  - *or* configure --without-mozilla to skip building the plugin])]
-)
-AS_IF([test "x$with_mozilla" != "xno"],
-  [AC_MSG_CHECKING([Mozilla version])
-   MOZILLA_VERSION=`$PKG_CONFIG --modversion firefox-plugin`
-   AC_MSG_RESULT([$MOZILLA_VERSION])
+  [with_gtk="yes"])
+
+AS_IF([test "x$with_gtk" != "xno"],
+  [PKG_CHECK_MODULES([GTK], [gtk+-2.0 gthread-2.0])
+   AC_CHECK_PROGS([GLIB_GENMARSHAL], [glib-genmarshal], [:])
+   GTK_VERSION=`$PKG_CONFIG gtk+-2.0 --modversion`
+   AC_MSG_NOTICE([using GTK+ version $GTK_VERSION])
+   GTHREAD_VERSION=`$PKG_CONFIG gthread-2.0 --modversion`
+   AC_MSG_NOTICE([using gthread-2.0 version $GTHREAD_VERSION])])
+
+AM_CONDITIONAL([HAVE_GTK], [test "x$with_gtk" = "xyes"])
+
+dnl PyGTK
+AC_ARG_WITH([python],
+  [AS_HELP_STRING([--without-python],
+    [disable support for python bindings])],
+  [],
+  [with_python="yes"])
+
+AC_ARG_VAR([PYTHON_CONFIG], [full path to python-config program])
+AC_ARG_VAR([PYTHON_CFLAGS], [compiler flags for building python extensions])
+AC_ARG_VAR([PYTHON_LIBS], [linker flags for building python extensions])
+
+AC_ARG_VAR([PYGTK_H2DEF], [full path to PyGTK h2def.py module])
+AC_ARG_VAR([PYGTK_CODEGEN], [full path to pygtk-codegen program])
+
+AS_IF([test "x$with_python" != "xno"],
+  [AM_PATH_PYTHON(2.3.5)
+   AC_CHECK_PROGS([PYTHON_CONFIG], [python-config], [:])
+   AS_IF([test "x$PYTHON_CFLAGS" != "x" && test "x$PYTHON_LIBS" != "x"],
+     [],
+     [test "x$PYTHON_CONFIG" = "x:"],
+     [AC_MSG_FAILURE([found $PYTHON, but can't find python-config?])])
+
+   AS_IF([test "x$PYTHON_CFLAGS" = "x"],
+     [PYTHON_CFLAGS=`$PYTHON_CONFIG --includes`])
+   AS_IF([test "x$PYTHON_LIBS" = "x"],
+     [PYTHON_LIBS=`$PYTHON_CONFIG --libs`])
+
+   AS_IF([test "x$with_gtk" = "xyes"],
+     [PKG_CHECK_MODULES([PYGTK], [pygtk-2.0])
+      AC_CHECK_PROGS([PYGTK_CODEGEN], [pygtk-codegen-2.0 pygtk-codegen], [:])
+      AS_IF([test "x$PYGTK_H2DEF" = "x"],
+        [PYGTK_H2DEF=`$PKG_CONFIG pygtk-2.0 --variable=codegendir`/h2def.py
+         AS_IF([test -f "$PYGTK_H2DEF"], [], [PYGTK_H2DEF=":"])])
+   ])
 ])
 
-AM_CONDITIONAL([HAVE_MOZILLA], [test "x$with_mozilla" != "xno"])
+AM_CONDITIONAL([HAVE_PYTHON], [test "x$with_python" = "xyes"])
+
 
 dnl header files
 
@@ -294,7 +303,7 @@ AS_IF([test "x$with_imagemagick" != "xyes"],
   [echo "       => the zebraimg file scanner will *NOT* be built"],
   [echo "       => zebraimg image file scanner will be built"])
 echo ""
-#echo "Mozilla Plugin    --with-mozilla=$with_mozilla"
+#echo "NPAPI Plugin     --with-npapi=$with_npapi"
 #AS_IF([test "x$with_mozilla" != "xyes"],
 #  [echo "       => the Mozilla/Firefox/OpenOffice plugin will *NOT* be built"],
 #  [echo "       => the Mozilla/Firefox/OpenOffice plugin will be built"])

@@ -40,6 +40,10 @@
 #endif
 #endif
 
+#ifdef HAVE_PTHREAD_H
+# include <pthread.h>
+#endif
+
 #include <zebra.h>
 #include "image.h"
 #include "error.h"
@@ -85,7 +89,46 @@ struct zebra_window_s {
 
     unsigned long colors[8];    /* pre-allocated colors */
 #endif
+
+#ifdef HAVE_LIBPTHREAD
+    pthread_mutex_t imglock;    /* lock displayed image */
+#endif
 };
+
+
+#ifdef HAVE_LIBPTHREAD
+
+/* window.draw has to be thread safe wrt/other apis
+ * FIXME should be a semaphore
+ */
+static inline int window_lock (zebra_window_t *w)
+{
+    int rc = 0;
+    if((rc = pthread_mutex_lock(&w->imglock))) {
+        err_capture(w, SEV_FATAL, ZEBRA_ERR_LOCKING, __func__,
+                    "unable to acquire lock");
+        w->err.errnum = rc;
+        return(-1);
+    }
+    return(0);
+}
+
+static inline int window_unlock (zebra_window_t *w)
+{
+    int rc = 0;
+    if((rc = pthread_mutex_unlock(&w->imglock))) {
+        err_capture(w, SEV_FATAL, ZEBRA_ERR_LOCKING, __func__,
+                    "unable to release lock");
+        w->err.errnum = rc;
+        return(-1);
+    }
+    return(0);
+}
+
+#else
+# define window_lock(...) (0)
+# define window_unlock(...) (0)
+#endif
 
 static inline int _zebra_window_add_format (zebra_window_t *w,
                                             uint32_t fmt)

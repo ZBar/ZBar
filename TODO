@@ -1,3 +1,11 @@
+next release:
+  * fix video buffering bugs exposed by quickcam driver (bug #1984543)
+  * replace unnecessarily fatal assertions with debug spew (bug #1986478)
+  * zebragtk library -version-info (or avoid versioning...)
+  * base library python bindings
+    * start w/enum wrappers
+  * finish writing and build API docs for zebragtk (and zebrapygtk)
+
 general:
   * finish error handling
   * handle video destroyed w/images outstanding

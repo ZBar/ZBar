@@ -40,6 +40,7 @@ zebra_decoder_t *zebra_decoder_create ()
     zebra_decoder_t *dcode = malloc(sizeof(zebra_decoder_t));
     dcode->buflen = BUFFER_MIN;
     dcode->buf = malloc(dcode->buflen);
+    dcode->handler = dcode->userdata = NULL;
 
     /* initialize default configs */
 #ifdef ENABLE_EAN

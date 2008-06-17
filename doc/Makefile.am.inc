@@ -1,7 +1,7 @@
 # documentation sources
 DOCSOURCES = doc/manual.xml doc/version.xml doc/reldate.xml \
     doc/ref/zebraimg.xml doc/ref/zebracam.xml doc/ref/commonoptions.xml
-   
+
 
 # man page targets to distribute and install
 dist_man_MANS = doc/man/zebraimg.1 doc/man/zebracam.1
@@ -13,7 +13,7 @@ man_stamp = doc/man/man.stamp
 #dist_doc_DATA = doc/zebra.pdf doc/zebra.html
 
 # distribute all documentation related files to avoid end-user rebuilds
-EXTRA_DIST = $(DOCSOURCES) $(man_stamp)
+EXTRA_DIST += $(DOCSOURCES) $(man_stamp)
 
 docs: $(dist_man_MANS) #dist_doc_DATA
 .PHONY: docs

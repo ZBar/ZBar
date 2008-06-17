@@ -30,6 +30,9 @@
 # error "include zebra.h in your application, **not** zebra/Exception.h"
 #endif
 
+#include <exception>
+#include <new>
+
 namespace zebra {
 
 /// base class for exceptions defined by this API.

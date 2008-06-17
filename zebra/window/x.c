@@ -288,6 +288,15 @@ int _zebra_window_set_visible (zebra_processor_t *proc,
     return(0);
 }
 
+int _zebra_window_invalidate (zebra_window_t *w)
+{
+    if(!w->display)
+        return(0);
+    XClearArea(w->display, w->xwin, 0, 0, w->width, w->height, 1);
+    XFlush(w->display);
+    return(0);
+}
+
 int _zebra_window_clear (zebra_window_t *w)
 {
     if(!w->display)

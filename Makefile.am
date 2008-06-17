@@ -1,10 +1,12 @@
 AM_CPPFLAGS = -I$(srcdir)/include
-AM_CFLAGS = -Wall
+AM_CFLAGS = -Wall -Werror
 AM_CXXFLAGS = $(AM_CFLAGS)
 bin_PROGRAMS =
 check_PROGRAMS =
 lib_LTLIBRARIES =
 CLEANFILES =
+BUILT_SOURCES =
+EXTRA_DIST =
 
 dist_doc_DATA = COPYING.LIB HACKING INSTALL NEWS README TODO
 
@@ -16,7 +18,13 @@ endif
 if HAVE_VIDEO
 include $(srcdir)/zebracam/Makefile.am.inc
 endif
-if HAVE_MOZILLA
+if HAVE_GTK
+include $(srcdir)/gtk/Makefile.am.inc
+if HAVE_PYTHON
+include $(srcdir)/pygtk/Makefile.am.inc
+endif
+endif
+if HAVE_NPAPI
 include $(srcdir)/plugin/Makefile.am.inc
 endif
 include $(srcdir)/test/Makefile.am.inc

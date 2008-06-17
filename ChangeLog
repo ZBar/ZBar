@@ -1,4 +1,18 @@
 current:
+  * add first pass of GTK widget!
+  * add PyGTK widget wrapper
+  * API change: modify window draw/redraw interface to improve interoperability
+    with toolkits
+    - add window locking for thread safety
+    - zebra_window_draw() no longer actually "draws" anything
+    => use window.draw to update the image from video thread
+       then schedule window.redraw from toolkit GUI thread
+  * fix missing C++ std lib dependencies
+  * fix uninitialized handler/userdata bug in decoder
+  * fix broken Code 128 checksum assertion
+  * fix video destructor segfault
+  * fix window destructor Xvideo errors (XID is unsigned...)
+  * switch configure to use pkg-config to find most dependencies
   * API documentation updates
 
 version 0.4:

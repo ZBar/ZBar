@@ -86,9 +86,14 @@ static inline int window_draw_overlay (zebra_window_t *w)
 
 inline int zebra_window_redraw (zebra_window_t *w)
 {
-    if(!w->image || !w->draw_image)
+    if(window_lock(w))
+        return(-1);
+    if(!w->image || !w->draw_image) {
+        window_unlock(w);
         return(_zebra_window_clear(w));
+    }
     int rc = w->draw_image(w, w->image);
+    window_unlock(w);
     if(rc)
         return(rc);
     return(window_draw_overlay(w));
@@ -97,6 +102,8 @@ inline int zebra_window_redraw (zebra_window_t *w)
 int zebra_window_draw (zebra_window_t *w,
                        zebra_image_t *img)
 {
+    if(window_lock(w))
+        return(-1);
     if(!w->draw_image)
         img = NULL;
     if(w->image)
@@ -104,7 +111,7 @@ int zebra_window_draw (zebra_window_t *w,
     w->image = img;
     if(img)
         img->refcnt++;
-    return(zebra_window_redraw(w));
+    return(window_unlock(w));
 }
 
 void zebra_window_set_overlay (zebra_window_t *w,
