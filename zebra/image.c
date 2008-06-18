@@ -78,7 +78,7 @@ inline void zebra_image_free_data (zebra_image_t *img)
     if(img->src) {
         /* replace video image w/new copy */
         assert(img->refcnt);
-        zebra_image_t *newimg = zebra_image_create(img);
+        zebra_image_t *newimg = zebra_image_create();
         memcpy(newimg, img, sizeof(zebra_image_t));
         /* recycle video image */
         newimg->cleanup(newimg);
@@ -105,6 +105,20 @@ void zebra_image_set_data (zebra_image_t *img,
     img->data = data;
     img->datalen = len;
     img->cleanup = cleanup;
+}
+
+zebra_image_t *zebra_image_copy (const zebra_image_t *src)
+{
+    zebra_image_t *dst = zebra_image_create();
+    dst->format = src->format;
+    dst->width = src->width;
+    dst->height = src->height;
+    dst->datalen = src->datalen;
+    dst->data = malloc(src->datalen);
+    assert(dst->data);
+    memcpy((void*)dst->data, src->data, src->datalen);
+    dst->cleanup = zebra_image_free_data;
+    return(dst);
 }
 
 const zebra_symbol_t *zebra_image_first_symbol (const zebra_image_t *img)

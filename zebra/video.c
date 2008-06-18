@@ -38,6 +38,17 @@ static void _zebra_video_recycle_image (zebra_image_t *img)
         video_unlock(vdo);
 }
 
+static void _zebra_video_recycle_shadow (zebra_image_t *img)
+{
+    zebra_video_t *vdo = img->src;
+    assert(vdo);
+    assert(img->srcidx == -1);
+    video_lock(vdo);
+    img->next = vdo->shadow_image;
+    vdo->shadow_image = img;
+    video_unlock(vdo);
+}
+
 zebra_video_t *zebra_video_create ()
 {
     zebra_video_t *vdo = calloc(1, sizeof(zebra_video_t));
@@ -55,14 +66,14 @@ zebra_video_t *zebra_video_create ()
 
     /* pre-allocate images */
     vdo->num_images = ZEBRA_VIDEO_IMAGES_MAX;
-    vdo->images = calloc(vdo->num_images, sizeof(zebra_image_t*));
+    vdo->images = calloc(ZEBRA_VIDEO_IMAGES_MAX, sizeof(zebra_image_t*));
     if(!vdo->images) {
         zebra_video_destroy(vdo);
         return(NULL);
     }
 
     int i;
-    for(i = 0; i < vdo->num_images; i++) {
+    for(i = 0; i < ZEBRA_VIDEO_IMAGES_MAX; i++) {
         zebra_image_t *img = vdo->images[i] = zebra_image_create();
         if(!img) {
             zebra_video_destroy(vdo);
@@ -83,10 +94,17 @@ void zebra_video_destroy (zebra_video_t *vdo)
         zebra_video_open(vdo, NULL);
     if(vdo->images) {
         int i;
-        for(i = 0; i < vdo->num_images; i++)
+        for(i = 0; i < ZEBRA_VIDEO_IMAGES_MAX; i++)
             if(vdo->images[i])
                 free(vdo->images[i]);
         free(vdo->images);
+    }
+    while(vdo->shadow_image) {
+        zebra_image_t *img = vdo->shadow_image;
+        vdo->shadow_image = img->next;
+        free((void*)img->data);
+        img->data = NULL;
+        free(img);
     }
     if(vdo->buf)
         free(vdo->buf);
@@ -222,7 +240,35 @@ zebra_image_t *zebra_video_next_image (zebra_video_t *vdo)
         return(NULL);
     }
     zebra_image_t *img = vdo->dq(vdo);
-    if(img)
+    if(img) {
+        if(vdo->num_images < 2) {
+            /* return a *copy* of the video image and immediately recycle
+             * the driver's buffer to avoid deadlocking the resources
+             */
+            zebra_image_t *tmp = img;
+            video_lock(vdo);
+            img = vdo->shadow_image;
+            vdo->shadow_image = (img) ? img->next : NULL;
+            video_unlock(vdo);
+                
+            if(!img) {
+                img = zebra_image_create();
+                assert(img);
+                img->refcnt = 0;
+                img->src = vdo;
+                /* recycle the shadow images */
+                img->cleanup = _zebra_video_recycle_shadow;
+
+                img->format = vdo->format;
+                img->width = vdo->width;
+                img->height = vdo->height;
+                img->datalen = vdo->datalen;
+                img->data = malloc(vdo->datalen);
+            }
+            memcpy((void*)img->data, tmp->data, img->datalen);
+            _zebra_video_recycle_image(tmp);
+        }
         img->refcnt++;
+    }
     return(img);
 }

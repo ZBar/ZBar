@@ -77,6 +77,7 @@ struct zebra_video_s {
     zebra_image_t **images;     /* indexed list of images */
     zebra_image_t *nq_image;    /* last image enqueued */
     zebra_image_t *dq_image;    /* first image to dequeue (when ordered) */
+    zebra_image_t *shadow_image; /* special case internal double buffering */
 
 #ifdef HAVE_LIBPTHREAD
     pthread_mutex_t qlock;      /* lock image queue */

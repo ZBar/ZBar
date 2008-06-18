@@ -1,4 +1,6 @@
 current:
+  * fix single buffer video hang (bug #1984543)
+  * replace inferred video size assertion with warning message (bug #1984543)
   * add first pass of GTK widget!
   * add PyGTK widget wrapper
   * API change: modify window draw/redraw interface to improve interoperability

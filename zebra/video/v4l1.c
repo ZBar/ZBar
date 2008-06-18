@@ -166,13 +166,18 @@ static int v4l1_mmap_buffers (zebra_video_t *vdo)
         zebra_image_t *img = vdo->images[i];
         zprintf(2, "    [%02d] @%08x\n", img->srcidx, vbuf.offsets[i]);
         img->data = vdo->buf + vbuf.offsets[i];
-        if(i + 1 < vdo->num_images) {
-            assert(vbuf.offsets[i + 1] > vbuf.offsets[i]);
-            img->datalen = vbuf.offsets[i + 1] - vbuf.offsets[i];
-        }
+        img->datalen = vdo->datalen;
+        int next_offset = ((i + 1 < vdo->num_images)
+                           ? vbuf.offsets[i + 1]
+                           : vbuf.size);
+        zassert(next_offset >= vbuf.offsets[i] + vdo->datalen,
+                "insufficient v4l1 video buffer size:\n"
+                "\tvbuf[%d]=%x vbuf[%d]=%x datalen=%lx\n"
+                "\timage=%d x %d %.4s(%08x) palette=%d\n",
+                i, vbuf.offsets[i], i + 1, next_offset,
+                vdo->datalen, vdo->width, vdo->height,
+                (char*)&vdo->format, vdo->format, vdo->palette);
     }
-    assert(vbuf.size > vbuf.offsets[i - 1]);
-    vdo->images[i - 1]->datalen = vbuf.size - vbuf.offsets[i - 1];
     return(0);
 #else
     return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,

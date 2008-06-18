@@ -77,10 +77,22 @@ typedef struct errinfo_s {
 
 extern int _zebra_verbosity;
 
-#define zprintf(level, format, ...) {                                   \
-    if(_zebra_verbosity >= level)                                       \
-        fprintf(stderr, "%s: " format, __func__ , ##__VA_ARGS__);       \
-}
+/* FIXME don't we need varargs hacks here? */
+
+#define zprintf(level, format, ...) do {                                \
+        if(_zebra_verbosity >= level)                                   \
+            fprintf(stderr, "%s: " format, __func__ , ##__VA_ARGS__);   \
+    } while(0)
+
+/* spew warnings for non-fatal assertions */
+#ifndef NDEBUG
+# define zassert(cond, format, ...) do {                                \
+        if(!(cond))                                                     \
+            fprintf(stderr, "WARNING: " format , ##__VA_ARGS__);        \
+    } while(0)
+#else
+# define zassert(cond, format, ...)
+#endif
 
 static inline int err_copy (void *dst_c,
                             void *src_c)
