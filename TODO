@@ -5,6 +5,7 @@ next release:
   * base library python bindings
     * start w/enum wrappers
   * finish writing and build API docs for zebragtk (and zebrapygtk)
+  * cleanup symbol leaks
 
 general:
   * finish error handling

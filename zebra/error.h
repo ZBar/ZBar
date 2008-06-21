@@ -84,16 +84,6 @@ extern int _zebra_verbosity;
             fprintf(stderr, "%s: " format, __func__ , ##__VA_ARGS__);   \
     } while(0)
 
-/* spew warnings for non-fatal assertions */
-#ifndef NDEBUG
-# define zassert(cond, format, ...) do {                                \
-        if(!(cond))                                                     \
-            fprintf(stderr, "WARNING: " format , ##__VA_ARGS__);        \
-    } while(0)
-#else
-# define zassert(cond, format, ...)
-#endif
-
 static inline int err_copy (void *dst_c,
                             void *src_c)
 {

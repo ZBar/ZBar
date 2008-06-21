@@ -242,11 +242,11 @@ static int v4l2_mmap_buffers (zebra_video_t *vdo)
             return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                                "querying video buffer (VIDIOC_QUERYBUF)"));
 
-        zassert(vbuf.length >= vdo->datalen,
-                "insufficient v4l2 video buffer size:\n"
-                "\tvbuf[%d].length=%x datalen=%lx image=%d x %d %.4s(%08x)\n",
-                i, vbuf.length, vdo->datalen, vdo->width, vdo->height,
-                (char*)&vdo->format, vdo->format);
+        if(vbuf.length < vdo->datalen)
+            fprintf(stderr, "WARNING: insufficient v4l2 video buffer size:\n"
+                    "\tvbuf[%d].length=%x datalen=%lx image=%d x %d %.4s(%08x)\n",
+                    i, vbuf.length, vdo->datalen, vdo->width, vdo->height,
+                    (char*)&vdo->format, vdo->format);
 
         zebra_image_t *img = vdo->images[i];
         img->datalen = vbuf.length;

@@ -37,6 +37,12 @@ void zebra_image_destroy (zebra_image_t *img)
     _zebra_image_refcnt(img, -1);
 }
 
+void zebra_image_ref (zebra_image_t *img,
+                      int refs)
+{
+    _zebra_image_refcnt(img, refs);
+}
+
 unsigned long zebra_image_get_format (const zebra_image_t *img)
 {
     return(img->format);

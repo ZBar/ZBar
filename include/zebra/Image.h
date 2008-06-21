@@ -105,6 +105,12 @@ public:
             return(_sym);
         }
 
+        /// access currently referenced Symbol.
+        const Symbol* operator-> () const
+        {
+            return(&_sym);
+        }
+
         /// test if two iterators refer to the same Symbol
         bool operator== (const SymbolIterator& iter) const
         {
@@ -143,11 +149,13 @@ public:
     /// create a new Image from a zebra_image_t C object
     Image (zebra_image_t *src)
         : _img(src)
-    { }
+    {
+        zebra_image_ref(src, +1);
+    }
 
     ~Image ()
     {
-        zebra_image_destroy(_img);
+        zebra_image_ref(_img, -1);
     }
 
     /// cast to C image object

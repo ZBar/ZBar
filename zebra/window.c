@@ -93,10 +93,13 @@ inline int zebra_window_redraw (zebra_window_t *w)
         return(_zebra_window_clear(w));
     }
     int rc = w->draw_image(w, w->image);
-    window_unlock(w);
-    if(rc)
+    if(rc) {
+        window_unlock(w);
         return(rc);
-    return(window_draw_overlay(w));
+    }
+    rc = window_draw_overlay(w);
+    window_unlock(w);
+    return(rc);
 }
 
 int zebra_window_draw (zebra_window_t *w,

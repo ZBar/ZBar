@@ -24,7 +24,6 @@
 #include <config.h>
 #include <stdlib.h>     /* malloc, free, abs */
 #include <string.h>     /* memset */
-#include <assert.h>
 
 #include <zebra.h>
 

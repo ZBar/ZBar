@@ -129,10 +129,12 @@ static inline signed char decode_lo (int sig)
         return(-1);
 
     unsigned char base = (sig >> 11) | ((sig >> 9) & 1);
-    assert(base < 8);
+    zassert(base < 8, -1, "sig=%x offset=%x idx=%x base=%x\n",
+            sig, offset, idx, base);
     idx += lo_base[base];
 
-    assert(idx <= 0x50);
+    zassert(idx <= 0x50, -1, "sig=%x offset=%x base=%x idx=%x\n",
+            sig, offset, base, idx);
     unsigned char c = characters[idx];
     dprintf(2, " %02x(%x(%02x)/%x(%02x)) => %02x",
             idx, base, lo_base[base], offset, lo_offset[offset],
@@ -240,7 +242,7 @@ static inline unsigned char validate_checksum (zebra_decoder_t *dcode)
     /* calculate sum in reverse to avoid multiply operations */
     unsigned i, acc = 0;
     for(i = dcode128->character - 3; i; i--) {
-        assert(sum < 103);
+        zassert(sum < 103, -1, "i=%x ");
         idx = (dcode128->direction) ? dcode128->character - 1 - i : i;
         acc += dcode->buf[idx];
         if(acc >= 103)

@@ -133,10 +133,12 @@ public:
         if(sym) {
             _type = zebra_symbol_get_type(sym);
             _data = zebra_symbol_get_data(sym);
+            _count = zebra_symbol_get_count(sym);
         }
         else {
             _type = ZEBRA_NONE;
             _data = "";
+            _count = -1;
         }
     }
 
@@ -182,6 +184,11 @@ public:
         return(_data);
     }
 
+    int get_count () const
+    {
+        return(_count);
+    }
+
     /// create a new PointIterator at the start of the location
     /// polygon.
     PointIterator point_begin() const
@@ -217,13 +224,14 @@ private:
     const zebra_symbol_t *_sym;
     zebra_symbol_type_t _type;
     std::string _data;
+    int _count;
     PointIterator _point_iter_end;
 };
 
 /// @relates Symbol
 /// stream the string representation of a Symbol.
-std::ostream& operator<< (std::ostream& out,
-                          const Symbol& sym)
+static inline std::ostream& operator<< (std::ostream& out,
+                                        const Symbol& sym)
 {
     out << sym.get_type_name()
         << sym.get_addon_name()

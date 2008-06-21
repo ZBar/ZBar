@@ -135,7 +135,7 @@ static inline int remove_poll (zebra_processor_t *proc,
                                int fd)
 {
     int i;
-    for(i = proc->polling.num; i >= 0; i--)
+    for(i = proc->polling.num - 1; i >= 0; i--)
         if(proc->polling.fds[i].fd == fd)
             break;
     zprintf(5, "[%d] fd=%d n=%d\n", i, fd, proc->polling.num);

@@ -1,4 +1,12 @@
 current:
+  * add dereference operator to C++ Symbol
+  * add count attribute to C++ Symbol
+  * fix broken C++ header definitions
+  * fix broken C++ Image references
+  * expose internal reference counting interface
+  * fix window locking bug
+  * cleanup some minor memory leaks
+  * convert Code 128 assertions to non-fatal warning spew
   * fix single buffer video hang (bug #1984543)
   * replace inferred video size assertion with warning message (bug #1984543)
   * add first pass of GTK widget!

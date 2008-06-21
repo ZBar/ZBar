@@ -65,7 +65,9 @@ int _zebra_window_attach (zebra_window_t *w,
                           unsigned long win)
 {
     if(w->display) {
-        /* FIXME cleanup existing resources? */
+        /* cleanup existing resources */
+        if(w->gc)
+            XFreeGC(w->display, w->gc);
         w->display = NULL;
     }
     w->xwin = 0;

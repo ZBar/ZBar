@@ -248,6 +248,15 @@ extern zebra_image_t *zebra_image_create();
  */
 extern void zebra_image_destroy(zebra_image_t *image);
 
+/** image reference count manipulation.
+ * increment the reference count when you store a new reference to the
+ * image.  decrement when the reference is no longer used.  do not
+ * refer to the image any longer once the count is decremented.
+ * zebra_image_ref(image, -1) is the same as zebra_image_destroy(image)
+ */
+extern void zebra_image_ref(zebra_image_t *image,
+                            int refs);
+
 /** image format conversion.  refer to the documentation for supported
  * image formats
  * @returns a @em new image with the sample data from the original image

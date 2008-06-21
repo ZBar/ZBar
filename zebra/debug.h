@@ -48,3 +48,27 @@
 # endif
 
 #endif /* DEBUG_LEVEL */
+
+/* spew warnings for non-fatal assertions.
+ * returns specified error code if assertion fails.
+ * NB check/return is still performed for NDEBUG
+ * only the message is inhibited
+ * FIXME don't we need varargs hacks here?
+ */
+#ifndef NDEBUG
+
+# define zassert(condition, retval, format, ...) do {                   \
+        if(!(condition)) {                                              \
+            /*            fprintf(stderr, "WARNING: __file__:__line__: __func__: Assertion \"%s\" failed.\n\t" format , ##__VA_ARGS__);*/ \
+            return(retval);                                             \
+        }                                                               \
+    } while(0)
+
+#else
+
+# define zassert(condition, retval, format, ...) do {   \
+        if(!(condition))                                \
+            return(retval);                             \
+    } while(0)
+
+#endif

@@ -427,10 +427,15 @@ void zebra_processor_destroy (zebra_processor_t *proc)
     if(proc->window) {
         zebra_window_destroy(proc->window);
         proc->window = NULL;
+        _zebra_window_close(proc);
     }
     if(proc->video) {
         zebra_video_destroy(proc->video);
         proc->video = NULL;
+    }
+    if(proc->scanner) {
+        zebra_image_scanner_destroy(proc->scanner);
+        proc->scanner = NULL;
     }
     proc_unlock(proc);
     err_cleanup(&proc->err);
@@ -439,6 +444,22 @@ void zebra_processor_destroy (zebra_processor_t *proc)
     pthread_cond_destroy(&proc->cond);
     pthread_mutex_destroy(&proc->mutex);
 #endif
+    if(proc->polling.fds) {
+        free(proc->polling.fds);
+        proc->polling.fds = NULL;
+    }
+    if(proc->polling.handlers) {
+        free(proc->polling.handlers);
+        proc->polling.handlers = NULL;
+    }
+    if(proc->thr_polling.fds) {
+        free(proc->thr_polling.fds);
+        proc->thr_polling.fds = NULL;
+    }
+    if(proc->thr_polling.handlers) {
+        free(proc->thr_polling.handlers);
+        proc->thr_polling.handlers = NULL;
+    }
     free(proc);
 }
 

@@ -24,7 +24,6 @@
 #include <config.h>
 #include <stdlib.h>     /* malloc, free */
 #include <string.h>     /* memset */
-#include <assert.h>
 
 #include <zebra.h>
 #include "decoder.h"
@@ -70,6 +69,8 @@ zebra_decoder_t *zebra_decoder_create ()
 
 void zebra_decoder_destroy (zebra_decoder_t *dcode)
 {
+    if(dcode->buf)
+        free(dcode->buf);
     free(dcode);
 }
 

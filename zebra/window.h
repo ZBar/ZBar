@@ -50,7 +50,9 @@
 
 struct zebra_window_s {
     errinfo_t err;              /* error reporting */
-    zebra_image_t *image;       /* last displayed image */
+    zebra_image_t *image;       /* last displayed image
+                                 * NB image access must be locked!
+                                 */
     unsigned overlay;           /* user set overlay level */
 
     uint32_t format;            /* output format */

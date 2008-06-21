@@ -70,7 +70,7 @@ public:
     /// associate reader with an existing platform window.
     /// see zebra_window_attach()
     void attach (void *x11_display_w32_hwnd,
-                 unsigned long x11_drawable)
+                 unsigned long x11_drawable = 0)
     {
         if(zebra_window_attach(_window,
                                x11_display_w32_hwnd, x11_drawable) < 0)
@@ -114,7 +114,7 @@ private:
 
 /// select a compatible format between video input and output window.
 /// see zebra_negotiate_format()
-void negotiate_format (Video& video, Window &window)
+static inline void negotiate_format (Video& video, Window &window)
 {
     if(zebra_negotiate_format(video, window) < 0)
         throw_exception(video);
