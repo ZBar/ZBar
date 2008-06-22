@@ -228,6 +228,9 @@ static void symbol_handler (zebra_image_scanner_t *iscn,
     }
     else
         sym->cache_count = 0;
+
+    if(iscn->handler)
+        iscn->handler(iscn->img, iscn->userdata);
 }
 
 zebra_image_scanner_t *zebra_image_scanner_create ()

@@ -195,7 +195,7 @@ AC_ARG_WITH([gtk],
 
 AS_IF([test "x$with_gtk" != "xno"],
   [PKG_CHECK_MODULES([GTK], [gtk+-2.0 gthread-2.0])
-   AC_CHECK_PROGS([GLIB_GENMARSHAL], [glib-genmarshal], [:])
+   GLIB_GENMARSHAL=`$PKG_CONFIG glib-2.0 --variable=glib_genmarshal`
    GTK_VERSION=`$PKG_CONFIG gtk+-2.0 --modversion`
    AC_MSG_NOTICE([using GTK+ version $GTK_VERSION])
    GTHREAD_VERSION=`$PKG_CONFIG gthread-2.0 --modversion`
@@ -240,6 +240,24 @@ AS_IF([test "x$with_python" != "xno"],
 ])
 
 AM_CONDITIONAL([HAVE_PYTHON], [test "x$with_python" = "xyes"])
+
+dnl Qt
+AC_ARG_WITH([qt],
+  [AS_HELP_STRING([--without-qt],
+    [disable support for Qt4 widget])],
+  [],
+  [with_qt="yes"])
+
+AC_ARG_VAR([MOC], [full path to Qt moc program])
+
+AS_IF([test "x$with_qt" != "xno"],
+  [PKG_CHECK_MODULES([QT], [QtCore >= 4 QtGui >= 4])
+   MOC=`$PKG_CONFIG QtGui --variable=moc_location`
+   AC_MSG_NOTICE([using moc from $MOC])
+   QT_VERSION=`$PKG_CONFIG QtGui --modversion`
+   AC_MSG_NOTICE([using Qt version $QT_VERSION])])
+
+AM_CONDITIONAL([HAVE_QT], [test "x$with_qt" = "xyes"])
 
 
 dnl header files

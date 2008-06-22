@@ -2,9 +2,10 @@ next release:
   * update configure summary w/current variations
   * replace unnecessarily fatal assertions with debug spew (bug #1986478)
   * zebragtk library -version-info (or avoid versioning...)
+  * QZebra alternate VIDEO_INIT entry points
   * base library python bindings
     * start w/enum wrappers
-  * finish writing and build API docs for zebragtk (and zebrapygtk)
+  * finish writing and build API docs for zebragtk, zebrapygtk, QZebra
   * cleanup symbol leaks
 
 general:
@@ -48,6 +49,7 @@ window:
   * API to query used interface (video, window?) (/format?)
   * mode to preserve aspect ratio (default?)
   * simple image manipulations scale(xv?)/mirror
+  * overlay doesn't resize w/window
   * more overlay details
     * decoded result(?)
     * stats

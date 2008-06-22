@@ -92,6 +92,14 @@ public:
             throw_exception(_window);
     }
 
+    /// clear the image from the output window.
+    /// see zebra_window_draw()
+    void clear ()
+    {
+        if(zebra_window_draw(_window, NULL) < 0)
+            throw_exception(_window);
+    }
+
     /// redraw the last image.
     /// zebra_window_redraw()
     void redraw ()
@@ -114,7 +122,7 @@ private:
 
 /// select a compatible format between video input and output window.
 /// see zebra_negotiate_format()
-static inline void negotiate_format (Video& video, Window &window)
+static inline void negotiate_format (Video& video, Window& window)
 {
     if(zebra_negotiate_format(video, window) < 0)
         throw_exception(video);

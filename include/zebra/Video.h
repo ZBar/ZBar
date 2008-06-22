@@ -73,6 +73,13 @@ public:
             throw_exception(_video);
     }
 
+    /// close video device if open.
+    void close ()
+    {
+        if(zebra_video_open(_video, NULL))
+            throw_exception(_video);
+    }
+
     /// retrieve file descriptor associated with open *nix video device.
     /// see zebra_video_get_fd()
     int get_fd ()
@@ -107,9 +114,9 @@ public:
     Image next_image ()
     {
         zebra_image_t *img = zebra_video_next_image(_video);
-        if(img)
-            return(Image(img));
-        throw_exception(_video);
+        if(!img)
+            throw_exception(_video);
+        return(Image(img));
     }
 
 private:

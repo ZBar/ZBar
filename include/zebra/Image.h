@@ -54,7 +54,8 @@ public:
         virtual void image_callback(Image &image) = 0;
 
         /// cast this handler to the C handler
-        operator zebra_image_data_handler_t* () const {
+        operator zebra_image_data_handler_t* () const
+        {
             return(_cb);
         }
 
@@ -63,7 +64,7 @@ public:
                          const void *userdata)
         {
             if(userdata) {
-                Image image(zimg);
+                Image image(zimg, +1);  // account for borrowed ref
                 ((Handler*)userdata)->image_callback(image);
             }
         }
@@ -147,10 +148,12 @@ public:
 
     /// constructor.
     /// create a new Image from a zebra_image_t C object
-    Image (zebra_image_t *src)
+    Image (zebra_image_t *src,
+           int refs = 0)
         : _img(src)
     {
-        zebra_image_ref(src, +1);
+        if(refs)
+            zebra_image_ref(src, refs);
     }
 
     ~Image ()

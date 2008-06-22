@@ -41,9 +41,16 @@ endif
 
 if HAVE_GTK
 check_PROGRAMS += test/test_gtk
-test_test_gtk_SOURCES = test/test_gtk.c
+test_test_gtk_SOURCES = test/test_gtk.c test/scan_video.c
 test_test_gtk_CPPFLAGS = $(GTK_CFLAGS) $(AM_CPPFLAGS)
 test_test_gtk_LDADD = $(GTK_LIBS) gtk/libzebragtk.la $(AM_LDADD)
+endif
+
+if HAVE_QT
+check_PROGRAMS += test/test_qt
+test_test_qt_SOURCES = test/test_qt.cpp test/scan_video.c
+test_test_qt_CPPFLAGS = $(QT_CFLAGS) $(AM_CPPFLAGS)
+test_test_qt_LDADD = $(QT_LIBS) qt/libzebraqt.la $(AM_LDADD)
 endif
 
 EXTRA_DIST += test/test_pygtk.py

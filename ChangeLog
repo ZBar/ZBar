@@ -1,4 +1,11 @@
 current:
+  * add first pass of Qt widget!
+    - test/example in test/test_qt.cpp
+    - factor video device scan to share among tests
+  * more C++ integration fixes
+    - additional Image ref tweaks
+    - add Video.close() and Window.clear() APIs
+  * fix missing image scanner handler call
   * add dereference operator to C++ Symbol
   * add count attribute to C++ Symbol
   * fix broken C++ header definitions

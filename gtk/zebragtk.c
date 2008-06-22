@@ -177,11 +177,11 @@ static void *zebra_gtk_processing_thread (void *arg)
             video_enabled = !zebra_video_enable(zebra->video, 1);
             if(video_enabled)
                 zebra_image_scanner_enable_cache(zebra->scanner, 1);
-            else {
+            g_mutex_lock(zebra->mutex);
+            if(!video_enabled) {
                 zebra_video_error_spew(zebra->video, 0);
                 zebra->state = IDLE;
             }
-            g_mutex_lock(zebra->mutex);
         }
 
         while(zebra->state == VIDEO_READY && zebra->video_enabled) {

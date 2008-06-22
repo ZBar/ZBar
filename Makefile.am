@@ -24,6 +24,9 @@ if HAVE_PYTHON
 include $(srcdir)/pygtk/Makefile.am.inc
 endif
 endif
+if HAVE_QT
+include $(srcdir)/qt/Makefile.am.inc
+endif
 if HAVE_NPAPI
 include $(srcdir)/plugin/Makefile.am.inc
 endif

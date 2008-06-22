@@ -21,18 +21,15 @@
  *  http://sourceforge.net/projects/zebra
  *------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <string.h>
-#include <ftw.h>
-
 #include <gtk/gtk.h>
-
 #include <zebra/zebragtk.h>
 
-GtkWidget *video_list = NULL;
-GtkTextView *results = NULL;
-const char *video_arg = NULL;
-int video_list_size = 0;
+static GtkWidget *video_list = NULL;
+static GtkTextView *results = NULL;
+
+int scan_video(void *add_device,
+               void *userdata,
+               const char *default_device);
 
 /* decode signal callback
  * puts the decoded result in the textbox
@@ -64,36 +61,7 @@ static void video_changed (GtkWidget *widget,
         gtk_combo_box_get_active_text(GTK_COMBO_BOX(video_list));
 
     zebra_gtk_set_video_device((ZebraGtk*)data, video_device);
-}
-
-/* search for v4l devices under /dev
- */
-static int video_filter (const char *fpath,
-                         const struct stat *sb,
-                         int typeflag)
-{
-    if(S_ISCHR(sb->st_mode) && (sb->st_rdev >> 8) == 81 && fpath) {
-        int active = video_arg && !strcmp(video_arg, fpath);
-        if(strncmp(fpath, "/dev/", 5)) {
-            char abs[strlen(fpath) + 6];
-            strcpy(abs, "/dev/");
-            if(fpath[0] == '/')
-                abs[4] = '\0';
-            strcat(abs, fpath);
-            gtk_combo_box_append_text(GTK_COMBO_BOX(video_list), abs);
-            active |= video_arg && !strcmp(video_arg, abs);
-        }
-        else
-            gtk_combo_box_append_text(GTK_COMBO_BOX(video_list), fpath);
-
-        if(active || (!video_list_size && !video_arg)) {
-            gtk_combo_box_set_active(GTK_COMBO_BOX(video_list),
-                                     video_list_size);
-            video_arg = NULL;
-        }
-        video_list_size++;
-    }
-    return(0);
+    zebra_gtk_set_video_enabled((ZebraGtk*)data, TRUE);
 }
 
 /* build a simple gui w/:
@@ -108,6 +76,7 @@ int main (int argc, char *argv[])
     gdk_threads_enter();
 
     gtk_init(&argc, &argv);
+    const char *video_arg = NULL;
     if(argc > 1)
         video_arg = argv[1];
 
@@ -129,13 +98,9 @@ int main (int argc, char *argv[])
     g_signal_connect(G_OBJECT(video_list), "changed",
                      G_CALLBACK(video_changed), zebra);
 
-    if(ftw("/dev", video_filter, 4))
-        perror("search for video devices failed");
-    if(video_arg) {
-        gtk_combo_box_append_text(GTK_COMBO_BOX(video_list), video_arg);
-        gtk_combo_box_set_active(GTK_COMBO_BOX(video_list), video_list_size);
-        video_list_size++;
-    }
+    int active = scan_video(gtk_combo_box_append_text, video_list, video_arg);
+    if(active >= 0)
+        gtk_combo_box_set_active(GTK_COMBO_BOX(video_list), active);
 
     results = GTK_TEXT_VIEW(gtk_text_view_new());
     gtk_widget_set_size_request(GTK_WIDGET(results), 320, 64);

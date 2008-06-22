@@ -86,7 +86,7 @@ public:
 
     /// enable or disable the inter-image result cache.
     /// see zebra_image_scanner_enable_cache()
-    void enable_cache (int enable = 1)
+    void enable_cache (bool enable = true)
     {
         zebra_image_scanner_enable_cache(_scanner, enable);
     }
