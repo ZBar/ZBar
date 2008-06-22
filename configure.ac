@@ -193,6 +193,8 @@ AC_ARG_WITH([gtk],
   [],
   [with_gtk="yes"])
 
+AC_ARG_VAR([GLIB_GENMARSHAL], [full path to glib-genmarshal])
+
 AS_IF([test "x$with_gtk" != "xno"],
   [PKG_CHECK_MODULES([GTK], [gtk+-2.0 gthread-2.0])
    GLIB_GENMARSHAL=`$PKG_CONFIG glib-2.0 --variable=glib_genmarshal`

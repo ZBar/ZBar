@@ -1,4 +1,5 @@
 current:
+  * fix glib-genmarshal check
   * add first pass of Qt widget!
     - test/example in test/test_qt.cpp
     - factor video device scan to share among tests
