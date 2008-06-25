@@ -23,7 +23,6 @@
 
 #include <config.h>
 #include <string.h>     /* memmove */
-#include <assert.h>
 
 #include <zebra.h>
 #include "decoder.h"
@@ -242,12 +241,16 @@ static inline unsigned char validate_checksum (zebra_decoder_t *dcode)
     /* calculate sum in reverse to avoid multiply operations */
     unsigned i, acc = 0;
     for(i = dcode128->character - 3; i; i--) {
-        zassert(sum < 103, -1, "i=%x ");
+        zassert(sum < 103, -1, "dir=%x i=%x sum=%x acc=%x %s\n",
+                dcode128->direction, i, sum, acc,
+                _zebra_decoder_buf_dump(dcode->buf, dcode128->character));
         idx = (dcode128->direction) ? dcode128->character - 1 - i : i;
         acc += dcode->buf[idx];
         if(acc >= 103)
             acc -= 103;
-        assert(acc < 103);
+        zassert(acc < 103, -1, "dir=%x i=%x sum=%x acc=%x %s\n",
+                dcode128->direction, i, sum, acc,
+                _zebra_decoder_buf_dump(dcode->buf, dcode128->character));
         sum += acc;
         if(sum >= 103)
             sum -= 103;
@@ -300,8 +303,12 @@ static inline unsigned postprocess_c (zebra_decoder_t *dcode,
             code -= 10;
             dcode->buf[j] += 1;
         }
-        assert(dcode->buf[j] <= '9');
-        assert(code <= 9);
+        zassert(dcode->buf[j] <= '9', delta,
+                "start=%x end=%x i=%x j=%x %s\n", start, end, i, j,
+                _zebra_decoder_buf_dump(dcode->buf, dcode->code128.character));
+        zassert(code <= 9, delta,
+                "start=%x end=%x i=%x j=%x %s\n", start, end, i, j,
+                _zebra_decoder_buf_dump(dcode->buf, dcode->code128.character));
         dcode->buf[j + 1] = '0' + code;
     }
     return(delta);
@@ -323,20 +330,29 @@ static inline unsigned char postprocess (zebra_decoder_t *dcode)
             dcode->buf[i] = dcode->buf[j];
             dcode->buf[j] = code;
         }
-        assert(dcode->buf[dcode128->character - 1] == STOP_REV);
+        zassert(dcode->buf[dcode128->character - 1] == STOP_REV, 1,
+                "dir=%x %s\n", dcode128->direction,
+                _zebra_decoder_buf_dump(dcode->buf, dcode->code128.character));
     }
     else
-        assert(dcode->buf[dcode128->character - 1] == STOP_FWD);
+        zassert(dcode->buf[dcode128->character - 1] == STOP_FWD, 1,
+                "dir=%x %s\n", dcode128->direction,
+                _zebra_decoder_buf_dump(dcode->buf, dcode->code128.character));
 
     code = dcode->buf[0];
-    assert(code >= START_A && code <= START_C);
+    zassert(code >= START_A && code <= START_C, 1, "%s\n",
+            _zebra_decoder_buf_dump(dcode->buf, dcode->code128.character));
+
     unsigned char charset = code - START_A;
     unsigned cexp = (code == START_C) ? 1 : 0;
     dprintf(2, " start=%c", 'A' + charset);
 
     for(i = 1, j = 0; i < dcode128->character - 2; i++) {
         unsigned char code = dcode->buf[i];
-        assert(!(code & 0x80));
+        zassert(!(code & 0x80), 1,
+                "i=%x j=%x code=%02x charset=%x cexp=%x %s\n",
+                i, j, code, charset, cexp,
+                _zebra_decoder_buf_dump(dcode->buf, dcode->code128.character));
 
         if((charset & 0x2) && (code < 100))
             /* defer character set C for expansion */
@@ -355,7 +371,10 @@ static inline unsigned char postprocess (zebra_decoder_t *dcode)
             dprintf(2, " %02x", code);
             if(charset & 0x2) {
                 /* expand character set C to ASCII */
-                assert(cexp);
+                zassert(cexp, 1, "i=%x j=%x code=%02x charset=%x cexp=%x %s\n",
+                        i, j, code, charset, cexp,
+                        _zebra_decoder_buf_dump(dcode->buf,
+                                                dcode->code128.character));
                 unsigned delta = postprocess_c(dcode, cexp, i, j);
                 i += delta;
                 j += delta * 2;
@@ -376,9 +395,12 @@ static inline unsigned char postprocess (zebra_decoder_t *dcode)
                 return(1);
             }
             else {
-                assert(code >= CODE_C && code <= CODE_A);
+                zassert(code >= CODE_C && code <= CODE_A, 1,
+                        "i=%x j=%x code=%02x charset=%x cexp=%x %s\n",
+                        i, j, code, charset, cexp,
+                        _zebra_decoder_buf_dump(dcode->buf,
+                                                dcode->code128.character));
                 unsigned char newset = CODE_A - code;
-                assert(newset <= 2);
                 if(newset != charset)
                     charset = newset;
                 else
@@ -389,7 +411,10 @@ static inline unsigned char postprocess (zebra_decoder_t *dcode)
         }
     }
     if(charset & 0x2) {
-        assert(cexp);
+        zassert(cexp, 1, "i=%x j=%x code=%02x charset=%x cexp=%x %s\n",
+                i, j, code, charset, cexp,
+                _zebra_decoder_buf_dump(dcode->buf,
+                                        dcode->code128.character));
         j += postprocess_c(dcode, cexp, i, j) * 2;
     }
     dcode->buf[j] = '\0';
@@ -449,7 +474,11 @@ zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
         return(0);
     }
 
-    assert(dcode->buflen > dcode128->character);
+    zassert(dcode->buflen > dcode128->character, 0,
+            "buflen=%x idx=%x c=%02x %s\n",
+            dcode->buflen, dcode128->character, c,
+            _zebra_decoder_buf_dump(dcode->buf, dcode->buflen));
+
     dcode->buf[dcode128->character++] = c;
 
     if(dcode128->character > 2 &&

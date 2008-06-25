@@ -1,4 +1,6 @@
 current:
+  * update configure summary for new features
+  * replace all decoder assertions w/non-fatal debug spew (bug #1986478)
   * fix glib-genmarshal check
   * add first pass of Qt widget!
     - test/example in test/test_qt.cpp

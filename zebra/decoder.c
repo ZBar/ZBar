@@ -23,7 +23,8 @@
 
 #include <config.h>
 #include <stdlib.h>     /* malloc, free */
-#include <string.h>     /* memset */
+#include <stdio.h>      /* snprintf */
+#include <string.h>     /* memset, strlen */
 
 #include <zebra.h>
 #include "decoder.h"
@@ -276,4 +277,24 @@ int zebra_decoder_set_config (zebra_decoder_t *dcode,
 #endif
 
     return(0);
+}
+
+static char *decoder_dump = NULL;
+
+const char *_zebra_decoder_buf_dump (unsigned char *buf,
+                                     unsigned int buflen)
+{
+    int dumplen = (buflen * 3) + 12;
+    if(!decoder_dump || dumplen > strlen(decoder_dump)) {
+        if(decoder_dump)
+            free(decoder_dump);
+        decoder_dump = malloc(dumplen);
+    }
+    char *p = decoder_dump +
+        snprintf(decoder_dump, 12, "buf[%04x]=",
+                 (buflen > 0xffff) ? 0xffff : buflen);
+    int i;
+    for(i = 0; i < buflen; i++)
+        p += snprintf(p, 4, "%s%02x", (i) ? " " : "",  buf[i]);
+    return(decoder_dump);
 }

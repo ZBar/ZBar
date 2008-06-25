@@ -23,7 +23,6 @@
 
 #include <config.h>
 #include <string.h>     /* memmove */
-#include <assert.h>
 
 #include <zebra.h>
 #include "decoder.h"

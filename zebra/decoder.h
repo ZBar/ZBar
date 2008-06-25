@@ -187,4 +187,7 @@ static inline char size_buf (zebra_decoder_t *dcode,
     return(0);
 }
 
+extern const char *_zebra_decoder_buf_dump (unsigned char *buf,
+                                            unsigned int buflen);
+
 #endif

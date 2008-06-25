@@ -70,7 +70,7 @@ or configure --disable-pthread to skip threaded support.])])
 dnl video
 AC_ARG_ENABLE([video],
   [AS_HELP_STRING([--disable-video],
-    [exclude video scanner application])],
+    [exclude video scanner features])],
   [],
   [enable_video="yes"])
 
@@ -313,18 +313,23 @@ echo ""
 echo "please verify that the detected configuration matches your expectations:"
 echo "------------------------------------------------------------------------"
 echo "X                 --with-x=$with_x"
+echo "pthreads          --enable-pthread=$enable_pthread"
 echo "v4l               --enable-video=$enable_video"
 AS_IF([test "x$enable_video" != "xyes"],
-  [echo "       => zebracam video scanner will *NOT* be built"],
-  [echo "       => zebracam video scanner will be built"])
-echo ""
+  [echo "        => zebracam video scanner will *NOT* be built"])
 echo "Magick++          --with-imagemagick=$with_imagemagick"
 AS_IF([test "x$with_imagemagick" != "xyes"],
-  [echo "       => the zebraimg file scanner will *NOT* be built"],
-  [echo "       => zebraimg image file scanner will be built"])
-echo ""
+  [echo "        => the zebraimg file scanner will *NOT* be built"])
+echo "Python            --with-python=$with_python"
+echo "GTK+              --with-gtk=$with_gtk"
+AS_IF([test "x$with_gtk" != "xyes"],
+  [echo "        => the GTK+ widget will *NOT* be built"],
+  [AS_IF([test "x$with_python" != "xyes"],
+     [echo "        => the PyGTK widget wrapper will *NOT* be built"])])
+echo "Qt4               --with-qt=$with_qt"
+AS_IF([test "x$with_qt" != "xyes"],
+  [echo "        => the Qt4 widget will *NOT* be built"])
 #echo "NPAPI Plugin     --with-npapi=$with_npapi"
 #AS_IF([test "x$with_mozilla" != "xyes"],
-#  [echo "       => the Mozilla/Firefox/OpenOffice plugin will *NOT* be built"],
-#  [echo "       => the Mozilla/Firefox/OpenOffice plugin will be built"])
-#echo ""
+#  [echo "       => the Mozilla/Firefox/OpenOffice plugin will *NOT* be built"])
+echo ""

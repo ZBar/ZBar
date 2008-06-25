@@ -22,8 +22,6 @@
  *------------------------------------------------------------------------*/
 
 #include <config.h>
-#include <assert.h>
-
 #include <zebra.h>
 #include "decoder.h"
 
@@ -215,7 +213,8 @@ static inline signed char decode4 (zebra_decoder_t *dcode)
         dprintf(2, " (d2=%d(%d) alt=%d)", d2, mid * dcode->ean.s4, alt);
     }
     dprintf(2, " char=%02x", digits[(unsigned char)code]);
-    assert(code < 0x14);
+    zassert(code < 0x14, -1, "code=%02x e1=%x e2=%x s4=%x color=%x\n",
+            code, e1, e2, dcode->ean.s4, get_color(dcode));
     return(code);
 }
 
@@ -371,7 +370,8 @@ static inline signed char ean_verify_checksum (ean_decoder_t *ean,
     unsigned char i;
     for(i = 0; i < n; i++) {
         unsigned char d = ean->buf[i];
-        assert(d < 10);
+        zassert(d < 10, -1, "i=%x d=%x chk=%x %s\n", i, d, chk,
+                _zebra_decoder_buf_dump((void*)ean->buf, 18));
         chk += d;
         if((i ^ n) & 1) {
             chk += d << 1;
@@ -381,11 +381,13 @@ static inline signed char ean_verify_checksum (ean_decoder_t *ean,
         if(chk >= 10)
             chk -= 10;
     }
-    assert(chk < 10);
+    zassert(chk < 10, -1, "chk=%x n=%x %s", chk, n,
+            _zebra_decoder_buf_dump((void*)ean->buf, 18));
     if(chk)
         chk = 10 - chk;
     unsigned char d = ean->buf[n];
-    assert(d < 10);
+    zassert(d < 10, -1, "n=%x d=%x chk=%x %s\n", n, d, chk,
+            _zebra_decoder_buf_dump((void*)ean->buf, 18));
     if(chk != d) {
         dprintf(1, "\nchecksum mismatch %d != %d (%s)\n",
                 chk, d, dsprintbuf(ean));
@@ -400,7 +402,8 @@ static inline unsigned char isbn10_calc_checksum (ean_decoder_t *ean)
     unsigned char w;
     for(w = 10; w > 1; w--) {
         unsigned char d = ean->buf[13 - w];
-        assert(d < 10);
+        zassert(d < 10, '?', "w=%x d=%x chk=%x %s\n", w, d, chk,
+                _zebra_decoder_buf_dump((void*)ean->buf, 18));
         chk += d * w;
     }
     chk = chk % 11;
@@ -525,12 +528,10 @@ static inline void postprocess (zebra_decoder_t *dcode,
         for(; j < base && ean->buf[i] >= 0; i++, j++)
             dcode->buf[j] = ean->buf[i] + '0';
 
-        if((sym & ZEBRA_SYMBOL) == ZEBRA_ISBN10 &&
-           TEST_CFG(ean->isbn10_config, ZEBRA_CFG_EMIT_CHECK)) {
-            assert(j == 9);
+        if((sym & ZEBRA_SYMBOL) == ZEBRA_ISBN10 && j == 9 &&
+           TEST_CFG(ean->isbn10_config, ZEBRA_CFG_EMIT_CHECK))
             /* recalculate ISBN-10 check digit */
             dcode->buf[j++] = isbn10_calc_checksum(ean);
-        }
     }
     if(sym & ZEBRA_ADDON)
         for(i = 13; ean->buf[i] >= 0; i++, j++)

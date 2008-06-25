@@ -23,7 +23,6 @@
 
 #include <config.h>
 #include <string.h>     /* memmove */
-#include <assert.h>
 
 #include <zebra.h>
 #include "decoder.h"
@@ -159,9 +158,9 @@ static inline signed char code39_decode9 (zebra_decoder_t *dcode)
         if(enc == 0xff)
             return(-1);
     }
+    zassert(enc < 0x20, -1, " enc=%x s9=%x\n", enc, dcode39->s9);
 
     /* lookup first 5 encoded widths for coarse decode */
-    assert(enc < 0x20);
     unsigned char idx = code39_hi[enc];
     if(idx == 0xff)
         return(-1);
@@ -179,8 +178,8 @@ static inline signed char code39_decode9 (zebra_decoder_t *dcode)
         idx = (idx & 0x3f) + ((enc >> 2) & 1);
     else if(idx & 0xc0)
         idx = (idx & 0x3f) + ((enc >> 2) & 3);
+    zassert(idx < 0x2c, -1, " idx=%x enc=%x s9=%x\n", idx, enc, dcode39->s9);
 
-    assert(idx < 0x2c);
     const char39_t *c = &code39_encodings[idx];
     dprintf(2, " i=%02x chk=%02x c=%02x/%02x", idx, c->chk, c->fwd, c->rev);
     if(enc != c->chk)
@@ -230,10 +229,10 @@ static inline void code39_postprocess (zebra_decoder_t *dcode)
             dcode->buf[j] = code;
         }
     }
-    for(i = 0; i < dcode39->character; i++) {
-        assert(dcode->buf[i] < 0x2b);
-        dcode->buf[i] = code39_characters[(unsigned)dcode->buf[i]];
-    }
+    for(i = 0; i < dcode39->character; i++)
+        dcode->buf[i] = ((dcode->buf[i] < 0x2b)
+                         ? code39_characters[(unsigned)dcode->buf[i]]
+                         : '?');
     dcode->buf[i] = '\0';
 }
 
@@ -298,7 +297,7 @@ zebra_symbol_type_t zebra_decode_code39 (zebra_decoder_t *dcode)
         return(ZEBRA_NONE);
     }
     else {
-        assert(c < 0x2b);
+        zassert(c < 0x2b, ZEBRA_NONE, "c=%02x s9=%x\n", c, dcode39->s9);
         dprintf(2, "\n");
     }
 
