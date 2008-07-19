@@ -1,4 +1,17 @@
 current:
+  * reimplement widget internals to support image scanning and
+    improve locking efficiency
+  * add image scanning to widgets. including builtin conversions from
+    toolkit image types: GtkPixbuf and QImage
+  * add video opened hooks to widgets (improved use model)
+  * add logo, used when there is nothing better to draw
+  * add userdata to image object
+  * fix image reuse cleanup bug
+  * fix format specifiers in some error messages
+  * enhance widget tests to support enable/disable and scan from image
+  * fix broken deallocation assumptions in test_qt
+  * widget API documentation (still need to hookup gtkdoc, and PyGtk docs)
+  * API documentation toplevel overview
   * update configure summary for new features
   * replace all decoder assertions w/non-fatal debug spew (bug #1986478)
   * fix glib-genmarshal check

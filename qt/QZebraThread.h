@@ -26,8 +26,13 @@
 #include <QThread>
 #include <QMutex>
 #include <QWaitCondition>
+#include <QEvent>
+#include <zebra/QZebraImage.h>
 #include <zebra/QZebra.h>
 #include <zebra.h>
+
+#define DEFAULT_WIDTH 640
+#define DEFAULT_HEIGHT 480
 
 namespace zebra {
 
@@ -38,42 +43,108 @@ class QZebraThread
     Q_OBJECT
 
 public:
+    enum EventType {
+        VideoDevice = QEvent::User,
+        VideoEnabled,
+        ScanImage,
+        Exit = QEvent::MaxUser
+    };
+
+    class VideoDeviceEvent : public QEvent {
+    public:
+        VideoDeviceEvent (const QString &device)
+            : QEvent((QEvent::Type)VideoDevice),
+              device(device)
+        { }
+        const QString device;
+    };
+
+    class VideoEnabledEvent : public QEvent {
+    public:
+        VideoEnabledEvent (bool enabled)
+            : QEvent((QEvent::Type)VideoEnabled),
+              enabled(enabled)
+        { }
+        bool enabled;
+    };
+
+    class ScanImageEvent : public QEvent {
+    public:
+        ScanImageEvent (const QImage &image)
+            : QEvent((QEvent::Type)ScanImage),
+              image(image)
+        { }
+        const QImage image;
+    };
+
     QMutex mutex;
-    QWaitCondition cond;
+    QWaitCondition newEvent;
 
-    Video *video;
+    // message queue for events passed from main gui thread to processor.
+    // (NB could(/should?) be QAbstractEventDispatcher except it doesn't
+    //  work as documented!? ):
+    // protected by mutex
+    QList<QEvent*> queue;
+
+    // shared state:
+    // written by processor thread just after opening video or
+    // scanning an image, read by main gui thread during size_request.
+    // protected by mutex
+
+    bool _videoOpened;
+    unsigned reqWidth, reqHeight;
+
+    // window is also shared: owned by main gui thread.
+    // processor thread only calls draw(), clear() and negotiate_format().
+    // protected by its own internal lock
+
     Window window;
-    ImageScanner scanner;
-
-    QString videoDevice;
-    bool videoEnabled;
-
-    enum {
-        IDLE,
-        VIDEO_INIT,
-        VIDEO_READY,
-        IMAGE,
-        EXIT = -1
-    } state;
 
     QZebraThread();
-    ~QZebraThread();
+
+    void pushEvent (QEvent *e)
+    {
+        QMutexLocker locker(&mutex);
+        queue.append(e);
+        newEvent.wakeOne();
+    }
 
 Q_SIGNALS:
-    void videoOpened();
+    void videoOpened(bool opened);
     void update();
-    void decoded(int type, const QString& data);
-    void decodedText(const QString& data);
+    void decoded(int type, const QString &data);
+    void decodedText(const QString &data);
 
 protected:
     void run();
 
-    Video *openVideo(std::string device);
+    void openVideo(const QString &device);
+    void enableVideo(bool enable);
     void processImage(Image &image);
 
-    void image_callback(Image &image);
+    void clear ()
+    {
+        window.clear();
+        if(image) {
+            delete image;
+            image = NULL;
+        }
+    }
 
-    QString textFormat;
+    virtual void image_callback(Image &image);
+
+    virtual bool event(QEvent *e);
+    virtual void videoDeviceEvent(VideoDeviceEvent *event);
+    virtual void videoEnabledEvent(VideoEnabledEvent *event);
+    virtual void scanImageEvent(ScanImageEvent *event);
+
+private:
+    Video *video;
+    ImageScanner scanner;
+    QZebraImage *image;
+    bool running;
+    bool videoRunning;
+    bool videoEnabled;
 };
 
 };

@@ -184,6 +184,9 @@ public:
         return(_data);
     }
 
+    /// retrieve inter-frame coherency count.
+    /// see zebra_symbol_get_count()
+    /// @since 1.5
     int get_count () const
     {
         return(_count);

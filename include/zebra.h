@@ -27,6 +27,44 @@
  * Zebra Barcode Reader Library C API definition
  */
 
+/** @mainpage
+ *
+ * interface to the barcode reader is available at several levels.
+ * most applications will want to use the high-level interfaces:
+ *
+ * @section high-level High-Level Interfaces
+ *
+ * these interfaces wrap all library functionality into an easy-to-use
+ * package for a specific toolkit:
+ * - the "GTK+ 2.x widget" may be used with GTK GUI applications.  a
+ *   Python wrapper is included for PyGtk
+ * - the @ref zebra::QZebra "Qt4 widget" may be used with Qt GUI
+ *   applications
+ * - the Processor interface (in @ref c-processor "C" or @ref
+ *   zebra::Processor "C++") adds a scanning window to an application
+ *   with no GUI.
+ *
+ * @section mid-level Intermediate Interfaces
+ *
+ * building blocks used to construct high-level interfaces:
+ * - the ImageScanner (in @ref c-imagescanner "C" or @ref
+ *   zebra::ImageScanner "C++") looks for barcodes in a library defined
+ *   image object
+ * - the Window abstraction (in @ref c-window "C" or @ref
+ *   zebra::Window "C++") sinks library images, displaying them on the
+ *   platform display
+ * - the Video abstraction (in @ref c-video "C" or @ref zebra::Video
+ *   "C++") sources library images from a video device
+ *
+ * @section low-level Low-Level Interfaces
+ *
+ * direct interaction with barcode scanning and decoding:
+ * - the Scanner (in @ref c-scanner "C" or @ref zebra::Scanner "C++")
+ *   looks for barcodes in a linear intensity sample stream
+ * - the Decoder (in @ref c-decoder "C" or @ref zebra::Decoder "C++")
+ *   extracts barcodes from a stream of bar and space widths
+ */
+
 #ifdef __cplusplus
 
 /** C++ namespace for library interfaces */
@@ -341,6 +379,13 @@ extern void zebra_image_set_data(zebra_image_t *image,
  */
 extern void zebra_image_free_data(zebra_image_t *image);
 
+/** associate user specified data value with an image. */
+extern void zebra_image_set_userdata(zebra_image_t *image,
+                                     void *userdata);
+
+/** return user specified data value associated with the image. */
+extern void *zebra_image_get_userdata(const zebra_image_t *image);
+
 /** dump raw image data to a file for debug.
  * the data will be prefixed with a 16 byte header consisting of:
  *   - 4 bytes uint = 0x676d697a ("zimg")
@@ -376,6 +421,7 @@ extern zebra_image_t *zebra_image_read(char *filename);
 
 /*------------------------------------------------------------*/
 /** @name Processor interface
+ * @anchor c-processor
  * high-level self-contained image processor.
  * processes video and images for barcodes, optionally displaying
  * images to a library owned output window
@@ -531,6 +577,7 @@ zebra_processor_get_error_code (const zebra_processor_t *processor)
 
 /*------------------------------------------------------------*/
 /** @name Video interface
+ * @anchor c-video
  * mid-level video source abstraction.
  * captures images from a video device
  */
@@ -619,6 +666,7 @@ zebra_video_get_error_code (const zebra_video_t *video)
 
 /*------------------------------------------------------------*/
 /** @name Window interface
+ * @anchor c-window
  * mid-level output window abstraction.
  * displays images to user-specified platform specific output window
  */
@@ -709,6 +757,7 @@ extern int zebra_negotiate_format(zebra_video_t *video,
 
 /*------------------------------------------------------------*/
 /** @name Image Scanner interface
+ * @anchor c-imagescanner
  * mid-level image scanner interface.
  * reads barcodes from 2-D images
  */
@@ -785,6 +834,7 @@ extern int zebra_scan_image(zebra_image_scanner_t *scanner,
 
 /*------------------------------------------------------------*/
 /** @name Decoder interface
+ * @anchor c-decoder
  * low-level bar width stream decoder interface.
  * identifies symbols and extracts encoded data
  */
@@ -893,6 +943,7 @@ extern void *zebra_decoder_get_userdata(const zebra_decoder_t *decoder);
 
 /*------------------------------------------------------------*/
 /** @name Scanner interface
+ * @anchor c-scanner
  * low-level linear intensity sample stream scanner interface.
  * identifies "bar" edges and measures width between them.
  * optionally passes to bar width decoder

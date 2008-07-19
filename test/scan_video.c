@@ -53,7 +53,7 @@ static int video_filter (const char *fpath,
             add_dev(userdata, fpath);
 
         if(active) {
-            default_idx = idx;
+            default_idx = idx + 1;
             default_dev = NULL;
         }
         idx++;
@@ -64,9 +64,8 @@ static int video_filter (const char *fpath,
 /* scan /dev for v4l video devices and call add_device for each.
  * also looks for a specified "default" device (if not NULL)
  * if not found, the default will be appended to the list.
- * returns the index of the default_device, or the index of
- * the first device (0) if the default was not specified.
- * NB *not* reentrant
+ * returns the index+1 of the default_device, or 0 if the default
+ * was not specified.  NB *not* reentrant
  */
 int scan_video (cb_t add_device,
                 void *_userdata,
@@ -86,7 +85,7 @@ int scan_video (cb_t add_device,
     if(default_dev) {
         /* default not found in list, add explicitly */
         add_dev(userdata, default_dev);
-        default_idx = idx++;
+        default_idx = ++idx;
         default_dev = NULL;
     }
 

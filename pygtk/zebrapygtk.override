@@ -7,10 +7,14 @@ headers
 modulename zebrapygtk
 %%
 import gtk.Widget as PyGtkWidget_Type
+import gtk.gdk.Pixbuf as PyGdkPixbuf_Type
 %%
 ignore-type
   ZebraGtkError
 %%
 ignore-glob
   *_get_type
+%%
+ignore
+  zebra_gtk_image_from_pixbuf  # until base library wrappers are in place
 %%

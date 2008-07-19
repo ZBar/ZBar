@@ -58,6 +58,7 @@ struct zebra_window_s {
     uint32_t format;            /* output format */
     unsigned width, height;     /* current output size */
     unsigned max_width, max_height;
+    zebra_image_t *logo;        /* logo image for current width x height */
 
     uint32_t *formats;          /* supported formats (zero terminated) */
 

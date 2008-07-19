@@ -1,19 +1,20 @@
-next release:
-  * zebragtk library -version-info (or avoid versioning...)
-  * QZebra alternate VIDEO_INIT entry points
-  * base library python bindings
-    * start w/enum wrappers
-  * finish writing and build API docs for zebragtk, zebrapygtk, QZebra
-  * cleanup symbol leaks
-
 general:
+  * cleanup symbol leaks
   * finish error handling
   * handle video destroyed w/images outstanding
-  * reconsider async X/toolkit interaction
   * dbg_scan background image stretched (still...)
   * profile and weed out obvious oversights
   * windows port
   * example using SANE to scan symbol(s)
+
+wrappers:
+  * zebragtk, QZebra library -version-info
+  * build API docs for zebragtk, zebrapygtk
+  * is zebragtk/QZebra BGR4 alpha swapped?
+  * widget config APIs
+  * drag-and-drop for widgets (configurable...)
+  * base library python bindings
+    * start w/enum wrappers
 
 symbologies:
   * PDF417
@@ -48,6 +49,7 @@ window:
   * API to query used interface (video, window?) (/format?)
   * mode to preserve aspect ratio (default?)
   * simple image manipulations scale(xv?)/mirror
+    * maintain aspect ratio
   * overlay doesn't resize w/window
   * more overlay details
     * decoded result(?)

@@ -15,4 +15,5 @@ pygtk/zebrapygtk.defs: include/zebra/zebragtk.h
 
 pygtk/%.c: pygtk/%.defs $(srcdir)/pygtk/zebrapygtk.override
 	$(PYGTK_CODEGEN) --prefix zebrapygtk \
+            --register $(PYGTK_DEFS)/gdk-types.defs \
 	    --override $(srcdir)/pygtk/zebrapygtk.override $< > $@

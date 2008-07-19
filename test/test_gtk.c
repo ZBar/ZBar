@@ -24,8 +24,10 @@
 #include <gtk/gtk.h>
 #include <zebra/zebragtk.h>
 
-static GtkWidget *video_list = NULL;
+static GtkWidget *window = NULL;
+static GtkWidget *status_image = NULL;
 static GtkTextView *results = NULL;
+static gchar *open_file = NULL;
 
 int scan_video(void *add_device,
                void *userdata,
@@ -39,8 +41,6 @@ static void decoded (GtkWidget *widget,
                      const char *result,
                      gpointer data)
 {
-    if(!results)
-        return;
     GtkTextBuffer *resultbuf = gtk_text_view_get_buffer(results);
     GtkTextIter end;
     gtk_text_buffer_get_end_iter(resultbuf, &end);
@@ -52,16 +52,91 @@ static void decoded (GtkWidget *widget,
     gtk_text_view_scroll_to_iter(results, &end, 0, FALSE, 0, 0);
 }
 
+
+/* update botton state when video state changes
+ */
+static void video_enabled (GObject *object,
+                           GParamSpec *param,
+                           gpointer data)
+{
+    ZebraGtk *zebra = ZEBRA_GTK(object);
+    gboolean enabled = zebra_gtk_get_video_enabled(zebra);
+    gboolean opened = zebra_gtk_get_video_opened(zebra);
+
+    GtkToggleButton *button = GTK_TOGGLE_BUTTON(data);
+    gboolean active = gtk_toggle_button_get_active(button);
+    if(active != (opened && enabled))
+        gtk_toggle_button_set_active(button, enabled);
+}
+
+static void video_opened (GObject *object,
+                          GParamSpec *param,
+                          gpointer data)
+{
+    ZebraGtk *zebra = ZEBRA_GTK(object);
+    gboolean opened = zebra_gtk_get_video_opened(zebra);
+    gboolean enabled = zebra_gtk_get_video_enabled(zebra);
+
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data), opened && enabled);
+    gtk_widget_set_sensitive(GTK_WIDGET(data), opened);
+}
+
 /* (re)open the video when a new device is selected
  */
 static void video_changed (GtkWidget *widget,
                            gpointer data)
 {
     const char *video_device =
-        gtk_combo_box_get_active_text(GTK_COMBO_BOX(video_list));
+        gtk_combo_box_get_active_text(GTK_COMBO_BOX(widget));
+    zebra_gtk_set_video_device(ZEBRA_GTK(data),
+                               ((video_device && video_device[0] != '<')
+                                ? video_device
+                                : NULL));
+}
 
-    zebra_gtk_set_video_device((ZebraGtk*)data, video_device);
-    zebra_gtk_set_video_enabled((ZebraGtk*)data, TRUE);
+static void status_button_toggled (GtkToggleButton *button,
+                                   gpointer data)
+{
+    ZebraGtk *zebra = ZEBRA_GTK(data);
+    gboolean opened = zebra_gtk_get_video_opened(zebra);
+    gboolean enabled = zebra_gtk_get_video_enabled(zebra);
+    gboolean active = gtk_toggle_button_get_active(button);
+    if(opened && (active != enabled))
+        zebra_gtk_set_video_enabled(ZEBRA_GTK(data), active);
+    gtk_image_set_from_stock(GTK_IMAGE(status_image),
+                             (opened && active) ? GTK_STOCK_YES : GTK_STOCK_NO,
+                             GTK_ICON_SIZE_BUTTON);
+    gtk_button_set_label(GTK_BUTTON(button),
+                         (!opened) ? "closed" :
+                         (active) ? "enabled" : "disabled");
+}
+
+static void open_button_clicked (GtkButton *button,
+                                 gpointer data)
+{
+    GtkWidget *dialog =
+        gtk_file_chooser_dialog_new("Open Image File", GTK_WINDOW(window),
+                                    GTK_FILE_CHOOSER_ACTION_OPEN,
+                                    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                    GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+                                    NULL);
+    GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
+    if(open_file)
+        gtk_file_chooser_set_filename(chooser, open_file);
+
+    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+        gchar *file = gtk_file_chooser_get_filename(chooser);
+        GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file(file, NULL);
+        if(pixbuf)
+            zebra_gtk_scan_image(ZEBRA_GTK(data), pixbuf);
+        else
+            fprintf(stderr, "ERROR: unable to open image file: %s\n", file);
+
+        if(open_file && file)
+            g_free(open_file);
+        open_file = file;
+    }
+    gtk_widget_destroy(dialog);
 }
 
 /* build a simple gui w/:
@@ -80,7 +155,7 @@ int main (int argc, char *argv[])
     if(argc > 1)
         video_arg = argv[1];
 
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
     gtk_window_set_title(GTK_WINDOW(window), "test_gtk");
     gtk_container_set_border_width(GTK_CONTAINER(window), 8);
@@ -93,32 +168,60 @@ int main (int argc, char *argv[])
     g_signal_connect(G_OBJECT(zebra), "decoded",
                      G_CALLBACK(decoded), NULL);
 
-    video_list = gtk_combo_box_new_text();
+    /* video device list combo box */
+    GtkWidget *video_list = gtk_combo_box_new_text();
 
     g_signal_connect(G_OBJECT(video_list), "changed",
                      G_CALLBACK(video_changed), zebra);
 
+    /* enable/disable status button */
+    GtkWidget *status_button = gtk_toggle_button_new();
+    status_image = gtk_image_new_from_stock(GTK_STOCK_NO,
+                                            GTK_ICON_SIZE_BUTTON);
+    gtk_button_set_image(GTK_BUTTON(status_button), status_image);
+    gtk_button_set_label(GTK_BUTTON(status_button), "closed");
+    gtk_widget_set_sensitive(status_button, FALSE);
+
+    /* bind status button state and video state */
+    g_signal_connect(G_OBJECT(status_button), "toggled",
+                     G_CALLBACK(status_button_toggled), zebra);
+    g_signal_connect(G_OBJECT(zebra), "notify::video-enabled",
+                     G_CALLBACK(video_enabled), status_button);
+    g_signal_connect(G_OBJECT(zebra), "notify::video-opened",
+                     G_CALLBACK(video_opened), status_button);
+
+    /* open image file button */
+    GtkWidget *open_button = gtk_button_new_from_stock(GTK_STOCK_OPEN);
+
+    g_signal_connect(G_OBJECT(open_button), "clicked",
+                     G_CALLBACK(open_button_clicked), zebra);
+
+    gtk_combo_box_append_text(GTK_COMBO_BOX(video_list), "<none>");
     int active = scan_video(gtk_combo_box_append_text, video_list, video_arg);
     if(active >= 0)
         gtk_combo_box_set_active(GTK_COMBO_BOX(video_list), active);
 
+    /* hbox for combo box and buttons */
+    GtkWidget *hbox = gtk_hbox_new(FALSE, 8);
+
+    gtk_box_pack_start(GTK_BOX(hbox), video_list, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), status_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), open_button, FALSE, FALSE, 0);
+
+    /* text box for holding results */
     results = GTK_TEXT_VIEW(gtk_text_view_new());
     gtk_widget_set_size_request(GTK_WIDGET(results), 320, 64);
     gtk_text_view_set_editable(results, FALSE);
     gtk_text_view_set_cursor_visible(results, FALSE);
     gtk_text_view_set_left_margin(results, 4);
 
+    /* vbox for hbox, zebra test widget and result text box */
     GtkWidget *vbox = gtk_vbox_new(FALSE, 8);
     gtk_container_add(GTK_CONTAINER(window), vbox);
 
-    gtk_box_pack_start(GTK_BOX(vbox), video_list, FALSE, FALSE, 8);
-    gtk_widget_show(video_list);
-
-    gtk_box_pack_start(GTK_BOX(vbox), zebra, TRUE, TRUE, 8);
-    gtk_widget_show(zebra);
-
-    gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(results), FALSE, FALSE, 8);
-    gtk_widget_show(GTK_WIDGET(results));
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), zebra, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(results), FALSE, FALSE, 0);
 
     GdkGeometry hints;
     hints.min_width = 320;
@@ -126,12 +229,8 @@ int main (int argc, char *argv[])
     gtk_window_set_geometry_hints(GTK_WINDOW(window), zebra, &hints,
                                   GDK_HINT_MIN_SIZE);
 
-    gtk_widget_show(vbox);
-    gtk_widget_show(window);
-
+    gtk_widget_show_all(window);
     gtk_main();
-
-    results = NULL;
     gdk_threads_leave();
     return(0);
 }

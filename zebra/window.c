@@ -24,6 +24,8 @@
 #include "window.h"
 #include "image.h"
 
+extern int _zebra_draw_logo(zebra_image_t *img);
+
 zebra_window_t *zebra_window_create ()
 {
     zebra_window_t *w = calloc(1, sizeof(zebra_window_t));
@@ -38,6 +40,10 @@ void zebra_window_destroy (zebra_window_t *w)
 {
     /* detach */
     zebra_window_attach(w, NULL, 0);
+    if(w->logo) {
+        _zebra_image_refcnt(w->logo, -1);
+        w->logo = NULL;
+    }
     err_cleanup(&w->err);
     free(w);
 }
@@ -67,7 +73,7 @@ static inline int window_draw_overlay (zebra_window_t *w)
      */
     if(!w->overlay)
         return(0);
-    if(w->overlay >= 1) {
+    if(w->overlay >= 1 && w->image) {
         /* FIXME outline each symbol */
         const zebra_symbol_t *sym = zebra_image_first_symbol(w->image);
         for(; sym; sym = sym->next) {
@@ -88,16 +94,20 @@ inline int zebra_window_redraw (zebra_window_t *w)
 {
     if(window_lock(w))
         return(-1);
-    if(!w->image || !w->draw_image) {
+    if(!w->draw_image || !w->logo) {
         window_unlock(w);
         return(_zebra_window_clear(w));
     }
-    int rc = w->draw_image(w, w->image);
-    if(rc) {
-        window_unlock(w);
-        return(rc);
+    int rc;
+    if(w->image)
+        rc = w->draw_image(w, w->image);
+    else {
+        rc = w->draw_image(w, w->logo);
+        if(w->image)
+            w->logo->refcnt++;
     }
-    rc = window_draw_overlay(w);
+    if(!rc)
+        rc = window_draw_overlay(w);
     window_unlock(w);
     return(rc);
 }
@@ -124,17 +134,28 @@ void zebra_window_set_overlay (zebra_window_t *w,
         lvl = 0;
     if(lvl > 2)
         lvl = 2;
-    if(w->overlay != lvl) {
+    if(window_lock(w))
+        return;
+    if(w->overlay != lvl)
         w->overlay = lvl;
-        zebra_window_redraw(w);
-    }
+    window_unlock(w);
 }
 
 int zebra_window_resize (zebra_window_t *w,
                          unsigned width,
                          unsigned height)
 {
+    if(window_lock(w))
+        return(-1);
     w->width = width;
     w->height = height;
-    return(0);
+    if(!w->logo) {
+        w->logo = zebra_image_create();
+        w->logo->refcnt++;
+    }
+    if(w->logo->width != width || w->logo->height != height) {
+        zebra_image_set_size(w->logo, width, height);
+        _zebra_draw_logo(w->logo);
+    }
+    return(window_unlock(w));
 }

@@ -93,10 +93,10 @@ inline void zebra_image_free_data (zebra_image_t *img)
         img->src = NULL;
         img->srcidx = -1;
     }
-    else if(img->cleanup) {
+    else if(img->cleanup && img->data) {
         if(img->cleanup != zebra_image_free_data)
             img->cleanup(img);
-        else if(img->data)
+        else
             free((void*)img->data);
     }
     img->data = NULL;
@@ -111,6 +111,17 @@ void zebra_image_set_data (zebra_image_t *img,
     img->data = data;
     img->datalen = len;
     img->cleanup = cleanup;
+}
+
+void zebra_image_set_userdata (zebra_image_t *img,
+                               void *userdata)
+{
+    img->userdata = userdata;
+}
+
+void *zebra_image_get_userdata (const zebra_image_t *img)
+{
+    return(img->userdata);
 }
 
 zebra_image_t *zebra_image_copy (const zebra_image_t *src)

@@ -981,18 +981,27 @@ int zebra_negotiate_format (zebra_video_t *vdo,
     if(!vdo && !win)
         return(0);
 
+    if(win)
+        window_lock(win);
+
     errinfo_t *errdst = (vdo) ? &vdo->err : &win->err;
-    if(verify_format_sort())
+    if(verify_format_sort()) {
+        if(win)
+            window_unlock(win);
         return(err_capture(errdst, SEV_FATAL, ZEBRA_ERR_INTERNAL, __func__,
                            "image format list is not sorted!?"));
+    }
 
-    if((vdo && !vdo->formats) || (win && !win->formats))
+    if((vdo && !vdo->formats) || (win && !win->formats)) {
+        if(win)
+            window_unlock(win);
         return(err_capture(errdst, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
                            "no input or output formats available"));
+    }
 
-    uint32_t y800[2] = { fourcc('Y','8','0','0'), 0 };
-    uint32_t *srcs = (vdo) ? vdo->formats : y800;
-    uint32_t *dsts = (win) ? win->formats : y800;
+    static const uint32_t y800[2] = { fourcc('Y','8','0','0'), 0 };
+    const uint32_t *srcs = (vdo) ? vdo->formats : y800;
+    const uint32_t *dsts = (win) ? win->formats : y800;
 
     unsigned min_cost = -1;
     uint32_t min_fmt = 0;
@@ -1016,6 +1025,9 @@ int zebra_negotiate_format (zebra_video_t *vdo,
                 break;
         }
     }
+    if(win)
+        window_unlock(win);
+
     if(!min_fmt)
         return(err_capture(errdst, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
                            "no supported image formats available"));

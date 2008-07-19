@@ -218,6 +218,7 @@ AC_ARG_VAR([PYTHON_LIBS], [linker flags for building python extensions])
 
 AC_ARG_VAR([PYGTK_H2DEF], [full path to PyGTK h2def.py module])
 AC_ARG_VAR([PYGTK_CODEGEN], [full path to pygtk-codegen program])
+AC_ARG_VAR([PYGTK_DEFS], [directory where PyGTK definitions may be found])
 
 AS_IF([test "x$with_python" != "xno"],
   [AM_PATH_PYTHON(2.3.5)
@@ -238,6 +239,8 @@ AS_IF([test "x$with_python" != "xno"],
       AS_IF([test "x$PYGTK_H2DEF" = "x"],
         [PYGTK_H2DEF=`$PKG_CONFIG pygtk-2.0 --variable=codegendir`/h2def.py
          AS_IF([test -f "$PYGTK_H2DEF"], [], [PYGTK_H2DEF=":"])])
+      AS_IF([test "x$PYGTK_DEFS" = "x"],
+        [PYGTK_DEFS=`$PKG_CONFIG pygtk-2.0 --variable=defsdir`])
    ])
 ])
 

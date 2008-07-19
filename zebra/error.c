@@ -137,7 +137,7 @@ const char *_zebra_error_string (const void *container,
             err->buf = realloc(err->buf, newlen + strlen(err->arg_str));
             len += sprintf(err->buf + len, err->detail, err->arg_str);
         }
-        else if(strstr(err->detail, "%d")) {
+        else if(strstr(err->detail, "%d") || strstr(err->detail, "%x")) {
             err->buf = realloc(err->buf, newlen + 32);
             len += sprintf(err->buf + len, err->detail, err->arg_int);
         }

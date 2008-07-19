@@ -279,7 +279,7 @@ static int v4l2_set_format (zebra_video_t *vdo,
          * xcept it crashes even harder when we try to capture :|
          */
         return(err_capture_int(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
-                               "setting format %08x (VIDIOC_S_FMT)", fmt));
+                               "setting format %x (VIDIOC_S_FMT)", fmt));
 
     struct v4l2_format newfmt;
     struct v4l2_pix_format *newpix = &newfmt.fmt.pix;

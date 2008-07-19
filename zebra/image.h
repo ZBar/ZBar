@@ -59,6 +59,7 @@ struct zebra_image_s {
     unsigned width, height;     /* image size */
     const void *data;           /* image sample data */
     unsigned long datalen;      /* allocated/mapped size of data */
+    void *userdata;             /* user specified data associated w/image */
 
     /* cleanup handler */
     zebra_image_cleanup_handler_t *cleanup;

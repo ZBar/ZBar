@@ -26,20 +26,18 @@
 
 using namespace zebra;
 
+static const QString textFormat("%1%2:%3");
+
 QZebraThread::QZebraThread ()
-    : video(NULL),
-      state(IDLE),
-      textFormat("%1%2:%3")
+    : reqWidth(DEFAULT_WIDTH),
+      reqHeight(DEFAULT_HEIGHT),
+      video(NULL),
+      image(NULL),
+      running(true),
+      videoRunning(false),
+      videoEnabled(false)
 {
     scanner.set_handler(*this);
-}
-
-QZebraThread::~QZebraThread ()
-{
-    if(video) {
-        delete video;
-        video = NULL;
-    }
 }
 
 void QZebraThread::image_callback (Image &image)
@@ -58,99 +56,173 @@ void QZebraThread::image_callback (Image &image)
         }
 }
 
-
-Video *QZebraThread::openVideo (std::string device)
-{
-    if(video) {
-        // ensure old video doesn't have image ref
-        // (FIXME handle video destroyed w/images outstanding)
-        window.clear();
-        delete video;
-        video = NULL;
-    }
-    video = new Video(device);
-    negotiate_format(*video, window);
-    emit videoOpened();
-    return(NULL);
-}
-
 void QZebraThread::processImage (Image &image)
 {
     scanner.scan(image);
     window.draw(image);
+    if(this->image && this->image != &image) {
+        delete this->image;
+        this->image = NULL;
+    }
     emit update();
+}
+
+void QZebraThread::enableVideo (bool enable)
+{
+    if(!video) {
+        videoRunning = videoEnabled = false;
+        return;
+    }
+    try {
+        scanner.enable_cache(enable);
+        video->enable(enable);
+        videoRunning = enable;
+    }
+    catch(std::exception &e) {
+        std::cerr << "ERROR: " << e.what() << std::endl;
+    }
+    if(!enable) {
+        // release video image and revert to logo
+        clear();
+        emit update();
+    }
+}
+
+void QZebraThread::openVideo (const QString &device)
+{
+    if(videoRunning)
+        enableVideo(false);
+
+    {
+        QMutexLocker locker(&mutex);
+        videoEnabled = _videoOpened = false;
+        reqWidth = DEFAULT_WIDTH;
+        reqHeight = DEFAULT_HEIGHT;
+    }
+
+    // ensure old video doesn't have image ref
+    // (FIXME handle video destroyed w/images outstanding)
+    clear();
+    emit update();
+
+    if(video) {
+        delete video;
+        video = NULL;
+        emit videoOpened(false);
+    }
+
+    if(device.isEmpty())
+        return;
+
+    try {
+        std::string devstr = device.toStdString();
+        video = new Video(devstr);
+        negotiate_format(*video, window);
+        {
+            QMutexLocker locker(&mutex);
+            videoEnabled = _videoOpened = true;
+            reqWidth = video->get_width();
+            reqHeight = video->get_height();
+        }
+        emit videoOpened(true);
+    }
+    catch(std::exception &e) {
+        std::cerr << "ERROR: " << e.what() << std::endl;
+        emit videoOpened(false);
+    }
+}
+
+
+void QZebraThread::videoDeviceEvent (VideoDeviceEvent *e)
+{
+    openVideo(e->device);
+}
+
+void QZebraThread::videoEnabledEvent (VideoEnabledEvent *e)
+{
+    if(videoRunning && !e->enabled)
+        enableVideo(false);
+    videoEnabled = e->enabled;
+}
+
+void QZebraThread::scanImageEvent (ScanImageEvent *e)
+{
+    if(videoRunning)
+        enableVideo(false);
+
+    try {
+        image = new QZebraImage(e->image);
+        processImage(*image);
+    }
+    catch(std::exception &e) {
+        std::cerr << "ERROR: " << e.what() << std::endl;
+        clear();
+    }
+}
+
+bool QZebraThread::event (QEvent *e)
+{
+    switch(e->type()) {
+    case VideoDevice:
+        videoDeviceEvent((VideoDeviceEvent*)e);
+        break;
+    case VideoEnabled:
+        videoEnabledEvent((VideoEnabledEvent*)e);
+        break;
+    case ScanImage:
+        scanImageEvent((ScanImageEvent*)e);
+        break;
+    case Exit:
+        if(videoRunning)
+            enableVideo(false);
+        running = false;
+        break;
+    default:
+        return(false);
+    }
+    return(true);
 }
 
 
 void QZebraThread::run ()
 {
-    mutex.lock();
-    while(state != EXIT) {
-        while(state == IDLE ||
-              state == VIDEO_READY && !videoEnabled)
-            cond.wait(&mutex);
-
-        if(state == VIDEO_INIT) {
-            QString devstr = QString(videoDevice);
-            std::string dev = devstr.toStdString();
-            mutex.unlock();
-
-            try {
-                openVideo(dev);
-
-                mutex.lock();
-                if(state == VIDEO_INIT && devstr == videoDevice)
-                    state = VIDEO_READY;
-            }
-            catch(std::exception &e) {
-                std::cerr << "ERROR: " << e.what() << std::endl;
-                mutex.lock();
-                state = IDLE;
-            }
+    QEvent *e = NULL;
+    while(running) {
+        if(!videoEnabled) {
+            QMutexLocker locker(&mutex);
+            while(queue.isEmpty())
+                newEvent.wait(&mutex);
+            e = queue.takeFirst();
         }
+        else {
+            // release reference to any previous QImage
+            clear();
+            enableVideo(true);
 
-        bool enabled = false;
-        if(state == VIDEO_READY && videoEnabled) {
-            mutex.unlock();
-            try {
-                video->enable();
-                scanner.enable_cache();
-                enabled = true;
-                mutex.lock();
+            while(videoRunning && !e) {
+                try {
+                    Image image = video->next_image();
+                    processImage(image);
+                }
+                catch(std::exception &e) {
+                    std::cerr << "ERROR: " << e.what() << std::endl;
+                    enableVideo(false);
+                    openVideo("");
+                }
+                QMutexLocker locker(&mutex);
+                if(!queue.isEmpty())
+                    e = queue.takeFirst();
             }
-            catch(std::exception &e) {
-                std::cerr << "ERROR: " << e.what() << std::endl;
-                mutex.lock();
-                state = IDLE;
-            }
+
+            if(videoRunning)
+                enableVideo(false);
         }
-
-        while(state == VIDEO_READY && videoEnabled) {
-            mutex.unlock();
-            try {
-                Image image = video->next_image();
-                processImage(image);
-                mutex.lock();
-            }
-            catch(std::exception &e) {
-                std::cerr << "ERROR: " << e.what() << std::endl;
-                mutex.lock();
-                state = IDLE;
-            }
-            
-        }
-
-        if(enabled) {
-            mutex.unlock();
-            try {
-                scanner.enable_cache(false);
-                video->enable(false);
-            }
-            catch(std::exception &e) {
-                std::cerr << "ERROR: " << e.what() << std::endl;
-            }
-            mutex.lock();
+        if(e) {
+            event(e);
+            delete e;
+            e = NULL;
         }
     }
-    mutex.unlock();
+    clear();
+    openVideo("");
 }

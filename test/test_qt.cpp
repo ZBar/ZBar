@@ -21,15 +21,18 @@
 //  http://sourceforge.net/projects/zebra
 //------------------------------------------------------------------------
 
-#include <iostream>
 #include <QApplication>
 #include <QWidget>
 #include <QLayout>
 #include <QComboBox>
+#include <QPushButton>
 #include <QTextEdit>
+#include <QFileDialog>
+#include <QImage>
 #include <zebra/QZebra.h>
 
-using namespace zebra;
+#define TEST_IMAGE_FORMATS \
+    "Image Files (*.png *.jpg *.jpeg *.bmp *.gif *.ppm *.pgm *.pbm *.tiff *.xpm *.xbm)"
 
 extern "C" {
 int scan_video(void *add_device,
@@ -37,45 +40,118 @@ int scan_video(void *add_device,
                const char *default_device);
 }
 
-void add_device (QComboBox *list,
-                 const char *device)
+class TestQZebra : public QWidget
 {
-    list->addItem(QString(device));
-}
+    Q_OBJECT
+
+protected:
+    static void add_device (QComboBox *list,
+                            const char *device)
+    {
+        list->addItem(QString(device));
+    }
+
+public:
+    TestQZebra (const char *default_device)
+    {
+        // drop-down list of video devices
+        QComboBox *videoList = new QComboBox;
+
+        // toggle button to disable/enable video
+        QPushButton *statusButton = new QPushButton;
+
+        QStyle *style = QApplication::style();
+        QIcon statusIcon = style->standardIcon(QStyle::SP_DialogNoButton);
+        QIcon yesIcon = style->standardIcon(QStyle::SP_DialogYesButton);
+        statusIcon.addPixmap(yesIcon.pixmap(QSize(128, 128),
+                                            QIcon::Normal, QIcon::On),
+                             QIcon::Normal, QIcon::On);
+
+        statusButton->setIcon(statusIcon);
+        statusButton->setText("&Enable");
+        statusButton->setCheckable(true);
+        statusButton->setEnabled(false);
+
+        // command button to open image files for scanning
+        QPushButton *openButton = new QPushButton("&Open");
+        QIcon openIcon = style->standardIcon(QStyle::SP_DialogOpenButton);
+        openButton->setIcon(openIcon);
+
+        // collect video list and buttons horizontally
+        QHBoxLayout *hbox = new QHBoxLayout;
+        hbox->addWidget(videoList, 5);
+        hbox->addWidget(statusButton, 1);
+        hbox->addWidget(openButton, 1);
+
+        // video barcode scanner
+        zebra = new zebra::QZebra;
+
+        // text box for results
+        QTextEdit *results = new QTextEdit;
+        results->setReadOnly(true);
+
+        QVBoxLayout *vbox = new QVBoxLayout;
+        vbox->addLayout(hbox);
+        vbox->addWidget(zebra);
+        vbox->addWidget(results);
+
+        setLayout(vbox);
+
+        videoList->addItem("");
+        int active = scan_video((void*)add_device, videoList, default_device);
+
+        // directly connect combo box change signal to scanner video open
+        connect(videoList, SIGNAL(currentIndexChanged(const QString&)),
+                zebra, SLOT(setVideoDevice(const QString&)));
+
+        // directly connect status button state to video enabled state
+        connect(statusButton, SIGNAL(toggled(bool)),
+                zebra, SLOT(setVideoEnabled(bool)));
+
+        // also update status button state when video is opened/closed
+        connect(zebra, SIGNAL(videoOpened(bool)),
+                statusButton, SLOT(setEnabled(bool)));
+
+        // enable/disable status button when video is opened/closed
+        connect(zebra, SIGNAL(videoOpened(bool)),
+                statusButton, SLOT(setChecked(bool)));
+
+        // prompt for image file to scan when openButton is clicked
+        connect(openButton, SIGNAL(clicked()), SLOT(openImage()));
+
+        // directly connect video scanner decode result to display in text box
+        connect(zebra, SIGNAL(decodedText(const QString&)),
+                results, SLOT(append(const QString&)));
+
+        if(active >= 0)
+            videoList->setCurrentIndex(active);
+    }
+
+public Q_SLOTS:
+    void openImage ()
+    {
+        file = QFileDialog::getOpenFileName(this, "Open Image", file,
+                                            TEST_IMAGE_FORMATS);
+        if(!file.isEmpty())
+            zebra->scanImage(QImage(file));
+    }
+
+private:
+    QString file;
+    zebra::QZebra *zebra;
+};
+
+#include "moc_test_qt.cpp"
 
 int main (int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    QWidget window;                     // the top level window
-    QVBoxLayout vbox;                   // w/contents arranged vertically
-    QComboBox videoList;                // drop-down list of video devices
-    QTextEdit results;                  // text box for results
-    zebra::QZebra zebra;                // video barcode scanner
-
-    window.setLayout(&vbox);
-    vbox.addWidget(&videoList);
-    vbox.addWidget(&zebra);
-    vbox.addWidget(&results);
-
-    results.setReadOnly(true);
-
-    // directly connect combo box change signal to scanner video open
-    QObject::connect(&videoList, SIGNAL(currentIndexChanged(const QString&)),
-                     &zebra, SLOT(setVideoDevice(const QString&)));
-
-    // directly connect video scanner decode result to display in text box
-    QObject::connect(&zebra, SIGNAL(decodedText(const QString&)),
-                     &results, SLOT(append(const QString&)));
-
     const char *dev = NULL;
     if(argc > 1)
         dev = argv[1];
 
-    int active = scan_video((void*)add_device, &videoList, dev);
-    if(active >= 0)
-        videoList.setCurrentIndex(active);
-
+    TestQZebra window(dev);
     window.show();
     return(app.exec());
 }

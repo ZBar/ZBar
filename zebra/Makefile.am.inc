@@ -5,7 +5,7 @@ zebra_libzebra_la_LIBADD =
 
 zebra_libzebra_la_SOURCES = zebra/debug.h zebra/config.c \
     zebra/error.h zebra/error.c zebra/symbol.h zebra/symbol.c \
-    zebra/image.h zebra/image.c zebra/convert.c \
+    zebra/image.h zebra/image.c zebra/convert.c zebra/logo.c \
     zebra/window.h zebra/window.c zebra/video.h zebra/video.c \
     zebra/processor.h zebra/processor.c \
     zebra/img_scanner.c zebra/scanner.c \

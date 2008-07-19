@@ -37,6 +37,8 @@
 
 namespace zebra {
 
+class Video;
+
 /// stores image data samples along with associated format and size
 /// metadata
 
@@ -64,8 +66,8 @@ public:
                          const void *userdata)
         {
             if(userdata) {
-                Image image(zimg, +1);  // account for borrowed ref
-                ((Handler*)userdata)->image_callback(image);
+                Image *image = (Image*)zebra_image_get_userdata(zimg);
+                ((Handler*)userdata)->image_callback(*image);
             }
         }
     };
@@ -138,22 +140,13 @@ public:
            unsigned long length = 0)
         : _img(zebra_image_create())
     {
+        zebra_image_set_userdata(_img, this);
         if(width && height)
             set_size(width, height);
         if(format.length())
             set_format(format);
         if(data && length)
             set_data(data, length);
-    }
-
-    /// constructor.
-    /// create a new Image from a zebra_image_t C object
-    Image (zebra_image_t *src,
-           int refs = 0)
-        : _img(src)
-    {
-        if(refs)
-            zebra_image_ref(src, refs);
     }
 
     ~Image ()
@@ -272,12 +265,28 @@ public:
     }
 
 protected:
+
+    friend class Video;
+
+    /// constructor.
+    /// @internal
+    /// create a new Image from a zebra_image_t C object
+    Image (zebra_image_t *src,
+           int refs = 0)
+        : _img(src)
+    {
+        if(refs)
+            zebra_image_ref(_img, refs);
+        zebra_image_set_userdata(_img, this);
+    }
+
     /// default data cleanup (noop)
     /// @internal
     static void _cleanup (zebra_image_t *img)
     {
         // by default nothing is cleaned
         assert(img);
+        assert(zebra_image_get_userdata(img));
     }
 
 private:

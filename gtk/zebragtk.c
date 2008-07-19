@@ -21,9 +21,6 @@
  *  http://sourceforge.net/projects/zebra
  *------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <assert.h>
-
 #include <gtk/gtksignal.h>
 #include <gdk/gdkx.h>
 
@@ -34,6 +31,11 @@
 #define DEFAULT_WIDTH 640
 #define DEFAULT_HEIGHT 480
 
+/* adapted from v4l2 spec */
+#define fourcc(a, b, c, d)                      \
+    ((long)(a) | ((long)(b) << 8) |             \
+     ((long)(c) << 16) | ((long)(d) << 24))
+
 GQuark zebra_gtk_error_quark ()
 {
     return(g_quark_from_static_string("zebra_gtk_error"));
@@ -41,6 +43,7 @@ GQuark zebra_gtk_error_quark ()
 
 enum {
     DECODED,
+    DECODED_TEXT,
     LAST_SIGNAL
 };
 
@@ -48,14 +51,7 @@ enum {
     PROP_0,
     PROP_VIDEO_DEVICE,
     PROP_VIDEO_ENABLED,
-};
-
-enum {
-    IDLE,               /* no images to process */
-    VIDEO_INIT,         /* new video_device available to open */
-    VIDEO_READY,        /* video open, ready to capture/process images */
-    IMAGE,              /* single image available to process */
-    EXIT = -1           /* finish thread */
+    PROP_VIDEO_OPENED,
 };
 
 static guint zebra_gtk_signals[LAST_SIGNAL] = { 0 };
@@ -63,43 +59,147 @@ static guint zebra_gtk_signals[LAST_SIGNAL] = { 0 };
 static gpointer zebra_gtk_parent_class = NULL;
 
 /* FIXME what todo w/errors? OOM? */
+/* FIXME signal failure notifications to main gui thread */
 
+void zebra_gtk_release_pixbuf (zebra_image_t *img)
+{
+    GdkPixbuf *pixbuf = zebra_image_get_userdata(img);
+    g_assert(GDK_IS_PIXBUF(pixbuf));
 
-static inline int zebra_gtk_video_open (ZebraGtk *self,
-                                        const char *video_device)
+    /* remove reference */
+    zebra_image_set_userdata(img, NULL);
+
+    /* release reference to associated pixbuf and it's data */
+    g_object_unref(pixbuf);
+}
+
+gboolean zebra_gtk_image_from_pixbuf (zebra_image_t *zimg,
+                                      GdkPixbuf *pixbuf)
+{
+    /* apparently should always be packed RGB? */
+    GdkColorspace colorspace = gdk_pixbuf_get_colorspace(pixbuf);
+    if(colorspace != GDK_COLORSPACE_RGB) {
+        g_warning("non-RGB color space not supported: %d\n", colorspace);
+        return(FALSE);
+    }
+
+    int nchannels = gdk_pixbuf_get_n_channels(pixbuf);
+    int bps = gdk_pixbuf_get_bits_per_sample(pixbuf);
+    long type = 0;
+
+    /* these are all guesses... */
+    if(nchannels == 3 && bps == 8)
+        type = fourcc('R','G','B','3');
+    else if(nchannels == 4 && bps == 8)
+        type = fourcc('B','G','R','4'); /* FIXME alpha flipped?! */
+    else if(nchannels == 1 && bps == 8)
+        type = fourcc('Y','8','0','0');
+    else if(nchannels == 3 && bps == 5)
+        type = fourcc('R','G','B','R');
+    else if(nchannels == 3 && bps == 4)
+        type = fourcc('R','4','4','4'); /* FIXME maybe? */
+    else {
+        g_warning("unsupported combination: nchannels=%d bps=%d\n",
+                  nchannels, bps);
+        return(FALSE);
+    }
+    zebra_image_set_format(zimg, type);
+
+    /* FIXME we don't deal w/bpl...
+     * this will cause problems w/unpadded pixbufs :|
+     */
+    unsigned pitch = gdk_pixbuf_get_rowstride(pixbuf);
+    unsigned width = pitch / ((nchannels * bps) / 8);
+    if((width * nchannels * 8 / bps) != pitch) {
+        g_warning("unsupported: width=%d nchannels=%d bps=%d rowstride=%d\n",
+                  width, nchannels, bps, pitch);
+        return(FALSE);
+    }
+    unsigned height = gdk_pixbuf_get_height(pixbuf);
+    /* FIXME this isn't correct either */
+    unsigned long datalen = width * height * nchannels;
+    zebra_image_set_size(zimg, width, height);
+
+    /* when the zebra image is released, the pixbuf will be
+     * automatically be released
+     */
+    zebra_image_set_userdata(zimg, pixbuf);
+    zebra_image_set_data(zimg, gdk_pixbuf_get_pixels(pixbuf), datalen,
+                         zebra_gtk_release_pixbuf);
+#ifdef DEBUG_ZEBRAGTK
+    g_message("colorspace=%d nchannels=%d bps=%d type=%.4s(%08lx)\n"
+              "\tpitch=%d width=%d height=%d datalen=0x%lx\n",
+              colorspace, nchannels, bps, (char*)&type, type,
+              pitch, width, height, datalen);
+#endif
+    return(TRUE);
+}
+
+static inline gboolean zebra_gtk_video_open (ZebraGtk *self,
+                                             const char *video_device)
 {
     ZebraGtkPrivate *zebra = ZEBRA_GTK_PRIVATE(self->_private);
+    gboolean video_opened = FALSE;
 
-    /* (re)create video
-     * FIXME video should support re-open
-     */
-    if(zebra->video) {
+    gdk_threads_enter();
+
+    zebra->req_width = DEFAULT_WIDTH;
+    zebra->req_height = DEFAULT_HEIGHT;
+    gtk_widget_queue_resize(GTK_WIDGET(self));
+
+    zebra->video_opened = FALSE;
+    if(zebra->thread)
+        g_object_notify(G_OBJECT(self), "video-opened");
+
+    if(zebra->window) {
         /* ensure old video doesn't have image ref
          * (FIXME handle video destroyed w/images outstanding)
          */
-        gdk_threads_enter();
-        if(zebra->window)
-            zebra_window_draw(zebra->window, NULL);
-        gdk_threads_leave();
-        
+        zebra_window_draw(zebra->window, NULL);
+        gtk_widget_queue_draw(GTK_WIDGET(self));
+    }
+    gdk_threads_leave();
+
+    if(zebra->video) {
         zebra_video_destroy(zebra->video);
         zebra->video = NULL;
     }
-    zebra->video = zebra_video_create();
-    assert(zebra->video);
 
-    int rc = zebra_video_open(zebra->video, video_device);
-    if(!rc) {
-        /* negotiation accesses the window format list */
+    if(video_device && video_device[0] && zebra->thread) {
+        /* create video
+         * FIXME video should support re-open
+         */
+        zebra->video = zebra_video_create();
+        g_assert(zebra->video);
+
+        if(zebra_video_open(zebra->video, video_device)) {
+            zebra_video_error_spew(zebra->video, 0);
+            zebra_video_destroy(zebra->video);
+            zebra->video = NULL;
+            /* FIXME error propagation */
+            return(FALSE);
+        }
+
+        /* negotiation accesses the window format list,
+         * so we hold the lock for this part
+         */
         gdk_threads_enter();
-        zebra_negotiate_format(zebra->video, zebra->window);
+
+        video_opened = !zebra_negotiate_format(zebra->video, zebra->window);
+
+        if(video_opened) {
+            zebra->req_width = zebra_video_get_width(zebra->video);
+            zebra->req_height = zebra_video_get_height(zebra->video);
+        }
         gtk_widget_queue_resize(GTK_WIDGET(self));
+
+        zebra->video_opened = video_opened;
+        if(zebra->thread)
+            g_object_notify(G_OBJECT(self), "video-opened");
+
         gdk_threads_leave();
     }
-    else
-        zebra_video_error_spew(zebra->video, 0);
-
-    return(rc);
+    return(video_opened);
 }
 
 static inline int zebra_gtk_process_image (ZebraGtk *self,
@@ -116,17 +216,26 @@ static inline int zebra_gtk_process_image (ZebraGtk *self,
 
     gdk_threads_enter();
 
-    if(rc) {
+    if(rc && zebra->thread) {
         /* update decode results */
         const zebra_symbol_t *sym;
         for(sym = zebra_image_first_symbol(image);
             sym;
             sym = zebra_symbol_next(sym))
             if(!zebra_symbol_get_count(sym)) {
-                char *data = g_strdup(zebra_symbol_get_data(sym));
+                zebra_symbol_type_t type = zebra_symbol_get_type(sym);
+                const char *data = zebra_symbol_get_data(sym);
                 g_signal_emit(self, zebra_gtk_signals[DECODED], 0,
-                              zebra_symbol_get_type(sym), data);
-                g_free(data);
+                              type, data);
+
+                /* FIXME skip this when unconnected? */
+                gchar *text = g_strconcat(zebra_get_symbol_name(type),
+                                          zebra_get_addon_name(type),
+                                          ":",
+                                          data,
+                                          NULL);
+                g_signal_emit(self, zebra_gtk_signals[DECODED_TEXT], 0, text);
+                g_free(text);
             }
     }
 
@@ -147,65 +256,98 @@ static void *zebra_gtk_processing_thread (void *arg)
         return(NULL);
     ZebraGtkPrivate *zebra = ZEBRA_GTK_PRIVATE(self->_private);
     g_object_ref(zebra);
+    g_assert(zebra->queue);
+    g_async_queue_ref(zebra->queue);
 
     zebra->scanner = zebra_image_scanner_create();
-    assert(zebra->scanner);
+    g_assert(zebra->scanner);
 
-    g_mutex_lock(zebra->mutex);
-    while(zebra->state != EXIT) {
-        while(zebra->state == IDLE ||
-              (zebra->state == VIDEO_READY && !zebra->video_enabled))
-            g_cond_wait(zebra->cond, zebra->mutex);
+    /* thread side enabled state */
+    gboolean video_enabled = FALSE;
+    GValue *msg = NULL;
 
-        if(zebra->state == VIDEO_INIT) {
-            const char *video_device = (const char *)zebra->video_device;
-            const char *video_device_save = g_strdup(video_device);
-            g_mutex_unlock(zebra->mutex);
+    while(TRUE) {
+        if(!msg)
+            msg = g_async_queue_pop(zebra->queue);
+        g_assert(G_IS_VALUE(msg));
 
-            int rc = zebra_gtk_video_open(self, video_device_save);
-
-            g_mutex_lock(zebra->mutex);
-            if(zebra->state == VIDEO_INIT &&
-               video_device == zebra->video_device)
-                zebra->state = (!rc) ? VIDEO_READY : IDLE /* ERROR? */;
-            g_free((void*)video_device_save);
-        }
-
-        gboolean video_enabled = FALSE;
-        if(zebra->state == VIDEO_READY && zebra->video_enabled) {
-            g_mutex_unlock(zebra->mutex);
-            video_enabled = !zebra_video_enable(zebra->video, 1);
-            if(video_enabled)
-                zebra_image_scanner_enable_cache(zebra->scanner, 1);
-            g_mutex_lock(zebra->mutex);
-            if(!video_enabled) {
-                zebra_video_error_spew(zebra->video, 0);
-                zebra->state = IDLE;
+        GType type = G_VALUE_TYPE(msg);
+        if(type == G_TYPE_INT) {
+            /* video state change */
+            int state = g_value_get_int(msg);
+            if(state < 0) {
+                /* terminate processing thread */
+                g_value_unset(msg);
+                g_free(msg);
+                msg = NULL;
+                break;
             }
+            g_assert(state >= 0 && state <= 1);
+            video_enabled = (state != 0);
         }
-
-        while(zebra->state == VIDEO_READY && zebra->video_enabled) {
-            g_mutex_unlock(zebra->mutex);
-
-            zebra_image_t *image = zebra_video_next_image(zebra->video);
-            int rc = zebra_gtk_process_image(self, image);
-            if(image)
-                zebra_image_destroy(image);
-
-            g_mutex_lock(zebra->mutex);
-            if(zebra->state == VIDEO_READY && rc < 0)
-                zebra->state = IDLE /* ERROR? */;
+        else if(type == G_TYPE_STRING) {
+            /* open new video device */
+            const char *video_device = g_value_get_string(msg);
+            video_enabled = zebra_gtk_video_open(self, video_device);
         }
+        else if(type == GDK_TYPE_PIXBUF) {
+            /* scan provided image and broadcast results */
+            zebra_image_t *image = zebra_image_create();
+            GdkPixbuf *pixbuf = GDK_PIXBUF(g_value_dup_object(msg));
+            if(zebra_gtk_image_from_pixbuf(image, pixbuf))
+                zebra_gtk_process_image(self, image);
+            else
+                g_object_unref(pixbuf);
+            zebra_image_destroy(image);
+        }
+        else {
+            gchar *dbg = g_strdup_value_contents(msg);
+            g_warning("unknown message type (%x) passed to thread: %s\n",
+                      type, dbg);
+            g_free(dbg);
+        }
+        g_value_unset(msg);
+        g_free(msg);
+        msg = NULL;
 
         if(video_enabled) {
-            g_mutex_unlock(zebra->mutex);
-            zebra_image_scanner_enable_cache(zebra->scanner, 0);
-            if(zebra_video_enable(zebra->video, 0))
+            /* release reference to any previous pixbuf */
+            zebra_window_draw(zebra->window, NULL);
+
+            if(zebra_video_enable(zebra->video, 1)) {
                 zebra_video_error_spew(zebra->video, 0);
-            g_mutex_lock(zebra->mutex);
+                video_enabled = FALSE;
+                continue;
+            }
+            zebra_image_scanner_enable_cache(zebra->scanner, 1);
+
+            while(video_enabled &&
+                  !(msg = g_async_queue_try_pop(zebra->queue))) {
+                zebra_image_t *image = zebra_video_next_image(zebra->video);
+                if(zebra_gtk_process_image(self, image) < 0)
+                    video_enabled = FALSE;
+                if(image)
+                    zebra_image_destroy(image);
+            }
+
+            zebra_image_scanner_enable_cache(zebra->scanner, 0);
+            if(zebra_video_enable(zebra->video, 0)) {
+                zebra_video_error_spew(zebra->video, 0);
+                video_enabled = FALSE;
+            }
+            /* release video image and revert to logo */
+            if(zebra->window) {
+                zebra_window_draw(zebra->window, NULL);
+                gtk_widget_queue_draw(GTK_WIDGET(self));
+            }
+
+            if(!video_enabled)
+                /* must have been an error while streaming */
+                zebra_gtk_video_open(self, NULL);
         }
     }
-    g_mutex_unlock(zebra->mutex);
+    if(zebra->window)
+        zebra_window_draw(zebra->window, NULL);
     g_object_unref(zebra);
     return(NULL);
 }
@@ -241,12 +383,11 @@ static void zebra_gtk_realize (GtkWidget *widget)
                            gdk_x11_drawable_get_xdisplay(widget->window),
                            gdk_x11_drawable_get_xid(widget->window)))
         zebra_window_error_spew(zebra->window, 0);
+}
 
-    g_mutex_lock(zebra->mutex);
-    if(zebra->video_device)
-        zebra->state = VIDEO_INIT;
-    g_cond_signal(zebra->cond);
-    g_mutex_unlock(zebra->mutex);
+static inline GValue *zebra_gtk_new_value (GType type)
+{
+    return(g_value_init(g_malloc0(sizeof(GValue)), type));
 }
 
 static void zebra_gtk_unrealize (GtkWidget *widget)
@@ -259,10 +400,12 @@ static void zebra_gtk_unrealize (GtkWidget *widget)
         return;
     ZebraGtkPrivate *zebra = ZEBRA_GTK_PRIVATE(self->_private);
 
-    g_mutex_lock(zebra->mutex);
-    zebra->state = IDLE;
-    g_cond_signal(zebra->cond);
-    g_mutex_unlock(zebra->mutex);
+    if(zebra->video_enabled) {
+        zebra->video_enabled = FALSE;
+        GValue *msg = zebra_gtk_new_value(G_TYPE_INT);
+        g_value_set_int(msg, 0);
+        g_async_queue_push(zebra->queue, msg);
+    }
 
     zebra_window_attach(zebra->window, NULL, 0);
 
@@ -281,19 +424,12 @@ static void zebra_gtk_size_request (GtkWidget *widget,
         return;
     ZebraGtkPrivate *zebra = ZEBRA_GTK_PRIVATE(self->_private);
 
-    g_mutex_lock(zebra->mutex);
-    if(zebra->video) {
-        /* use native video size (max) if available */
-        requisition->width = zebra_video_get_width(zebra->video);
-        requisition->height = zebra_video_get_height(zebra->video);
-    }
-    g_mutex_unlock(zebra->mutex);
-
-    if(!zebra->video || !requisition->width || !requisition->height) {
-        /* use arbitrary defaults if no video available */
-        requisition->width = DEFAULT_WIDTH;
-        requisition->height = DEFAULT_HEIGHT;
-    }
+    /* use native video size (max) if available,
+     * arbitrary defaults otherwise.
+     * video attributes maintained under main gui thread lock
+     */
+    requisition->width = zebra->req_width;
+    requisition->height = zebra->req_height;
 }
 
 static void zebra_gtk_size_allocate (GtkWidget *widget,
@@ -326,6 +462,36 @@ static gboolean zebra_gtk_expose (GtkWidget *widget,
     return(FALSE);
 }
 
+void zebra_gtk_scan_image (ZebraGtk *self,
+                           GdkPixbuf *img)
+{
+    if(!self->_private)
+        return;
+    ZebraGtkPrivate *zebra = ZEBRA_GTK_PRIVATE(self->_private);
+
+    g_object_ref(G_OBJECT(img));
+
+    /* queue for scanning by the processor thread */
+    GValue *msg = zebra_gtk_new_value(GDK_TYPE_PIXBUF);
+
+    /* this grabs a new reference to the image,
+     * eventually released by the processor thread
+     */
+    g_value_set_object(msg, img);
+    g_async_queue_push(zebra->queue, msg);
+}
+
+
+const char *zebra_gtk_get_video_device (ZebraGtk *self)
+{
+    if(!self->_private)
+        return(NULL);
+    ZebraGtkPrivate *zebra = ZEBRA_GTK_PRIVATE(self->_private);
+    if(zebra->video_device)
+        return(zebra->video_device);
+    else
+        return("");
+}
 
 void zebra_gtk_set_video_device (ZebraGtk *self,
                                  const char *video_device)
@@ -333,16 +499,31 @@ void zebra_gtk_set_video_device (ZebraGtk *self,
     if(!self->_private)
         return;
     ZebraGtkPrivate *zebra = ZEBRA_GTK_PRIVATE(self->_private);
-    g_mutex_lock(zebra->mutex);
+
     g_free((void*)zebra->video_device);
     zebra->video_device = g_strdup(video_device);
-    zebra->video_enabled = TRUE;
-    if(GTK_WIDGET_REALIZED(GTK_WIDGET(self))) {
-        zebra->state = VIDEO_INIT;
-        g_cond_signal(zebra->cond);
-    }
-    g_mutex_unlock(zebra->mutex);
+    zebra->video_enabled = video_device && video_device[0];
+
+    /* push another copy to processor thread */
+    GValue *msg = zebra_gtk_new_value(G_TYPE_STRING);
+    if(video_device)
+        g_value_set_string(msg, video_device);
+    else
+        g_value_set_static_string(msg, "");
+    g_async_queue_push(zebra->queue, msg);
+
+    g_object_freeze_notify(G_OBJECT(self));
     g_object_notify(G_OBJECT(self), "video-device");
+    g_object_notify(G_OBJECT(self), "video-enabled");
+    g_object_thaw_notify(G_OBJECT(self));
+}
+
+gboolean zebra_gtk_get_video_enabled (ZebraGtk *self)
+{
+    if(!self->_private)
+        return(FALSE);
+    ZebraGtkPrivate *zebra = ZEBRA_GTK_PRIVATE(self->_private);
+    return(zebra->video_enabled);
 }
 
 void zebra_gtk_set_video_enabled (ZebraGtk *self,
@@ -351,17 +532,26 @@ void zebra_gtk_set_video_enabled (ZebraGtk *self,
     if(!self->_private)
         return;
     ZebraGtkPrivate *zebra = ZEBRA_GTK_PRIVATE(self->_private);
-    video_enabled = (video_enabled != FALSE);
 
-    g_mutex_lock(zebra->mutex);
+    video_enabled = (video_enabled != FALSE);
     if(zebra->video_enabled != video_enabled) {
         zebra->video_enabled = video_enabled;
-        g_cond_signal(zebra->cond);
-        g_mutex_unlock(zebra->mutex);
+
+        /* push state change to processor thread */
+        GValue *msg = zebra_gtk_new_value(G_TYPE_INT);
+        g_value_set_int(msg, zebra->video_enabled);
+        g_async_queue_push(zebra->queue, msg);
+
         g_object_notify(G_OBJECT(self), "video-enabled");
     }
-    else
-        g_mutex_unlock(zebra->mutex);
+}
+
+gboolean zebra_gtk_get_video_opened (ZebraGtk *self)
+{
+    if(!self->_private)
+        return(FALSE);
+    ZebraGtkPrivate *zebra = ZEBRA_GTK_PRIVATE(self->_private);
+    return(zebra->video_opened);
 }
 
 static void zebra_gtk_set_property (GObject *object,
@@ -394,15 +584,16 @@ static void zebra_gtk_get_property (GObject *object,
 
     switch(prop_id) {
     case PROP_VIDEO_DEVICE:
-        g_mutex_lock(zebra->mutex);
-        g_value_set_string(value, (const char*)zebra->video_device);
-        g_mutex_unlock(zebra->mutex);
+        if(zebra->video_device)
+            g_value_set_string(value, zebra->video_device);
+        else
+            g_value_set_static_string(value, "");
         break;
     case PROP_VIDEO_ENABLED:
-        g_mutex_lock(zebra->mutex);
         g_value_set_boolean(value, zebra->video_enabled);
-        g_mutex_unlock(zebra->mutex);
         break;
+    case PROP_VIDEO_OPENED:
+        g_value_set_boolean(value, zebra->video_opened);
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     }
@@ -414,16 +605,16 @@ static void zebra_gtk_init (ZebraGtk *self)
     self->_private = (void*)zebra;
 
     zebra->window = zebra_window_create();
-    assert(zebra->window);
+    g_assert(zebra->window);
+
+    zebra->req_width = DEFAULT_WIDTH;
+    zebra->req_height = DEFAULT_HEIGHT;
 
     /* spawn a thread to handle decoding and video */
-    zebra->mutex = g_mutex_new();
-    assert(zebra->mutex);
-    zebra->cond = g_cond_new();
-    assert(zebra->cond);
+    zebra->queue = g_async_queue_new();
     zebra->thread = g_thread_create(zebra_gtk_processing_thread, self,
                                     FALSE, NULL);
-    assert(zebra->thread);
+    g_assert(zebra->thread);
 }
 
 static void zebra_gtk_dispose (GObject *object)
@@ -433,13 +624,20 @@ static void zebra_gtk_dispose (GObject *object)
         return;
 
     ZebraGtkPrivate *zebra = ZEBRA_GTK_PRIVATE(self->_private);
-
-    g_mutex_lock(zebra->mutex);
-    zebra->state = EXIT;
-    g_cond_signal(zebra->cond);
-    g_mutex_unlock(zebra->mutex);
-
     self->_private = NULL;
+
+    g_free((void*)zebra->video_device);
+    zebra->video_device = NULL;
+
+    /* signal processor thread to exit */
+    GValue *msg = zebra_gtk_new_value(G_TYPE_INT);
+    g_value_set_int(msg, -1);
+    g_async_queue_push(zebra->queue, msg);
+    zebra->thread = NULL;
+
+    /* there are no external references which might call other APIs */
+    g_async_queue_unref(zebra->queue);
+
     g_object_unref(G_OBJECT(zebra));
 }
 
@@ -450,20 +648,16 @@ static void zebra_gtk_private_finalize (GObject *object)
         zebra_window_destroy(zebra->window);
         zebra->window = NULL;
     }
-    if(zebra->video) {
-        zebra_video_destroy(zebra->video);
-        zebra->video = NULL;
-    }
     if(zebra->scanner) {
         zebra_image_scanner_destroy(zebra->scanner);
         zebra->scanner = NULL;
     }
-    g_free((void*)zebra->video_device);
-    zebra->video_device = NULL;
-    g_mutex_free(zebra->mutex);
-    zebra->mutex = NULL;
-    g_cond_free(zebra->cond);
-    zebra->cond = NULL;
+    if(zebra->video) {
+        zebra_video_destroy(zebra->video);
+        zebra->video = NULL;
+    }
+    g_async_queue_unref(zebra->queue);
+    zebra->queue = NULL;
 }
 
 static void zebra_gtk_class_init (ZebraGtkClass *klass)
@@ -493,6 +687,16 @@ static void zebra_gtk_class_init (ZebraGtkClass *klass)
                      G_TYPE_NONE, 2,
                      G_TYPE_INT, G_TYPE_STRING);
 
+    zebra_gtk_signals[DECODED_TEXT] =
+        g_signal_new("decoded-text",
+                     G_TYPE_FROM_CLASS(object_class),
+                     G_SIGNAL_RUN_CLEANUP,
+                     G_STRUCT_OFFSET(ZebraGtkClass, decoded_text),
+                     NULL, NULL,
+                     g_cclosure_marshal_VOID__STRING,
+                     G_TYPE_NONE, 1,
+                     G_TYPE_STRING);
+
     GParamSpec *p = g_param_spec_string("video-device",
         "Video device",
         "the platform specific name of the video device",
@@ -506,6 +710,13 @@ static void zebra_gtk_class_init (ZebraGtkClass *klass)
         FALSE,
         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
     g_object_class_install_property(object_class, PROP_VIDEO_ENABLED, p);
+
+    p = g_param_spec_boolean("video-opened",
+        "Video opened",
+        "current opened state of the video device",
+        FALSE,
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+    g_object_class_install_property(object_class, PROP_VIDEO_OPENED, p);
 }
 
 GType zebra_gtk_get_type ()

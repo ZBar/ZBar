@@ -35,7 +35,7 @@
 #include "processor.h"
 #include "test_images.h"
 
-zebra_image_t *_zebra_logo_create(unsigned, unsigned);
+extern int _zebra_draw_logo(zebra_image_t *img);
 
 zebra_processor_t proc;
 
@@ -47,7 +47,7 @@ static void input_wait ()
 
 int main (int argc, char *argv[])
 {
-    zebra_set_verbosity(10);
+    zebra_set_verbosity(32);
 
     err_init(&proc.err, ZEBRA_MOD_PROCESSOR);
     proc.window = zebra_window_create();
@@ -56,7 +56,10 @@ int main (int argc, char *argv[])
         return(1);
     }
 
-    if(_zebra_window_open(&proc, "zebra window test", 640, 480) ||
+    int width = 640 * .25;
+    int height = 480 * .25;
+
+    if(_zebra_window_open(&proc, "zebra window test", width, height) ||
        zebra_window_attach(proc.window, proc.display, proc.xwin) ||
        _zebra_window_set_visible(&proc, 1)) {
         fprintf(stderr, "failed to open test window\n");
@@ -65,16 +68,19 @@ int main (int argc, char *argv[])
     input_wait();
 
     zebra_image_t *img = zebra_image_create();
-    zebra_image_set_size(img, 640, 480);
-    zebra_image_set_format(img, fourcc('I','4','2','0'));
+    zebra_image_set_size(img, width, height);
+    /*zebra_image_set_format(img, fourcc('Y','8','0','0'));*/
     /*fourcc('I','4','2','0')*/
     /*fourcc('Y','V','1','2')*/
     /*fourcc('U','Y','V','Y')*/
     /*fourcc('Y','U','Y','V')*/
     /*fourcc('R','G','B','3')*/
     /*fourcc('Y','8','0','0')*/
-    test_image_bars(img);
-    if(zebra_window_draw(proc.window, img)) {
+    /*test_image_bars(img);*/
+    _zebra_draw_logo(img);
+
+    if(zebra_window_draw(proc.window, img) ||
+       zebra_window_redraw(proc.window)) {
         fprintf(stderr, "error drawing image\n");
         return(1);
     }

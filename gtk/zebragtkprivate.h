@@ -49,17 +49,39 @@ typedef struct _ZebraGtkPrivate
 {
     GObject object;
 
-    zebra_video_t *video;
-    zebra_window_t *window;
-    zebra_image_scanner_t *scanner;
-
+    /* these are all owned by the main gui thread */
     GThread *thread;
-    GMutex *mutex;
-    GCond *cond;
+    const char *video_device;
+    gboolean video_enabled;
 
-    volatile const char *video_device;
-    volatile gboolean video_enabled;
-    volatile int state;
+    /* messages are queued from the gui thread to the processor thread.
+     * each message is a GValue containing one of:
+     * - G_TYPE_INT: state change
+     *     1 = video enable
+     *     0 = video disable
+     *    -1 = terminate processor thread
+     * - G_TYPE_STRING: a named video device to open ("" to close)
+     * - GDK_TYPE_PIXBUF: an image to scan
+     */
+    GAsyncQueue *queue;
+
+    /* current processor state is shared:
+     * written by processor thread just after opening video or
+     * scanning an image, read by main gui thread during size_request.
+     * protected by main gui lock
+     */
+    unsigned req_width, req_height;
+    gboolean video_opened;
+
+    /* window is shared: owned by main gui thread.
+     * processor thread only calls draw() and negotiate_format().
+     * protected by main gui lock (and internal lock)
+     */
+    zebra_window_t *window;
+
+    /* video and scanner are owned by the processor thread */
+    zebra_video_t *video;
+    zebra_image_scanner_t *scanner;
 
 } ZebraGtkPrivate;
 
