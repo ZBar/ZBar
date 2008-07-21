@@ -1,4 +1,7 @@
 current:
+  * fix new generated file distribution errors
+  * switch Qt headers to old-style names (possible Qt3 support?)
+  * add independent API versioning for GTK and Qt widget libraries
   * reimplement widget internals to support image scanning and
     improve locking efficiency
   * add image scanning to widgets. including builtin conversions from

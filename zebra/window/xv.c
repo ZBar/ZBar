@@ -75,7 +75,8 @@ static inline int xv_init (zebra_window_t *w,
     w->src_height = img->height;
     XvImage *xvimg = XvCreateImage(w->display, w->img_port, w->format,
                                    NULL, img->width, img->height);
-    zprintf(3, "new XvImage %.4s(%08x) %dx%d(%d) from %.4s(%08x) %dx%d\n",
+    zprintf(3, "new XvImage %.4s(%08" PRIx32 ") %dx%d(%d)"
+            " from %.4s(%08" PRIx32 ") %dx%d\n",
             (char*)&w->format, w->format,
             xvimg->width, xvimg->height, xvimg->pitches[0],
             (char*)&img->format, img->format, img->width, img->height);

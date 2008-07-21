@@ -948,7 +948,7 @@ int _zebra_best_format (uint32_t src,
     if(!srcfmt)
         return(-1);
 
-    zprintf(8, "from %.4s(%08x) to", (char*)&src, src);
+    zprintf(8, "from %.4s(%08" PRIx32 ") to", (char*)&src, src);
     unsigned min_cost = -1;
     for(; *dsts; dsts++) {
         const zebra_format_def_t *dstfmt = _zebra_format_lookup(*dsts);
@@ -963,7 +963,8 @@ int _zebra_best_format (uint32_t src,
         else
             cost = conversions[srcfmt->group][dstfmt->group].cost;
         if(_zebra_verbosity >= 8)
-            fprintf(stderr, " %.4s(%08x)=%d", (char*)dsts, *dsts, cost);
+            fprintf(stderr, " %.4s(%08" PRIx32 ")=%d",
+                    (char*)dsts, *dsts, cost);
         if(min_cost > cost) {
             min_cost = cost;
             if(dst)
@@ -1013,10 +1014,11 @@ int zebra_negotiate_format (zebra_video_t *vdo,
         uint32_t win_fmt = 0;
         int cost = _zebra_best_format(*fmt, &win_fmt, dsts);
         if(cost < 0) {
-            zprintf(4, "%.4s(%08x) -> ? (unsupported)\n", (char*)fmt, *fmt);
+            zprintf(4, "%.4s(%08" PRIx32 ") -> ? (unsupported)\n",
+                    (char*)fmt, *fmt);
             continue;
         }
-        zprintf(4, "%.4s(%08x) -> %.4s(%08x) (%d)\n",
+        zprintf(4, "%.4s(%08" PRIx32 ") -> %.4s(%08" PRIx32 ") (%d)\n",
                 (char*)fmt, *fmt, (char*)&win_fmt, win_fmt, cost);
         if(min_cost > cost) {
             min_cost = cost;
@@ -1034,7 +1036,7 @@ int zebra_negotiate_format (zebra_video_t *vdo,
     if(!vdo)
         return(0);
 
-    zprintf(2, "setting best format %.4s(%08x) (%d)\n",
+    zprintf(2, "setting best format %.4s(%08" PRIx32 ") (%d)\n",
             (char*)&min_fmt, min_fmt, min_cost);
     return(zebra_video_init(vdo, min_fmt));
 }

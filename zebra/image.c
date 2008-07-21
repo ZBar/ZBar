@@ -163,11 +163,12 @@ int zebra_image_write (const zebra_image_t *img,
         n = snprintf(filename, len, "%s.%.4s.zimg",
                      filebase, (char*)&img->format);
     else
-        n = snprintf(filename, len, "%s.%08x.zimg", filebase, img->format);
+        n = snprintf(filename, len, "%s.%08" PRIx32 ".zimg",
+                     filebase, img->format);
     assert(n < len);
     filename[len] = '\0';
 
-    zprintf(1, "dumping %.4s(%08x) image to %s\n",
+    zprintf(1, "dumping %.4s(%08" PRIx32 ") image to %s\n",
             (char*)&img->format, img->format, filename);
 
     FILE *f = fopen(filename, "w");

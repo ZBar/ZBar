@@ -353,7 +353,7 @@ int test_image_bars (zebra_image_t *img)
     unsigned long datalen = planelen * fmt->bpp / 8;
     uint8_t *data = malloc(datalen);
     zebra_image_set_data(img, data, datalen, test_cleanup_handler);
-    fprintf(stderr, "create %.4s(%08x) image data %lx bytes @%p\n",
+    fprintf(stderr, "create %.4s(%08" PRIx32 ") image data %lx bytes @%p\n",
             (char*)&fmt->format, fmt->format, datalen, data);
 
     uint8_t *p = data;

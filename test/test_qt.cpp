@@ -141,7 +141,7 @@ private:
     zebra::QZebra *zebra;
 };
 
-#include "moc_test_qt.cpp"
+#include "moc_test_qt.h"
 
 int main (int argc, char *argv[])
 {

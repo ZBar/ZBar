@@ -1,6 +1,6 @@
 lib_LTLIBRARIES += qt/libzebraqt.la
 qt_libzebraqt_la_CPPFLAGS = -Iqt $(QT_CFLAGS) $(AM_CPPFLAGS)
-#qt_libzebraqt_la_LDFLAGS = -version-info $(LIB_VERSION) $(AM_LDFLAGS)
+qt_libzebraqt_la_LDFLAGS = -version-info $(ZQT_LIB_VERSION) $(AM_LDFLAGS)
 qt_libzebraqt_la_LIBADD = $(QT_LIBS) zebra/libzebra.la $(AM_LIBADD)
 
 qt_libzebraqt_la_SOURCES = qt/QZebra.cpp qt/moc_QZebra.cpp \

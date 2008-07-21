@@ -28,6 +28,10 @@
 #include "zebragtkprivate.h"
 #include "zebramarshal.h"
 
+#ifndef G_PARAM_STATIC_STRINGS
+# define G_PARAM_STATIC_STRINGS (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
+#endif
+
 #define DEFAULT_WIDTH 640
 #define DEFAULT_HEIGHT 480
 
@@ -303,7 +307,7 @@ static void *zebra_gtk_processing_thread (void *arg)
         else {
             gchar *dbg = g_strdup_value_contents(msg);
             g_warning("unknown message type (%x) passed to thread: %s\n",
-                      type, dbg);
+                      (unsigned)type, dbg);
             g_free(dbg);
         }
         g_value_unset(msg);

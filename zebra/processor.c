@@ -91,7 +91,7 @@ static inline int process_image (zebra_processor_t *proc,
 {
     if(img) {
         uint32_t format = zebra_image_get_format(img);
-        zprintf(16, "processing: %.4s(%08x) %dx%d @%p\n",
+        zprintf(16, "processing: %.4s(%08" PRIx32 ") %dx%d @%p\n",
                 (char*)&format, format,
                 zebra_image_get_width(img), zebra_image_get_height(img),
                 zebra_image_get_data(img));

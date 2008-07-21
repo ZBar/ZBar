@@ -26,7 +26,7 @@
 /// @file
 /// QImage to Image type conversion wrapper
 
-#include <QImage>
+#include <qimage.h>
 #include <zebra.h>
 
 namespace zebra {

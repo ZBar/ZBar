@@ -21,8 +21,8 @@
 //  http://sourceforge.net/projects/zebra
 //------------------------------------------------------------------------
 
-#include <QResizeEvent>
-#include <QX11Info>
+#include <qevent.h>
+#include <qx11info_x11.h>
 #include <zebra/QZebra.h>
 #include "QZebraThread.h"
 

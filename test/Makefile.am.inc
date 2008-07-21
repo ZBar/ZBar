@@ -48,12 +48,12 @@ endif
 
 if HAVE_QT
 check_PROGRAMS += test/test_qt
-test_test_qt_SOURCES = test/test_qt.cpp test/scan_video.c
+test_test_qt_SOURCES = test/test_qt.cpp test/moc_test_qt.h test/scan_video.c
 test_test_qt_CPPFLAGS = -Itest $(QT_CFLAGS) $(AM_CPPFLAGS)
 test_test_qt_LDADD = $(QT_LIBS) qt/libzebraqt.la $(AM_LDADD)
-BUILT_SOURCES += test/moc_test_qt.cpp
+BUILT_SOURCES += test/moc_test_qt.h
 
-test/moc_%.cpp: test/%.cpp
+test/moc_%.h: test/%.cpp
 	$(MOC) -i $(test_test_qt_CPPFLAGS) $< -o $@
 endif
 

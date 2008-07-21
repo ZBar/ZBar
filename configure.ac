@@ -21,6 +21,11 @@ dnl     then set age to 0.
 AC_SUBST([LIB_VERSION], [4:0:1])
 AC_SUBST([RELDATE], [2008-05-31])
 
+dnl widget libraries use their own versioning.
+dnl NB pygtk wrapper is *unversioned*
+AC_SUBST([ZGTK_LIB_VERSION], [0:0:0])
+AC_SUBST([ZQT_LIB_VERSION], [0:0:0])
+
 AC_DEFINE_UNQUOTED([ZEBRA_VERSION_MAJOR],
   [[`echo "$PACKAGE_VERSION" | sed -e 's/\..*$//'`]],
   [Program major version (before the '.') as a number])

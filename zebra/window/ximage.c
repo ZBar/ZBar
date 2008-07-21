@@ -78,9 +78,10 @@ static inline int ximage_init (zebra_window_t *w,
 
     if(!XInitImage(ximg))
         return(err_capture_int(w, SEV_ERROR, ZEBRA_ERR_XPROTO, __func__,
-                               "unable to init XImage for format %08x",
+                               "unable to init XImage for format %x",
                                w->format));
-    zprintf(3, "new XImage %.4s(%08x) %dx%d from %.4s(%08x) %dx%d\n",
+    zprintf(3, "new XImage %.4s(%08" PRIx32 ") %dx%d"
+            " from %.4s(%08" PRIx32 ") %dx%d\n",
             (char*)&w->format, w->format, ximg->width, ximg->height,
             (char*)&img->format, img->format, img->width, img->height);
     zprintf(4, "    masks: %08lx %08lx %08lx\n",
@@ -213,7 +214,7 @@ int _zebra_window_probe_ximage (zebra_window_t *w)
         int j, n = 0;
         for(j = 0; ximage_formats[fmtidx][j]; j++)
             if(!ximage_probe_format(w, ximage_formats[fmtidx][j])) {
-                zprintf(2, "    [%d] depth=%d bpp=%d: %.4s(%08x)\n",
+                zprintf(2, "    [%d] depth=%d bpp=%d: %.4s(%08" PRIx32 ")\n",
                         i, formats[i].depth, formats[i].bits_per_pixel,
                         (char*)&ximage_formats[fmtidx][j],
                         ximage_formats[fmtidx][j]);

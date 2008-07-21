@@ -26,7 +26,7 @@
 /// @file
 /// Barcode Reader Qt4 Widget
 
-#include <QWidget>
+#include <qwidget.h>
 
 namespace zebra {
 
