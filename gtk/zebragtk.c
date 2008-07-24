@@ -40,11 +40,6 @@
     ((long)(a) | ((long)(b) << 8) |             \
      ((long)(c) << 16) | ((long)(d) << 24))
 
-GQuark zebra_gtk_error_quark ()
-{
-    return(g_quark_from_static_string("zebra_gtk_error"));
-}
-
 enum {
     DECODED,
     DECODED_TEXT,

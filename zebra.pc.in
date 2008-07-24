@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: zebra
+Description: bar code scanning and decoding
+URL: http://zebra.sourceforge.net
+Version: @VERSION@
+Libs: -L${libdir} -lzebra
+Cflags: -I${includedir}

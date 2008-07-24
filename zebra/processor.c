@@ -173,7 +173,7 @@ static inline int proc_poll_inputs (zebra_processor_t *proc,
     if(rc <= 0)
         /* FIXME detect and handle fatal errors (somehow) */
         return(rc);
-    proc_lock(proc);
+    (void)proc_lock(proc);
     if(p->fds[0].revents && p->fds[0].fd == proc->kick_fds[0]) {
         unsigned junk[2];
         read(proc->kick_fds[0], junk, 2 * sizeof(unsigned));
@@ -288,7 +288,7 @@ static inline int proc_event_wait_unthreaded (zebra_processor_t *proc,
             sleepns.tv_nsec = (timeout % 1000) * 1000000;
             while(nanosleep(&sleepns, &remns) && errno == EINTR)
                 sleepns = remns;
-            proc_lock(proc);
+            (void)proc_lock(proc);
             return(0);
         }
     }
@@ -313,7 +313,7 @@ static inline int proc_event_wait (zebra_processor_t *proc,
 /* make a thread-local copy of polling data */
 static inline void proc_cache_polling (zebra_processor_t *proc)
 {
-    proc_lock(proc);
+    (void)proc_lock(proc);
     int n = proc->polling.num;
     zprintf(5, "%d fds\n", n);
     proc->thr_polling.num = n;
@@ -362,7 +362,7 @@ static void *proc_video_thread (void *arg)
     zebra_processor_t *proc = arg;
     proc_block_sigs();
 
-    proc_lock(proc);
+    (void)proc_lock(proc);
     while(1) {
         /* wait for active to be set */
         assert(!proc->sem);
@@ -379,7 +379,7 @@ static void *proc_video_thread (void *arg)
         zebra_image_t *img = zebra_video_next_image(proc->video);
         if(!img)
             return(NULL);
-        proc_lock(proc);
+        (void)proc_lock(proc);
         if(proc->active)
             process_image(proc, img);
         zebra_image_destroy(img);
@@ -421,7 +421,7 @@ zebra_processor_t *zebra_processor_create (int threaded)
 
 void zebra_processor_destroy (zebra_processor_t *proc)
 {
-    proc_lock(proc);
+    (void)proc_lock(proc);
     proc_destroy_thread(proc->video_thread, &proc->video_started);
     proc_destroy_thread(proc->input_thread, &proc->input_started);
     if(proc->window) {

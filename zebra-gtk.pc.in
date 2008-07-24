@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: zebra-gtk
+Description: bar code scanning and decoding GTK widget
+URL: http://zebra.sourceforge.net
+Version: @VERSION@
+Requires: zebra, gtk+-2.0, gthread-2.0
+Libs: -L${libdir} -lzebragtk
+Cflags: -I${includedir}

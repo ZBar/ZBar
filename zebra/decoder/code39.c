@@ -236,7 +236,7 @@ static inline void code39_postprocess (zebra_decoder_t *dcode)
     dcode->buf[i] = '\0';
 }
 
-zebra_symbol_type_t zebra_decode_code39 (zebra_decoder_t *dcode)
+zebra_symbol_type_t _zebra_decode_code39 (zebra_decoder_t *dcode)
 {
     code39_decoder_t *dcode39 = &dcode->code39;
 

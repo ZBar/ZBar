@@ -8,7 +8,6 @@ general:
   * example using SANE to scan symbol(s)
 
 wrappers:
-  * zebragtk, QZebra library -version-info
   * build API docs for zebragtk, zebrapygtk
   * is zebragtk/QZebra BGR4 alpha swapped?
   * widget config APIs
@@ -29,6 +28,7 @@ decoder:
     * Code-39/i25 check digit (after implementation)
     * Code-39 full ASCII (after implementation)
     * require min/max length (for variable length symbologies)
+    * standard symbology identifiers (which standard?)
     * set consistency requirements
     * set scanner filter params
 
@@ -58,5 +58,4 @@ window:
 zebracam/zebraimg:
   * stats/fps at zebracam exit
   * xml output format
-  * option to use standard symbology identifiers (which standard?)
   * decode hook (program/script)? (also zebraimg?)

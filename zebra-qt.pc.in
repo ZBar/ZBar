@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: zebra-qt
+Description: bar code scanning and decoding Qt4 widget
+URL: http://zebra.sourceforge.net
+Version: @VERSION@
+Requires: zebra, QtCore >= 4, QtGui >= 4
+Libs: -L${libdir} -lzebraqt
+Cflags: -I${includedir}

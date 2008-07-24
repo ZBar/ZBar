@@ -43,6 +43,6 @@ static inline void code128_reset (code128_decoder_t *dcode128)
 }
 
 /* decode Code 128 symbols */
-zebra_symbol_type_t zebra_decode_code128(zebra_decoder_t *dcode);
+zebra_symbol_type_t _zebra_decode_code128(zebra_decoder_t *dcode);
 
 #endif

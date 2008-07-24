@@ -1,12 +1,17 @@
 AM_CPPFLAGS = -I$(srcdir)/include
-AM_CFLAGS = -Wall -Werror
+AM_CFLAGS = -Wall
 AM_CXXFLAGS = $(AM_CFLAGS)
+ACLOCAL_AMFLAGS = -I config
 bin_PROGRAMS =
 check_PROGRAMS =
 lib_LTLIBRARIES =
 CLEANFILES =
+DISTCLEANFILES =
 BUILT_SOURCES =
 EXTRA_DIST =
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = zebra.pc
 
 dist_doc_DATA = COPYING.LIB HACKING INSTALL NEWS README TODO
 
@@ -20,12 +25,14 @@ include $(srcdir)/zebracam/Makefile.am.inc
 endif
 if HAVE_GTK
 include $(srcdir)/gtk/Makefile.am.inc
+pkgconfig_DATA += zebra-gtk.pc
 if HAVE_PYTHON
 include $(srcdir)/pygtk/Makefile.am.inc
 endif
 endif
 if HAVE_QT
 include $(srcdir)/qt/Makefile.am.inc
+pkgconfig_DATA += zebra-qt.pc
 endif
 if HAVE_NPAPI
 include $(srcdir)/plugin/Makefile.am.inc
@@ -36,5 +43,7 @@ include $(srcdir)/doc/Makefile.am.inc
 EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py \
     zebra.spec.in zebra.spec \
     debian/changelog debian/compat debian/control debian/copyright \
-    debian/docs debian/libzebra0.install debian/libzebra-dev.install \
-    debian/rules debian/shlibs.local debian/zebra-tools.install
+    debian/rules debian/libzebra3.install debian/libzebra-dev.install \
+    debian/libzebragtk0.install debian/libzebragtk-dev.install \
+    debian/libzebraqt0.install debian/libzebraqt-dev.install \
+    debian/python-zebrapygtk.install debian/zebra-tools.install

@@ -421,7 +421,7 @@ static inline unsigned char postprocess (zebra_decoder_t *dcode)
     return(0);
 }
 
-zebra_symbol_type_t zebra_decode_code128 (zebra_decoder_t *dcode)
+zebra_symbol_type_t _zebra_decode_code128 (zebra_decoder_t *dcode)
 {
     code128_decoder_t *dcode128 = &dcode->code128;
 

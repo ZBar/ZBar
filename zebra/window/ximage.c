@@ -110,24 +110,40 @@ static int ximage_draw (zebra_window_t *w,
     }
 
     ximg->data = (void*)img->data;
-    /* FIXME implement some basic scaling */
-    unsigned width = img->width;
-    unsigned src_x = 0, dst_x = 0;
-    if(w->width < img->width) {
-        width = w->width;
-        src_x = (img->width - w->width) >> 1;
-    }
-    else
-        dst_x = (w->width - img->width) >> 1;
 
+    int screen = DefaultScreen(w->display);
+    XSetForeground(w->display, w->gc, WhitePixel(w->display, screen));
+
+    /* FIXME implement some basic scaling */
     unsigned height = img->height;
     unsigned src_y = 0, dst_y = 0;
     if(w->height < img->height) {
         height = w->height;
         src_y = (img->height - w->height) >> 1;
     }
-    else
+    else if(w->height != img->height) {
         dst_y = (w->height - img->height) >> 1;
+        /* fill border */
+        XFillRectangle(w->display, w->xwin, w->gc,
+                       0, 0, w->width, dst_y);
+        XFillRectangle(w->display, w->xwin, w->gc,
+                       0, dst_y + img->height, w->width, dst_y);
+    }
+
+    unsigned width = img->width;
+    unsigned src_x = 0, dst_x = 0;
+    if(w->width < img->width) {
+        width = w->width;
+        src_x = (img->width - w->width) >> 1;
+    }
+    else if(w->width != img->width) {
+        dst_x = (w->width - img->width) >> 1;
+        /* fill border */
+        XFillRectangle(w->display, w->xwin, w->gc,
+                       0, dst_y, dst_x, img->height);
+        XFillRectangle(w->display, w->xwin, w->gc,
+                       img->width + dst_x, dst_y, dst_x, img->height);
+    }
 
     XPutImage(w->display, w->xwin, w->gc, ximg,
               src_x, src_y, dst_x, dst_y, width, height);

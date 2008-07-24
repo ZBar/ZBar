@@ -1,6 +1,7 @@
 lib_LTLIBRARIES += zebra/libzebra.la
 zebra_libzebra_la_CPPFLAGS = -I$(srcdir)/zebra $(AM_CPPFLAGS)
-zebra_libzebra_la_LDFLAGS = -version-info $(LIB_VERSION)
+zebra_libzebra_la_LDFLAGS = -version-info $(LIB_VERSION) \
+    -export-symbols-regex "^(zebra|_zebra.*_error)_.*" $(AM_LDFLAGS)
 zebra_libzebra_la_LIBADD =
 
 zebra_libzebra_la_SOURCES = zebra/debug.h zebra/config.c \
@@ -28,6 +29,7 @@ endif
 
 if HAVE_X
 zebra_libzebra_la_SOURCES += zebra/window/x.c zebra/window/ximage.c
+zebra_libzebra_la_CPPFLAGS += $(X_CFLAGS)
 zebra_libzebra_la_LDFLAGS += $(X_LIBS)
 zebra_libzebra_la_LIBADD += $(X_PRE_LIBS) -lX11 $(X_EXTRA_LIBS)
 if HAVE_XV

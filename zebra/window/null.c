@@ -74,6 +74,11 @@ int _zebra_window_clear (zebra_window_t *w)
     return(null_error(w, __func__));
 }
 
+int _zebra_window_invalidate (zebra_window_t *w)
+{
+    return(0);
+}
+
 int _zebra_window_draw_marker(zebra_window_t *w,
                               uint32_t rgb,
                               const point_t *p)

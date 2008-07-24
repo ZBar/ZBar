@@ -539,7 +539,7 @@ static inline void postprocess (zebra_decoder_t *dcode,
     dcode->buf[j] = '\0';
 }
 
-zebra_symbol_type_t zebra_decode_ean (zebra_decoder_t *dcode)
+zebra_symbol_type_t _zebra_decode_ean (zebra_decoder_t *dcode)
 {
     /* process upto 4 separate passes */
     zebra_symbol_type_t sym = ZEBRA_NONE;

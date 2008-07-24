@@ -1,8 +1,8 @@
 pyexec_LTLIBRARIES = pygtk/zebrapygtk.la
 pygtk_zebrapygtk_la_CPPFLAGS = \
     $(GTK_CFLAGS) $(PYTHON_CFLAGS) $(PYGTK_CFLAGS) $(AM_CPPFLAGS)
-pygtk_zebrapygtk_la_LDFLAGS = \
-    -module -avoid-version -export-symbols-regex initzebrapygtk
+pygtk_zebrapygtk_la_LDFLAGS = -shared -module -avoid-version -export-dynamic \
+    -export-symbols-regex initzebrapygtk
 pygtk_zebrapygtk_la_LIBADD = \
     $(PYTHON_LIBS) $(PYGTK_LIBS) gtk/libzebragtk.la $(AM_LIBADD)
 

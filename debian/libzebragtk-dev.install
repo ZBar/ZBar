@@ -1,0 +1,5 @@
+usr/include/zebra/zebragtk.h
+usr/lib/libzebragtk.la
+usr/lib/libzebragtk.a
+usr/lib/libzebragtk.so
+usr/lib/pkgconfig/zebra-gtk.pc

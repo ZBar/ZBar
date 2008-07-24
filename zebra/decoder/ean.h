@@ -79,6 +79,6 @@ static inline unsigned ean_get_config (ean_decoder_t *ean,
 }
 
 /* decode EAN/UPC symbols */
-zebra_symbol_type_t zebra_decode_ean(zebra_decoder_t *dcode);
+zebra_symbol_type_t _zebra_decode_ean(zebra_decoder_t *dcode);
 
 #endif

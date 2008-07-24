@@ -2,35 +2,19 @@ check_PROGRAMS += test/test_decode
 test_test_decode_CFLAGS = -Wno-unused $(AM_CFLAGS)
 test_test_decode_LDADD = zebra/libzebra.la $(AM_LDADD)
 
+TEST_IMAGE_SOURCES = test/test_images.c test/test_images.h
+
 check_PROGRAMS += test/test_proc
-test_test_proc_SOURCES = test/test_proc.c \
-    test/test_images.c test/test_images.h
+test_test_proc_SOURCES = test/test_proc.c $(TEST_IMAGE_SOURCES)
 test_test_proc_LDADD = zebra/libzebra.la $(AM_LDADD)
 
 check_PROGRAMS += test/test_convert
-test_test_convert_SOURCES = test/test_convert.c \
-    test/test_images.c test/test_images.h
+test_test_convert_SOURCES = test/test_convert.c $(TEST_IMAGE_SOURCES)
 test_test_convert_LDADD = zebra/libzebra.la $(AM_LDADD)
 
 check_PROGRAMS += test/test_cpp
 test_test_cpp_SOURCES = test/test_cpp.cpp
 test_test_cpp_LDADD = zebra/libzebra.la $(AM_LDADD)
-
-TEST_IMAGE_SOURCES = test/test_images.c test/test_images.h
-
-if HAVE_X
-check_PROGRAMS += test/test_window
-test_test_window_SOURCES = test/test_window.c $(TEST_IMAGE_SOURCES)
-test_test_window_LDADD = zebra/libzebra.la $(AM_LDADD)
-test_test_window_CPPFLAGS = -I$(srcdir)/zebra $(AM_CPPFLAGS)
-endif
-
-if HAVE_VIDEO
-check_PROGRAMS += test/test_video
-test_test_video_SOURCES = test/test_video.c $(TEST_IMAGE_SOURCES)
-test_test_video_LDADD = -lrt zebra/libzebra.la $(AM_LDADD)
-test_test_video_CPPFLAGS = -I$(srcdir)/zebra $(AM_CPPFLAGS)
-endif
 
 if HAVE_MAGICK
 check_PROGRAMS += test/dbg_scan
@@ -48,10 +32,12 @@ endif
 
 if HAVE_QT
 check_PROGRAMS += test/test_qt
-test_test_qt_SOURCES = test/test_qt.cpp test/moc_test_qt.h test/scan_video.c
+test_test_qt_SOURCES = test/test_qt.cpp test/scan_video.c
+nodist_test_test_qt_SOURCES = test/moc_test_qt.h
 test_test_qt_CPPFLAGS = -Itest $(QT_CFLAGS) $(AM_CPPFLAGS)
 test_test_qt_LDADD = $(QT_LIBS) qt/libzebraqt.la $(AM_LDADD)
-BUILT_SOURCES += test/moc_test_qt.h
+BUILT_SOURCES += $(nodist_test_test_qt_SOURCES)
+DISTCLEANFILES += $(nodist_test_test_qt_SOURCES)
 
 test/moc_%.h: test/%.cpp
 	$(MOC) -i $(test_test_qt_CPPFLAGS) $< -o $@

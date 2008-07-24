@@ -445,7 +445,7 @@ int _zebra_video_open (zebra_video_t *vdo,
 {
     /* close open device */
     if(vdo->fd >= 0) {
-        video_lock(vdo);
+        (void)video_lock(vdo);
         if(vdo->active) {
             vdo->active = 0;
             vdo->stop(vdo);
@@ -456,7 +456,7 @@ int _zebra_video_open (zebra_video_t *vdo,
         close(vdo->fd);
         zprintf(1, "closed camera fd=%d\n", vdo->fd);
         vdo->fd = -1;
-        video_unlock(vdo);
+        (void)video_unlock(vdo);
     }
     if(!dev)
         return(0);

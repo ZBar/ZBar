@@ -159,22 +159,22 @@ zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
 
 #ifdef ENABLE_EAN
     if((dcode->ean.enable) &&
-       (sym = zebra_decode_ean(dcode)))
+       (sym = _zebra_decode_ean(dcode)))
         dcode->type = sym;
 #endif
 #ifdef ENABLE_CODE39
     if(TEST_CFG(dcode->code39.config, ZEBRA_CFG_ENABLE) &&
-       (sym = zebra_decode_code39(dcode)) > ZEBRA_PARTIAL)
+       (sym = _zebra_decode_code39(dcode)) > ZEBRA_PARTIAL)
         dcode->type = sym;
 #endif
 #ifdef ENABLE_CODE128
     if(TEST_CFG(dcode->code128.config, ZEBRA_CFG_ENABLE) &&
-       (sym = zebra_decode_code128(dcode)) > ZEBRA_PARTIAL)
+       (sym = _zebra_decode_code128(dcode)) > ZEBRA_PARTIAL)
         dcode->type = sym;
 #endif
 #ifdef ENABLE_I25
     if(TEST_CFG(dcode->i25.config, ZEBRA_CFG_ENABLE) &&
-       (sym = zebra_decode_i25(dcode)) > ZEBRA_PARTIAL)
+       (sym = _zebra_decode_i25(dcode)) > ZEBRA_PARTIAL)
         dcode->type = sym;
 #endif
 

@@ -1,5 +1,14 @@
 Zebra Barcode Reader
 
+version 0.5 (2008-07-25):
+  Introducing zebra widgets!  Prioritized by popular demand, this
+  release includes fully functional barcode scanning widgets for GTK,
+  PyGTK, and Qt.  Application developers may now seamlessly integrate
+  barcode reader support with their user interface.
+
+  This release also fixes many bugs; existing users are encouraged to
+  upgrade.  
+
 version 0.4 (2008-05-31):
   new support for EAN-8, Code 39 and Interleaved 2 of 5!
   this release also introduces the long awaited decoder configuration

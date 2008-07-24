@@ -29,13 +29,13 @@ static void _zebra_video_recycle_image (zebra_image_t *img)
     zebra_video_t *vdo = img->src;
     assert(vdo);
     assert(img->srcidx >= 0);
-    video_lock(vdo);
+    (void)video_lock(vdo);
     if(vdo->images[img->srcidx] != img)
         vdo->images[img->srcidx] = img;
     if(vdo->active)
         vdo->nq(vdo, img);
     else
-        video_unlock(vdo);
+        (void)video_unlock(vdo);
 }
 
 static void _zebra_video_recycle_shadow (zebra_image_t *img)
@@ -43,10 +43,10 @@ static void _zebra_video_recycle_shadow (zebra_image_t *img)
     zebra_video_t *vdo = img->src;
     assert(vdo);
     assert(img->srcidx == -1);
-    video_lock(vdo);
+    (void)video_lock(vdo);
     img->next = vdo->shadow_image;
     vdo->shadow_image = img;
-    video_unlock(vdo);
+    (void)video_unlock(vdo);
 }
 
 zebra_video_t *zebra_video_create ()
@@ -234,9 +234,9 @@ zebra_image_t *zebra_video_next_image (zebra_video_t *vdo)
     if(video_lock(vdo))
         return(NULL);
     if(!vdo->active) {
-            err_capture(vdo, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,
-                        "video not enabled");
-        video_unlock(vdo);
+        err_capture(vdo, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,
+                    "video not enabled");
+        (void)video_unlock(vdo);
         return(NULL);
     }
     zebra_image_t *img = vdo->dq(vdo);
@@ -246,10 +246,10 @@ zebra_image_t *zebra_video_next_image (zebra_video_t *vdo)
              * the driver's buffer to avoid deadlocking the resources
              */
             zebra_image_t *tmp = img;
-            video_lock(vdo);
+            (void)video_lock(vdo);
             img = vdo->shadow_image;
             vdo->shadow_image = (img) ? img->next : NULL;
-            video_unlock(vdo);
+            (void)video_unlock(vdo);
                 
             if(!img) {
                 img = zebra_image_create();

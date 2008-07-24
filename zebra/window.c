@@ -95,7 +95,7 @@ inline int zebra_window_redraw (zebra_window_t *w)
     if(window_lock(w))
         return(-1);
     if(!w->draw_image || !w->logo) {
-        window_unlock(w);
+        (void)window_unlock(w);
         return(_zebra_window_clear(w));
     }
     int rc;
@@ -108,7 +108,7 @@ inline int zebra_window_redraw (zebra_window_t *w)
     }
     if(!rc)
         rc = window_draw_overlay(w);
-    window_unlock(w);
+    (void)window_unlock(w);
     return(rc);
 }
 
@@ -138,7 +138,7 @@ void zebra_window_set_overlay (zebra_window_t *w,
         return;
     if(w->overlay != lvl)
         w->overlay = lvl;
-    window_unlock(w);
+    (void)window_unlock(w);
 }
 
 int zebra_window_resize (zebra_window_t *w,

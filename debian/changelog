@@ -1,19 +1,29 @@
-libzebra (0.4-1) unstable; urgency=low
+zebra (0.5-1) unstable; urgency=low
+
+  * update to release 0.5
+  * change source package name to zebra
+  * update binary name for new soname
+  * add binary packages for new widgets
+  * fixes for multi-package build
+  * remove autoreconf and documentation rebuild, along w/associated depends
+
+ -- Jeff Brown <spadix@users.sourceforge.net>  Fri, 25 July 2008 21:00:00 -0500
+
+zebra (0.4-1) unstable; urgency=low
 
   * update to release 0.4
 
- -- Jeff Brown <spadix@users.sourceforge.net>  Fri, 30 May 3008 09:00:00 +0500
+ -- Jeff Brown <spadix@users.sourceforge.net>  Fri, 30 May 2008 09:00:00 -0500
 
-libzebra (0.2-1) unstable; urgency=low
+zebra (0.2-1) unstable; urgency=low
 
   * Added libsdl dependency
   * automake1.10 is now required
 
  -- Vít Hrachový <vit.hrachovy@sandbox.cz>  Thu, 17 May 2007 9:20:45 +0200
 
-libzebra (0.1-1) unstable; urgency=low
+zebra (0.1-1) unstable; urgency=low
 
   * Initial release
 
  -- Vít Hrachový <vit.hrachovy@sandbox.cz>  Wed, 11 Apr 2007 21:15:45 +0200
-

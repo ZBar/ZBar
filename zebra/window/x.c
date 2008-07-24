@@ -304,7 +304,7 @@ int _zebra_window_clear (zebra_window_t *w)
     if(!w->display)
         return(0);
     int screen = DefaultScreen(w->display);
-    XSetForeground(w->display, w->gc, BlackPixel(w->display, screen));
+    XSetForeground(w->display, w->gc, WhitePixel(w->display, screen));
     XFillRectangle(w->display, w->xwin, w->gc, 0, 0, w->width, w->height);
     return(0);
 }

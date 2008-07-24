@@ -1,30 +1,121 @@
-Source: libzebra
+Source: zebra
+Section: libs
 Priority: optional
 Maintainer: Vít Hrachový <vit.hrachovy@sandbox.cz>
-Build-Depends: debhelper (>= 5), autotools-dev, libmagick++9-dev, autoconf (>= 2.61), automake (>= 1:1.10), libtool (>= 1.5.22), xmlto (>= 0.0.18)
-Standards-Version: 3.7.2
+Homepage: http://zebra.sourceforge.net
+Build-Depends: debhelper (>= 7), pkg-config, libx11-dev, python-dev (>= 2.3), libgtk2.0-dev, python-gtk2-dev, libqt4-dev, libmagick++9-dev
+Standards-Version: 3.8.0
+
+Package: libzebra3
 Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: bar code scanning and decoding library
+ Zebra is a library for scanning and decoding bar codes from various
+ sources such as video streams, image files or raw intensity sensors.
+ It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
+ flexible, layered architecture features a fast, streaming interface
+ with a minimal memory footprint.
+ .
+ This package contains the shared library.
 
 Package: libzebra-dev
 Section: libdevel
 Architecture: any
-Depends: libzebra (= ${Source-Version})
-Description: Header files for Zebra bar code reading library.
- This packages installs files neccessary for development using Zebra barcodes
- decoding library.
+Depends: libzebra3 (= ${binary:Version})
+Conflicts: libzebra-dev
+Description: bar code library extra development files
+ Zebra is a library for scanning and decoding bar codes from various
+ sources such as video streams, image files or raw intensity sensors.
+ It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
+ flexible, layered architecture features a fast, streaming interface
+ with a minimal memory footprint.
+ .
+ This package contains header files and additional libraries used for
+ developing applications that read bar codes with this library.
 
-Package: libzebra
+Package: libzebragtk0
 Section: libs
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Bar codes reading library with small memory footprint
- Zebra is a layered barcode (EAN/UPC and Code 128) scanning and decoding
- library. Features a fast streaming interface with minimal memory footprint.
+Depends: libzebra3 (= ${binary:Version}), libgtk2.0-0
+Description: bar code reader GTK widget
+ Zebra is a library for scanning and decoding bar codes from various
+ sources such as video streams, image files or raw intensity sensors.
+ It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
+ flexible, layered architecture features a fast, streaming interface
+ with a minimal memory footprint.
+ .
+ This package contains a bar code scanning widget for use with GUI
+ applications based on GTK+-2.0.
+
+Package: libzebragtk-dev
+Section: libdevel
+Architecture: any
+Depends: libzebragtk0 (= ${binary:Version}), libgtk2.0-dev
+Description: bar code reader GTK widget extra development files
+ Zebra is a library for scanning and decoding bar codes from various
+ sources such as video streams, image files or raw intensity sensors.
+ It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
+ flexible, layered architecture features a fast, streaming interface
+ with a minimal memory footprint.
+ .
+ This package contains header files and additional libraries used for
+ developing GUI applications based on GTK+-2.0 that include a bar code
+ scanning widget.
+
+Package: python-zebrapygtk
+Section: libs
+Architecture: any
+Depends: libzebra3 (= ${binary:Version}), python (>= 2.3), python-gtk2
+Description: bar code reader PyGTK widget
+ Zebra is a library for scanning and decoding bar codes from various
+ sources such as video streams, image files or raw intensity sensors.
+ It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
+ flexible, layered architecture features a fast, streaming interface
+ with a minimal memory footprint.
+ .
+ This package contains a bar code scanning widget for use in GUI
+ applications based on PyGTK.
+
+Package: libzebraqt0
+Section: libs
+Architecture: any
+Depends: libzebra3 (= ${binary:Version}), libqt4-0
+Description: bar code reader Qt widget
+ Zebra is a library for scanning and decoding bar codes from various
+ sources such as video streams, image files or raw intensity sensors.
+ It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
+ flexible, layered architecture features a fast, streaming interface
+ with a minimal memory footprint.
+ .
+ This package contains a bar code scanning widget for use with GUI
+ applications based on Qt4.
+
+Package: libzebraqt-dev
+Section: libdevel
+Architecture: any
+Depends: libzebraqt0 (= ${binary:Version}), libqt4-dev
+Description: bar code reader Qt widget extra development files
+ Zebra is a library for scanning and decoding bar codes from various
+ sources such as video streams, image files or raw intensity sensors.
+ It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
+ flexible, layered architecture features a fast, streaming interface
+ with a minimal memory footprint.
+ .
+ This package contains header files and additional libraries used for
+ developing GUI applications based on Qt4 that include a bar code
+ scanning widget.
 
 Package: zebra-tools
 Section: graphics
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libmagick9
-Description: Reading barcodes using web camera or scanned images
- This package provides tools for reading barcodes using web camera or using
- scanned images.
+Depends: libzebra3 (= ${binary:Version}), ${shlibs:Depends}, libmagick9
+Description: utilities for reading bar codes from a webcam or image files
+ Zebra is a library for scanning and decoding bar codes from various
+ sources such as video streams, image files or raw intensity sensors.
+ It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
+ flexible, layered architecture features a fast, streaming interface
+ with a minimal memory footprint.
+ .
+ This package provides basic applications for reading bar codes from a
+ video device or from captured images of bar codes.

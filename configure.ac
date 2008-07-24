@@ -1,11 +1,13 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.61])
-AC_INIT([zebra], [0.4], [spadix@users.sourceforge.net])
+AC_INIT([zebra], [0.5], [spadix@users.sourceforge.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AM_INIT_AUTOMAKE([1.10 -Wall -Werror foreign subdir-objects std-options dist-bzip2])
 AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_SRCDIR(zebra/scanner.c)
+LT_PREREQ([2.2])
+LT_INIT([dlopen])
 
 dnl update these just before each release (along w/pacakge version above)
 dnl   LIB_VERSION update instructions copied from libtool docs:
@@ -18,8 +20,8 @@ dnl   - If any interfaces have been added since the last public release,
 dnl     then increment age.
 dnl   - If any interfaces have been removed since the last public release,
 dnl     then set age to 0. 
-AC_SUBST([LIB_VERSION], [4:0:1])
-AC_SUBST([RELDATE], [2008-05-31])
+AC_SUBST([LIB_VERSION], [5:0:2])
+AC_SUBST([RELDATE], [2008-07-25])
 
 dnl widget libraries use their own versioning.
 dnl NB pygtk wrapper is *unversioned*
@@ -38,7 +40,6 @@ dnl programs
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
-AC_PROG_LIBTOOL
 
 PKG_PROG_PKG_CONFIG
 
@@ -312,7 +313,14 @@ AC_CONFIG_COMMANDS([doc/reldate.xml],
   [RELDATE="$RELDATE"]
 )
 
-AC_CONFIG_FILES([Makefile zebra.spec doc/doxygen.conf])
+AC_CONFIG_FILES([
+Makefile
+zebra.pc
+zebra-gtk.pc
+zebra-qt.pc
+zebra.spec
+doc/doxygen.conf
+])
 AC_OUTPUT
 
 dnl summary log

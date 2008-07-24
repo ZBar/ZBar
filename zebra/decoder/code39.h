@@ -44,6 +44,6 @@ static inline void code39_reset (code39_decoder_t *dcode39)
 }
 
 /* decode Code 39 symbols */
-zebra_symbol_type_t zebra_decode_code39(zebra_decoder_t *dcode);
+zebra_symbol_type_t _zebra_decode_code39(zebra_decoder_t *dcode);
 
 #endif

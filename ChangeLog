@@ -1,7 +1,16 @@
-current:
+version 0.5:
+  * release updates (version, NEWS, packaging)
+  * add pkg-config files
+  * update to latest libtool and new autoconf macros
+  * cleanup library symbol exports
+    * remove test programs using internal hooks
+  * improve portability of some format specifiers
+  * fix missing stub for --without-x - thanks to Simon Schmeisser for a patch!
+  * fix --disable-pthread compile errors and warnings
+  * fix XImage size mismatch background artifacts
   * fix new generated file distribution errors
-  * switch Qt headers to old-style names (possible Qt3 support?)
-  * add independent API versioning for GTK and Qt widget libraries
+  * switch Qt headers to old-style names (investigate possible Qt3 support?)
+  * add independent ABI versioning for GTK and Qt widget libraries
   * reimplement widget internals to support image scanning and
     improve locking efficiency
   * add image scanning to widgets. including builtin conversions from

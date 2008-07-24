@@ -88,9 +88,9 @@ struct zebra_processor_s {
     pthread_cond_t event;
     pthread_t video_thread;             /* video input handler */
     pthread_t input_thread;             /* window event handler */
+#endif
     unsigned video_started;             /* thread active flags */
     unsigned input_started;
-#endif
 
 #ifdef HAVE_X
     Display *display;                   /* X display connection */

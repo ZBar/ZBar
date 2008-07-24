@@ -153,7 +153,7 @@ static inline signed char i25_decode_end (zebra_decoder_t *dcode)
     return(ZEBRA_I25);
 }
 
-zebra_symbol_type_t zebra_decode_i25 (zebra_decoder_t *dcode)
+zebra_symbol_type_t _zebra_decode_i25 (zebra_decoder_t *dcode)
 {
     i25_decoder_t *dcode25 = &dcode->i25;
 

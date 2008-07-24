@@ -291,6 +291,7 @@ extern void zebra_image_destroy(zebra_image_t *image);
  * image.  decrement when the reference is no longer used.  do not
  * refer to the image any longer once the count is decremented.
  * zebra_image_ref(image, -1) is the same as zebra_image_destroy(image)
+ * @since 0.5
  */
 extern void zebra_image_ref(zebra_image_t *image,
                             int refs);
@@ -379,11 +380,15 @@ extern void zebra_image_set_data(zebra_image_t *image,
  */
 extern void zebra_image_free_data(zebra_image_t *image);
 
-/** associate user specified data value with an image. */
+/** associate user specified data value with an image.
+ * @since 0.5
+ */
 extern void zebra_image_set_userdata(zebra_image_t *image,
                                      void *userdata);
 
-/** return user specified data value associated with the image. */
+/** return user specified data value associated with the image.
+ * @since 0.5
+ */
 extern void *zebra_image_get_userdata(const zebra_image_t *image);
 
 /** dump raw image data to a file for debug.

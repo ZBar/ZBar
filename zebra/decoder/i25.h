@@ -44,6 +44,6 @@ static inline void i25_reset (i25_decoder_t *i25)
 }
 
 /* decode interleaved 2 of 5 symbols */
-zebra_symbol_type_t zebra_decode_i25(zebra_decoder_t *dcode);
+zebra_symbol_type_t _zebra_decode_i25(zebra_decoder_t *dcode);
 
 #endif
