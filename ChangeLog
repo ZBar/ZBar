@@ -1,3 +1,8 @@
+current:
+  * add drag and drop support for *images* to Qt widget...unfortunately not
+    very useful; every application i tried drops uri-refs rather than images
+  * minor reference documentation updates
+
 version 0.5:
   * release updates (version, NEWS, packaging)
   * add pkg-config files

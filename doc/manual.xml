@@ -12,8 +12,8 @@
 ]>
 
 <book>
+  <title>Zebra Barcode Reader</title>
   <bookinfo>
-    <title>Zebra Barcode Reader</title>
     <productname>zebra-&version;</productname>
     <date>&date;</date>
 
@@ -40,7 +40,7 @@
   </chapter>
 
   <reference id="ref">
-    <title>Zebra Barcode Reader</title>
+    <title>Zebra Barcode Reader - Command Reference</title>
 
     &refzebracam;
     &refzebraimg;

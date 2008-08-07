@@ -85,6 +85,7 @@ public:
 
         // video barcode scanner
         zebra = new zebra::QZebra;
+        zebra->setAcceptDrops(true);
 
         // text box for results
         QTextEdit *results = new QTextEdit;

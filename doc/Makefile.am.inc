@@ -19,16 +19,14 @@ docs: $(dist_man_MANS) #dist_doc_DATA
 .PHONY: docs
 
 doc_path = --searchpath $(abs_builddir)/doc -m $(abs_srcdir)/doc/style.xsl
-# FIXME xmlto doesnt seem to apply --searchpath to xmllint?
-doc_path += --skip-validation
 
 #pdf: doc/zebra-manual.pdf
 #doc/zebra-manual.pdf: $(DOCSOURCES)
 #	$(XMLTO) $(XMLTOFLAGS) -o doc pdf $<
 
-#html: doc/zebra-manual.html
-#doc/zebra-manual.html: $(DOCSOURCES)
-#        $(XMLTO) $(XMLTOFLAGS) -o doc xhtml-nochunk $<
+html-local: doc/html/index.html
+doc/html/index.html: $(DOCSOURCES)
+	$(XMLTO) $(doc_path) $(XMLTOFLAGS) -o doc/html xhtml $<
 
 
 $(dist_man_MANS): $(man_stamp)

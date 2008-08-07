@@ -146,6 +146,8 @@ protected:
     void paintEvent(QPaintEvent *);
     void resizeEvent(QResizeEvent *);
     void changeEvent(QEvent*);
+    void dragEnterEvent(QDragEnterEvent*);
+    void dropEvent(QDropEvent*);
 
 protected Q_SLOTS:
     void sizeChange();

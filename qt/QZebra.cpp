@@ -22,6 +22,7 @@
 //------------------------------------------------------------------------
 
 #include <qevent.h>
+#include <qurl.h>
 #include <qx11info_x11.h>
 #include <zebra/QZebra.h>
 #include "QZebraThread.h"
@@ -111,6 +112,36 @@ void QZebra::scanImage (const QImage &image)
     if(!thread)
         return;
     thread->pushEvent(new QZebraThread::ScanImageEvent(image));
+}
+
+void QZebra::dragEnterEvent (QDragEnterEvent *event)
+{
+    if(event->mimeData()->hasImage() ||
+       event->mimeData()->hasUrls())
+        event->acceptProposedAction();
+}
+
+void QZebra::dropEvent (QDropEvent *event)
+{
+    if(event->mimeData()->hasImage()) {
+        QImage image = qvariant_cast<QImage>(event->mimeData()->imageData());
+        scanImage(image);
+        event->setDropAction(Qt::CopyAction);
+        event->accept();
+    }
+    else {
+        // FIXME TBD load URIs and queue for processing
+#if 0
+        std::cerr << "drop: "
+                  << event->mimeData()->formats().join(", ").toStdString()
+                  << std::endl;
+        QList<QUrl> urls = event->mimeData()->urls();
+        for(int i = 0; i < urls.size(); ++i)
+            std::cerr << "[" << i << "] "
+                      << urls.at(i).toString().toStdString()
+                      << std::endl;
+#endif
+    }
 }
 
 QSize QZebra::sizeHint () const

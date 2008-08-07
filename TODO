@@ -42,6 +42,7 @@ image formats:
   * add color support to conversions
   * add support for scanline pad throughout
   * factor conversion redundancy
+  * add support for libjpeg
 
 window:
   * add XShm support

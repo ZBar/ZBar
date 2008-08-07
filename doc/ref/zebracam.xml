@@ -1,4 +1,5 @@
-<refentry id="zebracam">
+<refentry xml:id="zebracam"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
 
   <refmeta>
     <refentrytitle>zebracam</refentrytitle>
@@ -103,6 +104,14 @@
   <refsection>
     <title>See Also</title>
     <para><xref linkend="zebraimg"/></para>
+    <para><link xlink:href="http://zebra.sf.net/"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Bugs</title>
+
+    <para>See <link xlink:href="http://sf.net/tracker/?group_id=189236&amp;atid=928515"/></para>
+
   </refsection>
 
 </refentry>

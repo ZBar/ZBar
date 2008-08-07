@@ -1,4 +1,5 @@
-<refentry id="zebraimg">
+<refentry xml:id="zebraimg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
 
   <refmeta>
     <refentrytitle>zebraimg</refentrytitle>
@@ -46,12 +47,20 @@
     <filename><replaceable>image</replaceable></filename> file
     <command>zebraimg</command> scans the image for bar codes and
     prints any decoded data to stdout.  Images may optionally be
-    displayed to the screen</para>
+    displayed to the screen.</para>
 
     <para>The underlying library currently supports EAN-13 (including
     UPC-A and ISBN subsets), EAN-8, Code 128, Code 39, and Interleaved
     2 of 5 symbologies.  The specific type of each detected symbol is
     printed with the decoded data.</para>
+
+    <para>Note that "<filename><replaceable>image</replaceable></filename>"
+
+    in this context refers to any format supported by ImageMagick,
+    including many vector formats such as PDF and PostScript.  Keep in
+    mind that vector formats are rasterized before scanning; manually
+    rasterize vector images before scanning to avoid unintentionally
+    corrupting embedded barcode bitmaps.</para>
 
   </refsection>
 
@@ -112,6 +121,14 @@
   <refsection>
     <title>See Also</title>
     <para><xref linkend="zebracam"/></para>
+    <para><link xlink:href="http://zebra.sf.net/"/></para>
+  </refsection>
+
+  <refsection>
+    <title>Bugs</title>
+
+    <para>See <link xlink:href="http://sf.net/tracker/?group_id=189236&amp;atid=928515"/></para>
+
   </refsection>
 
 </refentry>
