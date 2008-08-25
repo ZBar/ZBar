@@ -230,7 +230,7 @@ AS_IF([test "x$with_python" != "xno"],
   [AM_PATH_PYTHON(2.3.5)
    AS_IF([test "x$PYTHON_CFLAGS" != "x"],
      [],
-     [test "x$PYTHON_CONFIG" != "x" && test -x "$PYTHON_CONFIG"]
+     [test "x$PYTHON_CONFIG" != "x" && test -x "$PYTHON_CONFIG"],
      [PYTHON_CFLAGS=`$PYTHON_CONFIG --cflags`],
      [test -x "$PYTHON-config"],
      [PYTHON_CFLAGS=`$PYTHON-config --cflags`],
