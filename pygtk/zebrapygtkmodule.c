@@ -21,6 +21,11 @@
  *  http://sourceforge.net/projects/zebra
  *------------------------------------------------------------------------*/
 
+/* avoid "multiple definition" darwin link errors
+ * for symbols defined in pygobject.h (bug #2052681)
+ */
+#define NO_IMPORT_PYGOBJECT
+
 #include <pygobject.h>
 
 void zebrapygtk_register_classes(PyObject*);

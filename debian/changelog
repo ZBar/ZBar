@@ -1,3 +1,11 @@
+zebra (0.5-2) unstable; urgency=low
+
+  * update libmagick version (bug #2070164)
+  * fix missing zebrapygtk dependency on libzebragtk (bug #2070164)
+  * also removed debian directory from releases (bug #2070164)
+
+ -- Jeff Brown <spadix@users.sourceforge.net>  Sun, 24 July 2008 16:00:00 -0500
+
 zebra (0.5-1) unstable; urgency=low
 
   * update to release 0.5

@@ -1,4 +1,10 @@
 current:
+  * fix debian packaging dependencies (bug #2070164)
+  * *remove* debian directory from distribution (bug #2070164)
+  * fix inappropriately installed headers and man pages (bug #2055133)
+  * fix pygtk multiple definition link errors on darwin (bug #2052681)
+  * fixes to configure for detecting python settings (bug #2052663)
+  * remove zebrapygtk module link against libpython (bug #2052663)
   * add drag and drop support for *images* to Qt widget...unfortunately not
     very useful; every application i tried drops uri-refs rather than images
   * minor reference documentation updates

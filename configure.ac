@@ -228,16 +228,14 @@ AC_ARG_VAR([PYGTK_DEFS], [directory where PyGTK definitions may be found])
 
 AS_IF([test "x$with_python" != "xno"],
   [AM_PATH_PYTHON(2.3.5)
-   AC_CHECK_PROGS([PYTHON_CONFIG], [python-config], [:])
-   AS_IF([test "x$PYTHON_CFLAGS" != "x" && test "x$PYTHON_LIBS" != "x"],
+   AS_IF([test "x$PYTHON_CFLAGS" != "x"],
      [],
-     [test "x$PYTHON_CONFIG" = "x:"],
-     [AC_MSG_FAILURE([found $PYTHON, but can't find python-config?])])
-
-   AS_IF([test "x$PYTHON_CFLAGS" = "x"],
-     [PYTHON_CFLAGS=`$PYTHON_CONFIG --includes`])
-   AS_IF([test "x$PYTHON_LIBS" = "x"],
-     [PYTHON_LIBS=`$PYTHON_CONFIG --libs`])
+     [test "x$PYTHON_CONFIG" != "x" && test -x "$PYTHON_CONFIG"]
+     [PYTHON_CFLAGS=`$PYTHON_CONFIG --cflags`],
+     [test -x "$PYTHON-config"],
+     [PYTHON_CFLAGS=`$PYTHON-config --cflags`],
+     [PYTHON_CFLAGS=`$PYTHON -c 'import distutils.sysconfig as s; print " ".join(s.get_config_vars("CFLAGS")) + " -I"+s.get_python_inc() + " -I"+s.get_python_inc(plat_specific=True)'`])
+dnl FIXME now should check that #include <Python.h> compiles
 
    AS_IF([test "x$with_gtk" = "xyes"],
      [PKG_CHECK_MODULES([PYGTK], [pygtk-2.0])

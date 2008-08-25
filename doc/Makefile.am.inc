@@ -4,7 +4,13 @@ DOCSOURCES = doc/manual.xml doc/version.xml doc/reldate.xml \
 
 
 # man page targets to distribute and install
-dist_man_MANS = doc/man/zebraimg.1 doc/man/zebracam.1
+dist_man_MANS =
+if HAVE_MAGICK
+dist_man_MANS += doc/man/zebraimg.1
+endif
+if HAVE_VIDEO
+dist_man_MANS += doc/man/zebracam.1
+endif
 
 # witness to man page build (many-to-many workaround)
 man_stamp = doc/man/man.stamp

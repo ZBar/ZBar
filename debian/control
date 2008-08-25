@@ -66,7 +66,7 @@ Description: bar code reader GTK widget extra development files
 Package: python-zebrapygtk
 Section: libs
 Architecture: any
-Depends: libzebra3 (= ${binary:Version}), python (>= 2.3), python-gtk2
+Depends: libzebragtk0 (= ${binary:Version}), python (>= 2.3), python-gtk2
 Description: bar code reader PyGTK widget
  Zebra is a library for scanning and decoding bar codes from various
  sources such as video streams, image files or raw intensity sensors.
@@ -109,7 +109,7 @@ Description: bar code reader Qt widget extra development files
 Package: zebra-tools
 Section: graphics
 Architecture: any
-Depends: libzebra3 (= ${binary:Version}), ${shlibs:Depends}, libmagick9
+Depends: libzebra3 (= ${binary:Version}), ${shlibs:Depends}, libmagick10
 Description: utilities for reading bar codes from a webcam or image files
  Zebra is a library for scanning and decoding bar codes from various
  sources such as video streams, image files or raw intensity sensors.

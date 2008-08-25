@@ -41,9 +41,4 @@ include $(srcdir)/test/Makefile.am.inc
 include $(srcdir)/doc/Makefile.am.inc
 
 EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py \
-    zebra.spec.in zebra.spec \
-    debian/changelog debian/compat debian/control debian/copyright \
-    debian/rules debian/libzebra3.install debian/libzebra-dev.install \
-    debian/libzebragtk0.install debian/libzebragtk-dev.install \
-    debian/libzebraqt0.install debian/libzebraqt-dev.install \
-    debian/python-zebrapygtk.install debian/zebra-tools.install
+    zebra.spec.in zebra.spec
