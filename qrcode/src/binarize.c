@@ -112,7 +112,7 @@ void qr_wiener_filter(unsigned char *_img,int _width,int _height){
           g=_img[y*_width+x];
           a=(m-25*g)*vn3;
           sn2*=25;
-          _img[y*_width+x]=QR_CLAMP255(g+(a+QR_COPYSIGNI(sn2>>1,a))/sn2);
+          _img[y*_width+x]=QR_CLAMP255(g+QR_HDIVROUND(a,sn2));
         }
         else _img[y*_width+x]=(unsigned char)(((m<<1)+25)/50);
       }
@@ -193,7 +193,7 @@ void qr_wiener_filter(unsigned char *_img,int _width,int _height){
           g=_img[y*_width+x];
           a=m-9*g;
           sn2*=9;
-          _img[y*_width+x]=QR_CLAMP255(g+(a+QR_COPYSIGNI(sn2>>1,a))/sn2);
+          _img[y*_width+x]=QR_CLAMP255(g+QR_HDIVROUND(a,sn2));
         }
         else _img[y*_width+x]=(unsigned char)(((m<<1)+9)/18);
       }
@@ -238,8 +238,11 @@ static void qr_sauvola_mask(unsigned char *_mask,unsigned *_b,int *_nb,
     unsigned  g2;
     int       x;
     int       y;
-    for(logwindw=4;logwindw<8&&(1<<logwindw)<(_width+15>>4);logwindw++);
-    for(logwindh=4;logwindh<8&&(1<<logwindh)<(_height+15>>4);logwindh++);
+    /*We keep the window size fairly large to ensure it doesn't fit completely
+       inside the center of a finder pattern of a version 1 QR code at full
+       resolution.*/
+    for(logwindw=4;logwindw<8&&(1<<logwindw)<(_width+7>>3);logwindw++);
+    for(logwindh=4;logwindh<8&&(1<<logwindh)<(_height+7>>3);logwindh++);
     windw=1<<logwindw;
     windh=1<<logwindh;
     col_sums=(unsigned *)malloc(_width*sizeof(*col_sums));
@@ -407,8 +410,6 @@ static void qr_interpolate_background(unsigned char *_dst,
         _dst[y*_width+x]=(unsigned char)g;
         /*Update the window sums.*/
         if(x+1<_width){
-          int x0;
-          int x1;
           x0=QR_MAXI(0,x-(windw>>1));
           x1=QR_MINI(x+(windw>>1),_width-1);
           m+=col_sums[x1]-col_sums[x0];
@@ -441,7 +442,7 @@ static void qr_interpolate_background(unsigned char *_dst,
 /*Parameters of the logistic sigmoid function that defines the threshold based
    on the background intensity.
   They should all be between 0 and 1.*/
-#define QR_GATOS_Q  (0.8)
+#define QR_GATOS_Q  (0.7)
 #define QR_GATOS_P1 (0.5)
 #define QR_GATOS_P2 (0.8)
 
@@ -472,8 +473,15 @@ static void qr_gatos_mask(unsigned char *_mask,const unsigned char *_img,
   /*Apply the adaptive threshold.*/
   for(y=0;y<_height;y++)for(x=0;x<_width;x++){
     g=_background[y*_width+x];
+    /*_background[y*_width+x]=thresh[g];*/
     _mask[y*_width+x]=(unsigned char)(-(g-_img[y*_width+x]>thresh[g])&0xFF);
   }
+  /*{
+    FILE *fout;
+    fout=fopen("thresh.png","wb");
+    image_write_png(_background,_width,_height,fout);
+    fclose(fout);
+  }*/
 }
 
 /*Binarizes a grayscale image.*/
@@ -484,8 +492,8 @@ void qr_binarize(unsigned char *_img,int _width,int _height){
   int            nb;
   int            delta;
   int            ndelta;
-  qr_wiener_filter(_img,_width,_height);
-  /*{
+  /*qr_wiener_filter(_img,_width,_height);
+  {
     FILE *fout;
     fout=fopen("wiener.png","wb");
     image_write_png(_img,_width,_height,fout);
@@ -513,7 +521,7 @@ void qr_binarize(unsigned char *_img,int _width,int _height){
   free(mask);
 }
 
-#if 1||defined(TEST_BINARIZE)
+#if defined(TEST_BINARIZE)
 #include <stdio.h>
 #include "image.c"
 
@@ -540,12 +548,12 @@ int main(int _argc,char **_argv){
     fclose(fin);
   }
   qr_binarize(img,width,height);
-  {
+  /*{
     FILE *fout;
     fout=fopen("binary.png","wb");
     image_write_png(img,width,height,fout);
     fclose(fout);
-  }
+  }*/
   free(img);
   return 0;
 }

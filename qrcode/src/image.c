@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <limits.h>
 #include "png.h"
@@ -25,6 +26,7 @@ int image_read_png(unsigned char **_img,int *_width,int *_height,FILE *_fp){
   png_structp    png;
   png_infop      info;
   png_infop      end;
+  png_color_16p  bkgd;
   png_bytep     *rows;
   png_uint_32    width;
   png_uint_32    height;
@@ -69,10 +71,15 @@ int image_read_png(unsigned char **_img,int *_width,int *_height,FILE *_fp){
     return -EINVAL;
   }
   png_set_expand(png);
-  if(color_type&PNG_COLOR_MASK_COLOR)png_set_rgb_to_gray(png,1,-1,-1);
-  if(color_type&PNG_COLOR_MASK_ALPHA)png_set_strip_alpha(png);
   if(bit_depth<8)png_set_packing(png);
   if(bit_depth==16)png_set_strip_16(png);
+  if(color_type&PNG_COLOR_MASK_COLOR)png_set_rgb_to_gray(png,1,-1,-1);
+  /*Note that color_types 2 and 3 can also have alpha, despite not setting the
+     PNG_COLOR_MASK_ALPHA bit.*/
+  if(png_get_bKGD(png,info,&bkgd)){
+    png_set_background(png,bkgd,PNG_BACKGROUND_GAMMA_FILE,1,1.0);
+  }
+  else png_set_strip_alpha(png);
   img=(unsigned char *)malloc(height*width*sizeof(*img));
   if(img==NULL){
     png_destroy_read_struct(&png,&info,&end);
@@ -82,6 +89,7 @@ int image_read_png(unsigned char **_img,int *_width,int *_height,FILE *_fp){
   if(rows==NULL){
     free(img);
     png_destroy_read_struct(&png,&info,&end);
+    return -ENOMEM;
   }
   for(y=0;y<(int)height;y++)rows[y]=img+y*width;
   png_read_image(png,rows);
