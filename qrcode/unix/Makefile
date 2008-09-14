@@ -21,7 +21,7 @@ CFLAGS += -pipe -fvisibility=hidden
 # You may get speed increases by including flags such as -O2 or -O3 or
 #  -ffast-math, or additional flags, depending on your system and compiler.
 CFLAGS += -mfpu=vfp -mfloat-abi=softfp -mcpu=arm1136j-s -mtune=arm1136j-s
-#CFLAGS += -Os
+CFLAGS += -Os
 #CFLAGS += -ftree-vectorize -ftree-vectorizer-verbose=0
 # The -g flag will generally include debugging information.
 #CFLAGS += -g

@@ -34,6 +34,9 @@
 /*Computes the integer logarithm of an (unsigned, 32-bit) constant.*/
 #define QR_ILOG(_v) ((int)QR_ILOG4((unsigned)(_v)))
 
+/*Multiplies 32-bit numbers _a and _b, adds _r, and takes bits [_s,_s+31] of
+   the result.*/
+#define QR_FIXMUL(_a,_b,_r,_s) ((int)((_a)*(long long)(_b)+(_r)>>(_s)))
 
 unsigned qr_isqrt(unsigned _val);
 int qr_ilog(unsigned _val);

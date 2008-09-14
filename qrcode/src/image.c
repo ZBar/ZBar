@@ -79,7 +79,7 @@ int image_read_png(unsigned char **_img,int *_width,int *_height,FILE *_fp){
   if(png_get_bKGD(png,info,&bkgd)){
     png_set_background(png,bkgd,PNG_BACKGROUND_GAMMA_FILE,1,1.0);
   }
-  else png_set_strip_alpha(png);
+  png_set_strip_alpha(png);
   img=(unsigned char *)malloc(height*width*sizeof(*img));
   if(img==NULL){
     png_destroy_read_struct(&png,&info,&end);
