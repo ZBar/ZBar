@@ -87,39 +87,44 @@ Processor *processor = NULL;
 
 static void scan_image (const std::string& filename)
 {
-    Magick::Image image;
-    image.read(filename);
-    image.modifyImage();
-
-    // extract grayscale image pixels
-    // FIXME color!! ...preserve most color w/422P
-    // (but only if it's a color image)
-    Magick::Blob scan_data;
-    image.write(&scan_data, "GRAY", 8);
-    unsigned width = image.columns();
-    unsigned height = image.rows();
-    assert(scan_data.length() == width * height);
-
-    Image zimage(width, height, "Y800",
-                 scan_data.data(), scan_data.length());
-    processor->process_image(zimage);
-
-    // output result data
     bool found = false;
-    for(Image::SymbolIterator sym = zimage.symbol_begin();
-        sym != zimage.symbol_end();
-        ++sym)
-    {
-        cout << *sym << endl;
-        found = true;
-        num_symbols++;
+    list<Magick::Image> images;
+    Magick::readImages(&images, filename);
+    for(list<Magick::Image>::iterator image = images.begin();
+        image != images.end();
+        ++image)
+    {        
+        image->modifyImage();
+
+        // extract grayscale image pixels
+        // FIXME color!! ...preserve most color w/422P
+        // (but only if it's a color image)
+        Magick::Blob scan_data;
+        image->write(&scan_data, "GRAY", 8);
+        unsigned width = image->columns();
+        unsigned height = image->rows();
+        assert(scan_data.length() == width * height);
+
+        Image zimage(width, height, "Y800",
+                     scan_data.data(), scan_data.length());
+        processor->process_image(zimage);
+
+        // output result data
+        for(Image::SymbolIterator sym = zimage.symbol_begin();
+            sym != zimage.symbol_end();
+            ++sym)
+        {
+            cout << *sym << endl;
+            found = true;
+            num_symbols++;
+        }
+        cout.flush();
+        num_images++;
+        if(processor->is_visible())
+            processor->user_wait();
     }
-    cout.flush();
     if(!found)
         notfound++;
-    num_images++;
-    if(processor->is_visible())
-        processor->user_wait();
 }
 
 int usage (int rc, const string& msg = "")

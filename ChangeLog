@@ -1,4 +1,5 @@
 current:
+  * fix zebraimg to scan all pages/frames of a multi-frame input
   * fix debian packaging dependencies (bug #2070164)
   * *remove* debian directory from distribution (bug #2070164)
   * fix inappropriately installed headers and man pages (bug #2055133)
