@@ -74,8 +74,10 @@ const char *note_usage =
 const char *warning_not_found =
     "WARNING: barcode data was not detected in some image(s)\n"
     "  things to check:\n"
-    "    - is the barcode type supported?  currently supported\n"
-    "      symbologies are: EAN-13/UPC-A and Code 128\n"
+    "    - is the barcode type supported?"
+    "  currently supported symbologies are:\n"
+    "      EAN/UPC (EAN-13, EAN-8, UPC-A, UPC-E, ISBN-10, ISBN-13),\n"
+    "      Code 128, Code 39 and Interleaved 2 of 5\n"
     "    - is the barcode large enough in the image?\n"
     "    - is the barcode mostly in focus?\n"
     "    - is there sufficient contrast/illumination?\n";

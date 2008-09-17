@@ -31,8 +31,8 @@ const char *zebra_get_symbol_name (zebra_symbol_type_t sym)
 {
     switch(sym & ZEBRA_SYMBOL) {
     case ZEBRA_EAN8: return("EAN-8");
-    case ZEBRA_ISBN10: return("ISBN-10");
     case ZEBRA_UPCE: return("UPC-E");
+    case ZEBRA_ISBN10: return("ISBN-10");
     case ZEBRA_UPCA: return("UPC-A");
     case ZEBRA_EAN13: return("EAN-13");
     case ZEBRA_ISBN13: return("ISBN-13");

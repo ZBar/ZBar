@@ -46,9 +46,9 @@ zebra_decoder_t *zebra_decoder_create ()
 #ifdef ENABLE_EAN
     dcode->ean.enable = 1;
     dcode->ean.ean13_config = ((1 << ZEBRA_CFG_ENABLE) |
-                                (1 << ZEBRA_CFG_EMIT_CHECK));
-    dcode->ean.ean8_config = ((1 << ZEBRA_CFG_ENABLE) |
                                (1 << ZEBRA_CFG_EMIT_CHECK));
+    dcode->ean.ean8_config = ((1 << ZEBRA_CFG_ENABLE) |
+                              (1 << ZEBRA_CFG_EMIT_CHECK));
     dcode->ean.upca_config = 1 << ZEBRA_CFG_EMIT_CHECK;
     dcode->ean.upce_config = 1 << ZEBRA_CFG_EMIT_CHECK;
     dcode->ean.isbn10_config = 1 << ZEBRA_CFG_EMIT_CHECK;

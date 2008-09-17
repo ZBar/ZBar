@@ -87,8 +87,8 @@ typedef enum zebra_symbol_type_e {
     ZEBRA_NONE        =      0,   /**< no symbol decoded */
     ZEBRA_PARTIAL     =      1,   /**< intermediate status */
     ZEBRA_EAN8        =      8,   /**< EAN-8 */
+    ZEBRA_UPCE        =      9,   /**< UPC-E */
     ZEBRA_ISBN10      =     10,   /**< ISBN-10 (from EAN-13). @since 0.4 */
-    ZEBRA_UPCE        =     11,   /**< UPC-E */
     ZEBRA_UPCA        =     12,   /**< UPC-A */
     ZEBRA_EAN13       =     13,   /**< EAN-13 */
     ZEBRA_ISBN13      =     14,   /**< ISBN-13 (from EAN-13). @since 0.4 */

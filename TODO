@@ -19,18 +19,18 @@ symbologies:
   * PDF417
   * Code 39, i25 optional features (check digit and ASCII escapes)
   * handle Code 128 function characters (FNC1-4)
-  * finish UPC-E and addon decoding
+  * finish addon decoding
 
 decoder:
   * symbology/feature compile time enable/disable
   * more configuration options
-    * expand UPC-E (after finishing UPC-E implementation)
     * Code-39/i25 check digit (after implementation)
     * Code-39 full ASCII (after implementation)
     * require min/max length (for variable length symbologies)
     * standard symbology identifiers (which standard?)
     * set consistency requirements
     * set scanner filter params
+  * revisit noise and resolution independence
 
 image scanner:
   * extract and track symbol polygons
@@ -57,6 +57,7 @@ window:
     * stats
 
 zebracam/zebraimg:
+  * zebraimg multi-frame duplicate suppression
   * stats/fps at zebracam exit
   * xml output format
   * decode hook (program/script)? (also zebraimg?)

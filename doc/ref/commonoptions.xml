@@ -39,19 +39,19 @@
           class="parameter">value</replaceable></optional></option></term>
   <listitem>
     <simpara>Set decoder configuration option <replaceable
-        class="parameter">config</replaceable> for <replaceable
-        class="parameter">symbology</replaceable> to <replaceable
-        class="parameter">value</replaceable>.  <replaceable
-        class="parameter">value</replaceable> defaults to 1 if omitted.
+      class="parameter">config</replaceable> for <replaceable
+      class="parameter">symbology</replaceable> to <replaceable
+      class="parameter">value</replaceable>.  <replaceable
+      class="parameter">value</replaceable> defaults to 1 if omitted.
       <replaceable class="parameter">symbology</replaceable> is one of
       <option>ean13</option>, <option>ean8</option>,
-      <option>upca</option>, <option>isbn13</option>,
-      <option>isbn10</option>, <option>i25</option>,
-      <option>code39</option>, <option>code128</option> or the special
-      value <option>*</option>.  If <replaceable
-        class="parameter">symbology</replaceable> is omitted or
-      <option>*</option>, the <replaceable
-        class="parameter">config</replaceable> will be set for all
+      <option>upca</option>, <option>upce</option>,
+      <option>isbn13</option>, <option>isbn10</option>,
+      <option>i25</option>, <option>code39</option>,
+      <option>code128</option> or the special value <option>*</option>.
+      If <replaceable class="parameter">symbology</replaceable> is
+      omitted or <option>*</option>, the <replaceable
+      class="parameter">config</replaceable> will be set for all
       applicable symbologies.  These are the currently recognized
       <replaceable class="parameter">config</replaceable>s.  Prefix a
       config with "no-" to negate it.  Not all configs are appropriate
@@ -63,11 +63,11 @@
         <listitem>
           <simpara>Control decoding/reporting of a symbology.  For
             symbologies which are just subsets of <option>ean13</option>
-            (<option>upca</option>, <option>isbn13</option>,
-            <option>isbn10</option>), this config controls whether the
-            subsets are detected and reported as such.  These special
-            cases are disabled by default, all other symbologies default
-            to enabled</simpara>
+            (<option>upca</option>, <option>upce</option>,
+            <option>isbn13</option>, <option>isbn10</option>), this
+            config controls whether the subsets are detected and
+            reported as such.  These special cases are disabled by
+            default, all other symbologies default to enabled</simpara>
         </listitem>
       </varlistentry>
 

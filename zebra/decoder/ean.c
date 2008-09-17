@@ -251,7 +251,8 @@ static inline zebra_symbol_type_t ean_part_end4 (ean_pass_t *pass,
     return(ZEBRA_EAN8 | EAN_LEFT);
 }
 
-static inline zebra_symbol_type_t ean_part_end7 (ean_pass_t *pass,
+static inline zebra_symbol_type_t ean_part_end7 (ean_decoder_t *ean,
+                                                 ean_pass_t *pass,
                                                  unsigned char rev)
 {
     /* calculate parity index */
@@ -297,11 +298,16 @@ static inline zebra_symbol_type_t ean_part_end7 (ean_pass_t *pass,
             pass->raw[4] & 0xf, pass->raw[5] & 0xf,
             pass->raw[6] & 0xf, par);
 
-    if(!par)
-        return(ZEBRA_EAN13 | EAN_RIGHT);
-    if(par & 0x20)
-        return(ZEBRA_EAN13 | EAN_LEFT);
-    return(/*ZEBRA_UPCE*/ZEBRA_NONE);
+    if(TEST_CFG(ean->ean13_config, ZEBRA_CFG_ENABLE)) {
+        if(!par)
+            return(ZEBRA_EAN13 | EAN_RIGHT);
+        if(par & 0x20)
+            return(ZEBRA_EAN13 | EAN_LEFT);
+    }
+    if(par && !(par & 0x20))
+        return(ZEBRA_UPCE);
+
+    return(ZEBRA_NONE);
 }
 
 /* update state for one of 4 parallel passes */
@@ -351,12 +357,10 @@ static inline zebra_symbol_type_t decode_pass (zebra_decoder_t *dcode,
        (idx == 0x18 || idx == 0x17)) {
         zebra_symbol_type_t part = ZEBRA_NONE;
         dprintf(2, " rev=%x", rev);
-        if(TEST_CFG(dcode->ean.ean13_config, ZEBRA_CFG_ENABLE)) {
-            if(!aux_end(dcode, (rev) ? 3 : 4))
-                part = ean_part_end7(pass, rev);
-            else
-                dprintf(2, " [invalid end guard]");
-        }
+        if(!aux_end(dcode, (rev) ? 3 : 4))
+            part = ean_part_end7(&dcode->ean, pass, rev);
+        else
+            dprintf(2, " [invalid end guard]");
         pass->state = -1;
         return(part);
     }
@@ -415,11 +419,32 @@ static inline unsigned char isbn10_calc_checksum (ean_decoder_t *ean)
     return('X');
 }
 
+static inline void ean_expand_upce (ean_decoder_t *ean,
+                                    ean_pass_t *pass)
+{
+    int i = 0;
+    /* parity encoded digit is checksum */
+    ean->buf[12] = pass->raw[i++];
+
+    unsigned char decode = pass->raw[6] & 0xf;
+    ean->buf[0] = 0;
+    ean->buf[1] = 0;
+    ean->buf[2] = pass->raw[i++] & 0xf;
+    ean->buf[3] = pass->raw[i++] & 0xf;
+    ean->buf[4] = (decode < 3) ? decode : pass->raw[i++] & 0xf;
+    ean->buf[5] = (decode < 4) ? 0 : pass->raw[i++] & 0xf;
+    ean->buf[6] = (decode < 5) ? 0 : pass->raw[i++] & 0xf;
+    ean->buf[7] = 0;
+    ean->buf[8] = 0;
+    ean->buf[9] = (decode < 3) ? pass->raw[i++] & 0xf : 0;
+    ean->buf[10] = (decode < 4) ? pass->raw[i++] & 0xf : 0;
+    ean->buf[11] = (decode < 5) ? pass->raw[i++] & 0xf : decode;
+}
+
 static inline zebra_symbol_type_t integrate_partial (ean_decoder_t *ean,
                                                      ean_pass_t *pass,
                                                      zebra_symbol_type_t part)
 {
-    /* FIXME UPC-E, EAN-8 */
     /* copy raw data into holding buffer */
     /* if same partial is not consistent, reset others */
     dprintf(2, " integrate part=%x (%s)", part, dsprintbuf(ean));
@@ -458,7 +483,7 @@ static inline zebra_symbol_type_t integrate_partial (ean_decoder_t *ean,
             }
             ean->right = part;
         }
-        else /* EAN_LEFT or entire UPC-E symbol */ {
+        else if(part != ZEBRA_UPCE) /* EAN_LEFT */ {
             j = (part == ZEBRA_EAN13) ? 6 : 3;
             for(i = (part == ZEBRA_EAN13) ? 6 : 4; j >= 0; i--, j--) {
                 unsigned char digit = pass->raw[i] & 0xf;
@@ -471,13 +496,18 @@ static inline zebra_symbol_type_t integrate_partial (ean_decoder_t *ean,
             }
             ean->left = part;
         }
+        else /* ZEBRA_UPCE */
+            ean_expand_upce(ean, pass);
     }
-    /* FIXME broken for UPC-E, addons */
-    part = (ean->left & ean->right);
-    if(!part)
-        part = ZEBRA_PARTIAL;
 
-    if((part == ZEBRA_EAN13 && ean_verify_checksum(ean, 12)) ||
+    if((part & ZEBRA_SYMBOL) != ZEBRA_UPCE) {
+        part = (ean->left & ean->right);
+        if(!part)
+            part = ZEBRA_PARTIAL;
+    }
+
+    if(((part == ZEBRA_EAN13 ||
+         part == ZEBRA_UPCE) && ean_verify_checksum(ean, 12)) ||
        (part == ZEBRA_EAN8 && ean_verify_checksum(ean, 7)))
         /* invalid parity */
         part = ZEBRA_NONE;
@@ -496,7 +526,25 @@ static inline zebra_symbol_type_t integrate_partial (ean_decoder_t *ean,
                 part = ZEBRA_ISBN13;
         }
     }
-        
+    else if(part == ZEBRA_UPCE) {
+        if(TEST_CFG(ean->upce_config, ZEBRA_CFG_ENABLE)) {
+            /* UPC-E was decompressed for checksum verification,
+             * but user requested compressed result
+             */
+            ean->buf[0] = ean->buf[1] = 0;
+            for(i = 2; i < 8; i++)
+                ean->buf[i] = pass->raw[i - 1] & 0xf;
+            ean->buf[i] = pass->raw[0] & 0xf;
+        }
+        else if(TEST_CFG(ean->upca_config, ZEBRA_CFG_ENABLE))
+            /* UPC-E reported as UPC-A has priority over EAN-13 */
+            part = ZEBRA_UPCA;
+        else if(TEST_CFG(ean->ean13_config, ZEBRA_CFG_ENABLE))
+            part = ZEBRA_EAN13;
+        else
+            part = ZEBRA_NONE;
+    }
+
     if(part > ZEBRA_PARTIAL)
         part |= ean->addon;
 
@@ -512,18 +560,20 @@ static inline void postprocess (zebra_decoder_t *dcode,
     zebra_symbol_type_t base = sym & ZEBRA_SYMBOL;
     int i = 0, j = 0;
     if(base > ZEBRA_PARTIAL) {
-        if(base == ZEBRA_ISBN10) {
-            i = 3;
+        if(base == ZEBRA_UPCA)
+            i = 1;
+        else if(base == ZEBRA_UPCE) {
+            i = 1;
             base--;
         }
-        else {
-            if(base == ZEBRA_UPCA)
-                i = 1;
-            else if(base == ZEBRA_ISBN13)
-                base = ZEBRA_EAN13;
-            if(!TEST_CFG(ean_get_config(ean, sym), ZEBRA_CFG_EMIT_CHECK))
-                base--;
-        }
+        else if(base == ZEBRA_ISBN13)
+            base = ZEBRA_EAN13;
+        else if(base == ZEBRA_ISBN10)
+            i = 3;
+
+        if(base == ZEBRA_ISBN10 ||
+           !TEST_CFG(ean_get_config(ean, sym), ZEBRA_CFG_EMIT_CHECK))
+            base--;
 
         for(; j < base && ean->buf[i] >= 0; i++, j++)
             dcode->buf[j] = ean->buf[i] + '0';
