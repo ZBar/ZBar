@@ -1,4 +1,5 @@
 current:
+  * fix configure check for v4l2 - thanks to Simon Matter for the patch!
   * finish support for UPC-E
   * fix zebraimg to scan all pages/frames of a multi-frame input
   * fix debian packaging dependencies (bug #2070164)

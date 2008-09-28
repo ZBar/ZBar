@@ -38,7 +38,6 @@
 #ifdef HAVE_SYS_MMAN_H
 # include <sys/mman.h>
 #endif
-#include <linux/videodev.h>
 #include <linux/videodev2.h>
 
 #include "video.h"

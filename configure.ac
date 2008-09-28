@@ -87,9 +87,7 @@ AS_IF([test "x$enable_video" != "xno"],
 rebuild your kernel to include video4linux support or
 configure --disable-video to skip building video support.])])
    AC_CHECK_HEADERS([linux/videodev2.h], [with_video="v4l2"],
-     [AC_MSG_WARN([v4l2 API not detected, upgrade your kernel!])],
-     [[#include <linux/videodev.h>
-]])
+     [AC_MSG_WARN([v4l2 API not detected, upgrade your kernel!])])
 ])
 AM_CONDITIONAL([HAVE_VIDEO], [test "x$enable_video" != "xno"])
 AM_CONDITIONAL([HAVE_V4L1],
