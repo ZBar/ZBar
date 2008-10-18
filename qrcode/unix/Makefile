@@ -14,14 +14,16 @@ MAKEDEPEND = gcc -MM
 CINCLUDE = `pkg-config --cflags libpng`
 # These are gcc-only, but not actually critical.
 CFLAGS = -Wall -Wno-parentheses -Wpointer-arith -Wsign-compare
-CFLAGS += -std=c89 -pedantic
+CFLAGS += -std=c89 -pedantic -Wno-long-long
 CFLAGS += -pipe -fvisibility=hidden
 
 # Extra compilation flags.
 # You may get speed increases by including flags such as -O2 or -O3 or
 #  -ffast-math, or additional flags, depending on your system and compiler.
 CFLAGS += -mfpu=vfp -mfloat-abi=softfp -mcpu=arm1136j-s -mtune=arm1136j-s
-CFLAGS += -Os
+# -fforce-addr doesn't seem to have much effect on execution time, but it does
+#   make the binary smaller.
+CFLAGS += -Os -fforce-addr
 #CFLAGS += -ftree-vectorize -ftree-vectorizer-verbose=0
 # The -g flag will generally include debugging information.
 #CFLAGS += -g
@@ -37,9 +39,10 @@ WORKDIR = objs
 LIBQRCODE_CSOURCES = \
 bch15_5.c \
 binarize.c \
-qrdec.c \
 image.c \
 isaac.c \
+qrdec.c \
+qrdectxt.c \
 rs.c \
 util.c \
 

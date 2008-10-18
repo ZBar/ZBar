@@ -174,6 +174,10 @@ int qr_reader_extract_text(qr_reader *_reader,const unsigned char *_img,
 
 void qr_text_list_free(char **_text,int _ntext);
 
+/*TODO: Parse DoCoMo standard barcode data formats.
+  See http://www.nttdocomo.co.jp/english/service/imode/make/content/barcode/function/application/
+   for details.*/
+
 # if defined(__cplusplus)
 }
 # endif
