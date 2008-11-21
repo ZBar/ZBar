@@ -3,10 +3,10 @@ ZEBRA BARCODE READER
 
 Zebra is a library for scanning and decoding bar codes from various
 sources such as video streams, image files or raw intensity sensors.
-It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of
-5. Included with the library are basic applications for decoding
-captured bar code images and using a video device (eg, webcam) as a
-bar code scanner.  The flexible, layered architecture features a fast,
+It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5.
+Included with the library are basic applications for decoding captured
+bar code images and using a video device (eg, webcam) as a bar code
+scanner.  The flexible, layered architecture features a fast,
 streaming interface with a minimal memory footprint.
 
 Check the zebra library home page for the latest release, mailing

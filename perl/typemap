@@ -1,0 +1,68 @@
+# objects
+Zebra::Error					T_PTROBJ
+Zebra::Symbol					T_PTROBJ
+Zebra::Image					T_PTROBJ
+Zebra::Processor				T_PTROBJ
+Zebra::Video					T_PTROBJ
+Zebra::Window					T_PTROBJ
+Zebra::ImageScanner				T_PTROBJ
+Zebra::Decoder					T_PTROBJ
+Zebra::Scanner					T_PTROBJ
+
+# enums
+zebra_color_t					T_ENUM
+zebra_error_t					T_ENUM
+zebra_symbol_type_t				T_ENUM
+zebra_config_t					T_ENUM
+
+# special scalars
+fourcc_t					T_FOURCC
+timeout_t					T_TIMEOUT
+
+# error handling
+config_error					T_CONFIG_ERROR
+
+
+INPUT
+
+T_ENUM
+	$var = ($type)SvIV($arg)
+T_FOURCC
+	{
+            if(SvPOK($arg)) {
+                STRLEN len;
+                char *str = SvPV($arg, len);
+                if(len != 4)
+                    croak(\"invalid fourcc: \%s\", str);
+                $var = ((unsigned long)str[0] |
+                        ((unsigned long)str[1] << 8) |
+                        ((unsigned long)str[2] << 16) |
+                        ((unsigned long)str[3] << 24));
+            }
+            else
+                $var = SvUV($arg);
+        }
+T_TIMEOUT
+	if(($var = ($type)(SvNV($arg) * 1000.)) < 0)
+            $var = -1;
+
+OUTPUT
+
+T_ENUM
+	$arg = SvREFCNT_inc(lookup_enum(LOOKUP_$ntype, (int)$var));
+T_FOURCC
+        {
+            char str[4] = {
+                $var & 0xff,
+                ($var >> 8) & 0xff,
+                ($var >> 16) & 0xff,
+                ($var >> 24) & 0xff,
+            };
+            sv_setuv($arg, $var);
+            sv_setpvn($arg, str, 4);
+            SvIOK_on($arg);
+        }
+
+T_CONFIG_ERROR
+	if($var)
+            croak("invalid configuration setting: %s", config_string);

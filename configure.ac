@@ -212,7 +212,7 @@ AM_CONDITIONAL([HAVE_GTK], [test "x$with_gtk" = "xyes"])
 dnl PyGTK
 AC_ARG_WITH([python],
   [AS_HELP_STRING([--without-python],
-    [disable support for python bindings])],
+    [disable support for Python bindings])],
   [],
   [with_python="yes"])
 

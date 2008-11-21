@@ -63,6 +63,11 @@ const void *zebra_image_get_data (const zebra_image_t *img)
     return(img->data);
 }
 
+unsigned long zebra_image_get_data_length (const zebra_image_t *img)
+{
+    return(img->datalen);
+}
+
 void zebra_image_set_format (zebra_image_t *img,
                              unsigned long fmt)
 {

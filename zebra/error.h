@@ -98,6 +98,7 @@ static inline int err_copy (void *dst_c,
     dst->func = src->func;
     dst->detail = src->detail;
     dst->arg_str = src->arg_str;
+    src->arg_str = NULL; /* unused at src, avoid double free */
     dst->arg_int = src->arg_int;
     return(-1);
 }

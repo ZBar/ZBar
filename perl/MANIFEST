@@ -1,0 +1,15 @@
+README
+COPYING.LIB
+Changes
+MANIFEST
+Makefile.PL
+ppport.h
+typemap
+Zebra.xs
+Zebra.pm
+t/Decoder.t
+t/Image.t
+t/Processor.t
+t/Scanner.t
+t/Zebra.t
+t/barcode.png

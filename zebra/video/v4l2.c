@@ -220,11 +220,14 @@ static int v4l2_mmap_buffers (zebra_video_t *vdo)
     rb.count = vdo->num_images;
     rb.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     rb.memory = V4L2_MEMORY_MMAP;
-    if(ioctl(vdo->fd, VIDIOC_REQBUFS, &rb) || !rb.count)
+    if(ioctl(vdo->fd, VIDIOC_REQBUFS, &rb))
         return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                            "requesting video frame buffers (VIDIOC_REQBUFS)"));
     zprintf(1, "mapping %u buffers (of %d requested)\n",
             rb.count, vdo->num_images);
+    if(!rb.count)
+        return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,
+                           "driver returned 0 buffers"));
     if(vdo->num_images > rb.count)
         vdo->num_images = rb.count;
 

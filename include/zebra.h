@@ -343,6 +343,11 @@ extern unsigned zebra_image_get_height(const zebra_image_t *image);
  */
 extern const void *zebra_image_get_data(const zebra_image_t *image);
 
+/** return the size of image data.
+ * @since 0.6
+ */
+unsigned long zebra_image_get_data_length (const zebra_image_t *img);
+
 /** image_scanner decode result iterator.
  * @returns the first decoded symbol result for an image
  * or NULL if no results are available
@@ -466,12 +471,20 @@ extern int zebra_processor_force_format (zebra_processor_t *processor,
  * the specified function will be called by the processor whenever
  * new results are available from the video stream or a static image.
  * pass a NULL value to disable callbacks.
+ * @param userdata is set as with zebra_processor_set_userdata().
  * @returns the previously registered handler
  */
 extern zebra_image_data_handler_t*
 zebra_processor_set_data_handler(zebra_processor_t *processor,
                                  zebra_image_data_handler_t *handler,
                                  const void *userdata);
+
+/** associate user specified data value with the processor. */
+extern void zebra_processor_set_userdata(zebra_processor_t *processor,
+                                         void *userdata);
+
+/** return user specified data value associated with the processor. */
+extern void *zebra_processor_get_userdata(const zebra_processor_t *processor);
 
 /** set config for indicated symbology (0 for all) to specified value.
  * @returns 0 for success, non-0 for failure (config does not apply to

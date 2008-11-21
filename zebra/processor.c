@@ -595,6 +595,20 @@ zebra_processor_set_data_handler (zebra_processor_t *proc,
     return(result);
 }
 
+void zebra_processor_set_userdata (zebra_processor_t *proc,
+                                   void *userdata)
+{
+    if(proc_lock(proc) < 0)
+        return(NULL);
+    proc->userdata = userdata;
+    proc_unlock(proc);
+}
+
+void *zebra_processor_get_userdata (const zebra_processor_t *proc)
+{
+    return(proc->userdata);
+}
+
 int zebra_processor_set_config (zebra_processor_t *proc,
                                 zebra_symbol_type_t sym,
                                 zebra_config_t cfg,

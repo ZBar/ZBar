@@ -1,4 +1,7 @@
 current:
+  * first pass perl bindings for Processor, Scanner and Decoder
+  * fix error propagation double free bug
+  * add missing APIs: processor userdata and image data length
   * fix configure check for v4l2 - thanks to Simon Matter for the patch!
   * finish support for UPC-E
   * fix zebraimg to scan all pages/frames of a multi-frame input
