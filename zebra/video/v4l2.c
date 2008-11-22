@@ -275,13 +275,25 @@ static int v4l2_set_format (zebra_video_t *vdo,
     vpix->height = vdo->height;
     vpix->pixelformat = fmt;
     vpix->field = V4L2_FIELD_NONE;
-    if(ioctl(vdo->fd, VIDIOC_S_FMT, &vfmt) < 0)
-        /* vivi driver 0.4.0 breaks if we ask for no interlacing
-         * (v4l2 spec violation) FIXME should send them a patch
-         * xcept it crashes even harder when we try to capture :|
+    int rc = 0;
+    if((rc = ioctl(vdo->fd, VIDIOC_S_FMT, &vfmt)) < 0) {
+        /* several broken drivers return an error if we request
+         * no interlacing (NB v4l2 spec violation)
+         * ...try again with an interlaced request
          */
-        return(err_capture_int(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
-                               "setting format %x (VIDIOC_S_FMT)", fmt));
+        zprintf(1, "VIDIOC_S_FMT returned %d(%d), trying interlaced...\n",
+                rc, errno);
+
+        /* FIXME this might be _ANY once we can de-interlace */
+        vpix->field = V4L2_FIELD_INTERLACED;
+
+        if(ioctl(vdo->fd, VIDIOC_S_FMT, &vfmt) < 0)
+            return(err_capture_int(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
+                                   "setting format %x (VIDIOC_S_FMT)", fmt));
+
+        zprintf(0, "WARNING: broken driver returned error when non-interlaced"
+                " format requested\n");
+    }
 
     struct v4l2_format newfmt;
     struct v4l2_pix_format *newpix = &newfmt.fmt.pix;
@@ -291,11 +303,16 @@ static int v4l2_set_format (zebra_video_t *vdo,
         return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                            "querying format (VIDIOC_G_FMT)"));
 
-    if(newpix->pixelformat != fmt ||
-       newpix->field != V4L2_FIELD_NONE
+    if(newpix->field != V4L2_FIELD_NONE)
+        err_capture(vdo, SEV_WARNING, ZEBRA_ERR_INVALID, __func__,
+                    "video driver only supports interlaced format,"
+                    " vertical scanning may not work");
+
+    if(newpix->pixelformat != fmt
        /* FIXME bpl/bpp checks? */)
         return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,
-                             "video driver can't provide compatible format"));
+                           "video driver can't provide compatible format"));
+
     vdo->format = fmt;
     vdo->width = newpix->width;
     vdo->height = newpix->height;

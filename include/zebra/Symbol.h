@@ -120,11 +120,16 @@ public:
 
     /// constructor.
     Symbol (const zebra_symbol_t *sym = NULL)
+        : _xmlbuf(NULL),
+          _xmllen(0)
     {
         init(sym);
     }
 
-    ~Symbol () { }
+    ~Symbol () {
+        if(_xmlbuf)
+            free(_xmlbuf);
+    }
 
     /// initialize Symbol from C symbol object.
     void init (const zebra_symbol_t *sym)
@@ -223,12 +228,20 @@ public:
         return(zebra_symbol_get_loc_y(_sym, index));
     }
 
+    /// see zebra_symbol_xml().
+    const std::string xml () const
+    {
+        return(zebra_symbol_xml(_sym, (char**)&_xmlbuf, (unsigned*)&_xmllen));
+    }
+
 private:
     const zebra_symbol_t *_sym;
     zebra_symbol_type_t _type;
     std::string _data;
     int _count;
     PointIterator _point_iter_end;
+    char *_xmlbuf;
+    unsigned _xmllen;
 };
 
 /// @relates Symbol

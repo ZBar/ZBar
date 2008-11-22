@@ -22,6 +22,8 @@
  *------------------------------------------------------------------------*/
 
 #include <config.h>
+#include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 #include <zebra.h>
@@ -39,6 +41,7 @@ const char *zebra_get_symbol_name (zebra_symbol_type_t sym)
     case ZEBRA_I25: return("I2/5");
     case ZEBRA_CODE39: return("CODE-39");
     case ZEBRA_CODE128: return("CODE-128");
+    case ZEBRA_PDF417: return("PDF417");
     default: return("UNKNOWN");
     }
 }
@@ -93,4 +96,69 @@ int zebra_symbol_get_loc_y (const zebra_symbol_t *sym,
 const zebra_symbol_t *zebra_symbol_next (const zebra_symbol_t *sym)
 {
     return((sym) ? sym->next : NULL);
+}
+
+
+static const char *xmlfmt[] = {
+    "<symbol type='%s'",
+    " count='%d'",
+    "><data><![CDATA[",
+    "]]></data></symbol>",
+};
+
+/* FIXME suspect... */
+#define MAX_INT_DIGITS 10
+
+static inline void growbuf (unsigned **buf,
+                            unsigned *len,
+                            unsigned newlen)
+{
+}
+
+char *zebra_symbol_xml (const zebra_symbol_t *sym,
+                        char **buf,
+                        unsigned *len)
+{
+    const char *type = zebra_get_symbol_name(sym->type);
+    unsigned datalen = strlen(sym->data);
+    unsigned maxlen = (strlen(xmlfmt[0]) + strlen(xmlfmt[1]) +
+                       strlen(xmlfmt[2]) + strlen(xmlfmt[3]) +
+                       strlen(type) + datalen + MAX_INT_DIGITS + 1);
+    if(!*buf || (*len < maxlen)) {
+        if(*buf)
+            free(*buf);
+        *buf = malloc(maxlen);
+        /* FIXME check OOM */
+        *len = maxlen;
+    }
+
+    int n = snprintf(*buf, maxlen, xmlfmt[0], type);
+    assert(n > 0);
+    assert(n <= maxlen);
+
+    if(sym->cache_count) {
+        int i = snprintf(*buf + n, maxlen - n, xmlfmt[1], sym->cache_count);
+        assert(i > 0);
+        n += i;
+        assert(n <= maxlen);
+    }
+
+    int i = strlen(xmlfmt[2]);
+    memcpy(*buf + n, xmlfmt[2], i + 1);
+    n += i;
+    assert(n <= maxlen);
+
+    /* FIXME binary data */
+    /* FIXME handle "]]>" */
+    strncpy(*buf + n, sym->data, datalen + 1);
+    n += datalen;
+    assert(n <= maxlen);
+
+    i = strlen(xmlfmt[3]);
+    memcpy(*buf + n, xmlfmt[3], i + 1);
+    n += i;
+    assert(n <= maxlen);
+
+    *len = n;
+    return(*buf);
 }

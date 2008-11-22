@@ -239,8 +239,10 @@ zebra_image_t *zebra_video_next_image (zebra_video_t *vdo)
         (void)video_unlock(vdo);
         return(NULL);
     }
+    unsigned frame = vdo->frame++;
     zebra_image_t *img = vdo->dq(vdo);
     if(img) {
+        img->seq = frame;
         if(vdo->num_images < 2) {
             /* return a *copy* of the video image and immediately recycle
              * the driver's buffer to avoid deadlocking the resources
@@ -265,6 +267,7 @@ zebra_image_t *zebra_video_next_image (zebra_video_t *vdo)
                 img->datalen = vdo->datalen;
                 img->data = malloc(vdo->datalen);
             }
+            img->seq = frame;
             memcpy((void*)img->data, tmp->data, img->datalen);
             _zebra_video_recycle_image(tmp);
         }

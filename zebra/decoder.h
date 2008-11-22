@@ -32,6 +32,7 @@
 #define ENABLE_I25 1
 #define ENABLE_CODE39 1
 #define ENABLE_CODE128 1
+#undef ENABLE_PDF417
 
 #ifdef ENABLE_EAN
 # include "decoder/ean.h"
@@ -44,6 +45,9 @@
 #endif
 #ifdef ENABLE_CODE128
 # include "decoder/code128.h"
+#endif
+#ifdef ENABLE_PDF417
+# include "decoder/pdf417.h"
 #endif
 
 /* size of bar width history (implementation assumes power of two) */
@@ -95,6 +99,9 @@ struct zebra_decoder_s {
 #endif
 #ifdef ENABLE_CODE128
     code128_decoder_t code128;          /* Code 128 decode state */
+#endif
+#ifdef ENABLE_PDF417
+    pdf417_decoder_t pdf417;            /* PDF417 decode state */
 #endif
 };
 

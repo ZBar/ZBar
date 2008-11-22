@@ -63,6 +63,9 @@ zebra_decoder_t *zebra_decoder_create ()
 #ifdef ENABLE_CODE128
     dcode->code128.config = 1 << ZEBRA_CFG_ENABLE;
 #endif
+#ifdef ENABLE_PDF417
+    dcode->pdf417.config = 1 << ZEBRA_CFG_ENABLE;
+#endif
 
     zebra_decoder_reset(dcode);
     return(dcode);
@@ -90,6 +93,9 @@ void zebra_decoder_reset (zebra_decoder_t *dcode)
 #ifdef ENABLE_CODE128
     code128_reset(&dcode->code128);
 #endif
+#ifdef ENABLE_PDF417
+    pdf417_reset(&dcode->pdf417);
+#endif
 }
 
 void zebra_decoder_new_scan (zebra_decoder_t *dcode)
@@ -109,6 +115,9 @@ void zebra_decoder_new_scan (zebra_decoder_t *dcode)
 #endif
 #ifdef ENABLE_CODE128
     code128_reset(&dcode->code128);
+#endif
+#ifdef ENABLE_PDF417
+    pdf417_reset(&dcode->pdf417);
 #endif
 }
 
@@ -177,6 +186,11 @@ zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
        (sym = _zebra_decode_i25(dcode)) > ZEBRA_PARTIAL)
         dcode->type = sym;
 #endif
+#ifdef ENABLE_PDF417
+    if(TEST_CFG(dcode->pdf417.config, ZEBRA_CFG_ENABLE) &&
+       (sym = _zebra_decode_pdf417(dcode)) > ZEBRA_PARTIAL)
+        dcode->type = sym;
+#endif
 
     dcode->idx++;
     if(dcode->type) {
@@ -205,6 +219,7 @@ int zebra_decoder_set_config (zebra_decoder_t *dcode,
         zebra_decoder_set_config(dcode, ZEBRA_I25, cfg, val);
         zebra_decoder_set_config(dcode, ZEBRA_CODE39, cfg, val);
         zebra_decoder_set_config(dcode, ZEBRA_CODE128, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_PDF417, cfg, val);
         return(0);
 
 #ifdef ENABLE_EAN
@@ -248,6 +263,12 @@ int zebra_decoder_set_config (zebra_decoder_t *dcode,
 #ifdef ENABLE_CODE128
     case ZEBRA_CODE128:
         config = &dcode->code128.config;
+        break;
+#endif
+
+#ifdef ENABLE_PDF417
+    case ZEBRA_PDF417:
+        config = &dcode->pdf417.config;
         break;
 #endif
 

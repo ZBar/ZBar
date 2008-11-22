@@ -52,7 +52,7 @@
 using namespace std;
 using namespace zebra;
 
-const char *note_usage =
+static const char *note_usage =
     "usage: zebraimg [options] <image>...\n"
     "\n"
     "scan and decode bar codes from one or more image files\n"
@@ -65,13 +65,14 @@ const char *note_usage =
     "    --verbose=N     set specific debug output level\n"
     "    -d, --display   enable display of following images to the screen\n"
     "    -D, --nodisplay disable display of following images (default)\n"
+    "    --xml, --noxml  enable/disable XML output format\n"
     "    -S<CONFIG>[=<VALUE>], --set <CONFIG>[=<VALUE>]\n"
     "                    set decoder/scanner <CONFIG> to <VALUE> (or 1)\n"
     // FIXME overlay level
     // FIXME xml output
     ;
 
-const char *warning_not_found =
+static const char *warning_not_found =
     "WARNING: barcode data was not detected in some image(s)\n"
     "  things to check:\n"
     "    - is the barcode type supported?"
@@ -82,20 +83,27 @@ const char *warning_not_found =
     "    - is the barcode mostly in focus?\n"
     "    - is there sufficient contrast/illumination?\n";
 
-int notfound = 0;
-int num_images = 0, num_symbols = 0;
+static const char *xml_head =
+    "<barcodes xmlns='http://zebra.sourceforge.net/2008/barcode'>";
+static const char *xml_foot =
+    "</barcodes>";
 
-Processor *processor = NULL;
+static int notfound = 0;
+static int num_images = 0, num_symbols = 0;
+static int xmllvl = 0;
+
+static Processor *processor = NULL;
 
 static void scan_image (const std::string& filename)
 {
     bool found = false;
     list<Magick::Image> images;
     Magick::readImages(&images, filename);
+    int seq = 0;
     for(list<Magick::Image>::iterator image = images.begin();
         image != images.end();
-        ++image)
-    {        
+        ++image, seq++)
+    {
         image->modifyImage();
 
         // extract grayscale image pixels
@@ -116,15 +124,37 @@ static void scan_image (const std::string& filename)
             sym != zimage.symbol_end();
             ++sym)
         {
-            cout << *sym << endl;
+            if(!xmllvl)
+                cout << *sym << endl;
+            else {
+                if(xmllvl < 2) {
+                    xmllvl++;
+                    cout << "<source href='" << filename << "'>" << endl;
+                }
+                if(xmllvl < 3) {
+                    xmllvl++;
+                    cout << "<index num='" << seq << "'>" << endl;
+                }
+                cout << sym->xml() << endl;
+            }
             found = true;
             num_symbols++;
         }
+        if(xmllvl > 2) {
+            xmllvl--;
+            cout << "</index>" << endl;
+        }
         cout.flush();
+
         num_images++;
         if(processor->is_visible())
             processor->user_wait();
     }
+    if(xmllvl > 1) {
+        xmllvl--;
+        cout << "</source>" << endl;
+    }
+
     if(!found)
         notfound++;
 }
@@ -202,6 +232,8 @@ int main (int argc, const char *argv[])
             display = true;
         else if(arg == "--nodisplay" ||
                 arg == "--set" ||
+                arg == "--xml" ||
+                arg == "--noxml" ||
                 arg.substr(0, 6) == "--set=")
             continue;
         else if(arg == "--") {
@@ -244,6 +276,18 @@ int main (int argc, const char *argv[])
                 processor->set_visible(true);
             else if(arg == "--nodisplay")
                 processor->set_visible(false);
+            else if(arg == "--xml") {
+                if(xmllvl < 1) {
+                    xmllvl++;
+                    cout << xml_head << endl;
+                }
+            }
+            else if(arg == "--noxml") {
+                if(xmllvl > 0) {
+                    xmllvl--;
+                    cout << xml_foot << endl;
+                }
+            }
             else if(arg == "--set") {
                 if(parse_config(string(argv[++i]), "--set"))
                     return(1);
@@ -265,6 +309,12 @@ int main (int argc, const char *argv[])
     catch(std::exception &e) {
         cerr << "ERROR: " << e.what() << endl;
         return(1);
+    }
+
+    if(xmllvl > 0) {
+        xmllvl--;
+        cout << xml_foot << endl;
+        cout.flush();
     }
 
     if(num_images && !quiet) {

@@ -599,14 +599,14 @@ void zebra_processor_set_userdata (zebra_processor_t *proc,
                                    void *userdata)
 {
     if(proc_lock(proc) < 0)
-        return(NULL);
+        return;
     proc->userdata = userdata;
     proc_unlock(proc);
 }
 
 void *zebra_processor_get_userdata (const zebra_processor_t *proc)
 {
-    return(proc->userdata);
+    return((void*)proc->userdata);
 }
 
 int zebra_processor_set_config (zebra_processor_t *proc,

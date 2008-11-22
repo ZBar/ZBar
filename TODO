@@ -18,6 +18,7 @@ wrappers:
 
 symbologies:
   * PDF417
+    * support for binary symbol data
   * Code 39, i25 optional features (check digit and ASCII escapes)
   * handle Code 128 function characters (FNC1-4)
   * finish addon decoding
@@ -40,6 +41,7 @@ image scanner:
 
 image formats:
   * fix image data inheritance
+  * de-interlacing
   * add color support to conversions
   * add support for scanline pad throughout
   * factor conversion redundancy

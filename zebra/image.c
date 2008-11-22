@@ -48,6 +48,11 @@ unsigned long zebra_image_get_format (const zebra_image_t *img)
     return(img->format);
 }
 
+unsigned zebra_image_get_sequence (const zebra_image_t *img)
+{
+    return(img->seq);
+}
+
 unsigned zebra_image_get_width (const zebra_image_t *img)
 {
     return(img->width);
@@ -72,6 +77,12 @@ void zebra_image_set_format (zebra_image_t *img,
                              unsigned long fmt)
 {
     img->format = fmt;
+}
+
+void zebra_image_set_sequence (zebra_image_t *img,
+                               unsigned seq)
+{
+    img->seq = seq;
 }
 
 void zebra_image_set_size (zebra_image_t *img,

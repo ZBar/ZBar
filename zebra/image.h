@@ -68,6 +68,7 @@ struct zebra_image_s {
     int srcidx;                 /* index used by originator */
     zebra_image_t *next;        /* internal image lists */
 
+    unsigned seq;               /* page/frame sequence number */
     int nsyms;                  /* number of valid symbols */
     zebra_symbol_t *syms;       /* first of decoded symbol results */
 };

@@ -42,15 +42,25 @@ static const char *note_usage =
     "    -q, --quiet     disable beep when symbol is decoded\n"
     "    -v, --verbose   increase debug output level\n"
     "    --verbose=N     set specific debug output level\n"
+    "    --xml           use XML output format\n"
     "    --nodisplay     disable video display window\n"
     "    -S<CONFIG>[=<VALUE>], --set <CONFIG>[=<VALUE>]\n"
     "                    set decoder/scanner <CONFIG> to <VALUE> (or 1)\n"
     /* FIXME overlay level */
-    /* FIXME xml output */
     "\n";
 
-zebra_processor_t *proc;
-int quiet = 0;
+static const char *xml_head =
+    "<barcodes xmlns='http://zebra.sourceforge.net/2008/barcode'>"
+    "<source device='%s'>\n";
+static const char *xml_foot =
+    "</source></barcodes>\n";
+
+static zebra_processor_t *proc;
+static int quiet = 0;
+static int xml = 0;
+
+static char *xml_buf = NULL;
+static unsigned xml_len = 0;
 
 static int usage (int rc)
 {
@@ -73,7 +83,7 @@ static inline int parse_config (const char *cfgstr, int i, int n, char *arg)
     return(0);
 }
 
-void data_handler (zebra_image_t *img, const void *userdata)
+static void data_handler (zebra_image_t *img, const void *userdata)
 {
     const zebra_symbol_t *sym = zebra_image_first_symbol(img);
     assert(sym);
@@ -81,15 +91,26 @@ void data_handler (zebra_image_t *img, const void *userdata)
     for(; sym; sym = zebra_symbol_next(sym)) {
         if(zebra_symbol_get_count(sym))
             continue;
-        zebra_symbol_type_t type = zebra_symbol_get_type(sym);
-        printf("%s%s:%s\n",
-               zebra_get_symbol_name(type), zebra_get_addon_name(type),
-               zebra_symbol_get_data(sym));
+        if(!xml) {
+            zebra_symbol_type_t type = zebra_symbol_get_type(sym);
+            printf("%s%s:%s\n",
+                   zebra_get_symbol_name(type), zebra_get_addon_name(type),
+                   zebra_symbol_get_data(sym));
+        }
+        else {
+            if(!n)
+                printf("<index num='%u'>\n", zebra_image_get_sequence(img));
+            printf("%s\n", zebra_symbol_xml(sym, &xml_buf, &xml_len));
+        }
         n++;
     }
+
+    if(xml && n)
+        printf("</index>\n");
+    fflush(stdout);
+
     if(!quiet && n)
         fprintf(stderr, BELL);
-    fflush(stdout);
 }
 
 int main (int argc, const char *argv[])
@@ -151,6 +172,8 @@ int main (int argc, const char *argv[])
         }
         else if(!strcmp(argv[i], "--quiet"))
             quiet = 1;
+        else if(!strcmp(argv[i], "--xml"))
+            xml = 1;
         else if(!strcmp(argv[i], "--nodisplay"))
             display = 0;
         else if(!strcmp(argv[i], "--verbose"))
@@ -178,9 +201,16 @@ int main (int argc, const char *argv[])
     /* open video device, open window */
     if(zebra_processor_init(proc, video_device, display) ||
        /* show window */
-       (display && zebra_processor_set_visible(proc, 1)) ||
-       /* start video */
-       zebra_processor_set_active(proc, 1))
+       (display && zebra_processor_set_visible(proc, 1)))
+        return(zebra_processor_error_spew(proc, 0));
+
+    if(xml) {
+        printf(xml_head, video_device);
+        fflush(stdout);
+    }
+
+    /* start video */
+    if(zebra_processor_set_active(proc, 1))
         return(zebra_processor_error_spew(proc, 0));
 
     /* let the callback handle data */
@@ -197,5 +227,10 @@ int main (int argc, const char *argv[])
 
     /* free resources (leak check) */
     zebra_processor_destroy(proc);
+
+    if(xml) {
+        printf(xml_foot);
+        fflush(stdout);
+    }
     return(0);
 }

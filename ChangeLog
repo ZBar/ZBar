@@ -1,4 +1,9 @@
 current:
+  * add XML output option to zebracam and zebraimg
+  * add sequence number image attribute, set to frame number by video
+  * change v4l2 interlaced only drivers to warning instead of hard fail
+  * workaround broken drivers that return error for V4L2_FIELD_NONE request
+  * add some initial PDF417 hooks
   * first pass perl bindings for Processor, Scanner and Decoder
   * fix error propagation double free bug
   * add missing APIs: processor userdata and image data length

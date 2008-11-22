@@ -83,6 +83,8 @@ struct zebra_video_s {
     pthread_mutex_t qlock;      /* lock image queue */
 #endif
 
+    unsigned frame;             /* frame count */
+
     /* interface dependent methods */
     int (*init)(zebra_video_t*, uint32_t);
     int (*cleanup)(zebra_video_t*);

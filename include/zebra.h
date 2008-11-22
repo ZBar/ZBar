@@ -94,6 +94,7 @@ typedef enum zebra_symbol_type_e {
     ZEBRA_ISBN13      =     14,   /**< ISBN-13 (from EAN-13). @since 0.4 */
     ZEBRA_I25         =     25,   /**< Interleaved 2 of 5. @since 0.4 */
     ZEBRA_CODE39      =     39,   /**< Code 39. @since 0.4 */
+    ZEBRA_PDF417      =     57,   /**< PDF417. @since 0.6 */
     ZEBRA_CODE128     =    128,   /**< Code 128 */
     ZEBRA_SYMBOL      = 0x00ff,   /**< mask for base symbol type */
     ZEBRA_ADDON2      = 0x0200,   /**< 2-digit add-on flag */
@@ -244,6 +245,18 @@ extern int zebra_symbol_get_loc_y(const zebra_symbol_t *symbol,
  */
 extern const zebra_symbol_t *zebra_symbol_next(const zebra_symbol_t *symbol);
 
+/** print XML symbol element representation to user result buffer.
+ * @see http://zebra.sourceforge.net/2008/barcode.xsd for the schema.
+ * @param buffer is the inout result pointer, it will be reallocated
+ * with a larger size if necessary.
+ * @param buflen is inout length of the result buffer.
+ * @returns the buffer pointer
+ * @since 0.6
+ */
+extern char *zebra_symbol_xml(const zebra_symbol_t *symbol,
+                              char **buffer,
+                              unsigned *buflen);
+
 /*@}*/
 
 /*------------------------------------------------------------*/
@@ -328,6 +341,11 @@ extern zebra_image_t *zebra_image_convert_resize(const zebra_image_t *image,
  */
 extern unsigned long zebra_image_get_format(const zebra_image_t *image);
 
+/** retrieve a "sequence" (page/frame) number associated with this image.
+ * @since 0.6
+ */
+extern unsigned zebra_image_get_sequence(const zebra_image_t *image);
+
 /** retrieve the width of the image.
  * @returns the width in sample columns
  */
@@ -346,7 +364,7 @@ extern const void *zebra_image_get_data(const zebra_image_t *image);
 /** return the size of image data.
  * @since 0.6
  */
-unsigned long zebra_image_get_data_length (const zebra_image_t *img);
+unsigned long zebra_image_get_data_length(const zebra_image_t *img);
 
 /** image_scanner decode result iterator.
  * @returns the first decoded symbol result for an image
@@ -362,6 +380,12 @@ zebra_image_first_symbol(const zebra_image_t *image);
  */
 extern void zebra_image_set_format(zebra_image_t *image,
                                    unsigned long format);
+
+/** associate a "sequence" (page/frame) number with this image.
+ * @since 0.6
+ */
+extern void zebra_image_set_sequence(zebra_image_t *image,
+                                     unsigned sequence_num);
 
 /** specify the pixel size of the image.
  * @note this does not affect the data!
@@ -479,11 +503,15 @@ zebra_processor_set_data_handler(zebra_processor_t *processor,
                                  zebra_image_data_handler_t *handler,
                                  const void *userdata);
 
-/** associate user specified data value with the processor. */
+/** associate user specified data value with the processor.
+ * @since 0.6
+ */
 extern void zebra_processor_set_userdata(zebra_processor_t *processor,
                                          void *userdata);
 
-/** return user specified data value associated with the processor. */
+/** return user specified data value associated with the processor.
+ * @since 0.6
+ */
 extern void *zebra_processor_get_userdata(const zebra_processor_t *processor);
 
 /** set config for indicated symbology (0 for all) to specified value.
