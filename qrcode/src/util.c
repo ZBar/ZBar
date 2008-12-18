@@ -47,7 +47,7 @@ int qr_ilog(unsigned _v){
   int m;
   m=!!(_v&0xFFFF0000)<<4;
   _v>>=m;
-  ret|=m;
+  ret=m;
   m=!!(_v&0xFF00)<<3;
   _v>>=m;
   ret|=m;
