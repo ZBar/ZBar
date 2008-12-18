@@ -329,7 +329,7 @@ static int qr_finder_find_crossings(qr_finder_center *_centers,
      _all_ horizontal clusters in the group cross _all_ vertical lines in _all_
      vertical clusters in the group.
     This is equivalent to finding the maximum bipartite clique in the
-     connectivity graph, which requires linear progamming to solve.
+     connectivity graph, which requires linear progamming to solve efficiently.
     In principle, that is easy to do, but a realistic implementation without
      floating point is a lot of work (and computationally expensive).
     Right now we are relying on a sufficient border around the finder patterns
@@ -3473,9 +3473,9 @@ static const unsigned char QR_RS_NBLOCKS[40][4]={
 /*Attempts to fully decode a QR code.
   _qrdata:   Returns the parsed code data.
   _gf:       Used for Reed-Solomon error correction.
-  _ul:       UL finder pattern.
-  _ur:       UR finder pattern.
-  _dl:       DL finder pattern.
+  _ul_pos:   The location of the UL finder pattern.
+  _ur_pos:   The location of the UR finder pattern.
+  _dl_pos:   The location of the DL finder pattern.
   _p:        On input, contains estimated positions of the four corner modules.
              On output, contains a bounding quadrilateral for the code.
   _version:  The (decoded) version number.
