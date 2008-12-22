@@ -12,19 +12,23 @@ wrappers:
   * is zebragtk/QZebra BGR4 alpha swapped?
   * widget config APIs
   * drag-and-drop for widgets (configurable...)
+  * Perl build support integration
   * base library python bindings
     * start w/enum wrappers
   * GTK and Qt perl bindings
 
 symbologies:
   * PDF417
-    * support for binary symbol data
+    * extract/resolve symbol matrix parameters (NB multiple symbols)
+    * error detection/correction
+    * high-level decode
   * Code 39, i25 optional features (check digit and ASCII escapes)
   * handle Code 128 function characters (FNC1-4)
   * finish addon decoding
 
 decoder:
-  * symbology/feature compile time enable/disable
+  * support for binary symbol data (PDF417, Code 128)
+  * start/stop/abort and location detail APIs (PDF417, OMR)
   * more configuration options
     * Code-39/i25 check digit (after implementation)
     * Code-39 full ASCII (after implementation)
@@ -36,6 +40,7 @@ decoder:
 
 image scanner:
   * extract and track symbol polygons
+    * dynamic scan density (PDF417, OMR)
   * configurable pattern density
   * space lead in/out from each scan line
 

@@ -27,13 +27,6 @@
 
 #include <zebra.h>
 
-/* FIXME this should be configured */
-#define ENABLE_EAN 1
-#define ENABLE_I25 1
-#define ENABLE_CODE39 1
-#define ENABLE_CODE128 1
-#undef ENABLE_PDF417
-
 #ifdef ENABLE_EAN
 # include "decoder/ean.h"
 #endif

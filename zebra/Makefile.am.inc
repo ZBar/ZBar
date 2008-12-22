@@ -12,11 +12,22 @@ zebra_libzebra_la_SOURCES = zebra/debug.h zebra/config.c \
     zebra/img_scanner.c zebra/scanner.c \
     zebra/decoder.h zebra/decoder.c
 
-# FIXME put configure switches on these
+if ENABLE_EAN
 zebra_libzebra_la_SOURCES += zebra/decoder/ean.h zebra/decoder/ean.c
+endif
+if ENABLE_CODE128
 zebra_libzebra_la_SOURCES += zebra/decoder/code128.h zebra/decoder/code128.c
+endif
+if ENABLE_CODE39
 zebra_libzebra_la_SOURCES += zebra/decoder/code39.h zebra/decoder/code39.c
+endif
+if ENABLE_I25
 zebra_libzebra_la_SOURCES += zebra/decoder/i25.h zebra/decoder/i25.c
+endif
+if ENABLE_PDF417
+zebra_libzebra_la_SOURCES += zebra/decoder/pdf417.h zebra/decoder/pdf417.c \
+    zebra/decoder/pdf417_hash.h
+endif
 
 if HAVE_V4L1
 zebra_libzebra_la_SOURCES += zebra/video/v4l1.c

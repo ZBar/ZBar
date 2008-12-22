@@ -60,6 +60,8 @@ int zebra_parse_config (const char *cfgstr,
             *sym = ZEBRA_CODE39;
         else if(!strncmp(cfgstr, "code128", symlen))
             *sym = ZEBRA_CODE128;
+        else if(!strncmp(cfgstr, "pdf417", symlen))
+            *sym = ZEBRA_PDF417;
 
 #if 0
         /* FIXME addons are configured per-main symbol type */

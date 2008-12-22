@@ -181,7 +181,8 @@ static const unsigned int code39[91-32] = {
 /* FIXME configurable/randomized ratio, ics */
 /* FIXME check digit option, ASCII escapes */
 
-static void encode_char39 (unsigned char c)
+static void encode_char39 (unsigned char c,
+                           unsigned ics)
 {
     if(c >= 'a' && c <= 'z')
         c -= 'a' - 'A';
@@ -198,7 +199,7 @@ static void encode_char39 (unsigned char c)
         enc = (enc << 4) | ((raw & 0x100) ? 2 : 1);
         raw <<= 1;
     }
-    enc = (enc << 4) | 1;
+    enc = (enc << 4) | ics;
     printf("    encode '%c': %010"PRIx64": ", c, enc);
     encode(enc, REV);
 }
@@ -208,15 +209,90 @@ static void encode_code39 (unsigned char *data)
     printf("------------------------------------------------------------\n"
            "encode CODE-39: %s\n", data);
     encode(0xa, 0);  /* leading quiet */
-    encode_char39('*');
+    encode_char39('*', 1);
     int i;
     for(i = 0; data[i]; i++)
         if(data[i] != '*') /* skip (FIXME) */
-            encode_char39(data[i]);
-    encode_char39('*');
-    encode(0xa, 0);  /* trailing quiet */
+            encode_char39(data[i], 1);
+    encode_char39('*', 0xa);  /* w/trailing quiet */
     printf("------------------------------------------------------------\n");
 }
+
+
+/*------------------------------------------------------------*/
+/* PDF417 encoding */
+
+/* hardcoded test message: "hello world" */
+#define PDF417_ROWS 3
+#define PDF417_COLS 3
+static const unsigned pdf417_msg[PDF417_ROWS][PDF417_COLS] = {
+    { 007, 817, 131 },
+    { 344, 802, 437 },
+    { 333, 739, 194 },
+};
+
+#define PDF417_START UINT64_C(0x81111113)
+#define PDF417_STOP  UINT64_C(0x711311121)
+#include "pdf417_encode.h"
+
+static int calc_ind417 (int mod,
+                        int r,
+                        int cols)
+{
+    mod = (mod + 3) % 3;
+    int cw = 30 * (r / 3);
+    if(!mod)
+        return(cw + cols - 1);
+    else if(mod == 1)
+        return(cw + (PDF417_ROWS - 1) % 3);
+    assert(mod == 2);
+    return(cw + (PDF417_ROWS - 1) / 3);
+}
+
+static void encode_row417 (int r,
+                           const unsigned *cws,
+                           int cols,
+                           int dir)
+{
+    int k = r % 3;
+
+    printf("    [%d] encode %s:", r, (dir) ? "stop" : "start");
+    encode((dir) ? PDF417_STOP : PDF417_START, dir);
+
+    int cw = calc_ind417(k + !dir, r, cols);
+    printf("    [%d,%c] encode %03d(%d): ", r, (dir) ? 'R' : 'L', cw, k);
+    encode(pdf417_encode[cw][k], dir);
+
+    int c;
+    for(c = 0; c < cols; c++) {
+        cw = cws[c];
+        printf("    [%d,%d] encode %03d(%d): ", r, c, cw, k);
+        encode(pdf417_encode[cw][k], dir);
+    }
+
+    cw = calc_ind417(k + dir, r, cols);
+    printf("    [%d,%c] encode %03d(%d): ", r, (dir) ? 'L' : 'R', cw, k);
+    encode(pdf417_encode[cw][k], dir);
+
+    printf("    [%d] encode %s:", r, (dir) ? "start" : "stop");
+    encode((dir) ? PDF417_START : PDF417_STOP, dir);
+}
+
+static void encode_pdf417 ()
+{
+    printf("------------------------------------------------------------\n"
+           "encode PDF417: hello world\n");
+    encode(0xa, 0);
+
+    int r;
+    for(r = 0; r < PDF417_ROWS; r++) {
+        encode_row417(r, pdf417_msg[r], PDF417_COLS, r & 1);
+        encode(0xa, 0);
+    }
+
+    printf("------------------------------------------------------------\n");
+}
+
 
 /*------------------------------------------------------------*/
 /* Interleaved 2 of 5 encoding */
@@ -415,6 +491,10 @@ int main (int argc, char **argv)
 
     /*encode_code39("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%");*/
     encode_code39(data);
+
+    encode_junk(rnd_size);
+
+    encode_pdf417(data);
 
     encode_junk(rnd_size);
 

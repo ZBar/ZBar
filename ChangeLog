@@ -1,4 +1,6 @@
 current:
+  * add config/compile time symbology enables
+  * add low-level PDF417 decode stage - converts widths to codewords
   * add XML output option to zebracam and zebraimg
   * add sequence number image attribute, set to frame number by video
   * change v4l2 interlaced only drivers to warning instead of hard fail

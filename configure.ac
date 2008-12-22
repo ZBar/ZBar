@@ -48,6 +48,34 @@ documentation generation])
 AC_ARG_VAR([XMLTOFLAGS], [additional arguments for xmlto])
 AC_CHECK_PROGS([XMLTO], [xmlto], [:])
 
+dnl symbologies
+
+AC_ARG_ENABLE([codes],
+  [AS_HELP_STRING([--enable-codes=SYMS],
+    [select symbologies to compile [default=ean,i25,code39,code128]])],
+  [],
+  [enable_codes="ean,code39,code128,i25"]) dnl pdf417
+
+AC_DEFUN([ZEBRA_CHK_CODE], [
+  AC_MSG_CHECKING([whether to build $2])
+  enable_$1="no"
+  AH_TEMPLATE([ENABLE_]translit($1, a-z, A-Z),
+    [whether to build support for $2])
+  AS_CASE([$enable_codes],
+    [*$1* | *all*],
+    [enable_$1="yes"
+     AC_DEFINE([ENABLE_]translit($1, a-z, A-Z), [1])
+    ])
+  AM_CONDITIONAL([ENABLE_]translit($1, a-z, A-Z),
+    [test "x$enable_$1" = "xyes"])
+  AC_MSG_RESULT([$enable_$1])
+])dnl
+
+ZEBRA_CHK_CODE([ean], [EAN symbologies])
+ZEBRA_CHK_CODE([code128], [Code 128 symbology])
+ZEBRA_CHK_CODE([code39], [Code 39 symbology])
+ZEBRA_CHK_CODE([pdf417], [PDF417 symbology])
+ZEBRA_CHK_CODE([i25], [Interleaved 2 of 5 symbology])
 
 dnl libraries
 
