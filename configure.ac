@@ -7,7 +7,7 @@ AM_INIT_AUTOMAKE([1.10 -Wall -Werror foreign subdir-objects std-options dist-bzi
 AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_SRCDIR(zebra/scanner.c)
 LT_PREREQ([2.2])
-LT_INIT([dlopen])
+LT_INIT([dlopen win32-dll])
 
 dnl update these just before each release (along w/pacakge version above)
 dnl   LIB_VERSION update instructions copied from libtool docs:
@@ -80,6 +80,13 @@ ZEBRA_CHK_CODE([i25], [Interleaved 2 of 5 symbology])
 dnl libraries
 
 AC_SEARCH_LIBS([clock_gettime], [rt])
+
+dnl poll support
+dnl without poll() we exclude processor layer
+
+have_poll="no"
+AC_CHECK_HEADERS([poll.h], [have_poll="yes"])
+AM_CONDITIONAL([HAVE_POLL], [test "x$have_poll" = "xyes"])
 
 dnl pthreads
 dnl FIXME this doesn't port well, integrate something like this:

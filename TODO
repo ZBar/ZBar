@@ -5,6 +5,7 @@ general:
   * dbg_scan background image stretched (still...)
   * profile and weed out obvious oversights
   * windows port
+    * fix processor layer and/or add more appropriate windows interface
   * example using SANE to scan symbol(s)
 
 wrappers:

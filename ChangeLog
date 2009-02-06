@@ -1,4 +1,7 @@
 current:
+  * fixes for building DLLs with libtool under MinGW
+  * automatically remove "processor" layer if poll.h is unavailable
+  * test_decode portability workarounds
   * add config/compile time symbology enables
   * add low-level PDF417 decode stage - converts widths to codewords
   * add XML output option to zebracam and zebraimg

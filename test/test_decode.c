@@ -57,7 +57,8 @@ static void encode_junk (int n)
 static void encode (uint64_t units,
                     int fwd)
 {
-    printf(" raw=%"PRIx64"%c\n", units, (fwd) ? '<' : '>');
+    printf(" raw=%x%x%c\n", (unsigned)(units >> 32),
+           (unsigned)(units & 0xffffffff), (fwd) ? '<' : '>');
     if(!fwd)
         while(units && !(units >> 0x3c))
             units <<= 4;
@@ -200,7 +201,8 @@ static void encode_char39 (unsigned char c,
         raw <<= 1;
     }
     enc = (enc << 4) | ics;
-    printf("    encode '%c': %010"PRIx64": ", c, enc);
+    printf("    encode '%c': %02x%08x: ", c,
+           (unsigned)(enc >> 32), (unsigned)(enc & 0xffffffff));
     encode(enc, REV);
 }
 
@@ -456,7 +458,7 @@ int main (int argc, char **argv)
 
     unsigned char data[32] = { 0 };
     for(i = 0; i < 12; i++)
-        data[i] = ((rand() >> 16) % 10) + '0';
+        data[i] = (rand() % 10) + '0';
 
     calc_ean_parity(data, 12);
     encode_ean13(data);
@@ -482,7 +484,7 @@ int main (int argc, char **argv)
     encode_junk(rnd_size);
 
     for(i = 0; i < 10; i++)
-        data[i] = (rand() >> 16) % 0x5f + 0x20;
+        data[i] = (rand() % 0x5f) + 0x20;
     data[i] = 0;
 
     encode_code128b(data);

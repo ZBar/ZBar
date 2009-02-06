@@ -4,17 +4,19 @@ test_test_decode_LDADD = zebra/libzebra.la $(AM_LDADD)
 
 TEST_IMAGE_SOURCES = test/test_images.c test/test_images.h
 
-check_PROGRAMS += test/test_proc
-test_test_proc_SOURCES = test/test_proc.c $(TEST_IMAGE_SOURCES)
-test_test_proc_LDADD = zebra/libzebra.la $(AM_LDADD)
-
 check_PROGRAMS += test/test_convert
 test_test_convert_SOURCES = test/test_convert.c $(TEST_IMAGE_SOURCES)
 test_test_convert_LDADD = zebra/libzebra.la $(AM_LDADD)
 
+if HAVE_POLL
+check_PROGRAMS += test/test_proc
+test_test_proc_SOURCES = test/test_proc.c $(TEST_IMAGE_SOURCES)
+test_test_proc_LDADD = zebra/libzebra.la $(AM_LDADD)
+
 check_PROGRAMS += test/test_cpp
 test_test_cpp_SOURCES = test/test_cpp.cpp
 test_test_cpp_LDADD = zebra/libzebra.la $(AM_LDADD)
+endif
 
 if HAVE_MAGICK
 check_PROGRAMS += test/dbg_scan

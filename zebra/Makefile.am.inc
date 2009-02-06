@@ -1,6 +1,6 @@
 lib_LTLIBRARIES += zebra/libzebra.la
 zebra_libzebra_la_CPPFLAGS = -I$(srcdir)/zebra $(AM_CPPFLAGS)
-zebra_libzebra_la_LDFLAGS = -version-info $(LIB_VERSION) \
+zebra_libzebra_la_LDFLAGS = -no-undefined -version-info $(LIB_VERSION) \
     -export-symbols-regex "^(zebra|_zebra.*_error)_.*" $(AM_LDFLAGS)
 zebra_libzebra_la_LIBADD =
 
@@ -8,9 +8,12 @@ zebra_libzebra_la_SOURCES = zebra/debug.h zebra/config.c \
     zebra/error.h zebra/error.c zebra/symbol.h zebra/symbol.c \
     zebra/image.h zebra/image.c zebra/convert.c zebra/logo.c \
     zebra/window.h zebra/window.c zebra/video.h zebra/video.c \
-    zebra/processor.h zebra/processor.c \
     zebra/img_scanner.c zebra/scanner.c \
     zebra/decoder.h zebra/decoder.c
+
+if HAVE_POLL
+zebra_libzebra_la_SOURCES += zebra/processor.h zebra/processor.c
+endif
 
 if ENABLE_EAN
 zebra_libzebra_la_SOURCES += zebra/decoder/ean.h zebra/decoder/ean.c
