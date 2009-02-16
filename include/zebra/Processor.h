@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the Zebra Barcode Library.
 //
@@ -43,14 +43,6 @@ class Processor {
  public:
     /// value to pass for no timeout.
     static const int FOREVER = -1;
-
-    /// constructor.
-    Processor (bool threaded = true)
-    {
-        _processor = zebra_processor_create(threaded);
-        if(!_processor)
-            throw std::bad_alloc();
-    }
 
     /// constructor.
     Processor (bool threaded = true,
@@ -116,7 +108,7 @@ class Processor {
         int rc = zebra_processor_is_visible(_processor);
         if(rc < 0)
             throw_exception(_processor);
-        return(rc);
+        return(rc != 0);
     }
 
     /// show or hide the display window owned by the library.

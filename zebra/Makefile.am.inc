@@ -41,6 +41,10 @@ else
 zebra_libzebra_la_SOURCES += zebra/video/null.c
 endif
 
+if HAVE_JPEG
+zebra_libzebra_la_SOURCES += zebra/jpeg.c
+endif
+
 if HAVE_X
 zebra_libzebra_la_SOURCES += zebra/window/x.c zebra/window/ximage.c
 zebra_libzebra_la_CPPFLAGS += $(X_CFLAGS)

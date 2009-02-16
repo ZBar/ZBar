@@ -16,6 +16,12 @@ test_test_proc_LDADD = zebra/libzebra.la $(AM_LDADD)
 check_PROGRAMS += test/test_cpp
 test_test_cpp_SOURCES = test/test_cpp.cpp
 test_test_cpp_LDADD = zebra/libzebra.la $(AM_LDADD)
+
+if HAVE_JPEG
+check_PROGRAMS += test/test_jpeg
+test_test_jpeg_SOURCES = test/test_jpeg.cpp
+test_test_jpeg_LDADD = zebra/libzebra.la $(AM_LDADD)
+endif
 endif
 
 if HAVE_MAGICK

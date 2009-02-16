@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -81,6 +81,11 @@ struct zebra_video_s {
 
 #ifdef HAVE_LIBPTHREAD
     pthread_mutex_t qlock;      /* lock image queue */
+#endif
+
+#ifdef HAVE_LIBJPEG
+    struct jpeg_decompress_struct *jpeg; /* JPEG decompressor */
+    zebra_image_t *jpeg_img;    /* temporary image */
 #endif
 
     unsigned frame;             /* frame count */

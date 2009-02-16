@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -51,6 +51,10 @@ typedef enum zebra_format_group_e {
     ZEBRA_FMT_YUV_PACKED,
     ZEBRA_FMT_RGB_PACKED,
     ZEBRA_FMT_YUV_NV,
+    ZEBRA_FMT_JPEG,
+
+    /* enum size */
+    ZEBRA_FMT_NUM
 } zebra_format_group_t;
 
 

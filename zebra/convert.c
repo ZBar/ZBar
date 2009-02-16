@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -116,25 +116,24 @@ static const zebra_format_def_t format_defs[] = {
         { { 4, RGB_BITS(8, 8), RGB_BITS(16, 8), RGB_BITS(24, 8) } } },
     { fourcc('B','G','R','1'), ZEBRA_FMT_RGB_PACKED,
         { { 1, RGB_BITS(0, 3), RGB_BITS(3, 3), RGB_BITS(6, 2) } } },
-    { fourcc('R','G','B','Q'), ZEBRA_FMT_RGB_PACKED,
-        { { 2, RGB_BITS(2, 5), RGB_BITS(13, 5), RGB_BITS(8, 5) } } },
+    { fourcc('4','2','2','P'), ZEBRA_FMT_YUV_PLANAR, { { 1, 0, 0 /*UV*/ } } },
     { fourcc('Y','8','0','0'), ZEBRA_FMT_GRAY, },
     { fourcc('Y','U','Y','2'), ZEBRA_FMT_YUV_PACKED,
         { { 1, 0, 0, /*YUYV*/ } } },
-    { fourcc('R','G','B','O'), ZEBRA_FMT_RGB_PACKED,
-        { { 2, RGB_BITS(10, 5), RGB_BITS(5, 5), RGB_BITS(0, 5) } } },
-    { fourcc('G','R','E','Y'), ZEBRA_FMT_GRAY, },
+    { fourcc('J','P','E','G'), ZEBRA_FMT_JPEG, },
+    { fourcc('Y','V','Y','U'), ZEBRA_FMT_YUV_PACKED,
+        { { 1, 0, 1, /*YVYU*/ } } },
     { fourcc('Y','8', 0 , 0 ), ZEBRA_FMT_GRAY, },
     { fourcc('N','V','2','1'), ZEBRA_FMT_YUV_NV,     { { 1, 1, 1 /*VU*/ } } },
     { fourcc('N','V','1','2'), ZEBRA_FMT_YUV_NV,     { { 1, 1, 0 /*UV*/ } } },
     { fourcc('B','G','R','3'), ZEBRA_FMT_RGB_PACKED,
         { { 3, RGB_BITS(16, 8), RGB_BITS(8, 8), RGB_BITS(0, 8) } } },
     { fourcc('Y','V','U','9'), ZEBRA_FMT_YUV_PLANAR, { { 2, 2, 1 /*VU*/ } } },
-    { fourcc('4','2','2','P'), ZEBRA_FMT_YUV_PLANAR, { { 1, 0, 0 /*UV*/ } } },
-    { fourcc('Y','V','Y','U'), ZEBRA_FMT_YUV_PACKED,
-        { { 1, 0, 1, /*YVYU*/ } } },
-    { fourcc('U','Y','V','Y'), ZEBRA_FMT_YUV_PACKED,
-        { { 1, 0, 2, /*UYVY*/ } } },
+    { fourcc('R','G','B','O'), ZEBRA_FMT_RGB_PACKED,
+        { { 2, RGB_BITS(10, 5), RGB_BITS(5, 5), RGB_BITS(0, 5) } } },
+    { fourcc('R','G','B','Q'), ZEBRA_FMT_RGB_PACKED,
+        { { 2, RGB_BITS(2, 5), RGB_BITS(13, 5), RGB_BITS(8, 5) } } },
+    { fourcc('G','R','E','Y'), ZEBRA_FMT_GRAY, },
     { fourcc( 3 , 0 , 0 , 0 ), ZEBRA_FMT_RGB_PACKED,
         { { 4, RGB_BITS(16, 8), RGB_BITS(8, 8), RGB_BITS(0, 8) } } },
     { fourcc('Y','8',' ',' '), ZEBRA_FMT_GRAY, },
@@ -150,6 +149,7 @@ static const zebra_format_def_t format_defs[] = {
     { fourcc('B','G','R','4'), ZEBRA_FMT_RGB_PACKED,
         { { 4, RGB_BITS(16, 8), RGB_BITS(8, 8), RGB_BITS(0, 8) } } },
     { fourcc('Y','U','V','9'), ZEBRA_FMT_YUV_PLANAR, { { 2, 2, 0 /*UV*/ } } },
+    { fourcc('M','J','P','G'), ZEBRA_FMT_JPEG, },
     { fourcc('4','1','1','P'), ZEBRA_FMT_YUV_PLANAR, { { 2, 0, 0 /*UV*/ } } },
     { fourcc('R','G','B','P'), ZEBRA_FMT_RGB_PACKED,
         { { 2, RGB_BITS(11, 5), RGB_BITS(5, 6), RGB_BITS(0, 5) } } },
@@ -157,6 +157,8 @@ static const zebra_format_def_t format_defs[] = {
         { { 2, RGB_BITS(3, 5), RGB_BITS(13, 6), RGB_BITS(8, 5) } } },
     { fourcc('Y','U','Y','V'), ZEBRA_FMT_YUV_PACKED,
         { { 1, 0, 0, /*YUYV*/ } } },
+    { fourcc('U','Y','V','Y'), ZEBRA_FMT_YUV_PACKED,
+        { { 1, 0, 2, /*UYVY*/ } } },
 };
 
 static const int num_format_defs =
@@ -822,14 +824,27 @@ static void convert_rgb_resample (zebra_image_t *dst,
     }
 }
 
+#ifdef HAVE_LIBJPEG
+void _zebra_convert_jpeg_to_y(zebra_image_t *dst,
+                              const zebra_format_def_t *dstfmt,
+                              const zebra_image_t *src,
+                              const zebra_format_def_t *srcfmt);
+
+static void convert_jpeg(zebra_image_t *dst,
+                         const zebra_format_def_t *dstfmt,
+                         const zebra_image_t *src,
+                         const zebra_format_def_t *srcfmt);
+#endif
+
 /* group conversion matrix */
-static conversion_def_t conversions[][5] = {
+static conversion_def_t conversions[][ZEBRA_FMT_NUM] = {
     { /* *from* GRAY */
         {   0, convert_copy },           /* to GRAY */
         {   8, convert_uvp_append },     /* to YUV_PLANAR */
         {  24, convert_yuv_pack },       /* to YUV_PACKED */
         {  32, convert_yuvp_to_rgb },    /* to RGB_PACKED */
         {   8, convert_uvp_append },     /* to YUV_NV */
+        {  -1, NULL },                   /* to JPEG */
     },
     { /* from YUV_PLANAR */
         {   1, convert_copy },           /* to GRAY */
@@ -837,6 +852,7 @@ static conversion_def_t conversions[][5] = {
         {  64, convert_yuv_pack },       /* to YUV_PACKED */
         { 128, convert_yuvp_to_rgb },    /* to RGB_PACKED */
         {  40, convert_uvp_append },     /* to YUV_NV */
+        {  -1, NULL },                   /* to JPEG */
     },
     { /* from YUV_PACKED */
         {  24, convert_yuv_unpack },     /* to GRAY */
@@ -844,6 +860,7 @@ static conversion_def_t conversions[][5] = {
         {  20, convert_uv_resample },    /* to YUV_PACKED */
         { 144, convert_yuv_to_rgb },     /* to RGB_PACKED */
         {  18, convert_yuv_unpack },     /* to YUV_NV */
+        {  -1, NULL },                   /* to JPEG */
     },
     { /* from RGB_PACKED */
         { 112, convert_rgb_to_yuvp },    /* to GRAY */
@@ -851,6 +868,7 @@ static conversion_def_t conversions[][5] = {
         { 144, convert_rgb_to_yuv },     /* to YUV_PACKED */
         { 120, convert_rgb_resample },   /* to RGB_PACKED */
         { 152, convert_rgb_to_yuvp },    /* to YUV_NV */
+        {  -1, NULL },                   /* to JPEG */
     },
     { /* from YUV_NV (FIXME treated as GRAY) */
         {   1, convert_copy },           /* to GRAY */
@@ -858,7 +876,27 @@ static conversion_def_t conversions[][5] = {
         {  24, convert_yuv_pack },       /* to YUV_PACKED */
         {  32, convert_yuvp_to_rgb },    /* to RGB_PACKED */
         {   8, convert_uvp_append },     /* to YUV_NV */
-    }
+        {  -1, NULL },                   /* to JPEG */
+    },
+#ifdef HAVE_LIBJPEG
+    { /* from JPEG */
+        {  96, _zebra_convert_jpeg_to_y }, /* to GRAY */
+        { 104, convert_jpeg },           /* to YUV_PLANAR */
+        { 116, convert_jpeg },           /* to YUV_PACKED */
+        { 256, convert_jpeg },           /* to RGB_PACKED */
+        { 104, convert_jpeg },           /* to YUV_NV */
+        {  -1, NULL },                   /* to JPEG */
+    },
+#else
+    { /* from JPEG */
+        {  -1, NULL },                   /* to GRAY */
+        {  -1, NULL },                   /* to YUV_PLANAR */
+        {  -1, NULL },                   /* to YUV_PACKED */
+        {  -1, NULL },                   /* to RGB_PACKED */
+        {  -1, NULL },                   /* to YUV_NV */
+        {  -1, NULL },                   /* to JPEG */
+    },
+#endif
 };
 
 const zebra_format_def_t *_zebra_format_lookup (uint32_t fmt)
@@ -874,6 +912,48 @@ const zebra_format_def_t *_zebra_format_lookup (uint32_t fmt)
             i++;
     }
     return(NULL);
+}
+
+/* convert JPEG data via an intermediate format supported by libjpeg */
+static void convert_jpeg (zebra_image_t *dst,
+                          const zebra_format_def_t *dstfmt,
+                          const zebra_image_t *src,
+                          const zebra_format_def_t *srcfmt)
+{
+    /* define intermediate image in a format supported by libjpeg
+     * (currently only grayscale)
+     */
+    zebra_image_t *tmp;
+    if(!src->src) {
+        tmp = zebra_image_create();
+        tmp->format = fourcc('Y','8','0','0');
+        tmp->width = dst->width;
+        tmp->height = dst->height;
+    }
+    else {
+        tmp = src->src->jpeg_img;
+        assert(tmp);
+        dst->width = tmp->width;
+        dst->height = tmp->height;
+    }
+
+    const zebra_format_def_t *tmpfmt = _zebra_format_lookup(tmp->format);
+    assert(tmpfmt);
+
+    /* convert to intermediate format */
+    _zebra_convert_jpeg_to_y(tmp, tmpfmt, src, srcfmt);
+
+    /* now convert to dst */
+    dst->width = tmp->width;
+    dst->height = tmp->height;
+
+    conversion_handler_t *func =
+        conversions[tmpfmt->group][dstfmt->group].func;
+
+    func(dst, dstfmt, tmp, tmpfmt);
+
+    if(!src->src)
+        zebra_image_destroy(tmp);
 }
 
 zebra_image_t *zebra_image_convert_resize (const zebra_image_t *src,
@@ -911,6 +991,11 @@ zebra_image_t *zebra_image_convert_resize (const zebra_image_t *src,
 
     dst->cleanup = zebra_image_free_data;
     func(dst, dstfmt, src, srcfmt);
+    if(!dst->data) {
+        /* conversion failed */
+        zebra_image_destroy(dst);
+        return(NULL);
+    }
     return(dst);
 }
 
@@ -952,20 +1037,19 @@ int _zebra_best_format (uint32_t src,
     unsigned min_cost = -1;
     for(; *dsts; dsts++) {
         const zebra_format_def_t *dstfmt = _zebra_format_lookup(*dsts);
-        if(!dstfmt) {
-            
+        if(!dstfmt)
             continue;
-        }
         int cost;
         if(srcfmt->group == dstfmt->group &&
            srcfmt->p.cmp == dstfmt->p.cmp)
             cost = 0;
         else
             cost = conversions[srcfmt->group][dstfmt->group].cost;
+
         if(_zebra_verbosity >= 8)
             fprintf(stderr, " %.4s(%08" PRIx32 ")=%d",
                     (char*)dsts, *dsts, cost);
-        if(min_cost > cost) {
+        if(cost >= 0 && min_cost > cost) {
             min_cost = cost;
             if(dst)
                 *dst = *dsts;

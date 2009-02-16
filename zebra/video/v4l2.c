@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -63,6 +63,7 @@ static int v4l2_nq (zebra_video_t *vdo,
             vbuf.memory = V4L2_MEMORY_USERPTR;
             vbuf.m.userptr = (unsigned long)img->data;
             vbuf.length = img->datalen;
+            vbuf.index = img->srcidx; /* FIXME workaround broken drivers */
         }
         if(ioctl(vdo->fd, VIDIOC_QBUF, &vbuf))
             return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
@@ -338,6 +339,7 @@ static int v4l2_probe_iomode (zebra_video_t *vdo)
 {
     struct v4l2_requestbuffers rb;
     memset(&rb, 0, sizeof(rb));
+    rb.count = vdo->num_images; /* FIXME workaround broken drivers */
     rb.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     rb.memory = V4L2_MEMORY_USERPTR;
     if(ioctl(vdo->fd, VIDIOC_REQBUFS, &rb)) {
@@ -348,8 +350,11 @@ static int v4l2_probe_iomode (zebra_video_t *vdo)
         vdo->iomode = VIDEO_MMAP;
 #endif
     }
-    else
+    else {
         vdo->iomode = VIDEO_USERPTR;
+        if(rb.count)
+            vdo->num_images = rb.count;
+    }
     return(0);
 }
 

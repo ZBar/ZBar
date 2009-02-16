@@ -1,4 +1,9 @@
 current:
+  * initial support for decoding jpeg images using libjpeg!
+  * workaround broken v4l2 drivers in USERPTR mode
+  * have configure double check Magick++ install (bug #2582232)
+  * update README dependency list
+  * fix C++ warnings in Processor
   * fixes for building DLLs with libtool under MinGW
   * automatically remove "processor" layer if poll.h is unavailable
   * test_decode portability workarounds

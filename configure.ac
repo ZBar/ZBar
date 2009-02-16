@@ -196,6 +196,27 @@ specify XV_LIBS or configure --without-xv to disable the extension])],
 ])
 AM_CONDITIONAL([HAVE_XV], [test "x$with_xv" = "xyes"])
 
+dnl libjpeg
+AC_ARG_WITH([jpeg],
+  [AS_HELP_STRING([--without-jpeg],
+    [disable support for JPEG image conversions])],
+  [],
+  [with_jpeg="check"])
+
+have_jpeg="maybe"
+AS_IF([test "x$with_jpeg" != "xno"],
+  [AC_CHECK_HEADERS([jpeglib.h], [], [have_jpeg="no"])
+   AC_CHECK_HEADER([jerror.h], [], [have_jpeg="no"])
+   AC_CHECK_LIB([jpeg], [jpeg_read_header], [], [have_jpeg="no"])
+   AS_IF([test "x$have_jpeg" != "xno"],
+     [with_jpeg="yes"],
+     [test "x$with_jpeg" = "xyes"],
+     [AC_MSG_FAILURE([unable to find libjpeg! ensure CFLAGS/LDFLAGS are
+set appropriately or configure --without-jpeg])],
+     [test "x$have_jpeg" = "xno"])
+])
+
+AM_CONDITIONAL([HAVE_JPEG], [test "x$with_jpeg" = "xyes"])
 
 dnl ImageMagick
 AC_ARG_WITH([imagemagick],
@@ -207,14 +228,25 @@ AC_ARG_WITH([imagemagick],
 AS_IF([test "x$with_imagemagick" != "xno"],
   [PKG_CHECK_MODULES([MAGICK], [ImageMagick++ >= 6.2.6])
    MAGICK_VERSION=`$PKG_CONFIG ImageMagick++ --modversion`
-   AC_MSG_NOTICE([using ImageMagick version $MAGICK_VERSION])])
+   AC_MSG_NOTICE([using ImageMagick version $MAGICK_VERSION])
+
+dnl double check ImageMagick install (bug #2582232)
+   AC_LANG_PUSH([C++])
+   CPPFLAGS_save="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS $MAGICK_CFLAGS"
+   AC_CHECK_HEADER([Magick++.h], [],
+     [AC_MSG_FAILURE([ImageMagick++ package found but Magick++.h not installed?!
+this is a problem with your ImageMagick install,
+please resolve the inconsistency and try again...])])
+   CPPFLAGS="$CPPFLAGS_save"
+   AC_LANG_POP([C++])])
 
 AM_CONDITIONAL([HAVE_MAGICK], [test "x$with_imagemagick" = "xyes"])
 
 dnl Mozilla NPAPI
 AC_ARG_WITH([npapi],
-  [AS_HELP_STRING([--without-npapi],
-    [disable support for Firefox/Mozilla/OpenOffice NPAPI plugin])],
+  [AS_HELP_STRING([--with-npapi],
+    [enable support for Firefox/Mozilla/OpenOffice NPAPI plugin])],
   [],
   [with_npapi="no"])
 
@@ -364,6 +396,9 @@ echo "pthreads          --enable-pthread=$enable_pthread"
 echo "v4l               --enable-video=$enable_video"
 AS_IF([test "x$enable_video" != "xyes"],
   [echo "        => zebracam video scanner will *NOT* be built"])
+echo "jpeg              --with-jpeg=$with_jpeg"
+AS_IF([test "x$with_jpeg" != "xyes"],
+  [echo "        => JPEG image conversions will *NOT* be supported"])
 echo "Magick++          --with-imagemagick=$with_imagemagick"
 AS_IF([test "x$with_imagemagick" != "xyes"],
   [echo "        => the zebraimg file scanner will *NOT* be built"])

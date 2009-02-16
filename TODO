@@ -13,7 +13,7 @@ wrappers:
   * is zebragtk/QZebra BGR4 alpha swapped?
   * widget config APIs
   * drag-and-drop for widgets (configurable...)
-  * Perl build support integration
+  * Perl build support integration?
   * base library python bindings
     * start w/enum wrappers
   * GTK and Qt perl bindings
@@ -48,10 +48,9 @@ image scanner:
 image formats:
   * fix image data inheritance
   * de-interlacing
-  * add color support to conversions
+  * add color support to conversions (also jpeg)
   * add support for scanline pad throughout
   * factor conversion redundancy
-  * add support for libjpeg
 
 window:
   * add XShm support
@@ -68,5 +67,4 @@ window:
 zebracam/zebraimg:
   * zebraimg multi-frame duplicate suppression
   * stats/fps at zebracam exit
-  * xml output format
   * decode hook (program/script)? (also zebraimg?)

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -23,6 +23,12 @@
 
 #include "video.h"
 #include "image.h"
+
+
+#ifdef HAVE_LIBJPEG
+extern struct jpeg_decompress_struct *_zebra_jpeg_decomp_create();
+extern void _zebra_jpeg_decomp_destroy(struct jpeg_decompress_struct *cinfo);
+#endif
 
 static void _zebra_video_recycle_image (zebra_image_t *img)
 {
@@ -114,6 +120,16 @@ void zebra_video_destroy (zebra_video_t *vdo)
 #ifdef HAVE_LIBPTHREAD
     pthread_mutex_destroy(&vdo->qlock);
 #endif
+#ifdef HAVE_LIBJPEG
+    if(vdo->jpeg_img) {
+        zebra_image_destroy(vdo->jpeg_img);
+        vdo->jpeg_img = NULL;
+    }
+    if(vdo->jpeg) {
+        _zebra_jpeg_decomp_destroy(vdo->jpeg);
+        vdo->jpeg = NULL;
+    }
+#endif
     free(vdo);
 }
 
@@ -200,6 +216,23 @@ int zebra_video_init (zebra_video_t *vdo,
     vdo->format = fmt;
     if(video_init_images(vdo))
         return(-1);
+#ifdef HAVE_LIBJPEG
+    const zebra_format_def_t *vidfmt = _zebra_format_lookup(fmt);
+    if(vidfmt->group == ZEBRA_FMT_JPEG) {
+        /* prepare for decoding */
+        if(!vdo->jpeg)
+            vdo->jpeg = _zebra_jpeg_decomp_create();
+        if(vdo->jpeg_img)
+            zebra_image_destroy(vdo->jpeg_img);
+
+        /* create intermediate image for decoder to use*/
+        zebra_image_t *img = vdo->jpeg_img = zebra_image_create();
+        img->format = fourcc('Y','8','0','0');
+        img->width = vdo->width;
+        img->height = vdo->height;
+        img->datalen = vdo->width * vdo->height;
+    }
+#endif
     vdo->initialized = 1;
     return(0);
 }
