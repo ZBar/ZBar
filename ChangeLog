@@ -1,4 +1,7 @@
 current:
+  * add video pre-scaling API/option to video/processor/zebracam (req #2277340)
+  * add few missing APIs to perl xs wrapper
+  * fix missing libjpeg #ifdef in convert
   * initial support for decoding jpeg images using libjpeg!
   * workaround broken v4l2 drivers in USERPTR mode
   * have configure double check Magick++ install (bug #2582232)

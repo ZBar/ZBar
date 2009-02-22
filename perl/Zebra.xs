@@ -283,6 +283,7 @@ BOOT:
         CONSTANT(symbol_type, , ISBN13, zebra_get_symbol_name(ZEBRA_ISBN13));
         CONSTANT(symbol_type, , I25, zebra_get_symbol_name(ZEBRA_I25));
         CONSTANT(symbol_type, , CODE39, zebra_get_symbol_name(ZEBRA_CODE39));
+        CONSTANT(symbol_type, , PDF417, zebra_get_symbol_name(ZEBRA_PDF417));
         CONSTANT(symbol_type, , CODE128, zebra_get_symbol_name(ZEBRA_CODE128));
     }
 
@@ -346,6 +347,10 @@ fourcc_t
 zebra_image_get_format(image)
         Zebra::Image	image
 
+unsigned
+zebra_image_get_sequence(image)
+        Zebra::Image	image
+
 void
 get_size(image)
         Zebra::Image	image
@@ -377,6 +382,11 @@ void
 zebra_image_set_format(image, format)
         Zebra::Image	image
 	fourcc_t	format
+
+void
+zebra_image_set_sequence(image, seq_num)
+        Zebra::Image	image
+	unsigned	seq_num
 
 void
 zebra_image_set_size(image, width, height)
@@ -435,6 +445,24 @@ zebra_processor_init(processor, video_device="/dev/video0", enable_display=1)
 	bool	enable_display
     CODE:
         check_error(zebra_processor_init(processor, video_device, enable_display),
+                    processor);
+
+void
+zebra_processor_request_size(processor, width, height)
+        Zebra::Processor	processor
+	unsigned	width
+	unsigned	height
+    CODE:
+	check_error(zebra_processor_request_size(processor, width, height),
+                    processor);
+
+void
+zebra_processor_force_format(processor, input_format=0, output_format=0)
+        Zebra::Processor	processor
+	fourcc_t	input_format
+	fourcc_t	output_format
+    CODE:
+	check_error(zebra_processor_force_format(processor, input_format, output_format),
                     processor);
 
 void

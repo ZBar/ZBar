@@ -914,6 +914,7 @@ const zebra_format_def_t *_zebra_format_lookup (uint32_t fmt)
     return(NULL);
 }
 
+#ifdef HAVE_LIBJPEG
 /* convert JPEG data via an intermediate format supported by libjpeg */
 static void convert_jpeg (zebra_image_t *dst,
                           const zebra_format_def_t *dstfmt,
@@ -955,6 +956,7 @@ static void convert_jpeg (zebra_image_t *dst,
     if(!src->src)
         zebra_image_destroy(tmp);
 }
+#endif
 
 zebra_image_t *zebra_image_convert_resize (const zebra_image_t *src,
                                            unsigned long fmt,

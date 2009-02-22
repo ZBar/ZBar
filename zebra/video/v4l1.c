@@ -375,21 +375,11 @@ static inline int v4l1_init_window (zebra_video_t *vdo)
     zprintf(1, "setting max win: %d x %d @(%d, %d)%s\n",
             maxwin.width, maxwin.height, maxwin.x, maxwin.y,
             (maxwin.flags & 1) ? " INTERLACE" : "");
-    if(ioctl(vdo->fd, VIDIOCSWIN, &maxwin) >= 0) {
-        memset(&maxwin, 0, sizeof(maxwin));
-        if(ioctl(vdo->fd, VIDIOCGWIN, &maxwin) < 0)
-            return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
-                               "querying video window settings (VIDIOCGWIN)"));
-        vdo->width = maxwin.width;
-        vdo->height = maxwin.height;
-        if(maxwin.width >= vwin.width && maxwin.height >= vwin.height)
-            return(0);
-        zprintf(1, "oops, window shrunk?!");
+    if(ioctl(vdo->fd, VIDIOCSWIN, &maxwin) < 0) {
+        zprintf(1, "set FAILED...trying to recover original window\n");
+        /* ignore errors (driver broken anyway) */
+        ioctl(vdo->fd, VIDIOCSWIN, &vwin);
     }
-
-    zprintf(1, "set FAILED...trying to recover original window\n");
-    /* ignore errors (driver broken anyway) */
-    ioctl(vdo->fd, VIDIOCSWIN, &vwin);
 
     /* re-query resulting parameters */
     memset(&vwin, 0, sizeof(vwin));
@@ -422,8 +412,10 @@ static int _zebra_v4l1_probe (zebra_video_t *vdo)
         return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_UNSUPPORTED, __func__,
                            "v4l1 device does not support CAPTURE"));
 
-    vdo->width = vcap.maxwidth;
-    vdo->height = vcap.maxheight;
+    if(!vdo->width || !vdo->height) {
+        vdo->width = vcap.maxwidth;
+        vdo->height = vcap.maxheight;
+    }
 
     if(v4l1_init_window(vdo) ||
        v4l1_probe_formats(vdo) ||

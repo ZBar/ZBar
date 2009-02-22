@@ -152,6 +152,21 @@ int zebra_video_get_fd (const zebra_video_t *vdo)
                        "video device not opened"));
 }
 
+int zebra_video_request_size (zebra_video_t *vdo,
+                              unsigned width,
+                              unsigned height)
+{
+    if(vdo->initialized)
+        /* FIXME re-init different format? */
+        return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,
+                           "already initialized, unable to resize"));
+
+    vdo->width = width;
+    vdo->height = height;
+    zprintf(1, "request size: %d x %d\n", width, height);
+    return(0);
+}
+
 int zebra_video_get_width (const zebra_video_t *vdo)
 {
     return(vdo->width);

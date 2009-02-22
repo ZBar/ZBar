@@ -213,7 +213,7 @@ AS_IF([test "x$with_jpeg" != "xno"],
      [test "x$with_jpeg" = "xyes"],
      [AC_MSG_FAILURE([unable to find libjpeg! ensure CFLAGS/LDFLAGS are
 set appropriately or configure --without-jpeg])],
-     [test "x$have_jpeg" = "xno"])
+     [with_jpeg="no"])
 ])
 
 AM_CONDITIONAL([HAVE_JPEG], [test "x$with_jpeg" = "xyes"])

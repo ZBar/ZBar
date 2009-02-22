@@ -44,6 +44,8 @@ static const char *note_usage =
     "    --verbose=N     set specific debug output level\n"
     "    --xml           use XML output format\n"
     "    --nodisplay     disable video display window\n"
+    "    --prescale=<W>x<H>\n"
+    "                    request alternate video image size from driver\n"
     "    -S<CONFIG>[=<VALUE>], --set <CONFIG>[=<VALUE>]\n"
     "                    set decoder/scanner <CONFIG> to <VALUE> (or 1)\n"
     /* FIXME overlay level */
@@ -180,6 +182,18 @@ int main (int argc, const char *argv[])
             zebra_increase_verbosity();
         else if(!strncmp(argv[i], "--verbose=", 10))
             zebra_set_verbosity(strtol(argv[i] + 10, NULL, 0));
+        else if(!strncmp(argv[i], "--prescale=", 11)) {
+            char *x = NULL;
+            long int w = strtol(argv[i] + 11, &x, 10);
+            long int h = 0;
+            if(x && *x == 'x')
+                h = strtol(x + 1, NULL, 10);
+            if(!w || !h || !x || *x != 'x') {
+                fprintf(stderr, "ERROR: invalid prescale: %s\n\n", argv[i]);
+                return(usage(1));
+            }
+            zebra_processor_request_size(proc, w, h);
+        }
         else if(!strncmp(argv[i], "--infmt=", 8) &&
                 strlen(argv[i]) == 12)
             infmt = (argv[i][8] | (argv[i][9] << 8) |

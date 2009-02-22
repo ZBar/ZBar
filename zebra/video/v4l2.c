@@ -404,27 +404,13 @@ static inline int v4l2_probe_formats (zebra_video_t *vdo)
     maxpix->width = vdo->width;
     maxpix->height = vdo->height;
 
-    zprintf(1, "setting max size: %d x %d\n", vdo->width, vdo->height);
-    if(ioctl(vdo->fd, VIDIOC_S_FMT, &maxfmt) >= 0) {
-        memset(&maxfmt, 0, sizeof(maxfmt));
-        maxfmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if(ioctl(vdo->fd, VIDIOC_G_FMT, &maxfmt) < 0)
-            return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
-                               "querying current video format (VIDIOC_G_FMT)"));
-
-        vdo->width = maxpix->width;
-        vdo->height = maxpix->height;
-        vdo->datalen = maxpix->sizeimage;
-        if(maxpix->width >= pix->width && maxpix->height >= pix->height)
-            return(0);
-        zprintf(1, "oops, format shrunk?");
+    zprintf(1, "setting requested size: %d x %d\n", vdo->width, vdo->height);
+    if(ioctl(vdo->fd, VIDIOC_S_FMT, &maxfmt) < 0) {
+        zprintf(1, "set FAILED...trying to recover original format\n");
+        /* ignore errors (driver broken anyway) */
+        ioctl(vdo->fd, VIDIOC_S_FMT, &fmt);
     }
 
-    zprintf(1, "set FAILED...trying to recover original format\n");
-    /* ignore errors (driver broken anyway) */
-    ioctl(vdo->fd, VIDIOC_S_FMT, &fmt);
-
-    /* re-query resulting parameters */
     memset(&fmt, 0, sizeof(fmt));
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if(ioctl(vdo->fd, VIDIOC_G_FMT, &fmt) < 0)
@@ -461,8 +447,10 @@ static inline int v4l2_reset_crop (zebra_video_t *vdo)
             ccap.defrect.left, ccap.defrect.top,
             ccap.pixelaspect.numerator, ccap.pixelaspect.denominator);
 
-    vdo->width = ccap.defrect.width;
-    vdo->height = ccap.defrect.height;
+    if(!vdo->width || !vdo->height) {
+        vdo->width = ccap.defrect.width;
+        vdo->height = ccap.defrect.height;
+    }
 
     /* reset crop parameters */
     struct v4l2_crop crop;
@@ -500,9 +488,14 @@ int _zebra_v4l2_probe (zebra_video_t *vdo)
         return(err_capture(vdo, SEV_WARNING, ZEBRA_ERR_UNSUPPORTED, __func__,
                            "v4l2 device does not support usable CAPTURE"));
 
-    vdo->width = vdo->height = 65535;
     if(v4l2_reset_crop(vdo))
         /* ignoring errors (driver cropping support questionable) */;
+
+    if(!vdo->width || !vdo->height) {
+        /* fallback to large size, driver reduces to max available */
+        vdo->width = 640 * 64;
+        vdo->height = 480 * 64;
+    }
 
     if(v4l2_probe_formats(vdo))
         return(-1);

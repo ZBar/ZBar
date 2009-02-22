@@ -62,6 +62,7 @@ struct zebra_processor_s {
 
     zebra_image_data_handler_t *handler; /* application data handler */
 
+    unsigned req_width, req_height;     /* application requested video size */
     uint32_t force_input;               /* force input format (debug) */
     uint32_t force_output;              /* force format conversion (debug) */
 

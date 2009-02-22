@@ -494,15 +494,23 @@ int zebra_processor_init (zebra_processor_t *proc,
     if(enable_display) {
         proc->window = zebra_window_create();
         if(!proc->window) {
-            rc = err_copy(proc, proc->window);
+            rc = err_capture(proc, SEV_FATAL, ZEBRA_ERR_NOMEM,
+                             __func__, "allocating window resources");
             goto done;
         }
     }
 
     if(dev) {
         proc->video = zebra_video_create();
-        if(!proc->video ||
-           zebra_video_open(proc->video, dev)) {
+        if(!proc->video) {
+            rc = err_capture(proc, SEV_FATAL, ZEBRA_ERR_NOMEM,
+                             __func__, "allocating video resources");
+            goto done;
+        }
+        if(proc->req_width || proc->req_height)
+            zebra_video_request_size(proc->video,
+                                     proc->req_width, proc->req_height);
+        if(zebra_video_open(proc->video, dev)) {
             rc = err_copy(proc, proc->video);
             goto done;
         }
@@ -617,9 +625,18 @@ int zebra_processor_set_config (zebra_processor_t *proc,
     return(zebra_image_scanner_set_config(proc->scanner, sym, cfg, val));
 }
 
+int zebra_processor_request_size (zebra_processor_t *proc,
+                                  unsigned width,
+                                  unsigned height)
+{
+    proc->req_width = width;
+    proc->req_height = height;
+    return(0);
+}
+
 int zebra_processor_force_format (zebra_processor_t *proc,
-                                   unsigned long input,
-                                   unsigned long output)
+                                  unsigned long input,
+                                  unsigned long output)
 {
     proc->force_input = input;
     proc->force_output = output;

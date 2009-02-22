@@ -484,12 +484,21 @@ extern int zebra_processor_init(zebra_processor_t *processor,
                                 const char *video_device,
                                 int enable_display);
 
+/** request a preferred size for the video image from the device.
+ * the request may be adjusted or completely ignored by the driver.
+ * @note must be called before zebra_processor_init()
+ * @since 0.6
+ */
+extern int zebra_processor_request_size(zebra_processor_t *processor,
+                                        unsigned width,
+                                        unsigned height);
+
 /** force specific input and output formats for debug/testing.
  * @note must be called before zebra_processor_init()
  */
-extern int zebra_processor_force_format (zebra_processor_t *processor,
-                                         unsigned long input_format,
-                                         unsigned long output_format);
+extern int zebra_processor_force_format(zebra_processor_t *processor,
+                                        unsigned long input_format,
+                                        unsigned long output_format);
 
 /** setup result handler callback.
  * the specified function will be called by the processor whenever
@@ -655,6 +664,16 @@ extern int zebra_video_open(zebra_video_t *video,
  * or the driver only supports v4l1
  */
 extern int zebra_video_get_fd(const zebra_video_t *video);
+
+/** request a preferred size for the video image from the device.
+ * the request may be adjusted or completely ignored by the driver.
+ * @returns 0 if successful or -1 if the video device is already
+ * initialized
+ * @since 0.6
+ */
+extern int zebra_video_request_size(zebra_video_t *video,
+                                    unsigned width,
+                                    unsigned height);
 
 /** retrieve current output image width.
  * @returns the width or 0 if the video device is not open
