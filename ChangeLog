@@ -1,4 +1,5 @@
 version 0.6:
+  * add missing files to distribution
   * release updates (version, NEWS, pacakging)
   * rename perl module to Barcode::Zebra (fit with existing cpan namespace)
   * add perl documentation and example

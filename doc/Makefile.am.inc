@@ -20,6 +20,7 @@ man_stamp = doc/man/man.stamp
 
 # distribute all documentation related files to avoid end-user rebuilds
 EXTRA_DIST += $(DOCSOURCES) $(man_stamp)
+EXTRA_DIST += doc/api/footer.html doc/style.xsl
 
 docs: $(dist_man_MANS) #dist_doc_DATA
 .PHONY: docs

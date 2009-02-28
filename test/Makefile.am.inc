@@ -52,7 +52,7 @@ test/moc_%.h: test/%.cpp
 	$(MOC) -i $(test_test_qt_CPPFLAGS) $< -o $@
 endif
 
-EXTRA_DIST += test/test_pygtk.py
+EXTRA_DIST += test/test_pygtk.py test/test_perl.pl
 
 # automake bug in "monolithic mode"?
 CLEANFILES += test/.libs/test_decode test/.libs/test_proc \

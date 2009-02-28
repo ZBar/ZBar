@@ -40,5 +40,12 @@ endif
 include $(srcdir)/test/Makefile.am.inc
 include $(srcdir)/doc/Makefile.am.inc
 
-EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py \
+EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py examples/paginate.pl \
     zebra.spec.in zebra.spec
+
+EXTRA_DIST += perl/MANIFEST perl/README perl/Changes perl/COPYING.LIB \
+    perl/Makefile.PL perl/typemap perl/Zebra.xs perl/ppport.h \
+    perl/Barcode/Zebra.pm perl/Barcode/Zebra/Image.pod \
+    perl/Barcode/Zebra/ImageScanner.pod perl/Barcode/Zebra/Processor.pod \
+    perl/Barcode/Zebra/Symbol.pod perl/t/Decoder.t perl/t/Image.t \
+    perl/t/Processor.t perl/t/Scanner.t perl/t/Zebra.t perl/t/barcode.png
