@@ -1,4 +1,5 @@
 current:
+  * add perl documentation and example
   * add v4l version debug/test override
   * add docs for new zebracam prescale option
   * add video pre-scaling API/option to video/processor/zebracam (req #2277340)

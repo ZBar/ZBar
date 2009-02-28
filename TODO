@@ -14,6 +14,7 @@ wrappers:
   * widget config APIs
   * drag-and-drop for widgets (configurable...)
   * Perl build support integration?
+  * Perl object lifetime problems? (eg Symbol)
   * base library python bindings
     * start w/enum wrappers
   * GTK and Qt perl bindings
