@@ -13,11 +13,11 @@ Prefix: %{_prefix}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
-Zebra is a library for scanning and decoding bar codes from various
-sources such as video streams, image files or raw intensity sensors.
-It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
-flexible, layered architecture features a fast, streaming interface
-with a minimal memory footprint.
+The Zebra Barcode Reader library is a library for scanning and
+decoding bar codes from various sources such as video streams, image
+files or raw intensity sensors.  It supports EAN, UPC, Code 128, Code
+39 and Interleaved 2 of 5. The flexible, layered architecture features
+a fast, streaming interface with a minimal memory footprint.
 
 %package devel
 Group: Development/Libraries
@@ -25,11 +25,11 @@ Summary: bar code library extra development files
 Requires: %{name} = %{version}
 
 %description devel
-Zebra is a library for scanning and decoding bar codes from various
-sources such as video streams, image files or raw intensity sensors.
-It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
-flexible, layered architecture features a fast, streaming interface
-with a minimal memory footprint.
+The Zebra Barcode Reader library is a library for scanning and
+decoding bar codes from various sources such as video streams, image
+files or raw intensity sensors.  It supports EAN, UPC, Code 128, Code
+39 and Interleaved 2 of 5. The flexible, layered architecture features
+a fast, streaming interface with a minimal memory footprint.
 
 This package contains header files and additional libraries used for
 developing applications that read bar codes with this library.
@@ -40,11 +40,11 @@ Summary: bar code reader GTK widget
 Requires: %{name} = %{version}, gtk2
 
 %description gtk
-Zebra is a library for scanning and decoding bar codes from various
-sources such as video streams, image files or raw intensity sensors.
-It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
-flexible, layered architecture features a fast, streaming interface
-with a minimal memory footprint.
+The Zebra Barcode Reader library is a library for scanning and
+decoding bar codes from various sources such as video streams, image
+files or raw intensity sensors.  It supports EAN, UPC, Code 128, Code
+39 and Interleaved 2 of 5. The flexible, layered architecture features
+a fast, streaming interface with a minimal memory footprint.
 
 This package contains a bar code scanning widget for use with GUI
 applications based on GTK+-2.0.
@@ -55,11 +55,11 @@ Summary: bar code reader GTK widget extra development files
 Requires: %{name}-gtk = %{version}, %{name}-devel = %{version}, gtk2-devel
 
 %description gtk-devel
-Zebra is a library for scanning and decoding bar codes from various
-sources such as video streams, image files or raw intensity sensors.
-It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
-flexible, layered architecture features a fast, streaming interface
-with a minimal memory footprint.
+The Zebra Barcode Reader library is a library for scanning and
+decoding bar codes from various sources such as video streams, image
+files or raw intensity sensors.  It supports EAN, UPC, Code 128, Code
+39 and Interleaved 2 of 5. The flexible, layered architecture features
+a fast, streaming interface with a minimal memory footprint.
 
 This package contains header files and additional libraries used for
 developing GUI applications based on GTK+-2.0 that include a bar code
@@ -71,11 +71,11 @@ Summary: bar code reader PyGTK widget
 Requires: %{name} = %{version}, pygtk2
 
 %description pygtk
-Zebra is a library for scanning and decoding bar codes from various
-sources such as video streams, image files or raw intensity sensors.
-It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
-flexible, layered architecture features a fast, streaming interface
-with a minimal memory footprint.
+The Zebra Barcode Reader library is a library for scanning and
+decoding bar codes from various sources such as video streams, image
+files or raw intensity sensors.  It supports EAN, UPC, Code 128, Code
+39 and Interleaved 2 of 5. The flexible, layered architecture features
+a fast, streaming interface with a minimal memory footprint.
 
 This package contains a bar code scanning widget for use in GUI
 applications based on PyGTK.
@@ -86,11 +86,11 @@ Summary: bar code reader Qt widget
 Requires: %{name} = %{version}, qt >= 4
 
 %description qt
-Zebra is a library for scanning and decoding bar codes from various
-sources such as video streams, image files or raw intensity sensors.
-It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
-flexible, layered architecture features a fast, streaming interface
-with a minimal memory footprint.
+The Zebra Barcode Reader library is a library for scanning and
+decoding bar codes from various sources such as video streams, image
+files or raw intensity sensors.  It supports EAN, UPC, Code 128, Code
+39 and Interleaved 2 of 5. The flexible, layered architecture features
+a fast, streaming interface with a minimal memory footprint.
 
 This package contains a bar code scanning widget for use with GUI
 applications based on Qt4.
@@ -101,11 +101,11 @@ Summary: bar code reader Qt widget extra development files
 Requires: %{name}-qt = %{version}, %{name}-devel = %{version}, qt-devel >= 4
 
 %description qt-devel
-Zebra is a library for scanning and decoding bar codes from various
-sources such as video streams, image files or raw intensity sensors.
-It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5. The
-flexible, layered architecture features a fast, streaming interface
-with a minimal memory footprint.
+The Zebra Barcode Reader library is a library for scanning and
+decoding bar codes from various sources such as video streams, image
+files or raw intensity sensors.  It supports EAN, UPC, Code 128, Code
+39 and Interleaved 2 of 5. The flexible, layered architecture features
+a fast, streaming interface with a minimal memory footprint.
 
 This package contains header files and additional libraries used for
 developing GUI applications based on Qt4 that include a bar code

@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.61])
-AC_INIT([zebra], [0.5], [spadix@users.sourceforge.net])
+AC_INIT([zebra], [0.6], [spadix@users.sourceforge.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AM_INIT_AUTOMAKE([1.10 -Wall -Werror foreign subdir-objects std-options dist-bzip2])
@@ -20,13 +20,13 @@ dnl   - If any interfaces have been added since the last public release,
 dnl     then increment age.
 dnl   - If any interfaces have been removed since the last public release,
 dnl     then set age to 0. 
-AC_SUBST([LIB_VERSION], [5:0:2])
-AC_SUBST([RELDATE], [2008-07-25])
+AC_SUBST([LIB_VERSION], [6:0:3])
+AC_SUBST([RELDATE], [2009-02-28])
 
 dnl widget libraries use their own versioning.
 dnl NB pygtk wrapper is *unversioned*
 AC_SUBST([ZGTK_LIB_VERSION], [0:0:0])
-AC_SUBST([ZQT_LIB_VERSION], [0:0:0])
+AC_SUBST([ZQT_LIB_VERSION], [1:0:1])
 
 AC_DEFINE_UNQUOTED([ZEBRA_VERSION_MAJOR],
   [[`echo "$PACKAGE_VERSION" | sed -e 's/\..*$//'`]],

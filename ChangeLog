@@ -1,4 +1,5 @@
-current:
+version 0.6:
+  * release updates (version, NEWS, pacakging)
   * rename perl module to Barcode::Zebra (fit with existing cpan namespace)
   * add perl documentation and example
   * add v4l version debug/test override

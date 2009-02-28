@@ -1,5 +1,16 @@
 Zebra Barcode Reader
 
+version 0.6 (2009-02-28):
+  This release fixes many bugs and adds several improvements suggested
+  by users:  support for decoding UPC-E is finished.  zebraimg is
+  now able to scan all pages of a document (such as PDF or TIFF) and
+  the new XML output includes the page where each barcode is found.
+  Camera support has been significantly improved, including the
+  addition of JPEG image formats.  Perl bindings make it even easier
+  to write a document or video scanning application.  Finally, we are
+  now able to offer initial support for building the base library for
+  Windows!
+
 version 0.5 (2008-07-25):
   Introducing zebra widgets!  Prioritized by popular demand, this
   release includes fully functional barcode scanning widgets for GTK,
