@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -193,6 +193,10 @@ int main (int argc, const char *argv[])
                 return(usage(1));
             }
             zebra_processor_request_size(proc, w, h);
+        }
+        else if(!strncmp(argv[i], "--v4l=", 6)) {
+            long int v = strtol(argv[i] + 6, NULL, 0);
+            zebra_processor_request_interface(proc, v);
         }
         else if(!strncmp(argv[i], "--infmt=", 8) &&
                 strlen(argv[i]) == 12)

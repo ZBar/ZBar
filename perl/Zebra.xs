@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the Zebra Barcode Library.
 //

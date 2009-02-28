@@ -167,6 +167,17 @@ int zebra_video_request_size (zebra_video_t *vdo,
     return(0);
 }
 
+int zebra_video_request_interface (zebra_video_t *vdo,
+                                   int ver)
+{
+    if(vdo->fd >= 0)
+        return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,
+                         "device already opened, unable to change interface"));
+    vdo->intf = (video_interface_t)ver;
+    zprintf(1, "request interface version %d\n", vdo->intf);
+    return(0);
+}
+
 int zebra_video_get_width (const zebra_video_t *vdo)
 {
     return(vdo->width);

@@ -1,4 +1,6 @@
 current:
+  * add v4l version debug/test override
+  * add docs for new zebracam prescale option
   * add video pre-scaling API/option to video/processor/zebracam (req #2277340)
   * add few missing APIs to perl xs wrapper
   * fix missing libjpeg #ifdef in convert

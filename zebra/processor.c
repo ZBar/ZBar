@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -510,6 +510,8 @@ int zebra_processor_init (zebra_processor_t *proc,
         if(proc->req_width || proc->req_height)
             zebra_video_request_size(proc->video,
                                      proc->req_width, proc->req_height);
+        if(proc->req_v4l)
+            zebra_video_request_interface(proc->video, proc->req_v4l);
         if(zebra_video_open(proc->video, dev)) {
             rc = err_copy(proc, proc->video);
             goto done;
@@ -631,6 +633,13 @@ int zebra_processor_request_size (zebra_processor_t *proc,
 {
     proc->req_width = width;
     proc->req_height = height;
+    return(0);
+}
+
+int zebra_processor_request_interface (zebra_processor_t *proc,
+                                       int ver)
+{
+    proc->req_v4l = ver;
     return(0);
 }
 

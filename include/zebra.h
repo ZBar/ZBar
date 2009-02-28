@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -247,6 +247,7 @@ extern const zebra_symbol_t *zebra_symbol_next(const zebra_symbol_t *symbol);
 
 /** print XML symbol element representation to user result buffer.
  * @see http://zebra.sourceforge.net/2008/barcode.xsd for the schema.
+ * @param symbol is the symbol to print
  * @param buffer is the inout result pointer, it will be reallocated
  * with a larger size if necessary.
  * @param buflen is inout length of the result buffer.
@@ -493,6 +494,14 @@ extern int zebra_processor_request_size(zebra_processor_t *processor,
                                         unsigned width,
                                         unsigned height);
 
+/** request a preferred video driver interface version for
+ * debug/testing.
+ * @note must be called before zebra_processor_init()
+ * @since 0.6
+ */
+extern int zebra_processor_request_interface(zebra_processor_t *processor,
+                                             int version);
+
 /** force specific input and output formats for debug/testing.
  * @note must be called before zebra_processor_init()
  */
@@ -504,6 +513,8 @@ extern int zebra_processor_force_format(zebra_processor_t *processor,
  * the specified function will be called by the processor whenever
  * new results are available from the video stream or a static image.
  * pass a NULL value to disable callbacks.
+ * @param processor the object on which to set the handler.
+ * @param handler the function to call when new results are available.
  * @param userdata is set as with zebra_processor_set_userdata().
  * @returns the previously registered handler
  */
@@ -674,6 +685,13 @@ extern int zebra_video_get_fd(const zebra_video_t *video);
 extern int zebra_video_request_size(zebra_video_t *video,
                                     unsigned width,
                                     unsigned height);
+
+/** request a preferred driver interface version for debug/testing.
+ * @note must be called before zebra_video_open()
+ * @since 0.6
+ */
+extern int zebra_video_request_interface(zebra_video_t *video,
+                                         int version);
 
 /** retrieve current output image width.
  * @returns the width or 0 if the video device is not open

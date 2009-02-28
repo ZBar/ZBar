@@ -1,4 +1,5 @@
 check_PROGRAMS += test/test_decode
+test_test_decode_SOURCES = test/test_decode.c test/pdf417_encode.h
 test_test_decode_CFLAGS = -Wno-unused $(AM_CFLAGS)
 test_test_decode_LDADD = zebra/libzebra.la $(AM_LDADD)
 
@@ -19,7 +20,7 @@ test_test_cpp_LDADD = zebra/libzebra.la $(AM_LDADD)
 
 if HAVE_JPEG
 check_PROGRAMS += test/test_jpeg
-test_test_jpeg_SOURCES = test/test_jpeg.cpp
+test_test_jpeg_SOURCES = test/test_jpeg.c
 test_test_jpeg_LDADD = zebra/libzebra.la $(AM_LDADD)
 endif
 endif

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -448,6 +448,7 @@ int _zebra_video_open (zebra_video_t *vdo,
         close(vdo->fd);
         zprintf(1, "closed camera fd=%d\n", vdo->fd);
         vdo->fd = -1;
+        vdo->intf = VIDEO_INVALID;
         (void)video_unlock(vdo);
     }
     if(!dev)
@@ -463,10 +464,13 @@ int _zebra_video_open (zebra_video_t *vdo,
                                "opening video device '%s'", dev));
     zprintf(1, "opened camera device %s (fd=%d)\n", dev, vdo->fd);
 
-    int rc;
+    int rc = -1;
 #ifdef HAVE_LINUX_VIDEODEV2_H
-    rc = _zebra_v4l2_probe(vdo);
+    if(vdo->intf != VIDEO_V4L1)
+        rc = _zebra_v4l2_probe(vdo);
     if(rc)
+#else
+    zprintf(1, "WARNING: not compiled with v4l2 support, trying v4l1\n");
 #endif
         rc = _zebra_v4l1_probe(vdo);
     if(rc && vdo->fd >= 0) {

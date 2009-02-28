@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the Zebra Barcode Library.
  *
@@ -63,6 +63,7 @@ struct zebra_processor_s {
     zebra_image_data_handler_t *handler; /* application data handler */
 
     unsigned req_width, req_height;     /* application requested video size */
+    int req_v4l;                        /* application requested v4l version */
     uint32_t force_input;               /* force input format (debug) */
     uint32_t force_output;              /* force format conversion (debug) */
 

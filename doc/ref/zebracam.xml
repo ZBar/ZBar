@@ -82,6 +82,18 @@
         </listitem>
       </varlistentry>
 
+      <varlistentry>
+        <term><option>--prescale=<replaceable
+          class="parameter">W</replaceable>x<replaceable
+          class="parameter">H</replaceable></option></term>
+        <listitem>
+          <simpara>Request video input scaling from the camera driver.
+          Possibly useful for reducing huge frames to achieve a higher
+          frame rate.  Note that the driver may adjust or completely
+          ignore the scaling request.</simpara>
+        </listitem>
+      </varlistentry>
+
     </variablelist>
   </refsection>
 
