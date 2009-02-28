@@ -7,16 +7,16 @@ use Test::More tests => 3;
 
 #########################
 
-BEGIN { use_ok('Zebra') }
+BEGIN { use_ok('Barcode::Zebra') }
 
 #########################
 
-like(Zebra::version(), qr<\d.\d>, 'version');
+like(Barcode::Zebra::version(), qr<\d.\d>, 'version');
 
 #########################
 
-Zebra::set_verbosity(16);
-Zebra::increase_verbosity();
+Barcode::Zebra::set_verbosity(16);
+Barcode::Zebra::increase_verbosity();
 pass('verbosity');
 
 #########################

@@ -1,13 +1,13 @@
 # objects
-Zebra::Error					T_PTROBJ
-Zebra::Symbol					T_PTROBJ
-Zebra::Image					T_PTROBJ
-Zebra::Processor				T_PTROBJ
-Zebra::Video					T_PTROBJ
-Zebra::Window					T_PTROBJ
-Zebra::ImageScanner				T_PTROBJ
-Zebra::Decoder					T_PTROBJ
-Zebra::Scanner					T_PTROBJ
+Barcode::Zebra::Error				T_PTROBJ
+Barcode::Zebra::Symbol				T_PTROBJ
+Barcode::Zebra::Image				T_PTROBJ
+Barcode::Zebra::Processor			T_PTROBJ
+Barcode::Zebra::Video				T_PTROBJ
+Barcode::Zebra::Window				T_PTROBJ
+Barcode::Zebra::ImageScanner			T_PTROBJ
+Barcode::Zebra::Decoder				T_PTROBJ
+Barcode::Zebra::Scanner				T_PTROBJ
 
 # enums
 zebra_color_t					T_ENUM

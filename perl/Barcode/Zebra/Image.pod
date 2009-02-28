@@ -25,13 +25,13 @@
 
 =head1 NAME
 
-Zebra::Image - image object to scan for bar codes
+Barcode::Zebra::Image - image object to scan for bar codes
 
 =head1 SYNOPSIS
 
-    use Zebra;
+    use Barcode::Zebra;
     
-    my $image = Zebra::Image->new();
+    my $image = Barcode::Zebra::Image->new();
     $image->set_format('422P');
     $image->set_size(114, 80);
     $image->set_data($raw_bits);
@@ -40,9 +40,9 @@ Zebra::Image - image object to scan for bar codes
 
 =head1 DESCRIPTION
 
-Zebra::Image is used to pass images to the bar code scanner.  It wraps
-raw image data with the meta-data required to interpret it (size,
-pixel format, etc)
+Barcode::Zebra::Image is used to pass images to the bar code scanner.
+It wraps raw image data with the meta-data required to interpret it
+(size, pixel format, etc)
 
 =head2 Image Formats
 
@@ -76,8 +76,8 @@ Examples:
 
 =item new()
 
-Create a new Zebra::Image object.  The size, pixel format and data
-must be defined before the object may be used.
+Create a new Barcode::Zebra::Image object.  The size, pixel format and
+data must be defined before the object may be used.
 
 =item get_format()
 
@@ -105,12 +105,13 @@ Return/specify the raw image data as a binary string.
 
 =item get_symbols()
 
-Return a list of scanned Zebra::Symbol results attached to this image.
+Return a list of scanned Barcode::Zebra::Symbol results attached to
+this image.
 
 =item convert(I<format>)
 
-Return a new Zebra::Image object converted to the indicated fourcc
-format.  Returns C<undef> if the conversion is not supported.
+Return a new Barcode::Zebra::Image object converted to the indicated
+fourcc format.  Returns C<undef> if the conversion is not supported.
 Conversion complexity ranges from CPU intensive to trivial depending
 on the formats involved.  Note that only a few conversions retain
 color information.
@@ -119,7 +120,9 @@ color information.
 
 =head1 SEE ALSO
 
-Zebra, Zebra::Image, Zebra::Symbol, zebraimg(1), zebracam(1)
+Barcode::Zebra, Barcode::Zebra::Image, Barcode::Zebra::Symbol
+
+zebraimg(1), zebracam(1)
 
 http://zebra.sf.net
 

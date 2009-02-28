@@ -20,7 +20,7 @@
 #
 #  http://sourceforge.net/projects/zebra
 #------------------------------------------------------------------------
-package Zebra;
+package Barcode::Zebra;
 
 use 5.006;
 use strict;
@@ -32,12 +32,12 @@ our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(SPACE BAR
                     version increase_verbosity set_verbosity);
 
-our $VERSION = '0.2';
+our $VERSION = '0.1';
 
 require XSLoader;
-XSLoader::load('Zebra', $VERSION);
+XSLoader::load('Barcode::Zebra', $VERSION);
 
-package Zebra::Error;
+package Barcode::Zebra::Error;
 
 use overload '""' => sub { return($_[0]->error_string()) };
 
@@ -47,22 +47,22 @@ __END__
 
 =head1 NAME
 
-Zebra - Perl interface to the Zebra Barcode Reader Library
+Barcode::Zebra - Perl interface to the Zebra Barcode Reader Library
 
 
 =head1 SYNOPSIS
 
 setup:
 
-    use Zebra;
+    use Barcode::Zebra;
     
-    my $reader = Zebra::Processor->new();
+    my $reader = Barcode::Zebra::Processor->new();
     $reader->init();
     $reader->set_data_handler(my_handler);
 
 scan an image:
 
-    my $image = Zebra::Image->new();
+    my $image = Barcode::Zebra::Image->new();
     $image->set_format('422P');
     $image->set_size(114, 80);
     $image->set_data($raw_bits);
@@ -77,9 +77,10 @@ scan from video:
 
 =head1 DESCRIPTION
 
-Zebra is a library for scanning and decoding bar codes from various
-sources such as video streams, image files or raw intensity sensors.
-It supports EAN, UPC, Code 128, Code 39 and Interleaved 2 of 5.
+The Zebra Barcode Reader library is a library for scanning and
+decoding bar codes from various sources such as video streams, image
+files or raw intensity sensors.  It supports EAN, UPC, Code 128, Code
+39 and Interleaved 2 of 5.
 
 These are the bindings for interacting directly with the library from
 Perl.
@@ -125,8 +126,9 @@ Dark area or colored bar segment.
 
 =head1 SEE ALSO
 
-Zebra::Processor, Zebra::ImageScanner, Zebra::Image, Zebra::Symbol,
-Zebra::Scanner, Zebra::Decoder
+Barcode::Zebra::Processor, Barcode::Zebra::ImageScanner,
+Barcode::Zebra::Image, Barcode::Zebra::Symbol,
+Barcode::Zebra::Scanner, Barcode::Zebra::Decoder
 
 zebraimg(1), zebracam(1)
 

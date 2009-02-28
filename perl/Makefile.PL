@@ -2,9 +2,9 @@ use 5.006;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-    NAME              => 'Zebra',
-    VERSION_FROM      => "Zebra.pm",
-    ABSTRACT_FROM     => "Zebra.pm",
+    NAME              => 'Barcode::Zebra',
+    VERSION_FROM      => "Barcode/Zebra.pm",
+    ABSTRACT_FROM     => "Barcode/Zebra.pm",
     AUTHOR            => 'Jeff Brown <spadix@users.sourceforge.net>',
-    LIBS              => ['-lzebra '],
+    LIBS              => ['-lzebra'],
 );

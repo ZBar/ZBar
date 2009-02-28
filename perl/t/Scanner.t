@@ -1,5 +1,5 @@
 # Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl Zebra.t'
+# `make test'. After `make install' it should work as `perl Scanner.t'
 
 use warnings;
 use strict;
@@ -7,12 +7,12 @@ use Test::More tests => 3;
 
 #########################
 
-BEGIN { use_ok('Zebra') }
+BEGIN { use_ok('Barcode::Zebra') }
 
 #########################
 
-my $scanner = Zebra::Scanner->new();
-isa_ok($scanner, 'Zebra::Scanner', 'scanner');
+my $scanner = Barcode::Zebra::Scanner->new();
+isa_ok($scanner, 'Barcode::Zebra::Scanner', 'scanner');
 
 #########################
 

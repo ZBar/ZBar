@@ -28,15 +28,15 @@
 
 #include <zebra.h>
 
-typedef zebra_symbol_t *Zebra__Symbol;
-typedef zebra_image_t *Zebra__Image;
-typedef zebra_processor_t *Zebra__Processor;
-typedef zebra_video_t *Zebra__Video;
-typedef zebra_window_t *Zebra__Window;
-typedef zebra_image_scanner_t *Zebra__ImageScanner;
-typedef zebra_decoder_t *Zebra__Decoder;
-typedef zebra_scanner_t *Zebra__Scanner;
-typedef void *Zebra__Error;
+typedef zebra_symbol_t *Barcode__Zebra__Symbol;
+typedef zebra_image_t *Barcode__Zebra__Image;
+typedef zebra_processor_t *Barcode__Zebra__Processor;
+typedef zebra_video_t *Barcode__Zebra__Video;
+typedef zebra_window_t *Barcode__Zebra__Window;
+typedef zebra_image_scanner_t *Barcode__Zebra__ImageScanner;
+typedef zebra_decoder_t *Barcode__Zebra__Decoder;
+typedef zebra_scanner_t *Barcode__Zebra__Scanner;
+typedef void *Barcode__Zebra__Error;
 
 typedef unsigned long fourcc_t;
 typedef int timeout_t;
@@ -77,7 +77,7 @@ static inline SV *lookup_enum (AV *lookup, int val)
 static inline void check_error (int rc, void *obj)
 {
     if(rc < 0) {
-        sv_setref_pv(get_sv("@", TRUE), "Zebra::Error", obj);
+        sv_setref_pv(get_sv("@", TRUE), "Barcode::Zebra::Error", obj);
         croak(NULL);
     }
 }
@@ -158,7 +158,7 @@ static void processor_handler (zebra_image_t *image,
 {
     SV *img;
     zebra_image_ref(image, 1);
-    img = sv_setref_pv(sv_newmortal(), "Zebra::Image", image);
+    img = sv_setref_pv(sv_newmortal(), "Barcode::Zebra::Image", image);
     activate_handler((void*)userdata, img);
     SvREFCNT_dec(img);
 }
@@ -169,13 +169,13 @@ static void decoder_handler (zebra_decoder_t *decoder)
 }
 
 
-MODULE = Zebra		PACKAGE = Zebra			PREFIX = zebra_
+MODULE = Barcode::Zebra	PACKAGE = Barcode::Zebra		PREFIX = zebra_
 
 PROTOTYPES: ENABLE
 
 BOOT:
     {
-        HV *stash = gv_stashpv("Zebra", TRUE);
+        HV *stash = gv_stashpv("Barcode::Zebra", TRUE);
 
         LOOKUP_zebra_color_t = newAV();
         CONSTANT(color, , SPACE, "SPACE");
@@ -216,11 +216,11 @@ parse_config(config_string)
         mPUSHi(val);
 
 
-MODULE = Zebra		PACKAGE = Zebra::Error		PREFIX = zebra_
+MODULE = Barcode::Zebra	PACKAGE = Barcode::Zebra::Error	PREFIX = zebra_
 
 BOOT:
     {
-        HV *stash = gv_stashpv("Zebra::Error", TRUE);
+        HV *stash = gv_stashpv("Barcode::Zebra::Error", TRUE);
 
         LOOKUP_zebra_error_t = newAV();
         CONSTANT(error, ERR_, NOMEM, "out of memory");
@@ -237,7 +237,7 @@ BOOT:
 
 zebra_error_t
 get_error_code(err)
-	Zebra::Error	err
+	Barcode::Zebra::Error	err
     CODE:
 	RETVAL = _zebra_get_error_code(err);
     OUTPUT:
@@ -245,18 +245,18 @@ get_error_code(err)
 
 const char *
 error_string(err)
-	Zebra::Error	err
+	Barcode::Zebra::Error	err
     CODE:
 	RETVAL = _zebra_error_string(err, 1);
     OUTPUT:
 	RETVAL
 
 
-MODULE = Zebra		PACKAGE = Zebra::Config		PREFIX = zebra_config_
+MODULE = Barcode::Zebra	PACKAGE = Barcode::Zebra::Config	PREFIX = zebra_config_
 
 BOOT:
     {
-        HV *stash = gv_stashpv("Zebra::Config", TRUE);
+        HV *stash = gv_stashpv("Barcode::Zebra::Config", TRUE);
 
         LOOKUP_zebra_config_t = newAV();
         CONSTANT(config, CFG_, ENABLE, "enable");
@@ -266,11 +266,11 @@ BOOT:
     }
 
 
-MODULE = Zebra		PACKAGE = Zebra::Symbol		PREFIX = zebra_symbol_
+MODULE = Barcode::Zebra	PACKAGE = Barcode::Zebra::Symbol	PREFIX = zebra_symbol_
 
 BOOT:
     {
-        HV *stash = gv_stashpv("Zebra::Symbol", TRUE);
+        HV *stash = gv_stashpv("Barcode::Zebra::Symbol", TRUE);
 
         LOOKUP_zebra_symbol_type_t = newAV();
         CONSTANT(symbol_type, , NONE, "None");
@@ -289,19 +289,19 @@ BOOT:
 
 zebra_symbol_type_t
 zebra_symbol_get_type(symbol)
-	Zebra::Symbol symbol
+	Barcode::Zebra::Symbol symbol
 
 const char *
 zebra_symbol_get_data(symbol)
-	Zebra::Symbol symbol
+	Barcode::Zebra::Symbol symbol
 
 int
 zebra_symbol_get_count(symbol)
-	Zebra::Symbol symbol
+	Barcode::Zebra::Symbol symbol
 
 SV *
 zebra_symbol_get_loc(symbol)
-	Zebra::Symbol symbol
+	Barcode::Zebra::Symbol symbol
     PREINIT:
         unsigned i, size;
     PPCODE:
@@ -315,9 +315,9 @@ zebra_symbol_get_loc(symbol)
         }
 
 
-MODULE = Zebra		PACKAGE = Zebra::Image		PREFIX = zebra_image_
+MODULE = Barcode::Zebra	PACKAGE = Barcode::Zebra::Image	PREFIX = zebra_image_
 
-Zebra::Image
+Barcode::Zebra::Image
 new(package)
         char *	package
     CODE:
@@ -327,33 +327,33 @@ new(package)
 
 void
 DESTROY(image)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
     CODE:
         zebra_image_destroy(image);
 
-Zebra::Image
+Barcode::Zebra::Image
 zebra_image_convert(image, format)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
 	fourcc_t	format
 
-Zebra::Image
+Barcode::Zebra::Image
 zebra_image_convert_resize(image, format, width, height)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
 	fourcc_t	format
 	unsigned width
 	unsigned height
 
 fourcc_t
 zebra_image_get_format(image)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
 
 unsigned
 zebra_image_get_sequence(image)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
 
 void
 get_size(image)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
     PPCODE:
         EXTEND(SP, 2);
         mPUSHu(zebra_image_get_width(image));
@@ -361,7 +361,7 @@ get_size(image)
 
 SV *
 zebra_image_get_data(image)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
     CODE:
 	RETVAL = newSVpvn(zebra_image_get_data(image),
                           zebra_image_get_data_length(image));
@@ -370,33 +370,34 @@ zebra_image_get_data(image)
 
 SV *
 get_symbols(image)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
     PREINIT:
         const zebra_symbol_t *sym;
     PPCODE:
 	sym = zebra_image_first_symbol(image);
 	for(; sym; sym = zebra_symbol_next(sym))
-            XPUSHs(sv_setref_pv(sv_newmortal(), "Zebra::Symbol", (void*)sym));
+            XPUSHs(sv_setref_pv(sv_newmortal(), "Barcode::Zebra::Symbol",
+                   (void*)sym));
 
 void
 zebra_image_set_format(image, format)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
 	fourcc_t	format
 
 void
 zebra_image_set_sequence(image, seq_num)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
 	unsigned	seq_num
 
 void
 zebra_image_set_size(image, width, height)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
 	unsigned	width
 	unsigned	height
 
 void
 zebra_image_set_data(image, data)
-        Zebra::Image	image
+        Barcode::Zebra::Image	image
 	SV *	data
     PREINIT:
         SV *old;
@@ -421,9 +422,9 @@ zebra_image_set_data(image, data)
             croak("image data must be binary string");
 
 
-MODULE = Zebra		PACKAGE = Zebra::Processor	PREFIX = zebra_processor_
+MODULE = Barcode::Zebra	PACKAGE = Barcode::Zebra::Processor	PREFIX = zebra_processor_
 
-Zebra::Processor
+Barcode::Zebra::Processor
 new(package, threaded=0)
         char *	package
         bool	threaded
@@ -434,13 +435,13 @@ new(package, threaded=0)
 
 void
 DESTROY(processor)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
     CODE:
         zebra_processor_destroy(processor);
 
 void
 zebra_processor_init(processor, video_device="/dev/video0", enable_display=1)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
         const char *	video_device
 	bool	enable_display
     CODE:
@@ -449,7 +450,7 @@ zebra_processor_init(processor, video_device="/dev/video0", enable_display=1)
 
 void
 zebra_processor_request_size(processor, width, height)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
 	unsigned	width
 	unsigned	height
     CODE:
@@ -458,7 +459,7 @@ zebra_processor_request_size(processor, width, height)
 
 void
 zebra_processor_force_format(processor, input_format=0, output_format=0)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
 	fourcc_t	input_format
 	fourcc_t	output_format
     CODE:
@@ -467,19 +468,19 @@ zebra_processor_force_format(processor, input_format=0, output_format=0)
 
 void
 zebra_processor_set_config(processor, symbology, config, value=1)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
 	zebra_symbol_type_t	symbology
 	zebra_config_t	config
 	int	value
 
 config_error
 zebra_processor_parse_config(processor, config_string)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
         const char *config_string
 
 bool
 zebra_processor_is_visible(processor)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
     CODE:
 	check_error((RETVAL = zebra_processor_is_visible(processor)),
                     processor);
@@ -488,7 +489,7 @@ zebra_processor_is_visible(processor)
 
 void
 zebra_processor_set_visible(processor, visible=1)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
 	bool	visible
     CODE:
 	check_error(zebra_processor_set_visible(processor, visible),
@@ -496,7 +497,7 @@ zebra_processor_set_visible(processor, visible=1)
 
 void
 zebra_processor_set_active(processor, active=1)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
 	bool	active
     CODE:
 	check_error(zebra_processor_set_active(processor, active),
@@ -504,7 +505,7 @@ zebra_processor_set_active(processor, active=1)
 
 int
 zebra_processor_user_wait(processor, timeout=-1)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
 	timeout_t	timeout
     CODE:
 	check_error((RETVAL = zebra_processor_user_wait(processor, timeout)),
@@ -514,7 +515,7 @@ zebra_processor_user_wait(processor, timeout=-1)
 
 int
 process_one(processor, timeout=-1)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
 	timeout_t	timeout
     CODE:
 	check_error((RETVAL = zebra_process_one(processor, timeout)),
@@ -524,8 +525,8 @@ process_one(processor, timeout=-1)
 
 int
 process_image(processor, image)
-        Zebra::Processor	processor
-        Zebra::Image	image
+        Barcode::Zebra::Processor	processor
+        Barcode::Zebra::Image	image
     CODE:
 	check_error((RETVAL = zebra_process_image(processor, image)),
                     processor);
@@ -534,7 +535,7 @@ process_image(processor, image)
 
 void
 zebra_processor_set_data_handler(processor, handler = 0, closure = 0)
-        Zebra::Processor	processor
+        Barcode::Zebra::Processor	processor
 	SV *	handler
 	SV *	closure
     PREINIT:
@@ -547,9 +548,9 @@ zebra_processor_set_data_handler(processor, handler = 0, closure = 0)
         zebra_processor_set_data_handler(processor, processor_handler, wrap);
 
 
-MODULE = Zebra		PACKAGE = Zebra::ImageScanner	PREFIX = zebra_image_scanner_
+MODULE = Barcode::Zebra	PACKAGE = Barcode::Zebra::ImageScanner	PREFIX = zebra_image_scanner_
 
-Zebra::ImageScanner
+Barcode::Zebra::ImageScanner
 new(package)
         char *	package
     CODE:
@@ -559,40 +560,40 @@ new(package)
 
 void
 DESTROY(scanner)
-        Zebra::ImageScanner	scanner
+        Barcode::Zebra::ImageScanner	scanner
     CODE:
         zebra_image_scanner_destroy(scanner);
 
 void
 zebra_image_scanner_set_config(scanner, symbology, config, value=1)
-        Zebra::ImageScanner	scanner
+        Barcode::Zebra::ImageScanner	scanner
 	zebra_symbol_type_t	symbology
 	zebra_config_t	config
 	int	value
 
 config_error
 zebra_image_scanner_parse_config(scanner, config_string)
-        Zebra::ImageScanner	scanner
+        Barcode::Zebra::ImageScanner	scanner
         const char *config_string
 
 void
 zebra_image_scanner_enable_cache(scanner, enable)
-        Zebra::ImageScanner	scanner
+        Barcode::Zebra::ImageScanner	scanner
 	int	enable
 
 int
 scan_image(scanner, image)
-        Zebra::ImageScanner	scanner
-        Zebra::Image	image
+        Barcode::Zebra::ImageScanner	scanner
+        Barcode::Zebra::Image	image
     CODE:
 	RETVAL = zebra_scan_image(scanner, image);
     OUTPUT:
 	RETVAL
 
 
-MODULE = Zebra		PACKAGE = Zebra::Decoder	PREFIX = zebra_decoder_
+MODULE = Barcode::Zebra	PACKAGE = Barcode::Zebra::Decoder	PREFIX = zebra_decoder_
 
-Zebra::Decoder
+Barcode::Zebra::Decoder
 new(package)
         char *	package
     CODE:
@@ -602,34 +603,34 @@ new(package)
 
 void
 DESTROY(decoder)
-        Zebra::Decoder	decoder
+        Barcode::Zebra::Decoder	decoder
     CODE:
         /* FIXME cleanup handler wrapper */
         zebra_decoder_destroy(decoder);
 
 void
 zebra_decoder_set_config(decoder, symbology, config, value=1)
-        Zebra::Decoder	decoder
+        Barcode::Zebra::Decoder	decoder
 	zebra_symbol_type_t	symbology
 	zebra_config_t	config
 	int	value
 
 config_error
 zebra_decoder_parse_config(decoder, config_string)
-        Zebra::Decoder decoder
+        Barcode::Zebra::Decoder decoder
         const char *config_string
 
 void
 zebra_decoder_reset(decoder)
-        Zebra::Decoder	decoder
+        Barcode::Zebra::Decoder	decoder
 
 void
 zebra_decoder_new_scan(decoder)
-	Zebra::Decoder	decoder
+	Barcode::Zebra::Decoder	decoder
 
 zebra_symbol_type_t
 decode_width(decoder, width)
-	Zebra::Decoder	decoder
+	Barcode::Zebra::Decoder	decoder
 	unsigned	width
     CODE:
 	RETVAL = zebra_decode_width(decoder, width);
@@ -638,19 +639,19 @@ decode_width(decoder, width)
 
 zebra_color_t
 zebra_decoder_get_color(decoder)
-	Zebra::Decoder	decoder
+	Barcode::Zebra::Decoder	decoder
 
 const char *
 zebra_decoder_get_data(decoder)
-	Zebra::Decoder	decoder
+	Barcode::Zebra::Decoder	decoder
 
 zebra_symbol_type_t
 zebra_decoder_get_type(decoder)
-	Zebra::Decoder	decoder
+	Barcode::Zebra::Decoder	decoder
 
 void
 zebra_decoder_set_handler(decoder, handler = 0, closure = 0)
-	Zebra::Decoder	decoder
+	Barcode::Zebra::Decoder	decoder
 	SV *	handler
 	SV *	closure
     PREINIT:
@@ -665,12 +666,12 @@ zebra_decoder_set_handler(decoder, handler = 0, closure = 0)
         }
 
 
-MODULE = Zebra		PACKAGE = Zebra::Scanner	PREFIX = zebra_scanner_
+MODULE = Barcode::Zebra	PACKAGE = Barcode::Zebra::Scanner	PREFIX = zebra_scanner_
 
-Zebra::Scanner
+Barcode::Zebra::Scanner
 new(package, decoder = 0)
         char *	package
-        Zebra::Decoder	decoder
+        Barcode::Zebra::Decoder	decoder
     CODE:
         RETVAL = zebra_scanner_create(decoder);
     OUTPUT:
@@ -678,29 +679,29 @@ new(package, decoder = 0)
 
 void
 DESTROY(scanner)
-        Zebra::Scanner	scanner
+        Barcode::Zebra::Scanner	scanner
     CODE:
         zebra_scanner_destroy(scanner);
 
 zebra_symbol_type_t
 zebra_scanner_reset(scanner)
-	Zebra::Scanner	scanner
+	Barcode::Zebra::Scanner	scanner
 
 zebra_symbol_type_t
 zebra_scanner_new_scan(scanner)
-	Zebra::Scanner	scanner
+	Barcode::Zebra::Scanner	scanner
 
 zebra_color_t
 zebra_scanner_get_color(scanner)
-	Zebra::Scanner	scanner
+	Barcode::Zebra::Scanner	scanner
 
 unsigned
 zebra_scanner_get_width(scanner)
-	Zebra::Scanner	scanner
+	Barcode::Zebra::Scanner	scanner
 
 zebra_symbol_type_t
 scan_y(scanner, y)
-	Zebra::Scanner	scanner
+	Barcode::Zebra::Scanner	scanner
 	int	y
     CODE:
 	RETVAL = zebra_scan_y(scanner, y);

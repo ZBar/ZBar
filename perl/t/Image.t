@@ -1,5 +1,5 @@
 # Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl Zebra.t'
+# `make test'. After `make install' it should work as `perl Image.t'
 
 use warnings;
 use strict;
@@ -7,19 +7,19 @@ use Test::More tests => 16;
 
 #########################
 
-BEGIN { use_ok('Zebra') }
+BEGIN { use_ok('Barcode::Zebra') }
 
-Zebra::set_verbosity(16);
-
-#########################
-
-my $image = Zebra::Image->new();
-isa_ok($image, 'Zebra::Image', 'image');
+Barcode::Zebra::set_verbosity(16);
 
 #########################
 
-my $scanner = Zebra::ImageScanner->new();
-isa_ok($scanner, 'Zebra::ImageScanner', 'image scanner');
+my $image = Barcode::Zebra::Image->new();
+isa_ok($image, 'Barcode::Zebra::Image', 'image');
+
+#########################
+
+my $scanner = Barcode::Zebra::ImageScanner->new();
+isa_ok($scanner, 'Barcode::Zebra::ImageScanner', 'image scanner');
 
 #########################
 
@@ -77,7 +77,7 @@ SKIP: {
     #########################
 
     my $sym = $symbols[0];
-    isa_ok($sym, 'Zebra::Symbol', 'symbol');
+    isa_ok($sym, 'Barcode::Zebra::Symbol', 'symbol');
 
     #########################
 
@@ -85,7 +85,7 @@ SKIP: {
 
     #########################
 
-    is($sym->get_type(), Zebra::Symbol::EAN13, 'result type');
+    is($sym->get_type(), Barcode::Zebra::Symbol::EAN13, 'result type');
 
     #########################
 

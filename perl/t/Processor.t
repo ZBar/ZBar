@@ -1,5 +1,5 @@
 # Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl Zebra.t'
+# `make test'. After `make install' it should work as `perl Processor.t'
 
 use warnings;
 use strict;
@@ -7,14 +7,14 @@ use Test::More tests => 19;
 
 #########################
 
-BEGIN { use_ok('Zebra') }
+BEGIN { use_ok('Barcode::Zebra') }
 
-Zebra::set_verbosity(32);
+Barcode::Zebra::set_verbosity(32);
 
 #########################
 
-my $proc = Zebra::Processor->new();
-isa_ok($proc, 'Zebra::Processor', 'processor');
+my $proc = Barcode::Zebra::Processor->new();
+isa_ok($proc, 'Barcode::Zebra::Processor', 'processor');
 
 #########################
 
@@ -41,7 +41,7 @@ $proc->set_data_handler(sub {
     #########################
 
     my $image = $_[1];
-    isa_ok($image, 'Zebra::Image', 'image');
+    isa_ok($image, 'Barcode::Zebra::Image', 'image');
 
     #########################
 
@@ -51,11 +51,11 @@ $proc->set_data_handler(sub {
     #########################
 
     my $sym = $symbols[0];
-    isa_ok($sym, 'Zebra::Symbol', 'symbol');
+    isa_ok($sym, 'Barcode::Zebra::Symbol', 'symbol');
 
     #########################
 
-    is($sym->get_type(), Zebra::Symbol::EAN13, 'result type');
+    is($sym->get_type(), Barcode::Zebra::Symbol::EAN13, 'result type');
 
     #########################
 
@@ -94,7 +94,7 @@ SKIP: {
     my $im = Image::Magick->new();
     my $err = $im->Read('t/barcode.png');
     die($err) if($err);
-    my $image = Zebra::Image->new();
+    my $image = Barcode::Zebra::Image->new();
     $image->set_format('422P');
     $image->set_size($im->Get(qw(columns rows)));
     $image->set_data($im->ImageToBlob(

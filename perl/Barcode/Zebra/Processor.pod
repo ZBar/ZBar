@@ -25,15 +25,15 @@
 
 =head1 NAME
 
-Zebra::Processor - self-contained bar code reader
+Barcode::Zebra::Processor - self-contained bar code reader
 
 =head1 SYNOPSIS
 
 setup:
 
-    use Zebra;
+    use Barcode::Zebra;
     
-    my $reader = Zebra::Processor->new();
+    my $reader = Barcode::Zebra::Processor->new();
     $reader->init("/dev/video1", 1);
     $reader->parse_config('code39.disable');
     $reader->set_data_handler(my_handler);
@@ -50,14 +50,14 @@ scan from video:
 
 =head1 DESCRIPTION
 
-A Zebra::Processor may be used to quickly create stand-alone bar code
-scanning applications.  It has interfaces to scan images or video and
-to optionally display a video/image preview to a window.
+A Barcode::Zebra::Processor may be used to quickly create stand-alone
+bar code scanning applications.  It has interfaces to scan images or
+video and to optionally display a video/image preview to a window.
 
 This interface is not well suited for integration with an existing
 GUI, as the library manages the optional preview window and any user
-interaction.  Use a Zebra::ImageScanner or Investigate the avilable
-widget interfaces for GUI applications.
+interaction.  Use a Barcode::Zebra::ImageScanner or Investigate the
+avilable widget interfaces for GUI applications.
 
 =head1 REFERENCE
 
@@ -77,9 +77,9 @@ Open a video input device and/or prepare to display output.
 
 Setup a callback to process results whenever new results are available
 from the video stream or a static image.  The specified callable will
-be invoked with the associated Zebra::Processor object and I<closure>
-as arguments.  Closure may be achieved either using standard Perl
-closure or by manually passing a scalar via I<closure>.
+be invoked with the associated Barcode::Zebra::Processor object and
+I<closure> as arguments.  Closure may be achieved either using
+standard Perl closure or by manually passing a scalar via I<closure>.
 
 =item is_visible()
 
@@ -103,7 +103,7 @@ multiple results may still be returned.
 
 =item process_image([I<image>])
 
-Scan a Zebra::Image for bar codes.
+Scan a Barcode::Zebra::Image for bar codes.
 
 =item parse_config(I<configstr>)
 
@@ -120,7 +120,9 @@ called before C<init()>
 
 =head1 SEE ALSO
 
-Zebra, Zebra::Image, Zebra::ImageScanner, zebraimg(1), zebracam(1)
+Barcode::Zebra, Barcode::Zebra::Image, Barcode::Zebra::ImageScanner
+
+zebraimg(1), zebracam(1)
 
 http://zebra.sf.net
 

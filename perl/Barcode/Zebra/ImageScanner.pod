@@ -25,23 +25,20 @@
 
 =head1 NAME
 
-Zebra::Symbol - bar code scan result object
+Barcode::Zebra::ImageScanner - scan images for bar codes
 
 =head1 SYNOPSIS
 
-    my @symbols = $image->get_symbols();
-    foreach my $sym (@symbols) {
-        print("decoded: " . $sym->get_type() .
-              ":" . $sym->get_data().
-              "(" . $sym->get_count() . ")");
-    }
+    use Barcode::Zebra;
+    
+    my $scanner = Barcode::Zebra::ImageScanner->new();
+    $scanner->parse_config('i25.disable');
+    $scanner->scan_image($image);
 
 =head1 DESCRIPTION
 
-Zebra::Symbol objects are constant results returned for each bar code
-scanned from images or video.  This object wraps the raw symbol data
-with additional information about the decode (symbology, confidence,
-location, etc)
+A Barcode::Zebra::ImageScanner is used to scan for bar codes in a
+Barcode::Zebra::Image.
 
 =head1 REFERENCE
 
@@ -49,73 +46,28 @@ location, etc)
 
 =over 4
 
-=item get_type()
+=item new()
 
-The type of bar code "symbology" from which the data was decoded.
+Create a new bar code image scanner instance.
 
-=item get_data()
+=item scan_image([I<image>])
 
-The decoded data string.  Note that some symbologies can encode binary
-data.
+Scan a Barcode::Zebra::Image for bar codes.
 
-=item get_count()
+=item enable_cache([I<enable>])
 
-Current cache count of the symbol.  This integer value provides
-inter-scan reliability and redundancy information if enabled at the
-Zebra::ImageScanner.
+Enable the inter-image result consistency cache.
 
-=over 2
+=item parse_config(I<configstr>)
 
-=item *
-
-A negative value indicates that this result is still uncertain
-
-=item *
-
-A zero value indicates the first occurance of this result with high
-confidence
-
-=item *
-
-A positive value indicates a duplicate scan
-
-=back
-
-=back
-
-=head2 Constants
-
-Bar code type "symbology" constants:
-
-=over 4
-
-=item NONE
-
-=item PARTIAL
-
-=item EAN13
-
-=item EAN8
-
-=item UPCA
-
-=item UPCE
-
-=item ISBN10
-
-=item ISBN13
-
-=item I25
-
-=item CODE39
-
-=item CODE128
+Apply a decoder configuration setting.  See the documentation for
+C<zebracam>/C<zebraimg> for available configuration options.
 
 =back
 
 =head1 SEE ALSO
 
-Zebra, Zebra::Image, zebraimg(1), zebracam(1)
+Barcode::Zebra, Barcode::Zebra::Image, zebraimg(1), zebracam(1)
 
 http://zebra.sf.net
 

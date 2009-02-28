@@ -24,7 +24,7 @@
 use warnings;
 use strict;
 
-use Zebra;
+use Barcode::Zebra;
 use Image::Magick;
 
 warn("no input files specified?\n") if(!@ARGV);
@@ -33,7 +33,7 @@ warn("no input files specified?\n") if(!@ARGV);
 my $out = undef;
 
 # barcode scanner
-my $scanner = Zebra::ImageScanner->new();
+my $scanner = Barcode::Zebra::ImageScanner->new();
 
 foreach my $file (@ARGV) {
     print "scanning from \"$file\"\n";
@@ -43,7 +43,7 @@ foreach my $file (@ARGV) {
 
     foreach my $page (@$imseq) {
         # convert ImageMagick page to Zebra image
-        my $zimg = Zebra::Image->new();
+        my $zimg = Barcode::Zebra::Image->new();
         $zimg->set_format('Y800');
         $zimg->set_size($page->Get(qw(columns rows)));
         $zimg->set_data($page->Clone()->ImageToBlob(magick => 'GRAY', depth => 8));
