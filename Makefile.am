@@ -45,7 +45,7 @@ EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py examples/paginate.pl \
 
 EXTRA_DIST += perl/MANIFEST perl/README perl/Changes perl/COPYING.LIB \
     perl/Makefile.PL perl/typemap perl/Zebra.xs perl/ppport.h \
-    perl/Barcode/Zebra.pm perl/Barcode/Zebra/Image.pod \
-    perl/Barcode/Zebra/ImageScanner.pod perl/Barcode/Zebra/Processor.pod \
-    perl/Barcode/Zebra/Symbol.pod perl/t/Decoder.t perl/t/Image.t \
-    perl/t/Processor.t perl/t/Scanner.t perl/t/Zebra.t perl/t/barcode.png
+    perl/Zebra.pm perl/Zebra/Image.pod perl/Zebra/ImageScanner.pod \
+    perl/Zebra/Processor.pod perl/Zebra/Symbol.pod \
+    perl/t/Decoder.t perl/t/Image.t perl/t/Processor.t perl/t/Scanner.t \
+    perl/t/Zebra.t perl/t/barcode.png
