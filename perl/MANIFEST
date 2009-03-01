@@ -6,11 +6,11 @@ Makefile.PL
 typemap
 Zebra.xs
 ppport.h
-Barcode/Zebra.pm
-Barcode/Zebra/Image.pod
-Barcode/Zebra/ImageScanner.pod
-Barcode/Zebra/Processor.pod
-Barcode/Zebra/Symbol.pod
+Zebra.pm
+Zebra/Image.pod
+Zebra/ImageScanner.pod
+Zebra/Processor.pod
+Zebra/Symbol.pod
 t/barcode.png
 t/Decoder.t
 t/Image.t

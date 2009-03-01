@@ -1,4 +1,5 @@
 version 0.6:
+  * hotfix broken perl install (name change)
   * add missing files to distribution
   * release updates (version, NEWS, pacakging)
   * rename perl module to Barcode::Zebra (fit with existing cpan namespace)
