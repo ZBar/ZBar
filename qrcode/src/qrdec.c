@@ -87,11 +87,11 @@ void qr_reader_free(qr_reader *_reader){
   Whether the line is horizontal or vertical is determined by context.*/
 struct qr_finder_line{
   /*The location of the upper/left endpoint of the line.
-    The midpoint of the far left/top light section is used, instead of the
+    The midpoint of the far left/top dark section is used, instead of the
      edge, because it can be located more reliably.*/
   qr_point pos;
   /*The length of the line.
-    This extends to the midpoint of the far right/bottom light section, instead
+    This extends to the midpoint of the far right/bottom dark section, instead
      of the edge.*/
   int      len;
 };
@@ -663,15 +663,15 @@ static void qr_line_fit_points(qr_line _l,qr_point *_p,int _np,int _res){
   int sround;
   int i;
   sx=sy=0;
-  ymin=xmin=0;
-  ymax=xmax=INT_MAX;
+  ymax=xmax=INT_MIN;
+  ymin=xmin=INT_MAX;
   for(i=0;i<_np;i++){
     sx+=_p[i][0];
     xmin=QR_MINI(xmin,_p[i][0]);
-    xmax=QR_MINI(xmax,_p[i][0]);
+    xmax=QR_MAXI(xmax,_p[i][0]);
     sy+=_p[i][1];
     ymin=QR_MINI(ymin,_p[i][1]);
-    ymax=QR_MINI(ymax,_p[i][1]);
+    ymax=QR_MAXI(ymax,_p[i][1]);
   }
   xbar=((sx<<1)+_np)/(_np<<1);
   ybar=((sy<<1)+_np)/(_np<<1);
@@ -710,8 +710,8 @@ static int qr_line_isect(qr_point _p,const qr_line _l0,const qr_line _l1){
     y=-y;
     d=-d;
   }
-  _p[0]=QR_DIVROUND(x,d);
-  _p[1]=QR_DIVROUND(y,d);
+  _p[0]=QR_HDIVROUND(x,d);
+  _p[1]=QR_HDIVROUND(y,d);
   return 0;
 }
 
@@ -1146,7 +1146,7 @@ static void qr_finder_ransac(qr_finder *_f,const qr_aff *_hom,
       qr_point  q0;
       qr_point  q1;
       int       ninliers;
-      unsigned  thresh;
+      int       thresh;
       int       p0i;
       int       p1i;
       int      *p0;
@@ -1371,6 +1371,35 @@ static int qr_finder_locate_crossing(const unsigned char *_img,
   return 0;
 }
 
+static int qr_aff_line_step(const qr_aff *_aff,qr_line _l,
+ int _v,int _du,int *_dv){
+  int shift;
+  int round;
+  int dv;
+  int n;
+  int d;
+  n=_aff->fwd[0][_v]*_l[0]+_aff->fwd[1][_v]*_l[1];
+  d=_aff->fwd[0][1-_v]*_l[0]+_aff->fwd[1][1-_v]*_l[1];
+  if(d<0){
+    n=-n;
+    d=-d;
+  }
+  shift=QR_MAXI(0,qr_ilog(_du)+qr_ilog(abs(n))+3-QR_INT_BITS);
+  round=(1<<shift)>>1;
+  n=n+round>>shift;
+  d=d+round>>shift;
+  /*The line should not be outside 45 degrees of horizontal/vertical.
+    TODO: We impose this restriction to help ensure the loop below terminates,
+     but it should not technically be required.
+    It also, however, ensure we avoid division by zero.*/
+  if(abs(n)>=d)return -1;
+  n=-_du*n;
+  dv=QR_DIVROUND(n,d);
+  if(abs(dv)>=_du)return -1;
+  *_dv=dv;
+  return 0;
+}
+
 static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
  qr_finder *_dl,qr_point _p[4],const qr_aff *_aff,isaac_ctx *_isaac,
  const unsigned char *_img,int _width,int _height){
@@ -1411,8 +1440,6 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
   int       nbempty;
   int       shift;
   int       round;
-  int       n;
-  int       d;
   int       i;
   /*We attempt to correct large-scale perspective distortion by fitting lines
      to the edge of the code area.
@@ -1447,7 +1474,7 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
      system.
     Then we walk along the edge of the entire code, looking for
      light:dark:light patterns perpendicular to the edge.
-    Wherever we find one, we take the center of the light portion as an
+    Wherever we find one, we take the center of the dark portion as an
      additional sample point.
     At the end, we re-fit the line using all such sample points found.*/
   drv=_ur->size[1]>>1;
@@ -1457,25 +1484,9 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
      qr_line_eval(l[1],_dl->c->pos[0],_dl->c->pos[1])<0){
       return -1;
     }
-    /*Now figure out the change in ru for a given change in rv when stepping
-       along the fitted line.*/
-    n=_aff->fwd[0][1]*l[1][0]+_aff->fwd[1][1]*l[1][1];
-    d=_aff->fwd[0][0]*l[1][0]+_aff->fwd[1][0]*l[1][1];
-    if(d<0){
-      n=-n;
-      d=-d;
-    }
-    shift=QR_MAXI(0,qr_ilog(drv)+qr_ilog(abs(n))+3-QR_INT_BITS);
-    round=(1<<shift)>>1;
-    n=n+round>>shift;
-    d=d+round>>shift;
-    /*The line should not be outside 45 degrees of vertical.
-      TODO: We impose this restriction to help ensure the loop below
-       terminates, but it should not technically be required.*/
-    if(abs(n)>=d)return -1;
-    n=-drv*n;
-    dru=QR_DIVROUND(n,d);
-    if(abs(dru)>=drv)return -1;
+    /*Figure out the change in ru for a given change in rv when stepping along
+       the fitted line.*/
+    if(qr_aff_line_step(_aff,l[1],1,drv,&dru)<0)return -1;
   }
   else dru=0;
   ru=_ur->o[0]+3*_ur->size[0]-2*dru;
@@ -1487,25 +1498,9 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
      qr_line_eval(l[3],_ur->c->pos[0],_ur->c->pos[1])<0){
       return -1;
     }
-    /*Now figure out the change in by for a given change in bu when stepping
-       along the fitted line.*/
-    n=_aff->fwd[0][0]*l[3][0]+_aff->fwd[1][0]*l[3][1];
-    d=_aff->fwd[0][1]*l[3][0]+_aff->fwd[1][1]*l[3][1];
-    if(d<0){
-      n=-n;
-      d=-d;
-    }
-    shift=QR_MAXI(0,qr_ilog(drv)+qr_ilog(abs(n))+3-QR_INT_BITS);
-    round=(1<<shift)>>1;
-    n=n+round>>shift;
-    d=d+round>>shift;
-    /*The line should not be outside 45 degrees of horizontal.
-      TODO: We impose this restriction to help ensure the loop below
-       terminates, but it should not technically be required.*/
-    if(abs(n)>=d)return -1;
-    n=-dbu*n;
-    dbv=QR_DIVROUND(n,d);
-    if(abs(dbv)>=dbu)return -1;
+    /*Figure out the change in bv for a given change in bu when stepping along
+       the fitted line.*/
+    if(qr_aff_line_step(_aff,l[3],0,dbu,&dbv)<0)return -1;
   }
   else dbv=0;
   bu=_dl->o[0]-2*dbu;
@@ -1539,11 +1534,6 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
   dbxj=_aff->fwd[0][1]*_dl->size[1];
   dbyj=_aff->fwd[1][1]*_dl->size[1];
   /*Now step along the lines, looking for new sample points.*/
-  /*TODO: Should we re-fit the line after each new sample point is found to get
-     a better step direction?
-    Updating the statistics incrementally is complicated because of the dynamic
-     range scaling required, and the square root and divisions involved make it
-     expensive.*/
   nrempty=nbempty=0;
   for(;;){
     int ret;
@@ -1584,6 +1574,16 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
           rx=_aff->fwd[0][0]*ru+_aff->fwd[0][1]*rv+ox;
           ry=_aff->fwd[1][0]*ru+_aff->fwd[1][1]*rv+oy;
           nr++;
+          /*Re-fit the line to update the step direction.
+            TODO: This helps robustness, but it may not be necessary to do it
+             every time we add a point, as it is very expensive.*/
+          if(nr>1){
+            qr_line_fit_points(l[1],r,nr,_aff->res);
+            if(qr_aff_line_step(_aff,l[1],1,drv,&dru)>=0){
+              drxi=_aff->fwd[0][0]*dru+_aff->fwd[0][1]*drv;
+              dryi=_aff->fwd[1][0]*dru+_aff->fwd[1][1]*drv;
+            }
+          }
         }
         else nrempty=0;
       }
@@ -1616,6 +1616,16 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
           bx=_aff->fwd[0][0]*bu+_aff->fwd[0][1]*bv+ox;
           by=_aff->fwd[1][0]*bu+_aff->fwd[1][1]*bv+oy;
           nb++;
+          /*Re-fit the line to update the step direction.
+            TODO: This helps robustness, but it may not be necessary to do it
+             every time we add a point, as it is very expensive.*/
+          if(nb>1){
+            qr_line_fit_points(l[3],b,nb,_aff->res);
+            if(qr_aff_line_step(_aff,l[3],0,dbu,&dbv)>=0){
+              dbxi=_aff->fwd[0][0]*dbu+_aff->fwd[0][1]*dbv;
+              dbyi=_aff->fwd[1][0]*dbu+_aff->fwd[1][1]*dbv;
+            }
+          }
         }
         nbempty=0;
       }
@@ -2477,7 +2487,7 @@ static void qr_alignment_pattern_search(qr_point _p,const qr_hom_cell *_cell,
      found anything remotely close to an alignment pattern, we should be able
      to use most of these.*/
   for(i=0;i<8;i++){
-    static const unsigned MASK_TESTS[14][2]={
+    static const unsigned MASK_TESTS[8][2]={
       {0x1040041,0x1000001},{0x0041040,0x0001000},
       {0x0110110,0x0100010},{0x0011100,0x0001000},
       {0x0420084,0x0400004},{0x0021080,0x0001000},
@@ -2500,30 +2510,48 @@ static void qr_alignment_pattern_search(qr_point _p,const qr_hom_cell *_cell,
       y1=p[4-MASK_COORDS[i][1]][4-MASK_COORDS[i][0]][1]+dy>>QR_FINDER_SUBPREC;
       if(y1<0||y1>=_height)continue;
       if(!qr_finder_locate_crossing(_img,_width,_height,x0,y0,x1,y1,i&1,pc)){
-        nc[i>>1]++;
-        c[i>>1][0]+=pc[0]-bestx;
-        c[i>>1][1]+=pc[1]-besty;
+        int w;
+        int cx;
+        int cy;
+        cx=pc[0]-bestx;
+        cy=pc[1]-besty;
+        if(i&1){
+          /*Weight crossings aronud the center dot more highly, as they are
+             generally more reliable.*/
+          w=3;
+          cx+=cx<<1;
+          cy+=cy<<1;
+        }
+        else w=1;
+        nc[i>>1]+=w;
+        c[i>>1][0]+=cx;
+        c[i>>1][1]+=cy;
       }
     }
   }
-  /*Average offsets from lines in the same direction.*/
-  for(i=0;i<4;i++){
-    j=nc[i]&1;
-    nc[i]+=j;
-    c[i][0]<<=j;
-    c[i][1]<<=j;
-  }
   /*Sum offsets from lines in orthogonal directions.*/
   for(i=0;i<2;i++){
-    nc[i<<1]+=nc[i<<1|1];
-    j=nc[i<<1]>>2;
-    c[i<<1][0]=c[i<<1][0]+c[i<<1|1][0]<<j;
-    c[i<<1][1]=c[i<<1][1]+c[i<<1|1][1]<<j;
+    int a;
+    int b;
+    a=nc[i<<1];
+    b=nc[i<<1|1];
+    if(a&&b){
+      int w;
+      w=QR_MAXI(a,b);
+      c[i<<1][0]=QR_DIVROUND(w*(b*c[i<<1][0]+a*c[i<<1|1][0]),a*b);
+      c[i<<1][1]=QR_DIVROUND(w*(b*c[i<<1][1]+a*c[i<<1|1][1]),a*b);
+      nc[i<<1]=w<<1;
+    }
+    else{
+      c[i<<1][0]+=c[i<<1|1][0];
+      c[i<<1][1]+=c[i<<1|1][1];
+      nc[i<<1]+=b;
+    }
   }
   /*Average offsets from pairs of orthogonal lines.*/
-  nc[0]+=nc[2];
   c[0][0]+=c[2][0];
   c[0][1]+=c[2][1];
+  nc[0]+=nc[2];
   /*If we actually found any such lines, apply the adjustment.*/
   if(nc[0]){
     dx=QR_DIVROUND(c[0][0],nc[0]);

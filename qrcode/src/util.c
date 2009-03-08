@@ -1,26 +1,34 @@
 #include "util.h"
 
 unsigned qr_isqrt(unsigned _val){
-  unsigned temp;
   unsigned g;
   unsigned b;
-  int      bshft;
-  /*Uses the second approximation method from
-     http://www.azillionmonkeys.com/qed/sqroot.html*/
+  int      bshift;
+  /*Uses the second method from
+     http://www.azillionmonkeys.com/qed/sqroot.html
+    The main idea is to search for the largest binary digit b such that
+     (g+b)*(g+b) <= _val, and add it to the solution g.*/
   g=0;
   b=0x8000;
-  bshft=15;
-  do{
-    temp=(g<<1)+b<<bshft--;
-    if(_val>=temp){
+  for(bshift=16;bshift-->0;){
+    unsigned t;
+    t=(g<<1)+b<<bshift;
+    if(t<=_val){
       g+=b;
-      _val-=temp;
+      _val-=t;
     }
     b>>=1;
   }
-  while(b>0);
   return g;
 }
+
+/*TODO: ihypot
+  a>b => g=a+r && add e iff (a+r+e)*(a+r+e) <= a*a+b*b
+                            2*(a-b+r+e)*(r+e) <= (b-r-e)*(b-r-e)
+                            2*(a/(b-r-e)-1)*(r+e) <= b-r-e
+                            2*a*(r+e)/(b-r-e) <= b+r+e
+                            2*(a-b+r+e)/(b-r-e) <= b/(r+e)
+*/
 
 #if defined(__GNUC__)
 # include <features.h>

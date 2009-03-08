@@ -27,6 +27,7 @@ CFLAGS += -Os -fforce-addr
 #CFLAGS += -ftree-vectorize -ftree-vectorizer-verbose=0
 # The -g flag will generally include debugging information.
 #CFLAGS += -g
+#CFLAGS += -DQR_DEBUG
 LIBS = `pkg-config --libs libpng`
 
 # ANYTHING BELOW THIS LINE PROBABLY DOES NOT NEED EDITING

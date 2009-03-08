@@ -435,7 +435,8 @@ static int rs_modified_berlekamp_massey(const rs_gf256 *_gf,
       if(l<n-k){
         int t;
         for(i=0;i<=n-k;i++){
-          unsigned tti=tt[i];
+          unsigned tti;
+          tti=tt[i];
           tt[i]=rs_hgmul(_gf,_lambda[i],255-logd);
           _lambda[i]=_lambda[i]^rs_hgmul(_gf,tti,logd);
         }

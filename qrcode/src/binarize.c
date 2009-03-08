@@ -5,32 +5,8 @@
 #include "image.h"
 #include "binarize.h"
 
-void qr_image_cross_masking_median_filter(unsigned char *_img,
- int _width,int _height){
-  unsigned char *line_buf[8];
-  int            x;
-  int            y;
-  line_buf[0]=(unsigned char *)calloc(_width<<3,sizeof(*line_buf));
-  for(y=1;y<8;y++)line_buf[y]=line_buf[y-1]+_width;
-  for(y=2;y<_height-2;y++){
-    for(x=2;x<_height-2;x++){
-      int f;
-      int n;
-      n=0;
-      /*Note: we're double-counting the center pixel.
-        Is that wise?*/
-      for(f=-2;f<3;f++)n+=!!_img[y*_width+x+f]+!!_img[(y+f)*_width+x];
-      line_buf[y&7][x]=n>5;
-    }
-    memcpy(_img+(y-2)*_width,line_buf[y-2&7],_width*sizeof(*_img));
-  }
-  for(y=_height-4;y<_height;y++){
-    memcpy(_img+y*_width,line_buf[y&7],_width*sizeof(*_img));
-  }
-  free(line_buf[0]);
-}
-
-/*Binarization is based on~\cite{GPP06}.
+#if 0
+/*Binarization based on~\cite{GPP06}.
   @ARTICLE{GPP06,
     author="Basilios Gatos and Ioannis E. Pratikakis and Stavros J. Perantonis",
     title="Adaptive Degraded Document Image Binarization",
@@ -123,7 +99,6 @@ void qr_wiener_filter(unsigned char *_img,int _width,int _height){
 }
 
 #else
-
 /*Applies a 3x3 Wiener filter to the image, in-place, emphasizing differences
    where the local variance is small, and de-emphasizing them where it is
    large.*/
@@ -202,7 +177,6 @@ void qr_wiener_filter(unsigned char *_img,int _width,int _height){
   free(sn2_buf[0]);
   free(m_buf[0]);
 }
-
 #endif
 
 /*Computes a (conservative) foreground mask using the adaptive binarization
@@ -521,6 +495,105 @@ void qr_binarize(unsigned char *_img,int _width,int _height){
   free(mask);
 }
 
+#else
+/*The above algorithms are computationally expensive, and do not work as well
+   as the simple algorithm below.
+  Sauvola by itself does an excellent job of classifying regions outside the
+   QR code as background, which greatly reduces the chance of false alarms.
+  However, it also tends to over-shrink isolated black dots inside the code,
+   making them easy to miss with even slight mis-alignment.
+  Since the Gatos method uses Sauvola as input to its background interpolation
+   method, it cannot possibly mark any pixels as foreground which Sauvola
+   classified as background, and thus suffers from the same problem.
+  The following simple adaptive threshold method does not have this problem,
+   though it produces essentially random noise outside the QR code region.
+  QR codes are structured well enough that this does not seem to lead to any
+   actual false alarms in practice, and it allows many more codes to be
+   detected and decoded successfully than the Sauvola or Gatos binarization
+   methods.*/
+
+/*A simplified adaptive thresholder.
+  This compares the current pixel value to the mean value of a (large) window
+   surrounding it.*/
+void qr_binarize(unsigned char *_img,int _width,int _height){
+  if(_width>0&&_height>0){
+    unsigned char *mask;
+    unsigned      *col_sums;
+    int            logwindw;
+    int            logwindh;
+    int            windw;
+    int            windh;
+    int            y0offs;
+    int            y1offs;
+    unsigned       g;
+    int            x;
+    int            y;
+    mask=(unsigned char *)malloc(_width*_height*sizeof(*mask));
+    /*We keep the window size fairly large to ensure it doesn't fit completely
+       inside the center of a finder pattern of a version 1 QR code at full
+       resolution.*/
+    for(logwindw=4;logwindw<8&&(1<<logwindw)<(_width+7>>3);logwindw++);
+    for(logwindh=4;logwindh<8&&(1<<logwindh)<(_height+7>>3);logwindh++);
+    windw=1<<logwindw;
+    windh=1<<logwindh;
+    col_sums=(unsigned *)malloc(_width*sizeof(*col_sums));
+    /*Initialize sums down each column.*/
+    for(x=0;x<_width;x++){
+      g=_img[x];
+      col_sums[x]=(g<<logwindh-1)+g;
+    }
+    for(y=1;y<(windh>>1);y++){
+      y1offs=QR_MINI(y,_height-1)*_width;
+      for(x=0;x<_width;x++){
+        g=_img[y1offs+x];
+        col_sums[x]+=g;
+      }
+    }
+    for(y=0;y<_height;y++){
+      unsigned m;
+      int      x0;
+      int      x1;
+      /*Initialize the sum over the window.*/
+      m=(col_sums[0]<<logwindw-1)+col_sums[0];
+      for(x=1;x<(windw>>1);x++){
+        x1=QR_MINI(x,_width-1);
+        m+=col_sums[x1];
+      }
+      for(x=0;x<_width;x++){
+        /*Perform the test against the threshold T = (m/n)-D,
+           where n=windw*windh and D=3.*/
+        g=_img[y*_width+x];
+        mask[y*_width+x]=-(g+3<<logwindw+logwindh<m)&0xFF;
+        /*Update the window sum.*/
+        if(x+1<_width){
+          x0=QR_MAXI(0,x-(windw>>1));
+          x1=QR_MINI(x+(windw>>1),_width-1);
+          m+=col_sums[x1]-col_sums[x0];
+        }
+      }
+      /*Update the column sums.*/
+      if(y+1<_height){
+        y0offs=QR_MAXI(0,y-(windh>>1))*_width;
+        y1offs=QR_MINI(y+(windh>>1),_height-1)*_width;
+        for(x=0;x<_width;x++){
+          col_sums[x]-=_img[y0offs+x];
+          col_sums[x]+=_img[y1offs+x];
+        }
+      }
+    }
+    free(col_sums);
+    memcpy(_img,mask,_width*_height*sizeof(*_img));
+    free(mask);
+  }
+  /*{
+    FILE *fout;
+    fout=fopen("binary.png","wb");
+    image_write_png(_img,_width,_height,fout);
+    fclose(fout);
+  }*/
+}
+#endif
+
 #if defined(TEST_BINARIZE)
 #include <stdio.h>
 #include "image.c"
@@ -555,6 +628,6 @@ int main(int _argc,char **_argv){
     fclose(fout);
   }*/
   free(img);
-  return 0;
+  return EXIT_SUCCESS;
 }
 #endif

@@ -5,6 +5,12 @@
 #include "qrcode.h"
 #include "util.h"
 
+static int text_is_ascii(const unsigned char *_text,int _len){
+  int i;
+  for(i=0;i<_len;i++)if(_text[i]>=0x80)return 0;
+  return 1;
+}
+
 static int text_is_latin1(const unsigned char *_text,int _len){
   int i;
   for(i=0;i<_len;i++){
@@ -118,8 +124,8 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
     sa_text=(char *)malloc((sa_ctext+1)*sizeof(*sa_text));
     sa_ntext=0;
     eci=-1;
-    enc_list[0]=latin1_cd;
-    enc_list[1]=sjis_cd;
+    enc_list[0]=sjis_cd;
+    enc_list[1]=latin1_cd;
     enc_list[2]=utf8_cd;
     eci_cd=(iconv_t)-1;
     err=0;
@@ -221,7 +227,12 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
                 out=sa_text+sa_ntext;
                 outleft=sa_ctext-sa_ntext;
               }
-              /*Otherwise try our list of encodings.*/
+              /*If the text is 8-bit clean, prefer UTF-8 over SJIS, since SJIS
+                 will corrupt the backslashes used for DoCoMo formats.*/
+              else if(text_is_ascii((unsigned char *)in,inleft)){
+                enc_list_mtf(enc_list,utf8_cd);
+              }
+              /*Try our list of encodings.*/
               for(ei=0;ei<3;ei++)if(enc_list[ei]!=(iconv_t)-1){
                 /*According to the standard, ISO/IEC 8859-1 (one hyphen) is
                    supposed to be used, but reality is not always so.
@@ -242,7 +253,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
                 if(!err){
                   sa_ntext=out-sa_text;
                   enc_list_mtf(enc_list,enc_list[ei]);
-                  continue;
+                  break;
                 }
                 in=(char *)entry->payload.data.buf;
                 inleft=entry->payload.data.len;

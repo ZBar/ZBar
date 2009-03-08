@@ -36,5 +36,5 @@ int main(int _argc,char **_argv){
   for(i=0;i<ntext;i++)printf("%s\n",text[i]);
   qr_text_list_free(text,ntext);
   free(img);
-  return 0;
+  return EXIT_SUCCESS;
 }
