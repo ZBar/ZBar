@@ -1,3 +1,14 @@
+current:
+  * add image scan density API/option
+  * tweak option parser to be more strict/correct about abbreviations
+  * add API to force specific video io modes (req #2293955)
+  * apply patches for more broken driver workarounds (req #2293955)
+  * fix(?) C++ string to fourcc conversion
+  * add missing C++ wrappers
+  * add additional examples to man pages (symbology enable/disable)
+  * add missing options to man page synopsis
+  * add missing --xml option to man pages
+
 version 0.6:
   * hotfix broken perl install (name change)
   * add missing files to distribution

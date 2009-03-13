@@ -18,6 +18,7 @@ wrappers:
   * base library python bindings
     * start w/enum wrappers
   * GTK and Qt perl bindings
+  * C++ global wrappers
 
 symbologies:
   * PDF417
@@ -43,8 +44,6 @@ decoder:
 image scanner:
   * extract and track symbol polygons
     * dynamic scan density (PDF417, OMR)
-  * configurable pattern density
-  * space lead in/out from each scan line
 
 image formats:
   * fix image data inheritance

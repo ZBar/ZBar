@@ -65,7 +65,7 @@ static int v4l2_nq (zebra_video_t *vdo,
             vbuf.length = img->datalen;
             vbuf.index = img->srcidx; /* FIXME workaround broken drivers */
         }
-        if(ioctl(vdo->fd, VIDIOC_QBUF, &vbuf))
+        if(ioctl(vdo->fd, VIDIOC_QBUF, &vbuf) < 0)
             return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                                "queuing video buffer (VIDIOC_QBUF)"));
     }
@@ -93,7 +93,7 @@ static zebra_image_t *v4l2_dq (zebra_video_t *vdo)
         else
             vbuf.memory = V4L2_MEMORY_USERPTR;
 
-        if(ioctl(vdo->fd, VIDIOC_DQBUF, &vbuf)) {
+        if(ioctl(vdo->fd, VIDIOC_DQBUF, &vbuf) < 0) {
             err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                         "dequeuing video buffer (VIDIOC_DQBUF)");
             return(NULL);
@@ -155,7 +155,7 @@ static int v4l2_start (zebra_video_t *vdo)
         return(0);
 
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if(ioctl(vdo->fd, VIDIOC_STREAMON, &type))
+    if(ioctl(vdo->fd, VIDIOC_STREAMON, &type) < 0)
         return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                            "starting video stream (VIDIOC_STREAMON)"));
     return(0);
@@ -174,7 +174,7 @@ static int v4l2_stop (zebra_video_t *vdo)
         return(0);
 
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if(ioctl(vdo->fd, VIDIOC_STREAMOFF, &type))
+    if(ioctl(vdo->fd, VIDIOC_STREAMOFF, &type) < 0)
         return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                            "stopping video stream (VIDIOC_STREAMOFF)"));
     return(0);
@@ -207,7 +207,7 @@ static int v4l2_cleanup (zebra_video_t *vdo)
     /* requesting 0 buffers
      * should implicitly disable streaming
      */
-    if(ioctl(vdo->fd, VIDIOC_REQBUFS, &rb))
+    if(ioctl(vdo->fd, VIDIOC_REQBUFS, &rb) < 0)
         err_capture(vdo, SEV_WARNING, ZEBRA_ERR_SYSTEM, __func__,
                     "releasing video frame buffers (VIDIOC_REQBUFS)");
 
@@ -221,7 +221,7 @@ static int v4l2_mmap_buffers (zebra_video_t *vdo)
     rb.count = vdo->num_images;
     rb.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     rb.memory = V4L2_MEMORY_MMAP;
-    if(ioctl(vdo->fd, VIDIOC_REQBUFS, &rb))
+    if(ioctl(vdo->fd, VIDIOC_REQBUFS, &rb) < 0)
         return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                            "requesting video frame buffers (VIDIOC_REQBUFS)"));
     zprintf(1, "mapping %u buffers (of %d requested)\n",
@@ -240,7 +240,7 @@ static int v4l2_mmap_buffers (zebra_video_t *vdo)
     int i;
     for(i = 0; i < vdo->num_images; i++) {
         vbuf.index = i;
-        if(ioctl(vdo->fd, VIDIOC_QUERYBUF, &vbuf))
+        if(ioctl(vdo->fd, VIDIOC_QUERYBUF, &vbuf) < 0)
             /* FIXME cleanup */
             return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                                "querying video buffer (VIDIOC_QUERYBUF)"));
@@ -300,7 +300,7 @@ static int v4l2_set_format (zebra_video_t *vdo,
     struct v4l2_pix_format *newpix = &newfmt.fmt.pix;
     memset(&newfmt, 0, sizeof(newfmt));
     newfmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if(ioctl(vdo->fd, VIDIOC_G_FMT, &newfmt))
+    if(ioctl(vdo->fd, VIDIOC_G_FMT, &newfmt) < 0)
         return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                            "querying format (VIDIOC_G_FMT)"));
 
@@ -341,9 +341,17 @@ static int v4l2_probe_iomode (zebra_video_t *vdo)
     memset(&rb, 0, sizeof(rb));
     rb.count = vdo->num_images; /* FIXME workaround broken drivers */
     rb.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    rb.memory = V4L2_MEMORY_USERPTR;
-    if(ioctl(vdo->fd, VIDIOC_REQBUFS, &rb)) {
-        if(errno != EINVAL)
+    if(vdo->iomode == VIDEO_MMAP)
+        rb.memory = V4L2_MEMORY_MMAP;
+    else
+        rb.memory = V4L2_MEMORY_USERPTR;
+
+    if(ioctl(vdo->fd, VIDIOC_REQBUFS, &rb) < 0) {
+        if(vdo->iomode)
+            return(err_capture_int(vdo, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,
+                                   "unsupported iomode requested (%d)",
+                                   vdo->iomode));
+        else if(errno != EINVAL)
             return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_SYSTEM, __func__,
                                "querying streaming mode (VIDIOC_REQBUFS)"));
 #ifdef HAVE_SYS_MMAN_H
@@ -351,7 +359,8 @@ static int v4l2_probe_iomode (zebra_video_t *vdo)
 #endif
     }
     else {
-        vdo->iomode = VIDEO_USERPTR;
+        if(!vdo->iomode)
+            vdo->iomode = VIDEO_USERPTR;
         if(rb.count)
             vdo->num_images = rb.count;
     }
@@ -365,7 +374,7 @@ static inline int v4l2_probe_formats (zebra_video_t *vdo)
     memset(&desc, 0, sizeof(desc));
     desc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     for(desc.index = 0; desc.index < V4L2_FORMATS_MAX; desc.index++) {
-        if(ioctl(vdo->fd, VIDIOC_ENUM_FMT, &desc))
+        if(ioctl(vdo->fd, VIDIOC_ENUM_FMT, &desc) < 0)
             break;
         zprintf(2, "    [%d] %.4s : %s%s\n",
                 desc.index, (char*)&desc.pixelformat, desc.description,
@@ -501,7 +510,9 @@ int _zebra_v4l2_probe (zebra_video_t *vdo)
         return(-1);
 
     /* FIXME report error and fallback to readwrite? (if supported...) */
-    if(vcap.capabilities & V4L2_CAP_STREAMING && v4l2_probe_iomode(vdo))
+    if(vdo->iomode != VIDEO_READWRITE &&
+       (vcap.capabilities & V4L2_CAP_STREAMING) &&
+       v4l2_probe_iomode(vdo))
         return(-1);
     if(!vdo->iomode)
         vdo->iomode = VIDEO_READWRITE;

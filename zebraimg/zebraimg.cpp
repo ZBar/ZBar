@@ -69,7 +69,6 @@ static const char *note_usage =
     "    -S<CONFIG>[=<VALUE>], --set <CONFIG>[=<VALUE>]\n"
     "                    set decoder/scanner <CONFIG> to <VALUE> (or 1)\n"
     // FIXME overlay level
-    // FIXME xml output
     ;
 
 static const char *warning_not_found =

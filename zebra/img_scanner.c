@@ -63,6 +63,11 @@
  */
 #define CACHE_TIMEOUT     (CACHE_HYSTERESIS * 2) /* ms */
 
+#define NUM_SCN_CFGS (ZEBRA_CFG_Y_DENSITY - ZEBRA_CFG_X_DENSITY + 1)
+
+#define CFG(iscn, cfg) ((iscn)->configs[(cfg) - ZEBRA_CFG_X_DENSITY])
+
+
 /* image scanner state */
 struct zebra_image_scanner_s {
     zebra_scanner_t *scn;       /* associated linear intensity scanner */
@@ -78,6 +83,9 @@ struct zebra_image_scanner_s {
 
     int enable_cache;           /* current result cache state */
     zebra_symbol_t *cache;      /* inter-image result cache entries */
+
+    /* configuration settings */
+    int configs[NUM_SCN_CFGS];
 };
 
 static inline void recycle_syms (zebra_image_scanner_t *iscn,
@@ -244,6 +252,10 @@ zebra_image_scanner_t *zebra_image_scanner_create ()
         zebra_image_scanner_destroy(iscn);
         return(NULL);
     }
+
+    /* apply default configuration */
+    CFG(iscn, ZEBRA_CFG_X_DENSITY) = 16;
+    CFG(iscn, ZEBRA_CFG_Y_DENSITY) = 16;
     return(iscn);
 }
 
@@ -279,6 +291,13 @@ int zebra_image_scanner_set_config (zebra_image_scanner_t *iscn,
                                     zebra_config_t cfg,
                                     int val)
 {
+    if(cfg >= ZEBRA_CFG_X_DENSITY && cfg <= ZEBRA_CFG_Y_DENSITY) {
+        if(sym > ZEBRA_PARTIAL)
+            return(1);
+
+        CFG(iscn, cfg) = val;
+        return(0);
+    }
     return(zebra_decoder_set_config(iscn->dcode, sym, cfg, val));
 }
 
@@ -334,89 +353,90 @@ int zebra_scan_image (zebra_image_scanner_t *iscn,
     unsigned w = zebra_image_get_width(img);
     unsigned h = zebra_image_get_height(img);
     const uint8_t *data = zebra_image_get_data(img);
-    const uint8_t *p = data;
-    int x = 0, y = 0;
-#ifdef DEBUG_IMG_SCANNER
-    movedelta(0, (h + 1) / 2);
-#else
-    movedelta(0, 8);
-#endif
 
-    if(zebra_scanner_new_scan(iscn->scn))
-        symbol_handler(iscn, x, y);
-
-    /* FIXME add density config api */
     /* FIXME less arbitrary lead-out default */
     int quiet = w / 32;
     if(quiet < 8)
         quiet = 8;
 
-    while(y < h) {
-        zprintf(32, "img_x+: %03x,%03x @%p\n", x, y, p);
-        while(x < w) {
-            ASSERT_POS;
-            if(zebra_scan_y(iscn->scn, *p))
-                symbol_handler(iscn, x, y);
-            movedelta(1, 0);
-        }
-        quiet_border(iscn, quiet, x, y);
+    int density = CFG(iscn, ZEBRA_CFG_Y_DENSITY);
+    if(density > 0) {
+        const uint8_t *p = data;
+        int x = 0, y = 0;
 
-        movedelta(-1, 16);
-        if(y >= h)
-            break;
+        int border = (((h - 1) % density) + 1) / 2;
+        if(border > h / 2)
+            border = h / 2;
+        movedelta(0, border);
 
-        zprintf(32, "img_x-: %03x,%03x @%p\n", x, y, p);
-        while(x > 0) {
-            ASSERT_POS;
-            if(zebra_scan_y(iscn->scn, *p))
-                symbol_handler(iscn, x, y);
-            movedelta(-1, 0);
-        }
-        quiet_border(iscn, quiet, x, y);
+        if(zebra_scanner_new_scan(iscn->scn))
+            symbol_handler(iscn, x, y);
 
-        movedelta(1, 16);
-#ifdef DEBUG_IMG_SCANNER
-        break;
-#endif
-    }
-
-#ifndef DEBUG_IMG_SCANNER
-    x = y = 0;
-    p = data;
-    movedelta(8, 0);
-
-    while(x < w) {
-        zprintf(32, "img_y+: %03x,%03x @%p\n", x, y, p);
         while(y < h) {
-            ASSERT_POS;
-            if(zebra_scan_y(iscn->scn, *p))
-                symbol_handler(iscn, x, y);
-            movedelta(0, 1);
+            zprintf(32, "img_x+: %03x,%03x @%p\n", x, y, p);
+            while(x < w) {
+                ASSERT_POS;
+                if(zebra_scan_y(iscn->scn, *p))
+                    symbol_handler(iscn, x, y);
+                movedelta(1, 0);
+            }
+            quiet_border(iscn, quiet, x, y);
+
+            movedelta(-1, density);
+            if(y >= h)
+                break;
+
+            zprintf(32, "img_x-: %03x,%03x @%p\n", x, y, p);
+            while(x > 0) {
+                ASSERT_POS;
+                if(zebra_scan_y(iscn->scn, *p))
+                    symbol_handler(iscn, x, y);
+                movedelta(-1, 0);
+            }
+            quiet_border(iscn, quiet, x, y);
+
+            movedelta(1, density);
         }
-        quiet_border(iscn, quiet, x, y);
-
-        movedelta(16, -1);
-        if(x >= w)
-            break;
-
-        zprintf(32, "img_y-: %03x,%03x @%p\n", x, y, p);
-        while(y >= 0) {
-            ASSERT_POS;
-            if(zebra_scan_y(iscn->scn, *p))
-                symbol_handler(iscn, x, y);
-            movedelta(0, -1);
-        }
-        quiet_border(iscn, quiet, x, y);
-
-        movedelta(16, 1);
     }
-#endif
 
-    /* flush scanner pipe */
-    if(zebra_scanner_new_scan(iscn->scn))
-        symbol_handler(iscn, x, y);
+    density = CFG(iscn, ZEBRA_CFG_X_DENSITY);
+    if(density > 0) {
+        const uint8_t *p = data;
+        int x = 0, y = 0;
 
-    /* release reference */
+        int border = (((w - 1) % density) + 1) / 2;
+        if(border > w / 2)
+            border = w / 2;
+        movedelta(border, 0);
+
+        while(x < w) {
+            zprintf(32, "img_y+: %03x,%03x @%p\n", x, y, p);
+            while(y < h) {
+                ASSERT_POS;
+                if(zebra_scan_y(iscn->scn, *p))
+                    symbol_handler(iscn, x, y);
+                movedelta(0, 1);
+            }
+            quiet_border(iscn, quiet, x, y);
+
+            movedelta(density, -1);
+            if(x >= w)
+                break;
+
+            zprintf(32, "img_y-: %03x,%03x @%p\n", x, y, p);
+            while(y >= 0) {
+                ASSERT_POS;
+                if(zebra_scan_y(iscn->scn, *p))
+                    symbol_handler(iscn, x, y);
+                movedelta(0, -1);
+            }
+            quiet_border(iscn, quiet, x, y);
+
+            movedelta(density, 1);
+        }
+    }
+
+    /* release reference to converted image */
     zebra_image_destroy(img);
     return(iscn->img->nsyms);
 }

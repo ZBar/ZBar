@@ -39,37 +39,46 @@ int zebra_parse_config (const char *cfgstr,
 
     const char *dot = strchr(cfgstr, '.');
     if(dot) {
-        int symlen = dot - cfgstr;
-        if(!symlen || !strncmp(cfgstr, "*", symlen))
+        int len = dot - cfgstr;
+        if(!len || (len == 1 && !strncmp(cfgstr, "*", len)))
             *sym = 0;
-        else if(!strncmp(cfgstr, "ean8", symlen))
-            *sym = ZEBRA_EAN8;
-        else if(!strncmp(cfgstr, "isbn10", symlen))
-            *sym = ZEBRA_ISBN10;
-        else if(!strncmp(cfgstr, "upce", symlen))
-            *sym = ZEBRA_UPCE;
-        else if(!strncmp(cfgstr, "upca", symlen))
+        else if(len < 3)
+            return(1);
+        else if(!strncmp(cfgstr, "upca", len))
             *sym = ZEBRA_UPCA;
-        else if(!strncmp(cfgstr, "ean13", symlen))
+        else if(!strncmp(cfgstr, "upce", len))
+            *sym = ZEBRA_UPCE;
+        else if(!strncmp(cfgstr, "ean13", len))
             *sym = ZEBRA_EAN13;
-        else if(!strncmp(cfgstr, "isbn13", symlen))
-            *sym = ZEBRA_ISBN13;
-        else if(!strncmp(cfgstr, "i25", symlen))
+        else if(!strncmp(cfgstr, "ean8", len))
+            *sym = ZEBRA_EAN8;
+        else if(!strncmp(cfgstr, "i25", len))
             *sym = ZEBRA_I25;
-        else if(!strncmp(cfgstr, "code39", symlen))
-            *sym = ZEBRA_CODE39;
-        else if(!strncmp(cfgstr, "code128", symlen))
-            *sym = ZEBRA_CODE128;
-        else if(!strncmp(cfgstr, "pdf417", symlen))
-            *sym = ZEBRA_PDF417;
-
+        else if(len < 4)
+            return(1);
+        else if(!strncmp(cfgstr, "scanner", len))
+            *sym = ZEBRA_PARTIAL; /* FIXME lame */
+        else if(!strncmp(cfgstr, "isbn13", len))
+            *sym = ZEBRA_ISBN13;
+        else if(!strncmp(cfgstr, "isbn10", len))
+            *sym = ZEBRA_ISBN10;
 #if 0
         /* FIXME addons are configured per-main symbol type */
-        else if(!strncmp(cfgstr, "addon2", symlen))
+        else if(!strncmp(cfgstr, "addon2", len))
             *sym = ZEBRA_ADDON2;
-        else if(!strncmp(cfgstr, "addon5", symlen))
+        else if(!strncmp(cfgstr, "addon5", len))
             *sym = ZEBRA_ADDON5;
 #endif
+        else if(len < 6)
+            return(1);
+        else if(!strncmp(cfgstr, "code39", len))
+            *sym = ZEBRA_CODE39;
+        else if(!strncmp(cfgstr, "pdf417", len))
+            *sym = ZEBRA_PDF417;
+        else if(len < 7)
+            return(1);
+        else if(!strncmp(cfgstr, "code128", len))
+            *sym = ZEBRA_CODE128;
         else
             return(1);
         cfgstr = dot + 1;
@@ -77,33 +86,43 @@ int zebra_parse_config (const char *cfgstr,
     else
         *sym = 0;
 
-    int cfglen = strlen(cfgstr);
+    int len = strlen(cfgstr);
     const char *eq = strchr(cfgstr, '=');
     if(eq)
-        cfglen = eq - cfgstr;
+        len = eq - cfgstr;
     else
         *val = 1;  /* handle this here so we can override later */
     char negate = 0;
 
-    if(cfglen > 3 && !strncmp(cfgstr, "no-", 3)) {
+    if(len > 3 && !strncmp(cfgstr, "no-", 3)) {
         negate = 1;
         cfgstr += 3;
-        cfglen -= 3;
+        len -= 3;
     }
 
-    if(!strncmp(cfgstr, "enable", cfglen))
+    if(len < 1)
+        return(1);
+    else if(!strncmp(cfgstr, "y-density", len))
+        *cfg = ZEBRA_CFG_Y_DENSITY;
+    else if(!strncmp(cfgstr, "x-density", len))
+        *cfg = ZEBRA_CFG_X_DENSITY;
+    else if(len < 2)
+        return(1);
+    else if(!strncmp(cfgstr, "enable", len))
         *cfg = ZEBRA_CFG_ENABLE;
-    else if(!strncmp(cfgstr, "disable", cfglen)) {
+    else if(len < 3)
+        return(1);
+    else if(!strncmp(cfgstr, "disable", len)) {
         *cfg = ZEBRA_CFG_ENABLE;
         negate = !negate; /* no-disable ?!? */
     }
-    else if(!strncmp(cfgstr, "ascii", cfglen))
+    else if(!strncmp(cfgstr, "ascii", len))
         *cfg = ZEBRA_CFG_ASCII;
-    else if(!strncmp(cfgstr, "add-check", cfglen))
+    else if(!strncmp(cfgstr, "add-check", len))
         *cfg = ZEBRA_CFG_ADD_CHECK;
-    else if(!strncmp(cfgstr, "emit-check", cfglen))
+    else if(!strncmp(cfgstr, "emit-check", len))
         *cfg = ZEBRA_CFG_EMIT_CHECK;
-    else
+    else 
         return(1);
 
     if(eq) {

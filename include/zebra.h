@@ -126,7 +126,10 @@ typedef enum zebra_config_e {
     ZEBRA_CFG_ADD_CHECK,        /**< enable check digit when optional */
     ZEBRA_CFG_EMIT_CHECK,       /**< return check digit when present */
     ZEBRA_CFG_ASCII,            /**< enable full ASCII character set */
-    ZEBRA_CFG_NUM               /**< number of configs */
+    ZEBRA_CFG_NUM,              /**< number of boolean configs */
+
+    ZEBRA_CFG_X_DENSITY = 0x100,/**< image scanner vertical scan density */
+    ZEBRA_CFG_Y_DENSITY,        /**< image scanner horizontal scan density */
 } zebra_config_t;
 
 /** retrieve runtime library version information.
@@ -502,6 +505,20 @@ extern int zebra_processor_request_size(zebra_processor_t *processor,
 extern int zebra_processor_request_interface(zebra_processor_t *processor,
                                              int version);
 
+/** request a preferred video I/O mode for debug/testing.  You will
+ * get errors if the driver does not support the specified mode.
+ * @verbatim
+    0 = auto-detect
+    1 = force I/O using read()
+    2 = force memory mapped I/O using mmap()
+    3 = force USERPTR I/O (v4l2 only)
+@endverbatim
+ * @note must be called before zebra_processor_init()
+ * @since 0.7
+ */
+extern int zebra_processor_request_iomode(zebra_processor_t *video,
+                                          int iomode);
+
 /** force specific input and output formats for debug/testing.
  * @note must be called before zebra_processor_init()
  */
@@ -692,6 +709,20 @@ extern int zebra_video_request_size(zebra_video_t *video,
  */
 extern int zebra_video_request_interface(zebra_video_t *video,
                                          int version);
+
+/** request a preferred I/O mode for debug/testing.  You will get
+ * errors if the driver does not support the specified mode.
+ * @verbatim
+    0 = auto-detect
+    1 = force I/O using read()
+    2 = force memory mapped I/O using mmap()
+    3 = force USERPTR I/O (v4l2 only)
+@endverbatim
+ * @note must be called before zebra_video_open()
+ * @since 0.7
+ */
+extern int zebra_video_request_iomode(zebra_video_t *video,
+                                      int iomode);
 
 /** retrieve current output image width.
  * @returns the width or 0 if the video device is not open

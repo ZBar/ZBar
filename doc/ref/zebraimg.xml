@@ -22,10 +22,19 @@
       class="parameter">n</replaceable></arg></option></arg>
       <sbr/>
       <group choice="req" rep="repeat">
-        <arg choice="plain"><option>-d</option></arg>
+        <arg choice="plain"><option>-dD</option></arg>
         <arg choice="plain"><option>--display</option></arg>
-        <arg choice="plain"><option>-D</option></arg>
         <arg choice="plain"><option>--nodisplay</option></arg>
+        <arg choice="plain"><option>--xml</option></arg>
+        <arg choice="plain"><option>--noxml</option></arg>
+        <arg choice="plain"><option>-S<optional><replaceable
+            class="parameter">symbology</replaceable>.</optional><replaceable
+            class="parameter">config</replaceable><optional>=<replaceable
+            class="parameter">value</replaceable></optional></option></arg>
+        <arg choice="plain"><option>--set <optional><replaceable
+            class="parameter">symbology</replaceable>.</optional><replaceable
+            class="parameter">config</replaceable><optional>=<replaceable
+            class="parameter">value</replaceable></optional></option></arg>
         <arg choice="plain"><replaceable>image</replaceable></arg>
       </group>
     </cmdsynopsis>
@@ -87,15 +96,29 @@
       </varlistentry>
 
       <varlistentry>
+        <term><option>-d</option></term>
+        <term><option>--display</option></term>
         <term><option>-D</option></term>
         <term><option>--nodisplay</option></term>
         <listitem>
-          <simpara>Disable display of subsequent
+          <simpara>Enable/disable display of subsequent
           <filename><replaceable>image</replaceable></filename> files,
-          until <option>--display</option> is encountered.  This
-          option may appear multiple times to enable display of
-          specific images.  Image display is disabled by
-          default</simpara>
+          until next <option>--display</option> or
+          <option>--nodisplay</option> is encountered.  This option
+          may appear multiple times to enable display of specific
+          images.  Image display is disabled by default</simpara>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--xml</option></term>
+        <term><option>--noxml</option></term>
+        <listitem>
+          <simpara>Enable/disable result output using an XML format.
+          This format wraps the raw data from the symbol with
+          information about the scan (such as page indices) in an
+          easy to parse format.  The latest schema is available from
+          <link xlink:href="http://zebra.sourceforge.net/2008/barcode.xsd"/>.</simpara>
         </listitem>
       </varlistentry>
 
@@ -105,17 +128,32 @@
   <refsection>
     <title>Examples</title>
 
-    <para>Scan a JPEG image of a UPC bar code symbol and pass
+    <para>Scan a PNG image of a UPC bar code symbol and pass
     resulting data to a script that searches for the code in a
     database and does something useful with it:
 
-    <screen><command>zebraimg</command> <filename>product.jpg</filename> | <command>upcrpc.py</command></screen>
+    <screen><command>zebraimg</command> <filename>product.png</filename> | <command>upcrpc.py</command></screen>
 
     The <command>upcrpc.py</command> example script included in the
     <filename>examples/</filename> subdirectory of the distribution
     will make an XMLRPC call to a popular internet UPC database and
     print the product description if found.</para>
 
+    <para>Scan a JPEG image containing several barcodes and display
+    the image in a window, also disabling recognition of Interleaved 2
+    of 5 codes to prevent confusion with other symbologies or
+    background noise:
+
+      <screen><command>zebraimg</command> <option>--display</option> <option>-Si25.disable</option> <filename>label.jpg</filename></screen>
+    </para>
+
+    <para>Look in a scanned document only for Code 39, using XML
+    output format so the page numbers are available.  To enable only
+    Code 39, first all symbologies are disabled, then Code 39 is
+    re-enabled:
+
+      <screen><command>zebraimg</command> <option>--xml</option> <option>-Sdisable</option> <option>-Scode39.enable</option> <filename>scan.tiff</filename></screen>
+    </para>
   </refsection>
 
   <refsection>

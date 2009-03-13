@@ -80,6 +80,23 @@ public:
             throw_exception(_video);
     }
 
+    /// initialize video using a specific format for debug.
+    /// see zebra_video_init()
+    void init (unsigned long fourcc)
+    {
+        if(zebra_video_init(_video, fourcc))
+            throw_exception(_video);
+    }
+
+    /// initialize video using a specific format for debug.
+    /// see zebra_video_init()
+    void init (std::string& format)
+    {
+        unsigned int fourcc = *(unsigned int*)format.c_str();
+        if(zebra_video_init(_video, fourcc))
+            throw_exception(_video);
+    }
+
     /// retrieve file descriptor associated with open *nix video device.
     /// see zebra_video_get_fd()
     int get_fd ()
@@ -117,6 +134,31 @@ public:
         if(!img)
             throw_exception(_video);
         return(Image(img));
+    }
+
+    /// request a preferred size for the video image from the device.
+    /// see zebra_video_request_size()
+    /// @since 0.6
+    void request_size (int width, int height)
+    {
+        zebra_video_request_size(_video, width, height);
+    }
+
+    /// request a preferred driver interface version for debug/testing.
+    /// see zebra_video_request_interface()
+    /// @since 0.6
+    void request_interface (int version)
+    {
+        zebra_video_request_interface(_video, version);
+    }
+
+    /// request a preferred I/O mode for debug/testing.
+    /// see zebra_video_request_iomode()
+    /// @since 0.7
+    void request_iomode (int iomode)
+    {
+        if(zebra_video_request_iomode(_video, iomode))
+            throw_exception(_video);
     }
 
 private:

@@ -198,6 +198,10 @@ int main (int argc, const char *argv[])
             long int v = strtol(argv[i] + 6, NULL, 0);
             zebra_processor_request_interface(proc, v);
         }
+        else if(!strncmp(argv[i], "--iomode=", 9)) {
+            long int v = strtol(argv[i] + 9, NULL, 0);
+            zebra_processor_request_iomode(proc, v);
+        }
         else if(!strncmp(argv[i], "--infmt=", 8) &&
                 strlen(argv[i]) == 12)
             infmt = (argv[i][8] | (argv[i][9] << 8) |

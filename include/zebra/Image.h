@@ -193,6 +193,23 @@ public:
         zebra_image_set_format(_img, fourcc);
     }
 
+    /// retrieve a "sequence" (page/frame) number associated with this
+    /// image.
+    /// see zebra_image_get_sequence()
+    /// @since 0.6
+    unsigned get_sequence () const
+    {
+        return(zebra_image_get_sequence(_img));
+    }
+
+    /// associate a "sequence" (page/frame) number with this image.
+    /// see zebra_image_set_sequence()
+    /// @since 0.6
+    void set_sequence (unsigned sequence_num)
+    {
+        zebra_image_set_sequence(_img, sequence_num);
+    }
+
     /// retrieve the width of the image.
     /// see zebra_image_get_width()
     unsigned get_width () const
@@ -220,6 +237,14 @@ public:
     const void *get_data () const
     {
         return(zebra_image_get_data(_img));
+    }
+
+    /// return the size of the image sample data.
+    /// see zebra_image_get_data_length()
+    /// @since 0.6
+    unsigned long get_data_length () const
+    {
+        return(zebra_image_get_data_length(_img));
     }
 
     /// specify image sample data.

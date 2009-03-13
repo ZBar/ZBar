@@ -512,7 +512,9 @@ int zebra_processor_init (zebra_processor_t *proc,
                                      proc->req_width, proc->req_height);
         if(proc->req_v4l)
             zebra_video_request_interface(proc->video, proc->req_v4l);
-        if(zebra_video_open(proc->video, dev)) {
+        if((proc->req_iomode &&
+            zebra_video_request_iomode(proc->video, proc->req_iomode)) ||
+           zebra_video_open(proc->video, dev)) {
             rc = err_copy(proc, proc->video);
             goto done;
         }
@@ -640,6 +642,13 @@ int zebra_processor_request_interface (zebra_processor_t *proc,
                                        int ver)
 {
     proc->req_v4l = ver;
+    return(0);
+}
+
+int zebra_processor_request_iomode (zebra_processor_t *proc,
+                                    int iomode)
+{
+    proc->req_iomode = iomode;
     return(0);
 }
 

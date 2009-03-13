@@ -161,6 +161,52 @@ class Processor {
         return(*this);
     }
 
+    /// force specific input and output formats for debug/testing.
+    /// see zebra_processor_force_format()
+    void force_format (unsigned long input_format,
+                       unsigned long output_format)
+    {
+        if(zebra_processor_force_format(_processor, input_format,
+                                        output_format))
+            throw_exception(_processor);
+    }
+
+    /// force specific input and output formats for debug/testing.
+    /// see zebra_processor_force_format()
+    void force_format (std::string& input_format,
+                       std::string& output_format)
+    {
+        unsigned long ifourcc = *(unsigned long*)input_format.c_str();
+        unsigned long ofourcc = *(unsigned long*)output_format.c_str();
+        if(zebra_processor_force_format(_processor, ifourcc, ofourcc))
+            throw_exception(_processor);
+    }
+
+    /// request a preferred size for the video image from the device.
+    /// see zebra_processor_request_size()
+    /// @since 0.6
+    void request_size (int width, int height)
+    {
+        zebra_processor_request_size(_processor, width, height);
+    }
+
+    /// request a preferred driver interface version for debug/testing.
+    /// see zebra_processor_request_interface()
+    /// @since 0.6
+    void request_interface (int version)
+    {
+        zebra_processor_request_interface(_processor, version);
+    }
+
+    /// request a preferred I/O mode for debug/testing.
+    /// see zebra_processor_request_iomode()
+    /// @since 0.7
+    void request_iomode (int iomode)
+    {
+        if(zebra_processor_request_iomode(_processor, iomode))
+            throw_exception(_processor);
+    }
+
  private:
     zebra_processor_t *_processor;
 };

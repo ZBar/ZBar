@@ -9,7 +9,7 @@
   <refnamediv>
     <refname>zebracam</refname>
 
-    <refpurpose>scan and decode bar codes from a video stream
+    <refpurpose>scan and decode bar codes from a video device
     </refpurpose>
   </refnamediv>
 
@@ -19,8 +19,20 @@
       <arg><option>-qv</option></arg>
       <arg><option>--quiet</option></arg>
       <arg><option>--nodisplay</option></arg>
+      <arg><option>--xml</option></arg>
       <arg><option>--verbose<arg>=<replaceable
       class="parameter">n</replaceable></arg></option></arg>
+      <arg><option>--prescale=<replaceable
+          class="parameter">W</replaceable>x<replaceable
+          class="parameter">H</replaceable></option></arg>
+      <arg><option>-S<optional><replaceable
+          class="parameter">symbology</replaceable>.</optional><replaceable
+          class="parameter">config</replaceable><optional>=<replaceable
+          class="parameter">value</replaceable></optional></option></arg>
+      <arg><option>--set <optional><replaceable
+          class="parameter">symbology</replaceable>.</optional><replaceable
+          class="parameter">config</replaceable><optional>=<replaceable
+          class="parameter">value</replaceable></optional></option></arg>
       <arg><replaceable class="parameter">device</replaceable></arg>
     </cmdsynopsis>
 
@@ -83,6 +95,16 @@
       </varlistentry>
 
       <varlistentry>
+        <term><option>--xml</option></term>
+        <listitem>
+          <simpara>Stream results using an XML output format.  This
+          format wraps the raw data from the symbol with information
+          about the scan in an easy to parse format.  The latest
+          schema is available from <link xlink:href="http://zebra.sourceforge.net/2008/barcode.xsd"/>.</simpara>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
         <term><option>--prescale=<replaceable
           class="parameter">W</replaceable>x<replaceable
           class="parameter">H</replaceable></option></term>
@@ -104,13 +126,27 @@
     resulting data through a script that searches for each code in a
     database and does something useful with them:
 
-    <screen><command>zebracam</command> <filename>/dev/video1</filename> | <command>upcrpc.py</command></screen>
+      <screen><command>zebracam</command> <filename>/dev/video1</filename> | <command>upcrpc.py</command></screen>
 
     The <command>upcrpc.py</command> example script included in the
     <filename>examples/</filename> subdirectory of the distribution
     will make an XMLRPC call to a popular internet UPC database and
     print the product description if found.</para>
 
+    <para>Scan for barcodes using the default video device and stream
+    results to stdout in XML format, also disable recognition of
+    Interleaved 2 of 5 codes to prevent confusion with other
+    symbologies or background noise:
+
+      <screen><command>zebracam</command> <option>--xml</option> <option>-Si25.disable</option></screen>
+    </para>
+
+    <para>Scan only for Code 39, without using the preview window -
+    maybe for a fixed installation.  To enable only Code 39, first all
+    symbologies are disabled, then Code 39 is re-enabled:
+
+      <screen><command>zebracam</command> <option>--nodisplay</option> <option>-Sdisable</option> <option>-Scode39.enable</option></screen>
+    </para>
   </refsection>
 
   <refsection>

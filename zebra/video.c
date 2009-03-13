@@ -178,6 +178,19 @@ int zebra_video_request_interface (zebra_video_t *vdo,
     return(0);
 }
 
+int zebra_video_request_iomode (zebra_video_t *vdo,
+                                int iomode)
+{
+    if(vdo->fd >= 0)
+        return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,
+                         "device already opened, unable to change iomode"));
+    if(iomode < 0 || iomode > VIDEO_USERPTR)
+        return(err_capture(vdo, SEV_ERROR, ZEBRA_ERR_INVALID, __func__,
+                         "invalid iomode requested"));
+    vdo->iomode = iomode;
+    return(0);
+}
+
 int zebra_video_get_width (const zebra_video_t *vdo)
 {
     return(vdo->width);
