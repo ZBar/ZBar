@@ -128,6 +128,9 @@ typedef enum zebra_config_e {
     ZEBRA_CFG_ASCII,            /**< enable full ASCII character set */
     ZEBRA_CFG_NUM,              /**< number of boolean configs */
 
+    ZEBRA_CFG_MIN_LEN = 0x20,   /**< minimum data length for valid decode */
+    ZEBRA_CFG_MAX_LEN,          /**< maximum data length for valid decode */
+
     ZEBRA_CFG_X_DENSITY = 0x100,/**< image scanner vertical scan density */
     ZEBRA_CFG_Y_DENSITY,        /**< image scanner horizontal scan density */
 } zebra_config_t;

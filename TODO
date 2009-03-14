@@ -27,6 +27,7 @@ symbologies:
     * high-level decode
   * Code 39, i25 optional features (check digit and ASCII escapes)
   * handle Code 128 function characters (FNC1-4)
+  * Code 128 trailing quiet zone checks
   * finish addon decoding
 
 decoder:
@@ -44,6 +45,7 @@ decoder:
 image scanner:
   * extract and track symbol polygons
     * dynamic scan density (PDF417, OMR)
+  * add multi-sample array interface to linear scanner
 
 image formats:
   * fix image data inheritance

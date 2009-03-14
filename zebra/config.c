@@ -116,6 +116,10 @@ int zebra_parse_config (const char *cfgstr,
         *cfg = ZEBRA_CFG_ENABLE;
         negate = !negate; /* no-disable ?!? */
     }
+    else if(!strncmp(cfgstr, "min-length", len))
+        *cfg = ZEBRA_CFG_MIN_LEN;
+    else if(!strncmp(cfgstr, "max-length", len))
+        *cfg = ZEBRA_CFG_MAX_LEN;
     else if(!strncmp(cfgstr, "ascii", len))
         *cfg = ZEBRA_CFG_ASCII;
     else if(!strncmp(cfgstr, "add-check", len))

@@ -453,6 +453,7 @@ int main (int argc, char **argv)
      */
     decoder = zebra_decoder_create();
     zebra_decoder_set_handler(decoder, symbol_handler);
+    zebra_decoder_set_config(decoder, 0, ZEBRA_CFG_MIN_LEN, 0);
 
     encode_junk(rnd_size + 1);
 

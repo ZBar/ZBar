@@ -32,6 +32,7 @@ typedef struct code39_decoder_s {
     unsigned width;             /* last character width */
 
     unsigned config;
+    int configs[NUM_CFGS];      /* int valued configurations */
 } code39_decoder_t;
 
 /* reset Code 39 specific state */

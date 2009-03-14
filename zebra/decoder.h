@@ -27,6 +27,8 @@
 
 #include <zebra.h>
 
+#define NUM_CFGS (ZEBRA_CFG_MAX_LEN - ZEBRA_CFG_MIN_LEN + 1)
+
 #ifdef ENABLE_EAN
 # include "decoder/ean.h"
 #endif
@@ -65,7 +67,8 @@
 # define BUFFER_INCR  0x10
 #endif
 
-#define TEST_CFG(config, cfg) (((config) >> cfg) & 1)
+#define CFG(dcode, cfg) ((dcode).configs[(cfg) - ZEBRA_CFG_MIN_LEN])
+#define TEST_CFG(config, cfg) (((config) >> (cfg)) & 1)
 
 /* symbology independent decoder state */
 struct zebra_decoder_s {

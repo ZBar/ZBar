@@ -147,6 +147,15 @@ static inline signed char i25_decode_end (zebra_decoder_t *dcode)
         }
     }
 
+    if(dcode25->character < CFG(*dcode25, ZEBRA_CFG_MIN_LEN) ||
+       (CFG(*dcode25, ZEBRA_CFG_MAX_LEN) > 0 &&
+        dcode25->character > CFG(*dcode25, ZEBRA_CFG_MAX_LEN))) {
+        dprintf(2, " [invalid len]\n");
+        dcode->lock = 0;
+        dcode25->character = -1;
+        return(ZEBRA_NONE);
+    }
+
     dcode->buf[dcode25->character] = '\0';
     dprintf(2, " [valid end]\n");
     dcode25->character = -1;

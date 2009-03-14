@@ -113,20 +113,28 @@ static inline const unsigned char *dsprintbuf(ean_decoder_t *ean)
  * using preceding 4 as character width
  */
 static inline signed char aux_end (zebra_decoder_t *dcode,
-                                   unsigned char n)
+                                   unsigned char fwd)
 {
     /* reference width from previous character */
-    unsigned s = calc_s(dcode, n, 4);
+    unsigned s = calc_s(dcode, 4 + fwd, 4);
+
+    /* check quiet zone */
+    if(!fwd && (get_width(dcode, 0) * 14 + 1) / s < 3) {
+        dprintf(2, " [invalid quiet]");
+        return(-1);
+    }
 
     dprintf(2, " (");
     signed char code = 0;
     unsigned char i;
-    for(i = 0; i < n - 1; i++) {
+    for(i = 1 - fwd; i < 3 + fwd; i++) {
         unsigned e = get_width(dcode, i) + get_width(dcode, i + 1);
         dprintf(2, " %d", e);
         code = (code << 2) | decode_e(e, s, 7);
-        if(code < 0)
+        if(code < 0) {
+            dprintf(2, " [invalid end guard]");
             return(-1);
+        }
     }
     dprintf(2, ") s=%d aux=%x", s, code);
     return(code);
@@ -219,7 +227,7 @@ static inline signed char decode4 (zebra_decoder_t *dcode)
 }
 
 static inline zebra_symbol_type_t ean_part_end4 (ean_pass_t *pass,
-                                                 unsigned char rev)
+                                                 unsigned char fwd)
 {
     /* extract parity bits */
     unsigned char par = ((pass->raw[1] & 0x10) >> 1 |
@@ -232,7 +240,7 @@ static inline zebra_symbol_type_t ean_part_end4 (ean_pass_t *pass,
         /* invalid parity combination */
         return(ZEBRA_NONE);
 
-    if(!par == !rev) {
+    if(!par == fwd) {
         /* reverse sampled digits */
         unsigned char tmp = pass->raw[1];
         pass->raw[1] = pass->raw[4];
@@ -253,10 +261,10 @@ static inline zebra_symbol_type_t ean_part_end4 (ean_pass_t *pass,
 
 static inline zebra_symbol_type_t ean_part_end7 (ean_decoder_t *ean,
                                                  ean_pass_t *pass,
-                                                 unsigned char rev)
+                                                 unsigned char fwd)
 {
     /* calculate parity index */
-    unsigned char par = ((!rev)
+    unsigned char par = ((fwd)
                          ? ((pass->raw[1] & 0x10) << 1 |
                             (pass->raw[2] & 0x10) |
                             (pass->raw[3] & 0x10) >> 1 |
@@ -281,7 +289,7 @@ static inline zebra_symbol_type_t ean_part_end7 (ean_decoder_t *ean,
         /* invalid parity combination */
         return(ZEBRA_NONE);
 
-    if(!par == !rev) {
+    if(!par == fwd) {
         /* reverse sampled digits */
         unsigned char i;
         for(i = 1; i < 4; i++) {
@@ -316,14 +324,14 @@ static inline zebra_symbol_type_t decode_pass (zebra_decoder_t *dcode,
 {
     pass->state++;
     unsigned char idx = pass->state & STATE_IDX;
-    unsigned char rev = pass->state & 1;
+    unsigned char fwd = pass->state & 1;
 
-    if(get_color(dcode) == ZEBRA_BAR &&
-       (idx == 0x10 || idx == 0x0f) &&
+    if(get_color(dcode) == ZEBRA_SPACE &&
+       (idx == 0x10 || idx == 0x11) &&
        TEST_CFG(dcode->ean.ean8_config, ZEBRA_CFG_ENABLE) &&
-       !aux_end(dcode, (rev) ? 3 : 4)) {
-        dprintf(2, " rev=%x", rev);
-        zebra_symbol_type_t part = ean_part_end4(pass, rev);
+       !aux_end(dcode, fwd)) {
+        dprintf(2, " fwd=%x", fwd);
+        zebra_symbol_type_t part = ean_part_end4(pass, fwd);
         pass->state = -1;
         return(part);
     }
@@ -353,14 +361,12 @@ static inline zebra_symbol_type_t decode_pass (zebra_decoder_t *dcode,
         }
     }
 
-    if(get_color(dcode) == ZEBRA_BAR &&
-       (idx == 0x18 || idx == 0x17)) {
+    if(get_color(dcode) == ZEBRA_SPACE &&
+       (idx == 0x18 || idx == 0x19)) {
         zebra_symbol_type_t part = ZEBRA_NONE;
-        dprintf(2, " rev=%x", rev);
-        if(!aux_end(dcode, (rev) ? 3 : 4))
-            part = ean_part_end7(&dcode->ean, pass, rev);
-        else
-            dprintf(2, " [invalid end guard]");
+        dprintf(2, " fwd=%x", fwd);
+        if(!aux_end(dcode, fwd))
+            part = ean_part_end7(&dcode->ean, pass, fwd);
         pass->state = -1;
         return(part);
     }

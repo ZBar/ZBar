@@ -418,6 +418,7 @@ static inline unsigned char postprocess (zebra_decoder_t *dcode)
         j += postprocess_c(dcode, cexp, i, j) * 2;
     }
     dcode->buf[j] = '\0';
+    dcode->code128.character = j;
     return(0);
 }
 
@@ -487,13 +488,19 @@ zebra_symbol_type_t _zebra_decode_code128 (zebra_decoder_t *dcode)
         : c == STOP_FWD)) {
         /* FIXME STOP_FWD should check extra bar (and QZ!) */
         zebra_symbol_type_t sym = ZEBRA_CODE128;
-        if(validate_checksum(dcode) || postprocess(dcode)) {
-            dcode->lock = 0;
+        if(validate_checksum(dcode) || postprocess(dcode))
+            sym = ZEBRA_NONE;
+        else if(dcode128->character < CFG(*dcode128, ZEBRA_CFG_MIN_LEN) ||
+                (CFG(*dcode128, ZEBRA_CFG_MAX_LEN) > 0 &&
+                 dcode128->character > CFG(*dcode128, ZEBRA_CFG_MAX_LEN))) {
+            dprintf(2, " [invalid len]\n");
             sym = ZEBRA_NONE;
         }
         else
             dprintf(2, " [valid end]\n");
         dcode128->character = -1;
+        if(!sym)
+            dcode->lock = 0;
         return(sym);
     }
 

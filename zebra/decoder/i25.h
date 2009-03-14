@@ -32,6 +32,7 @@ typedef struct i25_decoder_s {
     unsigned width;             /* last character width */
 
     unsigned config;
+    int configs[NUM_CFGS];      /* int valued configurations */
 } i25_decoder_t;
 
 /* reset interleaved 2 of 5 specific state */

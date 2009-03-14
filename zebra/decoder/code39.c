@@ -259,7 +259,35 @@ zebra_symbol_type_t _zebra_decode_code39 (zebra_decoder_t *dcode)
             dcode39->character, dcode39->element);
 
     if(dcode39->element == 10) {
-        if(get_width(dcode, 0) > dcode39->width * 2) {
+        unsigned space = get_width(dcode, 0);
+        if(dcode39->character &&
+           dcode->buf[dcode39->character - 1] == 0x2b) {  /* STOP */
+            /* trim STOP character */
+            dcode39->character--;
+            zebra_symbol_type_t sym = ZEBRA_CODE39;
+
+            /* trailing quiet zone check */
+            if(space < dcode39->width / 4) {
+                dprintf(2, " [invalid qz]\n");
+                sym = ZEBRA_NONE;
+            }
+            else if(dcode39->character < CFG(*dcode39, ZEBRA_CFG_MIN_LEN) ||
+                    (CFG(*dcode39, ZEBRA_CFG_MAX_LEN) > 0 &&
+                     dcode39->character > CFG(*dcode39, ZEBRA_CFG_MAX_LEN))) {
+                dprintf(2, " [invalid len]\n");
+                sym = ZEBRA_NONE;
+            }
+            else {
+                /* FIXME checksum (needs config enable) */
+                code39_postprocess(dcode);
+                dprintf(2, " [valid end]\n");
+            }
+            dcode39->character = -1;
+            if(!sym)
+                dcode->lock = 0;
+            return(sym);
+        }
+        if(space > dcode39->width / 4) {
             /* inter-character space check failure */
             dcode->lock = 0;
             dcode39->character = -1;
@@ -280,24 +308,16 @@ zebra_symbol_type_t _zebra_decode_code39 (zebra_decoder_t *dcode)
         return(ZEBRA_PARTIAL);
     }
 
-    if(c == 0x2b) {  /* STOP */
-        /* FIXME checksum (needs config enable) */
-        /* FIXME check trailing quiet zone */
-        code39_postprocess(dcode);
-        dcode39->character = -1;
-        dprintf(2, " [valid end]\n");
-        return(ZEBRA_CODE39);
-    }
-    else if(c < 0 ||
-            ((dcode39->character >= BUFFER_MIN) &&
-             size_buf(dcode, dcode39->character + 1))) {
+    if(c < 0 ||
+       ((dcode39->character >= BUFFER_MIN) &&
+        size_buf(dcode, dcode39->character + 1))) {
         dprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
         dcode->lock = 0;
         dcode39->character = -1;
         return(ZEBRA_NONE);
     }
     else {
-        zassert(c < 0x2b, ZEBRA_NONE, "c=%02x s9=%x\n", c, dcode39->s9);
+        zassert(c < 0x2c, ZEBRA_NONE, "c=%02x s9=%x\n", c, dcode39->s9);
         dprintf(2, "\n");
     }
 

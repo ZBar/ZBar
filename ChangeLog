@@ -1,4 +1,6 @@
 current:
+  * add missing trailing quiet zone checks for ean and code39
+  * add min/max code length cfg/check for i25,code128,code39,pdf417
   * add image scan density API/option
   * tweak option parser to be more strict/correct about abbreviations
   * add API to force specific video io modes (req #2293955)

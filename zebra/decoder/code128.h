@@ -31,6 +31,7 @@ typedef struct code128_decoder_s {
     unsigned s6;                /* character width */
 
     unsigned config;
+    int configs[NUM_CFGS];      /* int valued configurations */
 } code128_decoder_t;
 
 /* reset Code 128 specific state */

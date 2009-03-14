@@ -57,9 +57,11 @@ zebra_decoder_t *zebra_decoder_create ()
 #endif
 #ifdef ENABLE_I25
     dcode->i25.config = 1 << ZEBRA_CFG_ENABLE;
+    CFG(dcode->i25, ZEBRA_CFG_MIN_LEN) = 6;
 #endif
 #ifdef ENABLE_CODE39
     dcode->code39.config = 1 << ZEBRA_CFG_ENABLE;
+    CFG(dcode->code39, ZEBRA_CFG_MIN_LEN) = 6;
 #endif
 #ifdef ENABLE_CODE128
     dcode->code128.config = 1 << ZEBRA_CFG_ENABLE;
@@ -203,26 +205,13 @@ zebra_symbol_type_t zebra_decode_width (zebra_decoder_t *dcode,
     return(dcode->type);
 }
 
-int zebra_decoder_set_config (zebra_decoder_t *dcode,
-                              zebra_symbol_type_t sym,
-                              zebra_config_t cfg,
-                              int val)
+static inline int decoder_set_config_bool (zebra_decoder_t *dcode,
+                                           zebra_symbol_type_t sym,
+                                           zebra_config_t cfg,
+                                           int val)
 {
     unsigned *config = NULL;
     switch(sym) {
-    case ZEBRA_NONE:
-        zebra_decoder_set_config(dcode, ZEBRA_EAN13, cfg, val);
-        zebra_decoder_set_config(dcode, ZEBRA_EAN8, cfg, val);
-        zebra_decoder_set_config(dcode, ZEBRA_UPCA, cfg, val);
-        zebra_decoder_set_config(dcode, ZEBRA_UPCE, cfg, val);
-        zebra_decoder_set_config(dcode, ZEBRA_ISBN10, cfg, val);
-        zebra_decoder_set_config(dcode, ZEBRA_ISBN13, cfg, val);
-        zebra_decoder_set_config(dcode, ZEBRA_I25, cfg, val);
-        zebra_decoder_set_config(dcode, ZEBRA_CODE39, cfg, val);
-        zebra_decoder_set_config(dcode, ZEBRA_CODE128, cfg, val);
-        zebra_decoder_set_config(dcode, ZEBRA_PDF417, cfg, val);
-        return(0);
-
 #ifdef ENABLE_EAN
     case ZEBRA_EAN13:
         config = &dcode->ean.ean13_config;
@@ -300,6 +289,68 @@ int zebra_decoder_set_config (zebra_decoder_t *dcode,
 
     return(0);
 }
+
+static inline int decoder_set_config_int (zebra_decoder_t *dcode,
+                                          zebra_symbol_type_t sym,
+                                          zebra_config_t cfg,
+                                          int val)
+{
+    switch(sym) {
+
+#ifdef ENABLE_I25
+    case ZEBRA_I25:
+        CFG(dcode->i25, cfg) = val;
+        break;
+#endif
+#ifdef ENABLE_CODE39
+    case ZEBRA_CODE39:
+        CFG(dcode->code39, cfg) = val;
+        break;
+#endif
+#ifdef ENABLE_CODE128
+    case ZEBRA_CODE128:
+        CFG(dcode->code128, cfg) = val;
+        break;
+#endif
+#ifdef ENABLE_PDF417
+    case ZEBRA_PDF417:
+        CFG(dcode->pdf417, cfg) = val;
+        break;
+#endif
+
+    default:
+        return(1);
+    }
+    return(0);
+}
+
+int zebra_decoder_set_config (zebra_decoder_t *dcode,
+                              zebra_symbol_type_t sym,
+                              zebra_config_t cfg,
+                              int val)
+{
+    if(sym == ZEBRA_NONE) {
+        zebra_decoder_set_config(dcode, ZEBRA_EAN13, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_EAN8, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_UPCA, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_UPCE, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_ISBN10, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_ISBN13, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_I25, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_CODE39, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_CODE128, cfg, val);
+        zebra_decoder_set_config(dcode, ZEBRA_PDF417, cfg, val);
+        return(0);
+    }
+
+    if(cfg >= 0 && cfg < ZEBRA_CFG_NUM)
+        return(decoder_set_config_bool(dcode, sym, cfg, val));
+    else if(cfg >= ZEBRA_CFG_MIN_LEN && cfg <= ZEBRA_CFG_MAX_LEN)
+        return(decoder_set_config_int(dcode, sym, cfg, val));
+    else
+        return(1);
+}
+
 
 static char *decoder_dump = NULL;
 

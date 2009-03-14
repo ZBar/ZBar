@@ -31,6 +31,7 @@ typedef struct pdf417_decoder_s {
     unsigned s8;                /* character width */
 
     unsigned config;
+    int configs[NUM_CFGS];      /* int valued configurations */
 } pdf417_decoder_t;
 
 /* reset PDF417 specific state */
