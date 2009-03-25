@@ -88,7 +88,7 @@ void qr_wiener_filter(unsigned char *_img,int _width,int _height){
           g=_img[y*_width+x];
           a=(m-25*g)*vn3;
           sn2*=25;
-          _img[y*_width+x]=QR_CLAMP255(g+QR_HDIVROUND(a,sn2));
+          _img[y*_width+x]=QR_CLAMP255(g+QR_DIVROUND(a,sn2));
         }
         else _img[y*_width+x]=(unsigned char)(((m<<1)+25)/50);
       }
@@ -168,7 +168,7 @@ void qr_wiener_filter(unsigned char *_img,int _width,int _height){
           g=_img[y*_width+x];
           a=m-9*g;
           sn2*=9;
-          _img[y*_width+x]=QR_CLAMP255(g+QR_HDIVROUND(a,sn2));
+          _img[y*_width+x]=QR_CLAMP255(g+QR_DIVROUND(a,sn2));
         }
         else _img[y*_width+x]=(unsigned char)(((m<<1)+9)/18);
       }
@@ -585,12 +585,14 @@ void qr_binarize(unsigned char *_img,int _width,int _height){
     memcpy(_img,mask,_width*_height*sizeof(*_img));
     free(mask);
   }
-  /*{
+#if defined(QR_DEBUG)
+  {
     FILE *fout;
     fout=fopen("binary.png","wb");
     image_write_png(_img,_width,_height,fout);
     fclose(fout);
-  }*/
+  }
+#endif
 }
 #endif
 

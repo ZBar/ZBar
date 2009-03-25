@@ -11,6 +11,8 @@
    - Removed the hard-coded parity size and performed general API cleanup.
    - Allow multiple representations of GF(2**8), since different standards use
       different irreducible polynomials.
+   - Allow different starting indices for the generator polynomial, since
+      different standards use different values.
    - Greatly reduced the computation by eliminating unnecessary operations.
    - Explicitly solve for the roots of low-degree polynomials instead of using
       an exhaustive search.

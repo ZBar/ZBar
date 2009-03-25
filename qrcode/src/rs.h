@@ -1,7 +1,7 @@
 #if !defined(_qrcode_rs_H)
 # define _qrcode_rs_H (1)
 
-/*This is one of 14 irreducible primitive polynomials of degree 8:
+/*This is one of 16 irreducible primitive polynomials of degree 8:
     x**8+x**4+x**3+x**2+1.
   Under such a polynomial, x (i.e., 0x02) is a generator of GF(2**8).
   The high order 1 bit is implicit.
@@ -47,8 +47,8 @@ void rs_gf256_init(rs_gf256 *_gf,unsigned _ppoly);
 int rs_correct(const rs_gf256 *_gf,int _m0,unsigned char *_data,int _ndata,
  int _npar,const unsigned char *_erasures,int _nerasures);
 
-/*Create an _nparmax-coefficient generator polynomial for a Reed-Solomon code
-   with _npar<256 parity bytes.*/
+/*Create an _npar-coefficient generator polynomial for a Reed-Solomon code with
+   _npar<256 parity bytes.*/
 void rs_compute_genpoly(const rs_gf256 *_gf,int _m0,
  unsigned char *_genpoly,int _npar);
 

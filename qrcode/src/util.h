@@ -5,16 +5,12 @@
 #define QR_MINI(_a,_b)      ((_a)+((_b)-(_a)&-((_b)<(_a))))
 #define QR_SIGNI(_x)        (((_x)>0)-((_x)<0))
 #define QR_SIGNMASK(_x)     (-((_x)<0))
-/*Divides a signed integer by a positive value with exact rounding.
-  Both values must be able to be doubled without overflow.*/
-#define QR_DIVROUND(_x,_y) \
- ((((_x)<<1)+(_y)-((_y)<<1&QR_SIGNMASK(_x)))/((_y)<<1))
-/*Divides a signed integer by a positive value with rounding (exact only when
-   the divisor is even), but less chance of potential overflow.*/
-#define QR_HDIVROUND(_x,_y) (((_x)+((_y)>>1)-((_y)&QR_SIGNMASK(_x)))/(_y))
 /*Unlike copysign(), simply inverts the sign of _a if _b is negative.
   Call with abs(_a) to emulate the standard copysign() behavior.*/
-#define QR_COPYSIGNI(_a,_b) ((_a)&~QR_SIGNMASK(_b)|-(_a)&QR_SIGNMASK(_b))
+#define QR_COPYSIGNI(_a,_b) ((_a)+QR_SIGNMASK(_b)^QR_SIGNMASK(_b))
+/*Divides a signed integer by a positive value with exact rounding.*/
+#define QR_DIVROUND(_x,_y) \
+ (((_x)+QR_COPYSIGNI(_y>>1,_x))/(_y))
 #define QR_CLAMPI(_a,_b,_c) (QR_MAXI(_a,QR_MINI(_b,_c)))
 #define QR_CLAMP255(_x)     ((unsigned char)((((_x)<0)-1)&((_x)|-((_x)>255))))
 /*Swaps two integers _a and _b if _a>_b.*/
@@ -31,7 +27,7 @@
 #define QR_ILOG2(_v) (((_v)&0xF0)?4+QR_ILOG1((_v)>>4):QR_ILOG1(_v))
 #define QR_ILOG3(_v) (((_v)&0xFF00)?8+QR_ILOG2((_v)>>8):QR_ILOG2(_v))
 #define QR_ILOG4(_v) (((_v)&0xFFFF0000)?16+QR_ILOG3((_v)>>16):QR_ILOG3(_v))
-/*Computes the integer logarithm of an (unsigned, 32-bit) constant.*/
+/*Computes the integer logarithm of a (positive, 32-bit) constant.*/
 #define QR_ILOG(_v) ((int)QR_ILOG4((unsigned)(_v)))
 
 /*Multiplies 32-bit numbers _a and _b, adds (possibly 64-bit) number _r, and

@@ -11,54 +11,51 @@
 
 static void isaac_update(isaac_ctx *_ctx){
   unsigned *m;
-  unsigned *mend;
-  unsigned *mm;
-  unsigned *m2;
   unsigned *r;
   unsigned  a;
   unsigned  b;
   unsigned  x;
   unsigned  y;
-  mm=_ctx->m;
+  int       i;
+  m=_ctx->m;
   r=_ctx->r;
   a=_ctx->a;
   b=_ctx->b+(++_ctx->c)&ISAAC_MASK;
-  mend=m2=mm+(ISAAC_SZ>>1);
-  for(m=mm;m<mend;){
-    x=*m;
-    a=(a^a<<13)+*m2++&ISAAC_MASK;
-    *m++=y=mm[x>>2&ISAAC_SZ-1]+a+b&ISAAC_MASK;
-    *r++=b=mm[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
-    x=*m;
-    a=(a^a>>6)+*m2++&ISAAC_MASK;
-    *m++=y=mm[x>>2&ISAAC_SZ-1]+a+b&ISAAC_MASK;
-    *r++=b=mm[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
-    x=*m;
-    a=(a^a<<2)+*m2++&ISAAC_MASK;
-    *m++=y=mm[x>>2&ISAAC_SZ-1]+a+b&ISAAC_MASK;
-    *r++=b=mm[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
-    x=*m;
-    a=(a^a>>16)+*m2++&ISAAC_MASK;
-    *m++=y=mm[x>>2&ISAAC_SZ-1]+a+b&ISAAC_MASK;
-    *r++=b=mm[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
+  for(i=0;i<ISAAC_SZ/2;i++){
+    x=m[i];
+    a=(a^a<<13)+m[i+ISAAC_SZ/2]&ISAAC_MASK;
+    m[i]=y=m[(x&ISAAC_SZ-1<<2)>>2]+a+b&ISAAC_MASK;
+    r[i]=b=m[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
+    x=m[++i];
+    a=(a^a>>6)+m[i+ISAAC_SZ/2]&ISAAC_MASK;
+    m[i]=y=m[(x&ISAAC_SZ-1<<2)>>2]+a+b&ISAAC_MASK;
+    r[i]=b=m[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
+    x=m[++i];
+    a=(a^a<<2)+m[i+ISAAC_SZ/2]&ISAAC_MASK;
+    m[i]=y=m[(x&ISAAC_SZ-1<<2)>>2]+a+b&ISAAC_MASK;
+    r[i]=b=m[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
+    x=m[++i];
+    a=(a^a>>16)+m[i+ISAAC_SZ/2]&ISAAC_MASK;
+    m[i]=y=m[(x&ISAAC_SZ-1<<2)>>2]+a+b&ISAAC_MASK;
+    r[i]=b=m[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
   }
-  for(m2=mm;m2<mend;){
-    x=*m;
-    a=(a^a<<13)+*m2++&ISAAC_MASK;
-    *m++=y=mm[x>>2&ISAAC_SZ-1]+a+b&ISAAC_MASK;
-    *r++=b=mm[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
-    x=*m;
-    a=(a^a>>6)+*m2++&ISAAC_MASK;
-    *m++=y=mm[x>>2&ISAAC_SZ-1]+a+b&ISAAC_MASK;
-    *r++=b=mm[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
-    x=*m;
-    a=(a^a<<2)+*m2++&ISAAC_MASK;
-    *m++=y=mm[x>>2&ISAAC_SZ-1]+a+b&ISAAC_MASK;
-    *r++=b=mm[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
-    x=*m;
-    a=(a^a>>16)+*m2++&ISAAC_MASK;
-    *m++=y=mm[x>>2&ISAAC_SZ-1]+a+b&ISAAC_MASK;
-    *r++=b=mm[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
+  for(i=ISAAC_SZ/2;i<ISAAC_SZ;i++){
+    x=m[i];
+    a=(a^a<<13)+m[i-ISAAC_SZ/2]&ISAAC_MASK;
+    m[i]=y=m[(x&ISAAC_SZ-1<<2)>>2]+a+b&ISAAC_MASK;
+    r[i]=b=m[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
+    x=m[++i];
+    a=(a^a>>6)+m[i-ISAAC_SZ/2]&ISAAC_MASK;
+    m[i]=y=m[(x&ISAAC_SZ-1<<2)>>2]+a+b&ISAAC_MASK;
+    r[i]=b=m[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
+    x=m[++i];
+    a=(a^a<<2)+m[i-ISAAC_SZ/2]&ISAAC_MASK;
+    m[i]=y=m[(x&ISAAC_SZ-1<<2)>>2]+a+b&ISAAC_MASK;
+    r[i]=b=m[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
+    x=m[++i];
+    a=(a^a>>16)+m[i-ISAAC_SZ/2]&ISAAC_MASK;
+    m[i]=y=m[(x&ISAAC_SZ-1<<2)>>2]+a+b&ISAAC_MASK;
+    r[i]=b=m[y>>ISAAC_SZ_LOG+2&ISAAC_SZ-1]+x&ISAAC_MASK;
   }
   _ctx->b=b;
   _ctx->a=a;

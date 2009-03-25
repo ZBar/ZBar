@@ -5,6 +5,8 @@
 extern "C" {
 # endif
 
+typedef int qr_point[2];
+
 typedef struct qr_reader          qr_reader;
 
 typedef struct qr_code_data_entry qr_code_data_entry;
@@ -101,8 +103,8 @@ struct qr_code_data_entry{
     unsigned eci;
     /*Structured-append header data.*/
     struct{
-      unsigned char sa_size;
       unsigned char sa_index;
+      unsigned char sa_size;
       unsigned char sa_parity;
     }sa;
   }payload;
@@ -120,17 +122,21 @@ struct qr_code_data{
   /*The ECC level (0...3, corresponding to 'L', 'M', 'Q', and 'H').*/
   unsigned char       ecc_level;
   /*Structured-append information.*/
-  /*The size of the structured-append group, or 0 if there was no S-A header.*/
-  unsigned char       sa_size;
   /*The index of this code in the structured-append group.
     If sa_size is zero, this is undefined.*/
   unsigned char       sa_index;
+  /*The size of the structured-append group, or 0 if there was no S-A header.*/
+  unsigned char       sa_size;
   /*The parity of the entire structured-append group.
     If sa_size is zero, this is undefined.*/
   unsigned char       sa_parity;
   /*The parity of this code.
     If sa_size is zero, this is undefined.*/
   unsigned char       self_parity;
+  /*An approximate bounding box for the code.
+    Points appear in the order up-left, up-right, down-left, down-right,
+     relative to the orientation of the QR code.*/
+  qr_point            bbox[4];
 };
 
 
