@@ -31,6 +31,7 @@
 #include <assert.h>
 
 #include <zebra.h>
+#include "error.h"
 #include "symbol.h"
 
 /* adapted from v4l2 spec */

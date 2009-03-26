@@ -5,6 +5,7 @@ ACLOCAL_AMFLAGS = -I config
 bin_PROGRAMS =
 check_PROGRAMS =
 lib_LTLIBRARIES =
+pyexec_LTLIBRARIES =
 CLEANFILES =
 DISTCLEANFILES =
 BUILT_SOURCES =
@@ -22,6 +23,9 @@ include $(srcdir)/zebraimg/Makefile.am.inc
 endif
 if HAVE_VIDEO
 include $(srcdir)/zebracam/Makefile.am.inc
+endif
+if HAVE_PYTHON
+include $(srcdir)/python/Makefile.am.inc
 endif
 if HAVE_GTK
 include $(srcdir)/gtk/Makefile.am.inc

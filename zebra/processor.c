@@ -719,16 +719,21 @@ int zebra_processor_set_active (zebra_processor_t *proc,
     }
     zebra_image_scanner_enable_cache(proc->scanner, active);
     int rc = zebra_video_enable(proc->video, active);
-    int vid_fd = zebra_video_get_fd(proc->video);
-    if(vid_fd >= 0) {
-        if(active)
-            add_poll(proc, vid_fd, proc_video_handler);
-        else
-            remove_poll(proc, vid_fd);
+    if(!rc) {
+        int vid_fd = zebra_video_get_fd(proc->video);
+        if(vid_fd >= 0) {
+            if(active)
+                add_poll(proc, vid_fd, proc_video_handler);
+            else
+                remove_poll(proc, vid_fd);
+        }
+        /* FIXME failure recovery? */
+        proc->active = active;
+        proc->events &= ~EVENT_INPUT;
     }
-    /* FIXME failure recovery? */
-    proc->active = active;
-    proc->events &= ~EVENT_INPUT;
+    else
+        err_copy(proc, proc->video);
+
 #ifdef HAVE_LIBPTHREAD
     if(proc->threaded) {
         assert(!proc->sem);

@@ -58,7 +58,7 @@ setup:
     
     my $reader = Barcode::Zebra::Processor->new();
     $reader->init();
-    $reader->set_data_handler(my_handler);
+    $reader->set_data_handler(\&my_handler);
 
 scan an image:
 
@@ -73,6 +73,13 @@ scan from video:
     $reader->set_visible();
     $reader->set_active();
     $reader->user_wait();
+
+collect results:
+
+    my @symbols = $image->get_symbols();
+    foreach my $sym (@symbols) {
+        print("decoded: " . $sym->get_type() . ":" . $sym->get_data());
+    }
 
 
 =head1 DESCRIPTION

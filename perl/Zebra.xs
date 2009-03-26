@@ -158,7 +158,7 @@ static void processor_handler (zebra_image_t *image,
 {
     SV *img;
     zebra_image_ref(image, 1);
-    img = sv_setref_pv(sv_newmortal(), "Barcode::Zebra::Image", image);
+    img = sv_setref_pv(newSV(0), "Barcode::Zebra::Image", image);
     activate_handler((void*)userdata, img);
     SvREFCNT_dec(img);
 }
@@ -263,6 +263,10 @@ BOOT:
         CONSTANT(config, CFG_, ADD_CHECK, "add-check");
         CONSTANT(config, CFG_, EMIT_CHECK, "emit-check");
         CONSTANT(config, CFG_, ASCII, "ascii");
+        CONSTANT(config, CFG_, MIN_LEN, "min-length");
+        CONSTANT(config, CFG_, MAX_LEN, "max-length");
+        CONSTANT(config, CFG_, X_DENSITY, "x-density");
+        CONSTANT(config, CFG_, Y_DENSITY, "y-density");
     }
 
 
@@ -545,7 +549,7 @@ zebra_processor_set_data_handler(processor, handler = 0, closure = 0)
         wrap = zebra_processor_get_userdata(processor);
         if(set_handler(&wrap, ST(0), handler, closure))
             callback = processor_handler;
-        zebra_processor_set_data_handler(processor, processor_handler, wrap);
+        zebra_processor_set_data_handler(processor, callback, wrap);
 
 
 MODULE = Barcode::Zebra	PACKAGE = Barcode::Zebra::ImageScanner	PREFIX = zebra_image_scanner_
@@ -656,7 +660,6 @@ zebra_decoder_set_handler(decoder, handler = 0, closure = 0)
 	SV *	closure
     PREINIT:
         handler_wrapper_t *wrap;
-        zebra_decoder_handler_t *callback;
     CODE:
         wrap = zebra_decoder_get_userdata(decoder);
         zebra_decoder_set_handler(decoder, NULL);

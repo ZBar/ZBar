@@ -21,8 +21,8 @@
  *  http://sourceforge.net/projects/zebra
  *------------------------------------------------------------------------*/
 
-#include "image.h"
 #include "error.h"
+#include "image.h"
 
 zebra_image_t *zebra_image_create ()
 {

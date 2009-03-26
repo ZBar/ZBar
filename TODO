@@ -34,13 +34,15 @@ decoder:
   * support for binary symbol data (PDF417, Code 128)
   * start/stop/abort and location detail APIs (PDF417, OMR)
   * more configuration options
+    * disable for at least UPC-E (maybe UPC-A?)
     * Code-39/i25 check digit (after implementation)
     * Code-39 full ASCII (after implementation)
-    * require min/max length (for variable length symbologies)
     * standard symbology identifiers (which standard?)
     * set consistency requirements
     * set scanner filter params
+  * fix min/max length check during decode
   * revisit noise and resolution independence
+  * support for a "confidence" metric
 
 image scanner:
   * extract and track symbol polygons

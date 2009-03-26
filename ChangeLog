@@ -1,4 +1,10 @@
 current:
+  * add first pass python bindings!
+  * fix perl mortality bug
+  * add new cfg constants to perl
+  * fix perl doc handler ref
+  * fix processor set_active error propagation
+  * add wiki examples (scan_image.*, processor.*)
   * add missing trailing quiet zone checks for ean and code39
   * add min/max code length cfg/check for i25,code128,code39,pdf417
   * add image scan density API/option
