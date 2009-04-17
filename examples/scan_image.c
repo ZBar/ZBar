@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <png.h>
-#include <zebra.h>
+#include <zbar.h>
 
-zebra_image_scanner_t *scanner = NULL;
+zbar_image_scanner_t *scanner = NULL;
 
 /* to complete a runnable example, this abbreviated implementation of
  * get_data() will use libpng to read an image file. refer to libpng
@@ -53,10 +53,10 @@ int main (int argc, char **argv)
     if(argc < 2) return(1);
 
     /* create a reader */
-    scanner = zebra_image_scanner_create();
+    scanner = zbar_image_scanner_create();
 
     /* configure the reader */
-    zebra_image_scanner_set_config(scanner, 0, ZEBRA_CFG_ENABLE, 1);
+    zbar_image_scanner_set_config(scanner, 0, ZBAR_CFG_ENABLE, 1);
 
     /* obtain image data */
     int width = 0, height = 0;
@@ -64,26 +64,26 @@ int main (int argc, char **argv)
     get_data(argv[1], &width, &height, &raw);
 
     /* wrap image data */
-    zebra_image_t *image = zebra_image_create();
-    zebra_image_set_format(image, *(int*)"Y800");
-    zebra_image_set_size(image, width, height);
-    zebra_image_set_data(image, raw, width * height, zebra_image_free_data);
+    zbar_image_t *image = zbar_image_create();
+    zbar_image_set_format(image, *(int*)"Y800");
+    zbar_image_set_size(image, width, height);
+    zbar_image_set_data(image, raw, width * height, zbar_image_free_data);
 
     /* scan the image for barcodes */
-    int n = zebra_scan_image(scanner, image);
+    int n = zbar_scan_image(scanner, image);
 
     /* extract results */
-    const zebra_symbol_t *symbol = zebra_image_first_symbol(image);
-    for(; symbol; symbol = zebra_symbol_next(symbol)) {
+    const zbar_symbol_t *symbol = zbar_image_first_symbol(image);
+    for(; symbol; symbol = zbar_symbol_next(symbol)) {
         /* do something useful with results */
-        zebra_symbol_type_t typ = zebra_symbol_get_type(symbol);
-        const char *data = zebra_symbol_get_data(symbol);
+        zbar_symbol_type_t typ = zbar_symbol_get_type(symbol);
+        const char *data = zbar_symbol_get_data(symbol);
         printf("decoded %s symbol \"%s\"\n",
-               zebra_get_symbol_name(typ), data);
+               zbar_get_symbol_name(typ), data);
     }
 
     /* clean up */
-    zebra_image_destroy(image);
+    zbar_image_destroy(image);
 
     return(0);
 }

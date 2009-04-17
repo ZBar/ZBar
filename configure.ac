@@ -1,11 +1,11 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.61])
-AC_INIT([zebra], [0.6], [spadix@users.sourceforge.net])
+AC_INIT([zbar], [0.6], [spadix@users.sourceforge.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AM_INIT_AUTOMAKE([1.10 -Wall -Werror foreign subdir-objects std-options dist-bzip2])
 AC_CONFIG_HEADERS([include/config.h])
-AC_CONFIG_SRCDIR(zebra/scanner.c)
+AC_CONFIG_SRCDIR(zbar/scanner.c)
 LT_PREREQ([2.2])
 LT_INIT([dlopen win32-dll])
 
@@ -20,18 +20,18 @@ dnl   - If any interfaces have been added since the last public release,
 dnl     then increment age.
 dnl   - If any interfaces have been removed since the last public release,
 dnl     then set age to 0. 
-AC_SUBST([LIB_VERSION], [6:0:3])
+AC_SUBST([LIB_VERSION], [0:0:0])
 AC_SUBST([RELDATE], [2009-02-28])
 
 dnl widget libraries use their own versioning.
 dnl NB pygtk wrapper is *unversioned*
 AC_SUBST([ZGTK_LIB_VERSION], [0:0:0])
-AC_SUBST([ZQT_LIB_VERSION], [1:0:1])
+AC_SUBST([ZQT_LIB_VERSION], [0:0:0])
 
-AC_DEFINE_UNQUOTED([ZEBRA_VERSION_MAJOR],
+AC_DEFINE_UNQUOTED([ZBAR_VERSION_MAJOR],
   [[`echo "$PACKAGE_VERSION" | sed -e 's/\..*$//'`]],
   [Program major version (before the '.') as a number])
-AC_DEFINE_UNQUOTED([ZEBRA_VERSION_MINOR],
+AC_DEFINE_UNQUOTED([ZBAR_VERSION_MINOR],
   [[`echo "$PACKAGE_VERSION" | sed -e 's/^[^.]*\.\([^.]*\)$/\1/'`]],
   [Program minor version (after '.') as a number])
 
@@ -56,7 +56,7 @@ AC_ARG_ENABLE([codes],
   [],
   [enable_codes="ean,code39,code128,i25"]) dnl pdf417
 
-AC_DEFUN([ZEBRA_CHK_CODE], [
+AC_DEFUN([ZBAR_CHK_CODE], [
   AC_MSG_CHECKING([whether to build $2])
   enable_$1="no"
   AH_TEMPLATE([ENABLE_]translit($1, a-z, A-Z),
@@ -71,11 +71,11 @@ AC_DEFUN([ZEBRA_CHK_CODE], [
   AC_MSG_RESULT([$enable_$1])
 ])dnl
 
-ZEBRA_CHK_CODE([ean], [EAN symbologies])
-ZEBRA_CHK_CODE([code128], [Code 128 symbology])
-ZEBRA_CHK_CODE([code39], [Code 39 symbology])
-ZEBRA_CHK_CODE([pdf417], [PDF417 symbology])
-ZEBRA_CHK_CODE([i25], [Interleaved 2 of 5 symbology])
+ZBAR_CHK_CODE([ean], [EAN symbologies])
+ZBAR_CHK_CODE([code128], [Code 128 symbology])
+ZBAR_CHK_CODE([code39], [Code 39 symbology])
+ZBAR_CHK_CODE([pdf417], [PDF417 symbology])
+ZBAR_CHK_CODE([i25], [Interleaved 2 of 5 symbology])
 
 dnl libraries
 
@@ -378,10 +378,10 @@ AC_CONFIG_COMMANDS([doc/reldate.xml],
 
 AC_CONFIG_FILES([
 Makefile
-zebra.pc
-zebra-gtk.pc
-zebra-qt.pc
-zebra.spec
+zbar.pc
+zbar-gtk.pc
+zbar-qt.pc
+zbar.spec
 doc/doxygen.conf
 ])
 AC_OUTPUT
@@ -395,13 +395,13 @@ echo "X                 --with-x=$with_x"
 echo "pthreads          --enable-pthread=$enable_pthread"
 echo "v4l               --enable-video=$enable_video"
 AS_IF([test "x$enable_video" != "xyes"],
-  [echo "        => zebracam video scanner will *NOT* be built"])
+  [echo "        => zbarcam video scanner will *NOT* be built"])
 echo "jpeg              --with-jpeg=$with_jpeg"
 AS_IF([test "x$with_jpeg" != "xyes"],
   [echo "        => JPEG image conversions will *NOT* be supported"])
 echo "Magick++          --with-imagemagick=$with_imagemagick"
 AS_IF([test "x$with_imagemagick" != "xyes"],
-  [echo "        => the zebraimg file scanner will *NOT* be built"])
+  [echo "        => the zbarimg file scanner will *NOT* be built"])
 echo "Python            --with-python=$with_python"
 echo "GTK+              --with-gtk=$with_gtk"
 AS_IF([test "x$with_gtk" != "xyes"],

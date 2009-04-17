@@ -1,9 +1,9 @@
 #!/usr/bin/python
 from sys import argv
-import zebra
+import zbar
 
 # create a Processor
-proc = zebra.Processor()
+proc = zbar.Processor()
 
 # configure the Processor
 proc.parse_config('enable')
@@ -31,5 +31,5 @@ proc.visible = True
 proc.active = True
 try:
     proc.user_wait()
-except zebra.WindowClosed, e:
+except zbar.WindowClosed, e:
     pass

@@ -1,32 +1,32 @@
 #!/usr/bin/env python
 #------------------------------------------------------------------------
-#  Copyright 2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+#  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
 #
-#  This file is part of the Zebra Barcode Library.
+#  This file is part of the ZBar Bar Code Reader.
 #
-#  The Zebra Barcode Library is free software; you can redistribute it
+#  The ZBar Bar Code Reader is free software; you can redistribute it
 #  and/or modify it under the terms of the GNU Lesser Public License as
 #  published by the Free Software Foundation; either version 2.1 of
 #  the License, or (at your option) any later version.
 #
-#  The Zebra Barcode Library is distributed in the hope that it will be
+#  The ZBar Bar Code Reader is distributed in the hope that it will be
 #  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 #  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU Lesser Public License for more details.
 #
 #  You should have received a copy of the GNU Lesser Public License
-#  along with the Zebra Barcode Library; if not, write to the Free
+#  along with the ZBar Bar Code Reader; if not, write to the Free
 #  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 #  Boston, MA  02110-1301  USA
 #
-#  http://sourceforge.net/projects/zebra
+#  http://sourceforge.net/projects/zbar
 #------------------------------------------------------------------------
 import sys, os, stat
 import pygtk, gtk
-import zebrapygtk
+import zbarpygtk
 
-def decoded(zebra, data):
-    """callback invoked when a barcode is decoded by the zebra widget.
+def decoded(zbar, data):
+    """callback invoked when a barcode is decoded by the zbar widget.
     displays the decoded data in the text box
     """
     buf = results.props.buffer
@@ -34,44 +34,44 @@ def decoded(zebra, data):
     buf.insert(end, data + "\n")
     results.scroll_to_iter(end, 0)
 
-def video_enabled(zebra, param):
-    """callback invoked when the zebra widget enables or disables
+def video_enabled(zbar, param):
+    """callback invoked when the zbar widget enables or disables
     video streaming.  updates the status button state to reflect the
     current video state
     """
-    enabled = zebra.get_video_enabled()
+    enabled = zbar.get_video_enabled()
     if status_button.get_active() != enabled:
         status_button.set_active(enabled)
 
-def video_opened(zebra, param):
-    """callback invoked when the zebra widget opens or closes a video
+def video_opened(zbar, param):
+    """callback invoked when the zbar widget opens or closes a video
     device.  also called when a device is closed due to error.
     updates the status button state to reflect the current video state
     """
-    opened = zebra.get_video_opened()
+    opened = zbar.get_video_opened()
     status_button.set_sensitive(opened)
-    set_status_label(opened, zebra.get_video_enabled())
+    set_status_label(opened, zbar.get_video_enabled())
 
 def video_changed(widget):
     """callback invoked when a new video device is selected from the
-    drop-down list.  sets the new device for the zebra widget,
+    drop-down list.  sets the new device for the zbar widget,
     which will eventually cause it to be opened and enabled
     """
     dev = video_list.get_active_text()
     if dev[0] == '<':
         dev = ''
-    zebra.set_video_device(dev)
+    zbar.set_video_device(dev)
 
 def status_button_toggled(button):
     """callback invoked when the status button changes state
-    (interactively or programmatically).  ensures the zebra widget
+    (interactively or programmatically).  ensures the zbar widget
     video streaming state is consistent and updates the display of the
     button to represent the current state
     """
-    opened = zebra.get_video_opened()
+    opened = zbar.get_video_opened()
     active = status_button.get_active()
-    if opened and (active != zebra.get_video_enabled()):
-        zebra.set_video_enabled(active)
+    if opened and (active != zbar.get_video_enabled()):
+        zbar.set_video_enabled(active)
     set_status_label(opened, active)
     if active:
         status_image.set_from_stock(gtk.STOCK_YES, gtk.ICON_SIZE_BUTTON)
@@ -81,7 +81,7 @@ def status_button_toggled(button):
 def open_button_clicked(button):
     """callback invoked when the 'Open' button is clicked.  pops up an
     'Open File' dialog which the user may use to select an image file.
-    if the image is successfully opened, it is passed to the zebra
+    if the image is successfully opened, it is passed to the zbar
     widget which displays it and scans it for barcodes.  results are
     returned using the same hook used to report video results
     """
@@ -97,7 +97,7 @@ def open_button_clicked(button):
             open_file = dialog.get_filename()
             pixbuf = gtk.gdk.pixbuf_new_from_file(open_file)
             if pixbuf:
-                zebra.scan_image(pixbuf)
+                zbar.scan_image(pixbuf)
     finally:
         dialog.destroy()
 
@@ -116,7 +116,7 @@ video_device = None
 if len(sys.argv) > 1:
     video_device = sys.argv[1]
 
-# threads *must* be properly initialized to use zebrapygtk
+# threads *must* be properly initialized to use zbarpygtk
 gtk.gdk.threads_init()
 gtk.gdk.threads_enter()
 
@@ -125,8 +125,8 @@ window.set_title("test_pygtk")
 window.set_border_width(8)
 window.connect("destroy", gtk.main_quit)
 
-zebra = zebrapygtk.Gtk()
-zebra.connect("decoded-text", decoded)
+zbar = zbarpygtk.Gtk()
+zbar.connect("decoded-text", decoded)
 
 # video device list combo box
 video_list = gtk.combo_box_new_text()
@@ -140,8 +140,8 @@ status_button.set_sensitive(False)
 
 # bind status button state and video state
 status_button.connect("toggled", status_button_toggled)
-zebra.connect("notify::video-enabled", video_enabled)
-zebra.connect("notify::video-opened", video_opened)
+zbar.connect("notify::video-enabled", video_enabled)
+zbar.connect("notify::video-opened", video_opened)
 
 # open image file button
 open_button = gtk.Button(stock=gtk.STOCK_OPEN)
@@ -182,11 +182,11 @@ results.set_left_margin(4)
 # combine inputs, scanner, and results vertically
 vbox = gtk.VBox(spacing=8)
 vbox.pack_start(hbox, expand=False)
-vbox.pack_start(zebra)
+vbox.pack_start(zbar)
 vbox.pack_start(results, expand=False)
 
 window.add(vbox)
-window.set_geometry_hints(zebra, min_width=320, min_height=240)
+window.set_geometry_hints(zbar, min_width=320, min_height=240)
 window.show_all()
 
 gtk.main()

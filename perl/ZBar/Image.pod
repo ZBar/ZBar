@@ -1,0 +1,142 @@
+#------------------------------------------------------------------------
+#  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+#
+#  This file is part of the ZBar Bar Code Reader.
+#
+#  The ZBar Bar Code Reader is free software; you can redistribute it
+#  and/or modify it under the terms of the GNU Lesser Public License as
+#  published by the Free Software Foundation; either version 2.1 of
+#  the License, or (at your option) any later version.
+#
+#  The ZBar Bar Code Reader is distributed in the hope that it will be
+#  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser Public License
+#  along with the ZBar Bar Code Reader; if not, write to the Free
+#  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+#  Boston, MA  02110-1301  USA
+#
+#  http://sourceforge.net/projects/zbar
+#------------------------------------------------------------------------
+
+=pod
+
+=head1 NAME
+
+Barcode::ZBar::Image - image object to scan for bar codes
+
+=head1 SYNOPSIS
+
+    use Barcode::ZBar;
+    
+    my $image = Barcode::ZBar::Image->new();
+    $image->set_format('422P');
+    $image->set_size(114, 80);
+    $image->set_data($raw_bits);
+    
+    my @symbols = $image->get_symbols();
+
+=head1 DESCRIPTION
+
+Barcode::ZBar::Image is used to pass images to the bar code scanner.
+It wraps raw image data with the meta-data required to interpret it
+(size, pixel format, etc)
+
+=head2 Image Formats
+
+Image data formats are represented by (relatively) standard "Four
+Character Codes" (fourcc), represented by four character strings in
+Perl.  A list of supported formats is available on the project wiki.
+
+Examples:
+
+=over 2
+
+=item *
+
+'GREY' - single 8bpp intensity plane
+
+=item *
+
+'BGR3' - 24bpp packed RGB component format
+
+=item *
+
+'YUYV' - 12bpp packed luminance/chrominance (YCbCr) format
+
+=back
+
+=head1 REFERENCE
+
+=head2 Methods
+
+=over 4
+
+=item new()
+
+Create a new Barcode::ZBar::Image object.  The size, pixel format and
+data must be defined before the object may be used.
+
+=item get_format()
+
+=item set_format(I<format>)
+
+Return/specify the fourcc code corresponding to the image pixel format.
+
+=item get_sequence()
+
+=item set_sequence(I<seq_num>)
+
+Return/specify the video frame or page number associated with the image.
+
+=item get_size()
+
+=item set_size(I<width>, I<height>)
+
+Return/specify the (I<width>, I<height>) image size tuple.
+
+=item get_data()
+
+=item set_data(I<raw>)
+
+Return/specify the raw image data as a binary string.
+
+=item get_symbols()
+
+Return a list of scanned Barcode::ZBar::Symbol results attached to
+this image.
+
+=item convert(I<format>)
+
+Return a new Barcode::ZBar::Image object converted to the indicated
+fourcc format.  Returns C<undef> if the conversion is not supported.
+Conversion complexity ranges from CPU intensive to trivial depending
+on the formats involved.  Note that only a few conversions retain
+color information.
+
+=back
+
+=head1 SEE ALSO
+
+Barcode::ZBar, Barcode::ZBar::Image, Barcode::ZBar::Symbol
+
+zbarimg(1), zbarcam(1)
+
+http://zbar.sf.net
+
+=head1 AUTHOR
+
+Jeff Brown, E<lt>spadix@users.sourceforge.netE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2008-2009 (c) Jeff Brown E<lt>spadix@users.sourceforge.netE<gt>
+
+The ZBar Bar Code Reader is free software; you can redistribute it
+and/or modify it under the terms of the GNU Lesser Public License as
+published by the Free Software Foundation; either version 2.1 of
+the License, or (at your option) any later version.
+
+=cut

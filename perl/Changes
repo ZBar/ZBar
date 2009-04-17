@@ -1,4 +1,7 @@
-Revision history for Perl extension Barcode::Zebra.
+Revision history for Perl extension Barcode::ZBar.
+
+0.02  2009-04-16 spadix
+	* project name change: package becomes Barcode::ZBar
 
 0.01  2009-02-28 spadix
 	* add Barcode:: namespace prefix

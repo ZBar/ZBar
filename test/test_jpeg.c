@@ -1,24 +1,24 @@
 /*------------------------------------------------------------------------
  *  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
- *  This file is part of the Zebra Barcode Library.
+ *  This file is part of the ZBar Bar Code Reader.
  *
- *  The Zebra Barcode Library is free software; you can redistribute it
+ *  The ZBar Bar Code Reader is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU Lesser Public License as
  *  published by the Free Software Foundation; either version 2.1 of
  *  the License, or (at your option) any later version.
  *
- *  The Zebra Barcode Library is distributed in the hope that it will be
+ *  The ZBar Bar Code Reader is distributed in the hope that it will be
  *  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
  *  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU Lesser Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser Public License
- *  along with the Zebra Barcode Library; if not, write to the Free
+ *  along with the ZBar Bar Code Reader; if not, write to the Free
  *  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
  *  Boston, MA  02110-1301  USA
  *
- *  http://sourceforge.net/projects/zebra
+ *  http://sourceforge.net/projects/zbar
  *------------------------------------------------------------------------*/
 
 #include <config.h>
@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include <zebra.h>
+#include <zbar.h>
 
 #include "test_images.h"
 
@@ -108,32 +108,32 @@ unsigned char rgb[8*8*3] = {
 
 int main (int argc, char **argv)
 {
-    zebra_set_verbosity(32);
+    zbar_set_verbosity(32);
 
-    zebra_processor_t *proc = zebra_processor_create(0);
+    zbar_processor_t *proc = zbar_processor_create(0);
     assert(proc);
-    if(zebra_processor_init(proc, NULL, 1))
+    if(zbar_processor_init(proc, NULL, 1))
         return(2);
 
-    zebra_image_t *img = zebra_image_create();
-    zebra_image_set_size(img, 8, 8);
-    zebra_image_set_format(img, fourcc('J','P','E','G'));
-    zebra_image_set_data(img, jpeg, sizeof(jpeg), NULL);
+    zbar_image_t *img = zbar_image_create();
+    zbar_image_set_size(img, 8, 8);
+    zbar_image_set_format(img, fourcc('J','P','E','G'));
+    zbar_image_set_data(img, jpeg, sizeof(jpeg), NULL);
 
-    zebra_image_t *test = zebra_image_convert(img, fourcc('Y','8','0','0'));
+    zbar_image_t *test = zbar_image_convert(img, fourcc('Y','8','0','0'));
     if(!test)
         return(2);
     printf("converted: %d x %d (%lx) %08lx\n",
-           zebra_image_get_width(test),
-           zebra_image_get_height(test),
-           zebra_image_get_data_length(test),
-           zebra_image_get_format(test));
+           zbar_image_get_width(test),
+           zbar_image_get_height(test),
+           zbar_image_get_data_length(test),
+           zbar_image_get_format(test));
 
-    if(zebra_process_image(proc, test) < 0)
+    if(zbar_process_image(proc, test) < 0)
         return(3);
-    if(zebra_processor_set_visible(proc, 1))
+    if(zbar_processor_set_visible(proc, 1))
         return(4);
 
-    zebra_processor_user_wait(proc, -1);
+    zbar_processor_user_wait(proc, -1);
     return(0);
 }

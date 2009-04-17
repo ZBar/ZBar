@@ -1,24 +1,24 @@
 /*------------------------------------------------------------------------
  *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
- *  This file is part of the Zebra Barcode Library.
+ *  This file is part of the ZBar Bar Code Reader.
  *
- *  The Zebra Barcode Library is free software; you can redistribute it
+ *  The ZBar Bar Code Reader is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU Lesser Public License as
  *  published by the Free Software Foundation; either version 2.1 of
  *  the License, or (at your option) any later version.
  *
- *  The Zebra Barcode Library is distributed in the hope that it will be
+ *  The ZBar Bar Code Reader is distributed in the hope that it will be
  *  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
  *  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU Lesser Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser Public License
- *  along with the Zebra Barcode Library; if not, write to the Free
+ *  along with the ZBar Bar Code Reader; if not, write to the Free
  *  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
  *  Boston, MA  02110-1301  USA
  *
- *  http://sourceforge.net/projects/zebra
+ *  http://sourceforge.net/projects/zbar
  *------------------------------------------------------------------------*/
 
 #include <inttypes.h>
@@ -27,19 +27,19 @@
 #include <string.h>
 #include <assert.h>
 
-#include <zebra.h>
+#include <zbar.h>
 
-zebra_decoder_t *decoder;
+zbar_decoder_t *decoder;
 
-static void symbol_handler (zebra_decoder_t *decoder)
+static void symbol_handler (zbar_decoder_t *decoder)
 {
-    zebra_symbol_type_t sym = zebra_decoder_get_type(decoder);
-    if(sym <= ZEBRA_PARTIAL)
+    zbar_symbol_type_t sym = zbar_decoder_get_type(decoder);
+    if(sym <= ZBAR_PARTIAL)
         return;
     printf("%s%s:%s\n",
-           zebra_get_symbol_name(sym),
-           zebra_get_addon_name(sym),
-           zebra_decoder_get_data(decoder));
+           zbar_get_symbol_name(sym),
+           zbar_get_addon_name(sym),
+           zbar_decoder_get_data(decoder));
     /* FIXME add check! */
 }
 
@@ -48,7 +48,7 @@ static void encode_junk (int n)
     printf("encode random junk...\n");
     int i;
     for(i = 0; i < n; i++)
-        zebra_decode_width(decoder, 10. * (rand() / (RAND_MAX + 1.)));
+        zbar_decode_width(decoder, 10. * (rand() / (RAND_MAX + 1.)));
 }
 
 #define FWD 1
@@ -65,7 +65,7 @@ static void encode (uint64_t units,
 
     while(units) {
         unsigned char w = (fwd) ? units & 0xf : units >> 0x3c;
-        zebra_decode_width(decoder, w);
+        zbar_decode_width(decoder, w);
         if(fwd)
             units >>= 4;
         else
@@ -451,9 +451,9 @@ int main (int argc, char **argv)
      *   - simulate dark "swelling" and light "blooming"
      *   - inject parity errors
      */
-    decoder = zebra_decoder_create();
-    zebra_decoder_set_handler(decoder, symbol_handler);
-    zebra_decoder_set_config(decoder, 0, ZEBRA_CFG_MIN_LEN, 0);
+    decoder = zbar_decoder_create();
+    zbar_decoder_set_handler(decoder, symbol_handler);
+    zbar_decoder_set_config(decoder, 0, ZBAR_CFG_MIN_LEN, 0);
 
     encode_junk(rnd_size + 1);
 
@@ -501,6 +501,6 @@ int main (int argc, char **argv)
 
     encode_junk(rnd_size);
 
-    zebra_decoder_destroy(decoder);
+    zbar_decoder_destroy(decoder);
     return(0);
 }

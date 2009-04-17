@@ -9,8 +9,8 @@ general:
   * example using SANE to scan symbol(s)
 
 wrappers:
-  * build API docs for zebragtk, zebrapygtk
-  * is zebragtk/QZebra BGR4 alpha swapped?
+  * build API docs for zbargtk, zbarpygtk
+  * is zbargtk/QZBar BGR4 alpha swapped?
   * widget config APIs
   * drag-and-drop for widgets (configurable...)
   * Perl build support integration?
@@ -68,7 +68,7 @@ window:
     * decoded result(?)
     * stats
 
-zebracam/zebraimg:
-  * zebraimg multi-frame duplicate suppression
-  * stats/fps at zebracam exit
-  * decode hook (program/script)? (also zebraimg?)
+zbarcam/zbarimg:
+  * zbarimg multi-frame duplicate suppression
+  * stats/fps at zbarcam exit
+  * decode hook (program/script)? (also zbarimg?)

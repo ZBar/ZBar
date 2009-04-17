@@ -1,12 +1,12 @@
 #!/usr/bin/python
 from sys import argv
-import zebra
+import zbar
 import Image
 
 if len(argv) < 2: exit(1)
 
 # create a reader
-scanner = zebra.ImageScanner()
+scanner = zbar.ImageScanner()
 
 # configure the reader
 scanner.parse_config('enable')
@@ -17,7 +17,7 @@ width, height = pil.size
 raw = pil.tostring()
 
 # wrap image data
-image = zebra.Image(width, height, 'Y800', raw)
+image = zbar.Image(width, height, 'Y800', raw)
 
 # scan the image for barcodes
 scanner.scan(image)

@@ -1,4 +1,27 @@
-#include "zebramodule.h"
+/*------------------------------------------------------------------------
+ *  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *
+ *  This file is part of the ZBar Bar Code Reader.
+ *
+ *  The ZBar Bar Code Reader is free software; you can redistribute it
+ *  and/or modify it under the terms of the GNU Lesser Public License as
+ *  published by the Free Software Foundation; either version 2.1 of
+ *  the License, or (at your option) any later version.
+ *
+ *  The ZBar Bar Code Reader is distributed in the hope that it will be
+ *  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser Public License
+ *  along with the ZBar Bar Code Reader; if not, write to the Free
+ *  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+ *  Boston, MA  02110-1301  USA
+ *
+ *  http://sourceforge.net/projects/zbar
+ *------------------------------------------------------------------------*/
+
+#include "zbarmodule.h"
 
 static char symboliter_doc[] = PyDoc_STR(
     "symbol iterator.\n"
@@ -6,7 +29,7 @@ static char symboliter_doc[] = PyDoc_STR(
     "iterates over decode results attached to an image.");
 
 static int
-symboliter_traverse (zebraSymbolIter *self,
+symboliter_traverse (zbarSymbolIter *self,
                      visitproc visit,
                      void *arg)
 {
@@ -15,43 +38,43 @@ symboliter_traverse (zebraSymbolIter *self,
 }
 
 static int
-symboliter_clear (zebraSymbolIter *self)
+symboliter_clear (zbarSymbolIter *self)
 {
     Py_CLEAR(self->img);
     return(0);
 }
 
 static void
-symboliter_dealloc (zebraSymbolIter *self)
+symboliter_dealloc (zbarSymbolIter *self)
 {
     symboliter_clear(self);
     ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
-static zebraSymbolIter*
-symboliter_iter (zebraSymbolIter *self)
+static zbarSymbolIter*
+symboliter_iter (zbarSymbolIter *self)
 {
     Py_INCREF(self);
     return(self);
 }
 
-static zebraSymbol*
-symboliter_iternext (zebraSymbolIter *self)
+static zbarSymbol*
+symboliter_iternext (zbarSymbolIter *self)
 {
     if(!self->zsym)
-        self->zsym = zebra_image_first_symbol(self->img->zimg);
+        self->zsym = zbar_image_first_symbol(self->img->zimg);
     else
-        self->zsym = zebra_symbol_next(self->zsym);
+        self->zsym = zbar_symbol_next(self->zsym);
     if(!self->zsym)
         return(NULL);
-    return(zebraSymbol_FromSymbol(self->img, self->zsym));
+    return(zbarSymbol_FromSymbol(self->img, self->zsym));
 }
 
-PyTypeObject zebraSymbolIter_Type = {
+PyTypeObject zbarSymbolIter_Type = {
     PyObject_HEAD_INIT(NULL)
-    .tp_name        = "zebra.SymbolIter",
+    .tp_name        = "zbar.SymbolIter",
     .tp_doc         = symboliter_doc,
-    .tp_basicsize   = sizeof(zebraSymbolIter),
+    .tp_basicsize   = sizeof(zbarSymbolIter),
     .tp_flags       = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
                       Py_TPFLAGS_HAVE_GC,
     .tp_traverse    = (traverseproc)symboliter_traverse,
@@ -61,11 +84,11 @@ PyTypeObject zebraSymbolIter_Type = {
     .tp_iternext    = (iternextfunc)symboliter_iternext,
 };
 
-static zebraSymbolIter*
-zebraSymbolIter_New (zebraImage *img)
+static zbarSymbolIter*
+zbarSymbolIter_New (zbarImage *img)
 {
-    zebraSymbolIter *self;
-    self = PyObject_GC_New(zebraSymbolIter, &zebraSymbolIter_Type);
+    zbarSymbolIter *self;
+    self = PyObject_GC_New(zbarSymbolIter, &zbarSymbolIter_Type);
     if(!self)
         return(NULL);
 
@@ -81,26 +104,26 @@ static char image_doc[] = PyDoc_STR(
     "\n"
     "stores image data samples along with associated format and size metadata.");
 
-static zebraImage*
+static zbarImage*
 image_new (PyTypeObject *type,
            PyObject *args,
            PyObject *kwds)
 {
-    zebraImage *self = (zebraImage*)type->tp_alloc(type, 0);
+    zbarImage *self = (zbarImage*)type->tp_alloc(type, 0);
     if(!self)
         return(NULL);
 
-    self->zimg = zebra_image_create();
+    self->zimg = zbar_image_create();
     if(!self->zimg) {
         Py_DECREF(self);
         return(NULL);
     }
-    zebra_image_set_userdata(self->zimg, self);
+    zbar_image_set_userdata(self->zimg, self);
     return(self);
 }
 
 static int
-image_traverse (zebraImage *self,
+image_traverse (zbarImage *self,
                 visitproc visit,
                 void *arg)
 {
@@ -109,47 +132,47 @@ image_traverse (zebraImage *self,
 }
 
 static int
-image_clear (zebraImage *self)
+image_clear (zbarImage *self)
 {
-    zebra_image_t *zimg = self->zimg;
+    zbar_image_t *zimg = self->zimg;
     self->zimg = NULL;
     if(zimg) {
-        assert(zebra_image_get_userdata(zimg) == self);
+        assert(zbar_image_get_userdata(zimg) == self);
         if(self->data) {
-            /* attach data directly to zebra image */
-            zebra_image_set_userdata(zimg, self->data);
+            /* attach data directly to zbar image */
+            zbar_image_set_userdata(zimg, self->data);
             self->data = NULL;
         }
         else
-            zebra_image_set_userdata(zimg, NULL);
-        zebra_image_destroy(zimg);
+            zbar_image_set_userdata(zimg, NULL);
+        zbar_image_destroy(zimg);
     }
     return(0);
 }
 
 static void
-image_dealloc (zebraImage *self)
+image_dealloc (zbarImage *self)
 {
     image_clear(self);
     ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
-static zebraSymbolIter*
-image_iter (zebraImage *self)
+static zbarSymbolIter*
+image_iter (zbarImage *self)
 {
-    return(zebraSymbolIter_New(self));
+    return(zbarSymbolIter_New(self));
 }
 
 static PyObject*
-image_get_format (zebraImage *self,
+image_get_format (zbarImage *self,
                   void *closure)
 {
-    unsigned long format = zebra_image_get_format(self->zimg);
+    unsigned long format = zbar_image_get_format(self->zimg);
     return(PyString_FromStringAndSize((char*)&format, 4));
 }
 
 static int
-image_set_format (zebraImage *self,
+image_set_format (zbarImage *self,
                   PyObject *value,
                   void *closure)
 {
@@ -166,21 +189,21 @@ image_set_format (zebraImage *self,
                      format);
         return(-1);
     }
-    zebra_image_set_format(self->zimg,*((unsigned long*)format));
+    zbar_image_set_format(self->zimg,*((unsigned long*)format));
     return(0);
 }
 
 static PyObject*
-image_get_size (zebraImage *self,
+image_get_size (zbarImage *self,
                 void *closure)
 {
-    unsigned int width = zebra_image_get_width(self->zimg);
-    unsigned int height = zebra_image_get_height(self->zimg);
+    unsigned int width = zbar_image_get_width(self->zimg);
+    unsigned int height = zbar_image_get_height(self->zimg);
     return(PyTuple_Pack(2, PyInt_FromLong(width), PyInt_FromLong(height)));
 }
 
 static int
-image_set_size (zebraImage *self,
+image_set_size (zbarImage *self,
                 PyObject *value,
                 void *closure)
 {
@@ -206,7 +229,7 @@ image_set_size (zebraImage *self,
     if(height == -1 && PyErr_Occurred())
         goto error;
 
-    zebra_image_set_size(self->zimg, width, height);
+    zbar_image_set_size(self->zimg, width, height);
     rc = 0;
 
 error:
@@ -219,17 +242,17 @@ error:
 }
 
 static PyObject*
-image_get_int (zebraImage *self,
+image_get_int (zbarImage *self,
                void *closure)
 {
     unsigned int val = -1;
     switch((int)closure) {
     case 0:
-        val = zebra_image_get_width(self->zimg); break;
+        val = zbar_image_get_width(self->zimg); break;
     case 1:
-        val = zebra_image_get_height(self->zimg); break;
+        val = zbar_image_get_height(self->zimg); break;
     case 2:
-        val = zebra_image_get_sequence(self->zimg); break;
+        val = zbar_image_get_sequence(self->zimg); break;
     default:
         assert(0);
     }
@@ -237,7 +260,7 @@ image_get_int (zebraImage *self,
 }
 
 static int
-image_set_int (zebraImage *self,
+image_set_int (zbarImage *self,
                PyObject *value,
                void *closure)
 {
@@ -248,15 +271,15 @@ image_set_int (zebraImage *self,
     }
     switch((int)closure) {
     case 0:
-        tmp = zebra_image_get_height(self->zimg);
-        zebra_image_set_size(self->zimg, val, tmp);
+        tmp = zbar_image_get_height(self->zimg);
+        zbar_image_set_size(self->zimg, val, tmp);
         break;
     case 1:
-        tmp = zebra_image_get_width(self->zimg);
-        zebra_image_set_size(self->zimg, tmp, val);
+        tmp = zbar_image_get_width(self->zimg);
+        zbar_image_set_size(self->zimg, tmp, val);
         break;
     case 2:
-        zebra_image_set_sequence(self->zimg, val);
+        zbar_image_set_sequence(self->zimg, val);
     default:
         assert(0);
     }
@@ -264,17 +287,17 @@ image_set_int (zebraImage *self,
 }
 
 static PyObject*
-image_get_data (zebraImage *self,
+image_get_data (zbarImage *self,
                 void *closure)
 {
-    assert(zebra_image_get_userdata(self->zimg) == self);
+    assert(zbar_image_get_userdata(self->zimg) == self);
     if(self->data) {
         Py_INCREF(self->data);
         return(self->data);
     }
 
-    const char *data = zebra_image_get_data(self->zimg);
-    unsigned long datalen = zebra_image_get_data_length(self->zimg);
+    const char *data = zbar_image_get_data(self->zimg);
+    unsigned long datalen = zbar_image_get_data_length(self->zimg);
     if(!data || !datalen) {
         Py_INCREF(Py_None);
         return(Py_None);
@@ -286,14 +309,14 @@ image_get_data (zebraImage *self,
 }
 
 void
-image_cleanup (zebra_image_t *zimg)
+image_cleanup (zbar_image_t *zimg)
 {
-    PyObject *data = zebra_image_get_userdata(zimg);
-    zebra_image_set_userdata(zimg, NULL);
+    PyObject *data = zbar_image_get_userdata(zimg);
+    zbar_image_set_userdata(zimg, NULL);
     if(!data)
         return;  /* FIXME internal error */
-    if(PyObject_TypeCheck(data, &zebraImage_Type)) {
-        zebraImage *self = (zebraImage*)data;
+    if(PyObject_TypeCheck(data, &zbarImage_Type)) {
+        zbarImage *self = (zbarImage*)data;
         assert(self->zimg == zimg);
         Py_CLEAR(self->data);
     }
@@ -302,12 +325,12 @@ image_cleanup (zebra_image_t *zimg)
 }
 
 static int
-image_set_data (zebraImage *self,
+image_set_data (zbarImage *self,
                 PyObject *value,
                 void *closure)
 {
     if(!value) {
-        zebra_image_free_data(self->zimg);
+        zbar_image_free_data(self->zimg);
         return(0);
     }
     char *data;
@@ -316,10 +339,10 @@ image_set_data (zebraImage *self,
         return(-1);
 
     Py_INCREF(value);
-    zebra_image_set_data(self->zimg, data, datalen, image_cleanup);
+    zbar_image_set_data(self->zimg, data, datalen, image_cleanup);
     assert(!self->data);
     self->data = value;
-    zebra_image_set_userdata(self->zimg, self);
+    zbar_image_set_userdata(self->zimg, self);
     return(0);
 }
 
@@ -337,7 +360,7 @@ static PyGetSetDef image_getset[] = {
 };
 
 static int
-image_init (zebraImage *self,
+image_init (zbarImage *self,
             PyObject *args,
             PyObject *kwds)
 {
@@ -349,7 +372,7 @@ image_init (zebraImage *self,
         return(-1);
 
     if(width > 0 && height > 0)
-        zebra_image_set_size(self->zimg, width, height);
+        zbar_image_set_size(self->zimg, width, height);
     if(format && image_set_format(self, format, NULL))
         return(-1);
     if(data && image_set_data(self, data, NULL))
@@ -357,8 +380,8 @@ image_init (zebraImage *self,
     return(0);
 }
 
-static zebraImage*
-image_convert (zebraImage *self,
+static zbarImage*
+image_convert (zbarImage *self,
                PyObject *args,
                PyObject *kwds)
 {
@@ -377,24 +400,24 @@ image_convert (zebraImage *self,
         return(NULL);
     }
 
-    zebraImage *img = PyObject_GC_New(zebraImage, &zebraImage_Type);
+    zbarImage *img = PyObject_GC_New(zbarImage, &zbarImage_Type);
     if(!img)
         return(NULL);
     img->data = NULL;
     if(width > 0 && height > 0)
         img->zimg =
-            zebra_image_convert_resize(self->zimg,
+            zbar_image_convert_resize(self->zimg,
                                        *((unsigned long*)format),
                                        width, height);
     else
-        img->zimg = zebra_image_convert(self->zimg, *((unsigned long*)format));
+        img->zimg = zbar_image_convert(self->zimg, *((unsigned long*)format));
 
     if(!img->zimg) {
         /* FIXME propagate exception */
         Py_DECREF(img);
         return(NULL);
     }
-    zebra_image_set_userdata(img->zimg, img);
+    zbar_image_set_userdata(img->zimg, img);
 
     return(img);
 }
@@ -404,11 +427,11 @@ static PyMethodDef image_methods[] = {
     { NULL, },
 };
 
-PyTypeObject zebraImage_Type = {
+PyTypeObject zbarImage_Type = {
     PyObject_HEAD_INIT(NULL)
-    .tp_name        = "zebra.Image",
+    .tp_name        = "zbar.Image",
     .tp_doc         = image_doc,
-    .tp_basicsize   = sizeof(zebraImage),
+    .tp_basicsize   = sizeof(zbarImage),
     .tp_flags       = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
                       Py_TPFLAGS_HAVE_GC,
     .tp_new         = (newfunc)image_new,
@@ -421,26 +444,26 @@ PyTypeObject zebraImage_Type = {
     .tp_iter        = (getiterfunc)image_iter,
 };
 
-zebraImage*
-zebraImage_FromImage (zebra_image_t *zimg)
+zbarImage*
+zbarImage_FromImage (zbar_image_t *zimg)
 {
-    zebraImage *self = PyObject_GC_New(zebraImage, &zebraImage_Type);
+    zbarImage *self = PyObject_GC_New(zbarImage, &zbarImage_Type);
     if(!self)
         return(NULL);
-    zebra_image_ref(zimg, 1);
-    zebra_image_set_userdata(zimg, self);
+    zbar_image_ref(zimg, 1);
+    zbar_image_set_userdata(zimg, self);
     self->zimg = zimg;
     self->data = NULL;
     return(self);
 }
 
 int
-zebraImage_validate (zebraImage *img)
+zbarImage_validate (zbarImage *img)
 {
-    if(!zebra_image_get_width(img->zimg) ||
-       !zebra_image_get_height(img->zimg) ||
-       !zebra_image_get_data(img->zimg) ||
-       !zebra_image_get_data_length(img->zimg)) {
+    if(!zbar_image_get_width(img->zimg) ||
+       !zbar_image_get_height(img->zimg) ||
+       !zbar_image_get_data(img->zimg) ||
+       !zbar_image_get_data_length(img->zimg)) {
         PyErr_Format(PyExc_ValueError, "image size and data must be defined");
         return(-1);
     }

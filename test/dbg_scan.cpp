@@ -1,46 +1,46 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
- *  This file is part of the Zebra Barcode Library.
+ *  This file is part of the ZBar Bar Code Reader.
  *
- *  The Zebra Barcode Library is free software; you can redistribute it
+ *  The ZBar Bar Code Reader is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU Lesser Public License as
  *  published by the Free Software Foundation; either version 2.1 of
  *  the License, or (at your option) any later version.
  *
- *  The Zebra Barcode Library is distributed in the hope that it will be
+ *  The ZBar Bar Code Reader is distributed in the hope that it will be
  *  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
  *  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU Lesser Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser Public License
- *  along with the Zebra Barcode Library; if not, write to the Free
+ *  along with the ZBar Bar Code Reader; if not, write to the Free
  *  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
  *  Boston, MA  02110-1301  USA
  *
- *  http://sourceforge.net/projects/zebra
+ *  http://sourceforge.net/projects/zbar
  *------------------------------------------------------------------------*/
 
 #include <Magick++.h>
 #include <iostream>
 #include <fstream>
 #include <libgen.h>
-#include <zebra.h>
+#include <zbar.h>
 
 using namespace std;
-using namespace zebra;
+using namespace zbar;
 
-#ifndef ZEBRA_FIXED
-# define ZEBRA_FIXED 5
+#ifndef ZBAR_FIXED
+# define ZBAR_FIXED 5
 #endif
 
-#define ZEBRA_FRAC (1 << ZEBRA_FIXED)
+#define ZBAR_FRAC (1 << ZBAR_FIXED)
 
 Decoder decoder;
 Scanner scanner;
 
 /* undocumented API for drawing cutesy debug graphics */
-extern "C" void zebra_scanner_get_state(const zebra_scanner_t *scn,
+extern "C" void zbar_scanner_get_state(const zbar_scanner_t *scn,
                                         unsigned *x,
                                         unsigned *cur_edge,
                                         unsigned *last_edge,
@@ -156,7 +156,7 @@ void scan_image (const char *filename)
     for(unsigned i = 0; i < width; i++) {
         int edge = scanner.scan_y(raw[i]);
         unsigned x;
-        zebra_scanner_get_state(scanner.get_c_scanner(), &x,
+        zbar_scanner_get_state(scanner.get_c_scanner(), &x,
                                 &cur_edge[i], &last_edge[i],
                                 &y0[i], &y1[i], &y2[i], &y1_thr[i]);
 #ifdef DEBUG_SCANNER
@@ -166,19 +166,19 @@ void scan_image (const char *filename)
         if(edge) {
             last_edge[i] += i - x;
             unsigned w = scanner.get_width();
-            svg << "<rect x='" << (2. * (last_edge[i] - w) / ZEBRA_FRAC)
-                << "' width='" << (w * 2. / ZEBRA_FRAC)
+            svg << "<rect x='" << (2. * (last_edge[i] - w) / ZBAR_FRAC)
+                << "' width='" << (w * 2. / ZBAR_FRAC)
                 << "' height='32' class='"
                 << (scanner.get_color() ? "space" : "bar") << "'/>" << endl
                 << "<text transform='translate("
-                << ((2. * last_edge[i] - w) / ZEBRA_FRAC) - 3
+                << ((2. * last_edge[i] - w) / ZBAR_FRAC) - 3
                 << ",16) rotate(90)' class='"
                 << (scanner.get_color() ? "space" : "bar") << "'>" << endl
                 << w << "</text>" << endl;
-            zebra_symbol_type_t sym = decoder.decode_width(w);
-            if(sym > ZEBRA_PARTIAL) {
+            zbar_symbol_type_t sym = decoder.decode_width(w);
+            if(sym > ZBAR_PARTIAL) {
                 svg << "<text transform='translate("
-                    << (2. * (last_edge[i] + w) / ZEBRA_FRAC)
+                    << (2. * (last_edge[i] + w) / ZBAR_FRAC)
                     << ",208) rotate(90)' class='data'>"
                     << decoder.get_data_string() << "</text>" << endl;
             }
@@ -192,7 +192,7 @@ void scan_image (const char *filename)
         << "<path id='edges' d='";
     for(unsigned i = 0; i < width; i++)
         if(last_edge[i])
-            svg << " M" << ((double)last_edge[i] / ZEBRA_FRAC) << ",0v768";
+            svg << " M" << ((double)last_edge[i] / ZBAR_FRAC) << ",0v768";
     svg << "'/>" << endl
         << "</g>" << endl
         << "<g transform='translate(-1,384) scale(2,-.5)'>" << endl
@@ -207,7 +207,7 @@ void scan_image (const char *filename)
         << "<path id='cur-edge' d='";
     for(unsigned i = 1; i < width - 1; i++)
         if(!last_edge[i + 1] && (cur_edge[i] != cur_edge[i + 1]))
-            svg << " M" << ((double)cur_edge[i] / ZEBRA_FRAC) - 1 << ",-32v64";
+            svg << " M" << ((double)cur_edge[i] / ZBAR_FRAC) - 1 << ",-32v64";
     svg << "'/>" << endl
         << "<path class='y1thr' d='M";
     for(unsigned i = 0; i < width; i++)

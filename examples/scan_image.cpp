@@ -1,9 +1,9 @@
 #include <iostream>
 #include <Magick++.h>
-#include <zebra.h>
+#include <zbar.h>
 
 using namespace std;
-using namespace zebra;
+using namespace zbar;
 
 int main (int argc, char **argv)
 {
@@ -13,7 +13,7 @@ int main (int argc, char **argv)
     ImageScanner scanner;
 
     // configure the reader
-    scanner.set_config(ZEBRA_NONE, ZEBRA_CFG_ENABLE, 1);
+    scanner.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
 
     // obtain image data
     Magick::Image magick(argv[1]);  // read an image file

@@ -1,4 +1,7 @@
-current:
+version 0.7:
+  * fixup some perl distribution details
+  * project name change: everything "zebra" becomes "zbar"
+  * remove old logo
   * add first pass python bindings!
   * fix perl mortality bug
   * add new cfg constants to perl

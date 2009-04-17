@@ -1,8 +1,8 @@
-if you're hacking at zebra, PLEASE send patches against the latest SVN!
-if you haven't already, get zebra from SVN by running:
+if you're hacking at ZBar, PLEASE send patches against the latest SVN!
+if you haven't already, get ZBar from SVN by running:
 
-    svn co https://zebra.svn.sourceforge.net/svnroot/zebra/trunk zebra
-    cd zebra
+    svn co https://zbar.svn.sourceforge.net/svnroot/zbar/trunk zbar
+    cd zbar
     autoreconf --install
 
 this will generate configure and all that other foo you usually get with

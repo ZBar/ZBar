@@ -1,15 +1,14 @@
-Barcode::Zebra Perl module
-==========================
+Barcode::ZBar Perl module
+=========================
 
-The Zebra Barcode Reader library is a library for scanning and
-decoding bar codes from various sources such as video streams, image
-files or raw intensity sensors.  It supports EAN, UPC, Code 128, Code
-39 and Interleaved 2 of 5.  These are the Perl bindings for the
-library.
+The ZBar Bar Code Reader is a library for scanning and decoding bar
+codes from various sources such as video streams, image files or raw
+intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
+Interleaved 2 of 5.  These are the Perl bindings for the library.
 
-Check the zebra library home page for the latest release, mailing
+Check the ZBar project home page for the latest release, mailing
 lists, etc.
-    http://zebra.sourceforge.net/
+    http://zbar.sourceforge.net/
 
 
 INSTALLATION
@@ -24,10 +23,10 @@ To install this module type the following:
 
 DEPENDENCIES
 
-This module requires the Zebra Barcode Reader library, which may be
-obtained from:
+This module requires the ZBar Bar Code Reader, which may be obtained
+from:
 
-    http://zebra.sourceforge.net/
+    http://zbar.sourceforge.net/
 
 
 COPYRIGHT AND LICENCE

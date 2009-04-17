@@ -1,24 +1,24 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
- *  This file is part of the Zebra Barcode Library.
+ *  This file is part of the ZBar Bar Code Reader.
  *
- *  The Zebra Barcode Library is free software; you can redistribute it
+ *  The ZBar Bar Code Reader is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU Lesser Public License as
  *  published by the Free Software Foundation; either version 2.1 of
  *  the License, or (at your option) any later version.
  *
- *  The Zebra Barcode Library is distributed in the hope that it will be
+ *  The ZBar Bar Code Reader is distributed in the hope that it will be
  *  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
  *  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU Lesser Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser Public License
- *  along with the Zebra Barcode Library; if not, write to the Free
+ *  along with the ZBar Bar Code Reader; if not, write to the Free
  *  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
  *  Boston, MA  02110-1301  USA
  *
- *  http://sourceforge.net/projects/zebra
+ *  http://sourceforge.net/projects/zbar
  *------------------------------------------------------------------------*/
 
 #include <config.h>
@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <zebra.h>
+#include <zbar.h>
 #include "test_images.h"
 
 typedef enum format_type_e {
@@ -108,9 +108,9 @@ int test_image_check_cleanup ()
     return(allocated_images);
 }
 
-static void test_cleanup_handler (zebra_image_t *img)
+static void test_cleanup_handler (zbar_image_t *img)
 {
-    void *data = (void*)zebra_image_get_data(img);
+    void *data = (void*)zbar_image_get_data(img);
     fprintf(stderr, "cleanup image data @%p\n", data);
     free(data);
     allocated_images--;
@@ -336,15 +336,15 @@ static inline uint8_t *fill_bars_rgb (uint8_t *p,
     return(((uint8_t*)q) + headlen);
 }
 
-int test_image_bars (zebra_image_t *img)
+int test_image_bars (zbar_image_t *img)
 {
     allocated_images++;
-    unsigned w = zebra_image_get_width(img);
-    unsigned h = zebra_image_get_height(img);
+    unsigned w = zbar_image_get_width(img);
+    unsigned h = zbar_image_get_height(img);
 
     const format_def_t *fmt;
     for(fmt = formats; fmt->format; fmt++)
-        if(fmt->format == zebra_image_get_format(img))
+        if(fmt->format == zbar_image_get_format(img))
             break;
     if(!fmt->format)
         return(-1);
@@ -352,7 +352,7 @@ int test_image_bars (zebra_image_t *img)
     unsigned long planelen = w * h;
     unsigned long datalen = planelen * fmt->bpp / 8;
     uint8_t *data = malloc(datalen);
-    zebra_image_set_data(img, data, datalen, test_cleanup_handler);
+    zbar_image_set_data(img, data, datalen, test_cleanup_handler);
     fprintf(stderr, "create %.4s(%08" PRIx32 ") image data %lx bytes @%p\n",
             (char*)&fmt->format, fmt->format, datalen, data);
 

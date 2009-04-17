@@ -7,14 +7,14 @@
   <!ENTITY date SYSTEM "reldate.xml">
 
   <!ENTITY refcommonoptions SYSTEM "ref/commonoptions.xml">
-  <!ENTITY refzebraimg SYSTEM "ref/zebraimg.xml">
-  <!ENTITY refzebracam SYSTEM "ref/zebracam.xml">
+  <!ENTITY refzbarimg SYSTEM "ref/zbarimg.xml">
+  <!ENTITY refzbarcam SYSTEM "ref/zbarcam.xml">
 ]>
 
 <book>
-  <title>Zebra Barcode Reader</title>
+  <title>ZBar Barcode Reader</title>
   <bookinfo>
-    <productname>zebra-&version;</productname>
+    <productname>zbar-&version;</productname>
     <date>&date;</date>
 
     <author>
@@ -31,7 +31,6 @@
       <holder>Jeff Brown</holder>
     </copyright>
     <legalnotice><para>All Rights Reserved</para></legalnotice>
-
     <!-- <legalnotice><para>insert GNU FDL header?</para></legalnotice> -->
   </bookinfo>
 
@@ -41,10 +40,10 @@
   </chapter>
 
   <reference id="ref">
-    <title>Zebra Barcode Reader - Command Reference</title>
+    <title>ZBar Barcode Reader - Command Reference</title>
 
-    &refzebracam;
-    &refzebraimg;
+    &refzbarcam;
+    &refzbarimg;
 
   </reference>
 

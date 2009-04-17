@@ -7,19 +7,19 @@ use Test::More tests => 16;
 
 #########################
 
-BEGIN { use_ok('Barcode::Zebra') }
+BEGIN { use_ok('Barcode::ZBar') }
 
-Barcode::Zebra::set_verbosity(16);
-
-#########################
-
-my $image = Barcode::Zebra::Image->new();
-isa_ok($image, 'Barcode::Zebra::Image', 'image');
+Barcode::ZBar::set_verbosity(16);
 
 #########################
 
-my $scanner = Barcode::Zebra::ImageScanner->new();
-isa_ok($scanner, 'Barcode::Zebra::ImageScanner', 'image scanner');
+my $image = Barcode::ZBar::Image->new();
+isa_ok($image, 'Barcode::ZBar::Image', 'image');
+
+#########################
+
+my $scanner = Barcode::ZBar::ImageScanner->new();
+isa_ok($scanner, 'Barcode::ZBar::ImageScanner', 'image scanner');
 
 #########################
 
@@ -77,7 +77,7 @@ SKIP: {
     #########################
 
     my $sym = $symbols[0];
-    isa_ok($sym, 'Barcode::Zebra::Symbol', 'symbol');
+    isa_ok($sym, 'Barcode::ZBar::Symbol', 'symbol');
 
     #########################
 
@@ -85,7 +85,7 @@ SKIP: {
 
     #########################
 
-    is($sym->get_type(), Barcode::Zebra::Symbol::EAN13, 'result type');
+    is($sym->get_type(), Barcode::ZBar::Symbol::EAN13, 'result type');
 
     #########################
 

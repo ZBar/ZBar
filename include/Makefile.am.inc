@@ -1,13 +1,13 @@
-zincludedir = $(includedir)/zebra
-include_HEADERS = include/zebra.h
-zinclude_HEADERS = include/zebra/Scanner.h include/zebra/Decoder.h \
-    include/zebra/Exception.h include/zebra/Symbol.h include/zebra/Image.h \
-    include/zebra/ImageScanner.h include/zebra/Video.h include/zebra/Window.h \
-    include/zebra/Processor.h
+zincludedir = $(includedir)/zbar
+include_HEADERS = include/zbar.h
+zinclude_HEADERS = include/zbar/Scanner.h include/zbar/Decoder.h \
+    include/zbar/Exception.h include/zbar/Symbol.h include/zbar/Image.h \
+    include/zbar/ImageScanner.h include/zbar/Video.h include/zbar/Window.h \
+    include/zbar/Processor.h
 
 if HAVE_GTK
-zinclude_HEADERS += include/zebra/zebragtk.h
+zinclude_HEADERS += include/zbar/zbargtk.h
 endif
 if HAVE_QT
-zinclude_HEADERS += include/zebra/QZebra.h include/zebra/QZebraImage.h
+zinclude_HEADERS += include/zbar/QZBar.h include/zbar/QZBarImage.h
 endif

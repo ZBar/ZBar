@@ -1,11 +1,34 @@
-#include "zebramodule.h"
+/*------------------------------------------------------------------------
+ *  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *
+ *  This file is part of the ZBar Bar Code Reader.
+ *
+ *  The ZBar Bar Code Reader is free software; you can redistribute it
+ *  and/or modify it under the terms of the GNU Lesser Public License as
+ *  published by the Free Software Foundation; either version 2.1 of
+ *  the License, or (at your option) any later version.
+ *
+ *  The ZBar Bar Code Reader is distributed in the hope that it will be
+ *  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser Public License
+ *  along with the ZBar Bar Code Reader; if not, write to the Free
+ *  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+ *  Boston, MA  02110-1301  USA
+ *
+ *  http://sourceforge.net/projects/zbar
+ *------------------------------------------------------------------------*/
+
+#include "zbarmodule.h"
 
 static char enumitem_doc[] = PyDoc_STR(
     "simple enumeration item.\n"
     "\n"
     "associates an int value with a name for printing.");
 
-static zebraEnumItem*
+static zbarEnumItem*
 enumitem_new (PyTypeObject *type,
               PyObject *args,
               PyObject *kwds)
@@ -16,7 +39,7 @@ enumitem_new (PyTypeObject *type,
     if(!PyArg_ParseTupleAndKeywords(args, kwds, "iS", kwlist, &val, &name))
         return(NULL);
 
-    zebraEnumItem *self = (zebraEnumItem*)type->tp_alloc(type, 0);
+    zbarEnumItem *self = (zbarEnumItem*)type->tp_alloc(type, 0);
     if(!self)
         return(NULL);
 
@@ -26,21 +49,21 @@ enumitem_new (PyTypeObject *type,
 }
 
 static void
-enumitem_dealloc (zebraEnumItem *self)
+enumitem_dealloc (zbarEnumItem *self)
 {
     Py_CLEAR(self->name);
     ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject*
-enumitem_str (zebraEnumItem *self)
+enumitem_str (zbarEnumItem *self)
 {
     Py_INCREF(self->name);
     return(self->name);
 }
 
 static int
-enumitem_print (zebraEnumItem *self,
+enumitem_print (zbarEnumItem *self,
                 FILE *fp,
                 int flags)
 {
@@ -48,7 +71,7 @@ enumitem_print (zebraEnumItem *self,
 }
 
 static PyObject*
-enumitem_repr (zebraEnumItem *self)
+enumitem_repr (zbarEnumItem *self)
 {
     PyObject *name = PyObject_Repr(self->name);
     if(!name)
@@ -62,11 +85,11 @@ enumitem_repr (zebraEnumItem *self)
     return((PyObject*)repr);
 }
 
-PyTypeObject zebraEnumItem_Type = {
+PyTypeObject zbarEnumItem_Type = {
     PyObject_HEAD_INIT(NULL)
-    .tp_name        = "zebra.EnumItem",
+    .tp_name        = "zbar.EnumItem",
     .tp_doc         = enumitem_doc,
-    .tp_basicsize   = sizeof(zebraEnumItem),
+    .tp_basicsize   = sizeof(zbarEnumItem),
     .tp_flags       = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_new         = (newfunc)enumitem_new,
     .tp_dealloc     = (destructor)enumitem_dealloc,
@@ -76,13 +99,13 @@ PyTypeObject zebraEnumItem_Type = {
 };
 
 
-zebraEnumItem*
-zebraEnumItem_New (PyObject *byname,
-                   PyObject *byvalue,
-                   int val,
-                   const char *name)
+zbarEnumItem*
+zbarEnumItem_New (PyObject *byname,
+                  PyObject *byvalue,
+                  int val,
+                  const char *name)
 {
-    zebraEnumItem *self = PyObject_New(zebraEnumItem, &zebraEnumItem_Type);
+    zbarEnumItem *self = PyObject_New(zbarEnumItem, &zbarEnumItem_Type);
     if(!self)
         return(NULL);
     self->val.ob_ival = val;
@@ -105,7 +128,7 @@ static char enum_doc[] = PyDoc_STR(
 /* FIXME add iteration */
 
 static int
-enum_traverse (zebraEnum *self,
+enum_traverse (zbarEnum *self,
                visitproc visit,
                void *arg)
 {
@@ -115,7 +138,7 @@ enum_traverse (zebraEnum *self,
 }
 
 static int
-enum_clear (zebraEnum *self)
+enum_clear (zbarEnum *self)
 {
     Py_CLEAR(self->byname);
     Py_CLEAR(self->byvalue);
@@ -123,30 +146,30 @@ enum_clear (zebraEnum *self)
 }
 
 static void
-enum_dealloc (zebraEnum *self)
+enum_dealloc (zbarEnum *self)
 {
     enum_clear(self);
     ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
-PyTypeObject zebraEnum_Type = {
+PyTypeObject zbarEnum_Type = {
     PyObject_HEAD_INIT(NULL)
-    .tp_name        = "zebra.Enum",
+    .tp_name        = "zbar.Enum",
     .tp_doc         = enum_doc,
-    .tp_basicsize   = sizeof(zebraEnum),
+    .tp_basicsize   = sizeof(zbarEnum),
     .tp_flags       = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
                       Py_TPFLAGS_HAVE_GC,
-    .tp_dictoffset  = offsetof(zebraEnum, byname),
+    .tp_dictoffset  = offsetof(zbarEnum, byname),
     .tp_traverse    = (traverseproc)enum_traverse,
     .tp_clear       = (inquiry)enum_clear,
     .tp_dealloc     = (destructor)enum_dealloc,
 };
 
 
-zebraEnum*
-zebraEnum_New ()
+zbarEnum*
+zbarEnum_New ()
 {
-    zebraEnum *self = PyObject_GC_New(zebraEnum, &zebraEnum_Type);
+    zbarEnum *self = PyObject_GC_New(zbarEnum, &zbarEnum_Type);
     if(!self)
         return(NULL);
     self->byname = PyDict_New();
@@ -159,12 +182,12 @@ zebraEnum_New ()
 }
 
 int
-zebraEnum_Add (zebraEnum *self,
-               int val,
-               const char *name)
+zbarEnum_Add (zbarEnum *self,
+              int val,
+              const char *name)
 {
-    zebraEnumItem *item;
-    item = zebraEnumItem_New(self->byname, self->byvalue, val, name);
+    zbarEnumItem *item;
+    item = zbarEnumItem_New(self->byname, self->byvalue, val, name);
     if(!item)
         return(-1);
     return(0);

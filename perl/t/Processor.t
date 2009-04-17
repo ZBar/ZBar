@@ -7,14 +7,14 @@ use Test::More tests => 19;
 
 #########################
 
-BEGIN { use_ok('Barcode::Zebra') }
+BEGIN { use_ok('Barcode::ZBar') }
 
-Barcode::Zebra::set_verbosity(32);
+Barcode::ZBar::set_verbosity(32);
 
 #########################
 
-my $proc = Barcode::Zebra::Processor->new();
-isa_ok($proc, 'Barcode::Zebra::Processor', 'processor');
+my $proc = Barcode::ZBar::Processor->new();
+isa_ok($proc, 'Barcode::ZBar::Processor', 'processor');
 
 #########################
 
@@ -41,7 +41,7 @@ $proc->set_data_handler(sub {
     #########################
 
     my $image = $_[1];
-    isa_ok($image, 'Barcode::Zebra::Image', 'image');
+    isa_ok($image, 'Barcode::ZBar::Image', 'image');
 
     #########################
 
@@ -51,11 +51,11 @@ $proc->set_data_handler(sub {
     #########################
 
     my $sym = $symbols[0];
-    isa_ok($sym, 'Barcode::Zebra::Symbol', 'symbol');
+    isa_ok($sym, 'Barcode::ZBar::Symbol', 'symbol');
 
     #########################
 
-    is($sym->get_type(), Barcode::Zebra::Symbol::EAN13, 'result type');
+    is($sym->get_type(), Barcode::ZBar::Symbol::EAN13, 'result type');
 
     #########################
 
@@ -94,7 +94,7 @@ SKIP: {
     my $im = Image::Magick->new();
     my $err = $im->Read('t/barcode.png');
     die($err) if($err);
-    my $image = Barcode::Zebra::Image->new();
+    my $image = Barcode::ZBar::Image->new();
     $image->set_format('422P');
     $image->set_size($im->Get(qw(columns rows)));
     $image->set_data($im->ImageToBlob(

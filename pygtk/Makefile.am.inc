@@ -1,19 +1,21 @@
-pyexec_LTLIBRARIES += pygtk/zebrapygtk.la
-pygtk_zebrapygtk_la_CPPFLAGS = \
+pyexec_LTLIBRARIES += pygtk/zbarpygtk.la
+pygtk_zbarpygtk_la_CPPFLAGS = \
     $(GTK_CFLAGS) $(PYTHON_CFLAGS) $(PYGTK_CFLAGS) $(AM_CPPFLAGS)
-pygtk_zebrapygtk_la_LDFLAGS = -shared -module -avoid-version -export-dynamic \
-    -export-symbols-regex initzebrapygtk
-pygtk_zebrapygtk_la_LIBADD = \
-    $(PYTHON_LIBS) $(PYGTK_LIBS) gtk/libzebragtk.la $(AM_LIBADD)
+pygtk_zbarpygtk_la_LDFLAGS = -shared -module -avoid-version -export-dynamic \
+    -export-symbols-regex initzbarpygtk
+pygtk_zbarpygtk_la_LIBADD = \
+    $(PYTHON_LIBS) $(PYGTK_LIBS) gtk/libzbargtk.la $(AM_LIBADD)
 
-pygtk_zebrapygtk_la_SOURCES = pygtk/zebrapygtkmodule.c pygtk/zebrapygtk.c
-BUILT_SOURCES += pygtk/zebrapygtk.c pygtk/zebrapygtk.defs
-EXTRA_DIST += pygtk/zebrapygtk.override pygtk/zebrapygtk.c pygtk/zebrapygtk.defs
+pygtk_zbarpygtk_la_SOURCES = pygtk/zbarpygtkmodule.c pygtk/zbarpygtk.c
+BUILT_SOURCES += pygtk/zbarpygtk.c pygtk/zbarpygtk.defs
+EXTRA_DIST += pygtk/zbarpygtk.override pygtk/zbarpygtk.c pygtk/zbarpygtk.defs
 
-pygtk/zebrapygtk.defs: include/zebra/zebragtk.h
-	$(PYTHON) $(PYGTK_H2DEF) $< > $@
+# FIXME ugly hack to fixup new name... now non-standard?
+pygtk/zbarpygtk.defs: include/zbar/zbargtk.h
+	$(PYTHON) $(PYGTK_H2DEF) $< | \
+	$(SED) -e 's/Z_TYPE_BAR_/ZBAR_TYPE_/' > $@
 
-pygtk/%.c: pygtk/%.defs $(srcdir)/pygtk/zebrapygtk.override
-	$(PYGTK_CODEGEN) --prefix zebrapygtk \
+pygtk/%.c: pygtk/%.defs $(srcdir)/pygtk/zbarpygtk.override
+	$(PYGTK_CODEGEN) --prefix zbarpygtk \
             --register $(PYGTK_DEFS)/gdk-types.defs \
-	    --override $(srcdir)/pygtk/zebrapygtk.override $< > $@
+	    --override $(srcdir)/pygtk/zbarpygtk.override $< > $@

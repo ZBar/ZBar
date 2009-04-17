@@ -1,11 +1,34 @@
-#include "zebramodule.h"
+/*------------------------------------------------------------------------
+ *  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *
+ *  This file is part of the ZBar Bar Code Reader.
+ *
+ *  The ZBar Bar Code Reader is free software; you can redistribute it
+ *  and/or modify it under the terms of the GNU Lesser Public License as
+ *  published by the Free Software Foundation; either version 2.1 of
+ *  the License, or (at your option) any later version.
+ *
+ *  The ZBar Bar Code Reader is distributed in the hope that it will be
+ *  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser Public License
+ *  along with the ZBar Bar Code Reader; if not, write to the Free
+ *  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+ *  Boston, MA  02110-1301  USA
+ *
+ *  http://sourceforge.net/projects/zbar
+ *------------------------------------------------------------------------*/
+
+#include "zbarmodule.h"
 
 static char processor_doc[] = PyDoc_STR(
     "low level decode of measured bar/space widths.\n"
     "\n"
     "FIXME.");
 
-static zebraProcessor*
+static zbarProcessor*
 processor_new (PyTypeObject *type,
                PyObject *args,
                PyObject *kwds)
@@ -14,12 +37,12 @@ processor_new (PyTypeObject *type,
     if(!PyArg_ParseTupleAndKeywords(args, kwds, "", kwlist))
         return(NULL);
 
-    zebraProcessor *self = (zebraProcessor*)type->tp_alloc(type, 0);
+    zbarProcessor *self = (zbarProcessor*)type->tp_alloc(type, 0);
     if(!self)
         return(NULL);
 
-    self->zproc = zebra_processor_create(0/*FIXME*/);
-    zebra_processor_set_userdata(self->zproc, self);
+    self->zproc = zbar_processor_create(0/*FIXME*/);
+    zbar_processor_set_userdata(self->zproc, self);
     if(!self->zproc) {
         Py_DECREF(self);
         return(NULL);
@@ -28,7 +51,7 @@ processor_new (PyTypeObject *type,
 }
 
 static int
-processor_traverse (zebraProcessor *self,
+processor_traverse (zbarProcessor *self,
                     visitproc visit,
                     void *arg)
 {
@@ -38,43 +61,43 @@ processor_traverse (zebraProcessor *self,
 }
 
 static int
-processor_clear (zebraProcessor *self)
+processor_clear (zbarProcessor *self)
 {
-    zebra_processor_set_data_handler(self->zproc, NULL, NULL);
-    zebra_processor_set_userdata(self->zproc, NULL);
+    zbar_processor_set_data_handler(self->zproc, NULL, NULL);
+    zbar_processor_set_userdata(self->zproc, NULL);
     Py_CLEAR(self->handler);
     Py_CLEAR(self->closure);
     return(0);
 }
 
 static void
-processor_dealloc (zebraProcessor *self)
+processor_dealloc (zbarProcessor *self)
 {
     processor_clear(self);
-    zebra_processor_destroy(self->zproc);
+    zbar_processor_destroy(self->zproc);
     ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject*
-processor_get_bool (zebraProcessor *self,
+processor_get_bool (zbarProcessor *self,
                     void *closure)
 {
     int val;
     switch((int)closure) {
     case 0:
-        val = zebra_processor_is_visible(self->zproc);
+        val = zbar_processor_is_visible(self->zproc);
         break;
     default:
         assert(0);
         return(NULL);
     }
     if(val < 0)
-        return(zebraErr_Set((PyObject*)self));
+        return(zbarErr_Set((PyObject*)self));
     return(PyBool_FromLong(val));
 }
 
 static int
-processor_set_bool (zebraProcessor *self,
+processor_set_bool (zbarProcessor *self,
                     PyObject *value,
                     void *closure)
 {
@@ -87,17 +110,17 @@ processor_set_bool (zebraProcessor *self,
         return(-1);
     switch((int)closure) {
     case 0:
-        rc = zebra_processor_set_visible(self->zproc, val);
+        rc = zbar_processor_set_visible(self->zproc, val);
         break;
     case 1:
-        rc = zebra_processor_set_active(self->zproc, val);
+        rc = zbar_processor_set_active(self->zproc, val);
         break;
     default:
         assert(0);
         return(-1);
     }
     if(rc < 0) {
-        zebraErr_Set((PyObject*)self);
+        zbarErr_Set((PyObject*)self);
         return(-1);
     }
     return(0);
@@ -112,19 +135,19 @@ static PyGetSetDef processor_getset[] = {
 };
 
 static PyObject*
-processor_set_config (zebraProcessor *self,
+processor_set_config (zbarProcessor *self,
                       PyObject *args,
                       PyObject *kwds)
 {
-    zebra_symbol_type_t sym = ZEBRA_NONE;
-    zebra_config_t cfg = ZEBRA_CFG_ENABLE;
+    zbar_symbol_type_t sym = ZBAR_NONE;
+    zbar_config_t cfg = ZBAR_CFG_ENABLE;
     int val = 1;
     static char *kwlist[] = { "symbology", "config", "value", NULL };
     if(!PyArg_ParseTupleAndKeywords(args, kwds, "|iii", kwlist,
                                     &sym, &cfg, &val))
         return(NULL);
 
-    if(zebra_processor_set_config(self->zproc, sym, cfg, val)) {
+    if(zbar_processor_set_config(self->zproc, sym, cfg, val)) {
         PyErr_SetString(PyExc_ValueError, "invalid configuration setting");
         return(NULL);
     }
@@ -132,7 +155,7 @@ processor_set_config (zebraProcessor *self,
 }
 
 static PyObject*
-processor_init_ (zebraProcessor *self,
+processor_init_ (zbarProcessor *self,
                  PyObject *args,
                  PyObject *kwds)
 {
@@ -143,13 +166,13 @@ processor_init_ (zebraProcessor *self,
                                     &dev, object_to_bool, &disp))
         return(NULL);
 
-    if(zebra_processor_init(self->zproc, dev, disp))
-        return(zebraErr_Set((PyObject*)self));
+    if(zbar_processor_init(self->zproc, dev, disp))
+        return(zbarErr_Set((PyObject*)self));
     Py_RETURN_NONE;
 }
 
 static PyObject*
-processor_parse_config (zebraProcessor *self,
+processor_parse_config (zbarProcessor *self,
                         PyObject *args,
                         PyObject *kwds)
 {
@@ -158,7 +181,7 @@ processor_parse_config (zebraProcessor *self,
     if(!PyArg_ParseTupleAndKeywords(args, kwds, "s", kwlist, &cfg))
         return(NULL);
 
-    if(zebra_processor_parse_config(self->zproc, cfg)) {
+    if(zbar_processor_parse_config(self->zproc, cfg)) {
         PyErr_Format(PyExc_ValueError, "invalid configuration setting: %s",
                      cfg);
         return(NULL);
@@ -182,7 +205,7 @@ object_to_timeout (PyObject *obj,
 }
 
 static PyObject*
-processor_user_wait (zebraProcessor *self,
+processor_user_wait (zbarProcessor *self,
                      PyObject *args,
                      PyObject *kwds)
 {
@@ -192,14 +215,14 @@ processor_user_wait (zebraProcessor *self,
                                     object_to_timeout, &timeout))
         return(NULL);
 
-    int rc = zebra_processor_user_wait(self->zproc, timeout);
+    int rc = zbar_processor_user_wait(self->zproc, timeout);
     if(rc < 0)
-        return(zebraErr_Set((PyObject*)self));
+        return(zbarErr_Set((PyObject*)self));
     return(PyInt_FromLong(rc));
 }
 
 static PyObject*
-processor_process_one (zebraProcessor *self,
+processor_process_one (zbarProcessor *self,
                        PyObject *args,
                        PyObject *kwds)
 {
@@ -209,44 +232,44 @@ processor_process_one (zebraProcessor *self,
                                     object_to_timeout, &timeout))
         return(NULL);
 
-    int rc = zebra_process_one(self->zproc, timeout);
+    int rc = zbar_process_one(self->zproc, timeout);
     if(rc < 0)
-        return(zebraErr_Set((PyObject*)self));
+        return(zbarErr_Set((PyObject*)self));
     return(PyInt_FromLong(rc));
 }
 
 static PyObject*
-processor_process_image (zebraProcessor *self,
+processor_process_image (zbarProcessor *self,
                          PyObject *args,
                          PyObject *kwds)
 {
-    zebraImage *img = NULL;
+    zbarImage *img = NULL;
     static char *kwlist[] = { "image", NULL };
     if(!PyArg_ParseTupleAndKeywords(args, kwds, "O!", kwlist,
-                                    &zebraImage_Type, &img))
+                                    &zbarImage_Type, &img))
         return(NULL);
 
-    if(zebraImage_validate(img))
+    if(zbarImage_validate(img))
         return(NULL);
 
-    int n = zebra_process_image(self->zproc, img->zimg);
+    int n = zbar_process_image(self->zproc, img->zimg);
     if(n < 0)
-        return(zebraErr_Set((PyObject*)self));
+        return(zbarErr_Set((PyObject*)self));
     return(PyInt_FromLong(n));
 }
 
 void
-process_handler (zebra_image_t *zimg,
+process_handler (zbar_image_t *zimg,
                  const void *userdata)
 {
-    zebraProcessor *self = (zebraProcessor*)userdata;
+    zbarProcessor *self = (zbarProcessor*)userdata;
     assert(self);
     assert(self->handler);
     assert(self->closure);
 
-    zebraImage *img = zebra_image_get_userdata(zimg);
+    zbarImage *img = zbar_image_get_userdata(zimg);
     if(!img || img->zimg != zimg) {
-        img = zebraImage_FromImage(zimg);
+        img = zbarImage_FromImage(zimg);
         if(!img) {
             PyErr_NoMemory();
             return;
@@ -268,7 +291,7 @@ process_handler (zebra_image_t *zimg,
 }
 
 static PyObject*
-processor_set_data_handler (zebraProcessor *self,
+processor_set_data_handler (zbarProcessor *self,
                             PyObject *args,
                             PyObject *kwds)
 {
@@ -295,11 +318,11 @@ processor_set_data_handler (zebraProcessor *self,
         Py_INCREF(closure);
         self->closure = closure;
 
-        zebra_processor_set_data_handler(self->zproc, process_handler, self);
+        zbar_processor_set_data_handler(self->zproc, process_handler, self);
     }
     else {
         self->handler = self->closure = NULL;
-        zebra_processor_set_data_handler(self->zproc, NULL, self);
+        zbar_processor_set_data_handler(self->zproc, NULL, self);
     }
     Py_RETURN_NONE;
 }
@@ -322,11 +345,11 @@ static PyMethodDef processor_methods[] = {
     { NULL, },
 };
 
-PyTypeObject zebraProcessor_Type = {
+PyTypeObject zbarProcessor_Type = {
     PyObject_HEAD_INIT(NULL)
-    .tp_name        = "zebra.Processor",
+    .tp_name        = "zbar.Processor",
     .tp_doc         = processor_doc,
-    .tp_basicsize   = sizeof(zebraProcessor),
+    .tp_basicsize   = sizeof(zbarProcessor),
     .tp_flags       = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
                       Py_TPFLAGS_HAVE_GC,
     .tp_new         = (newfunc)processor_new,

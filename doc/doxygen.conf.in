@@ -1,9 +1,9 @@
-PROJECT_NAME = "Zebra Barcode Reader Library"
+PROJECT_NAME = "ZBar Bar Code Reader Library"
 PROJECT_NUMBER = "version @VERSION@"
 
 INPUT = @top_srcdir@/include
 RECURSIVE = YES
-EXCLUDE = @top_srcdir@/include/zebra/zebragtk.h
+EXCLUDE = @top_srcdir@/include/zbar/zbargtk.h
 EXCLUDE_PATTERNS = */.svn/*
 STRIP_FROM_PATH = @top_srcdir@
 

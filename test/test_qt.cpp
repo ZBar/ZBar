@@ -1,24 +1,24 @@
 //------------------------------------------------------------------------
-//  Copyright 2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
-//  This file is part of the Zebra Barcode Library.
+//  This file is part of the ZBar Bar Code Reader.
 //
-//  The Zebra Barcode Library is free software; you can redistribute it
+//  The ZBar Bar Code Reader is free software; you can redistribute it
 //  and/or modify it under the terms of the GNU Lesser Public License as
 //  published by the Free Software Foundation; either version 2.1 of
 //  the License, or (at your option) any later version.
 //
-//  The Zebra Barcode Library is distributed in the hope that it will be
+//  The ZBar Bar Code Reader is distributed in the hope that it will be
 //  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU Lesser Public License for more details.
 //
 //  You should have received a copy of the GNU Lesser Public License
-//  along with the Zebra Barcode Library; if not, write to the Free
+//  along with the ZBar Bar Code Reader; if not, write to the Free
 //  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 //  Boston, MA  02110-1301  USA
 //
-//  http://sourceforge.net/projects/zebra
+//  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
 #include <QApplication>
@@ -29,7 +29,7 @@
 #include <QTextEdit>
 #include <QFileDialog>
 #include <QImage>
-#include <zebra/QZebra.h>
+#include <zbar/QZBar.h>
 
 #define TEST_IMAGE_FORMATS \
     "Image Files (*.png *.jpg *.jpeg *.bmp *.gif *.ppm *.pgm *.pbm *.tiff *.xpm *.xbm)"
@@ -40,7 +40,7 @@ int scan_video(void *add_device,
                const char *default_device);
 }
 
-class TestQZebra : public QWidget
+class TestQZBar : public QWidget
 {
     Q_OBJECT
 
@@ -52,7 +52,7 @@ protected:
     }
 
 public:
-    TestQZebra (const char *default_device)
+    TestQZBar (const char *default_device)
     {
         // drop-down list of video devices
         QComboBox *videoList = new QComboBox;
@@ -84,8 +84,8 @@ public:
         hbox->addWidget(openButton, 1);
 
         // video barcode scanner
-        zebra = new zebra::QZebra;
-        zebra->setAcceptDrops(true);
+        zbar = new zbar::QZBar;
+        zbar->setAcceptDrops(true);
 
         // text box for results
         QTextEdit *results = new QTextEdit;
@@ -93,7 +93,7 @@ public:
 
         QVBoxLayout *vbox = new QVBoxLayout;
         vbox->addLayout(hbox);
-        vbox->addWidget(zebra);
+        vbox->addWidget(zbar);
         vbox->addWidget(results);
 
         setLayout(vbox);
@@ -103,25 +103,25 @@ public:
 
         // directly connect combo box change signal to scanner video open
         connect(videoList, SIGNAL(currentIndexChanged(const QString&)),
-                zebra, SLOT(setVideoDevice(const QString&)));
+                zbar, SLOT(setVideoDevice(const QString&)));
 
         // directly connect status button state to video enabled state
         connect(statusButton, SIGNAL(toggled(bool)),
-                zebra, SLOT(setVideoEnabled(bool)));
+                zbar, SLOT(setVideoEnabled(bool)));
 
         // also update status button state when video is opened/closed
-        connect(zebra, SIGNAL(videoOpened(bool)),
+        connect(zbar, SIGNAL(videoOpened(bool)),
                 statusButton, SLOT(setEnabled(bool)));
 
         // enable/disable status button when video is opened/closed
-        connect(zebra, SIGNAL(videoOpened(bool)),
+        connect(zbar, SIGNAL(videoOpened(bool)),
                 statusButton, SLOT(setChecked(bool)));
 
         // prompt for image file to scan when openButton is clicked
         connect(openButton, SIGNAL(clicked()), SLOT(openImage()));
 
         // directly connect video scanner decode result to display in text box
-        connect(zebra, SIGNAL(decodedText(const QString&)),
+        connect(zbar, SIGNAL(decodedText(const QString&)),
                 results, SLOT(append(const QString&)));
 
         if(active >= 0)
@@ -134,12 +134,12 @@ public Q_SLOTS:
         file = QFileDialog::getOpenFileName(this, "Open Image", file,
                                             TEST_IMAGE_FORMATS);
         if(!file.isEmpty())
-            zebra->scanImage(QImage(file));
+            zbar->scanImage(QImage(file));
     }
 
 private:
     QString file;
-    zebra::QZebra *zebra;
+    zbar::QZBar *zbar;
 };
 
 #include "moc_test_qt.h"
@@ -152,7 +152,7 @@ int main (int argc, char *argv[])
     if(argc > 1)
         dev = argv[1];
 
-    TestQZebra window(dev);
+    TestQZBar window(dev);
     window.show();
     return(app.exec());
 }

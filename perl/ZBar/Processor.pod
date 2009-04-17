@@ -1,0 +1,142 @@
+#------------------------------------------------------------------------
+#  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+#
+#  This file is part of the ZBar Bar Code Reader.
+#
+#  The ZBar Bar Code Reader is free software; you can redistribute it
+#  and/or modify it under the terms of the GNU Lesser Public License as
+#  published by the Free Software Foundation; either version 2.1 of
+#  the License, or (at your option) any later version.
+#
+#  The ZBar Bar Code Reader is distributed in the hope that it will be
+#  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser Public License
+#  along with the ZBar Bar Code Reader; if not, write to the Free
+#  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+#  Boston, MA  02110-1301  USA
+#
+#  http://sourceforge.net/projects/zbar
+#------------------------------------------------------------------------
+
+=pod
+
+=head1 NAME
+
+Barcode::ZBar::Processor - self-contained bar code reader
+
+=head1 SYNOPSIS
+
+setup:
+
+    use Barcode::ZBar;
+    
+    my $reader = Barcode::ZBar::Processor->new();
+    $reader->init("/dev/video1", 1);
+    $reader->parse_config('code39.disable');
+    $reader->set_data_handler(\&my_handler);
+
+scan an image:
+
+    $reader->process_image($image);
+
+scan from video:
+
+    $reader->set_visible();
+    $reader->set_active();
+    $reader->user_wait();
+
+=head1 DESCRIPTION
+
+A Barcode::ZBar::Processor may be used to quickly create stand-alone
+bar code scanning applications.  It has interfaces to scan images or
+video and to optionally display a video/image preview to a window.
+
+This interface is not well suited for integration with an existing
+GUI, as the library manages the optional preview window and any user
+interaction.  Use a Barcode::ZBar::ImageScanner or Investigate the
+avilable widget interfaces for GUI applications.
+
+=head1 REFERENCE
+
+=head2 Methods
+
+=over 4
+
+=item new()
+
+Create a new bar code reader instance.
+
+=item init([I<video_device>], [I<enable_display>])
+
+Open a video input device and/or prepare to display output.
+
+=item set_data_handler([I<handler>], [I<closure>])
+
+Setup a callback to process results whenever new results are available
+from the video stream or a static image.  The specified callable will
+be invoked with the associated Barcode::ZBar::Processor object and
+I<closure> as arguments.  Closure may be achieved either using
+standard Perl closure or by manually passing a scalar via I<closure>.
+
+=item is_visible()
+
+=item set_visible([I<visible>])
+
+Test/set visibility of the output window.
+
+=item set_active([I<active>])
+
+Enable/disable video streaming and scanning for bar codes.
+
+=item user_wait([I<timeout>])
+
+Wait for the user to press a key/button or close the window.  Bar
+codes will continue to be processed if video is active.
+
+=item process_one([I<timeout>])
+
+Enable video and scan until at least one barcode is found.  Note that
+multiple results may still be returned.
+
+=item process_image([I<image>])
+
+Scan a Barcode::ZBar::Image for bar codes.
+
+=item parse_config(I<configstr>)
+
+Apply a decoder configuration setting.  See the documentation for
+C<zbarcam>/C<zbarimg> for available configuration options.
+
+=item request_size(I<width>, I<height>)
+
+Request a preferred size for the video image from the device.  The
+request may be adjusted or completely ignored by the driver.  Must be
+called before C<init()>
+
+=back
+
+=head1 SEE ALSO
+
+Barcode::ZBar, Barcode::ZBar::Image, Barcode::ZBar::ImageScanner
+
+zbarimg(1), zbarcam(1)
+
+http://zbar.sf.net
+
+=head1 AUTHOR
+
+Jeff Brown, E<lt>spadix@users.sourceforge.netE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2008-2009 (c) Jeff Brown E<lt>spadix@users.sourceforge.netE<gt>
+
+The ZBar Bar Code Reader is free software; you can redistribute it
+and/or modify it under the terms of the GNU Lesser Public License as
+published by the Free Software Foundation; either version 2.1 of
+the License, or (at your option) any later version.
+
+=cut

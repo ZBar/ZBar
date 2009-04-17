@@ -1,24 +1,24 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2008 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
- *  This file is part of the Zebra Barcode Library.
+ *  This file is part of the ZBar Bar Code Reader.
  *
- *  The Zebra Barcode Library is free software; you can redistribute it
+ *  The ZBar Bar Code Reader is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU Lesser Public License as
  *  published by the Free Software Foundation; either version 2.1 of
  *  the License, or (at your option) any later version.
  *
- *  The Zebra Barcode Library is distributed in the hope that it will be
+ *  The ZBar Bar Code Reader is distributed in the hope that it will be
  *  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
  *  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU Lesser Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser Public License
- *  along with the Zebra Barcode Library; if not, write to the Free
+ *  along with the ZBar Bar Code Reader; if not, write to the Free
  *  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
  *  Boston, MA  02110-1301  USA
  *
- *  http://sourceforge.net/projects/zebra
+ *  http://sourceforge.net/projects/zbar
  *------------------------------------------------------------------------*/
 
 #include <config.h>
@@ -31,26 +31,26 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <zebra.h>
+#include <zbar.h>
 #include "processor.h"
 #include "test_images.h"
 
-extern int _zebra_draw_logo(zebra_image_t *img);
+extern int _zbar_draw_logo(zbar_image_t *img);
 
-zebra_processor_t proc;
+zbar_processor_t proc;
 
 static void input_wait ()
 {
     fprintf(stderr, "waiting for input...\n");
-    _zebra_window_handle_events(&proc, 1);
+    _zbar_window_handle_events(&proc, 1);
 }
 
 int main (int argc, char *argv[])
 {
-    zebra_set_verbosity(32);
+    zbar_set_verbosity(32);
 
-    err_init(&proc.err, ZEBRA_MOD_PROCESSOR);
-    proc.window = zebra_window_create();
+    err_init(&proc.err, ZBAR_MOD_PROCESSOR);
+    proc.window = zbar_window_create();
     if(!proc.window) {
         fprintf(stderr, "unable to allocate memory?!\n");
         return(1);
@@ -59,17 +59,17 @@ int main (int argc, char *argv[])
     int width = 640 * .25;
     int height = 480 * .25;
 
-    if(_zebra_window_open(&proc, "zebra window test", width, height) ||
-       zebra_window_attach(proc.window, proc.display, proc.xwin) ||
-       _zebra_window_set_visible(&proc, 1)) {
+    if(_zbar_window_open(&proc, "zbar window test", width, height) ||
+       zbar_window_attach(proc.window, proc.display, proc.xwin) ||
+       _zbar_window_set_visible(&proc, 1)) {
         fprintf(stderr, "failed to open test window\n");
         return(1);
     }
     input_wait();
 
-    zebra_image_t *img = zebra_image_create();
-    zebra_image_set_size(img, width, height);
-    /*zebra_image_set_format(img, fourcc('Y','8','0','0'));*/
+    zbar_image_t *img = zbar_image_create();
+    zbar_image_set_size(img, width, height);
+    /*zbar_image_set_format(img, fourcc('Y','8','0','0'));*/
     /*fourcc('I','4','2','0')*/
     /*fourcc('Y','V','1','2')*/
     /*fourcc('U','Y','V','Y')*/
@@ -77,14 +77,14 @@ int main (int argc, char *argv[])
     /*fourcc('R','G','B','3')*/
     /*fourcc('Y','8','0','0')*/
     /*test_image_bars(img);*/
-    _zebra_draw_logo(img);
+    _zbar_draw_logo(img);
 
-    if(zebra_window_draw(proc.window, img) ||
-       zebra_window_redraw(proc.window)) {
+    if(zbar_window_draw(proc.window, img) ||
+       zbar_window_redraw(proc.window)) {
         fprintf(stderr, "error drawing image\n");
         return(1);
     }
-    zebra_image_destroy(img);
+    zbar_image_destroy(img);
     img = NULL;
 
     input_wait();
@@ -92,7 +92,7 @@ int main (int argc, char *argv[])
     /* FIXME display cmd arg images? or formats? */
 
     fprintf(stderr, "cleaning up\n");
-    zebra_window_destroy(proc.window);
+    zbar_window_destroy(proc.window);
 
     /* FIXME destructor check? */
     if(test_image_check_cleanup())
