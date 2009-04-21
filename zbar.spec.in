@@ -13,7 +13,7 @@ Prefix: %{_prefix}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
-The ZBar Barcode Reader is a library for scanning and decoding bar
+The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
 intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
 Interleaved 2 of 5. The flexible, layered architecture features a
@@ -25,7 +25,7 @@ Summary: bar code library extra development files
 Requires: %{name} = %{version}
 
 %description devel
-The ZBar Barcode Reader is a library for scanning and decoding bar
+The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
 intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
 Interleaved 2 of 5. The flexible, layered architecture features a
@@ -40,7 +40,7 @@ Summary: bar code reader GTK widget
 Requires: %{name} = %{version}, gtk2
 
 %description gtk
-The ZBar Barcode Reader is a library for scanning and decoding bar
+The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
 intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
 Interleaved 2 of 5. The flexible, layered architecture features a
@@ -55,7 +55,7 @@ Summary: bar code reader GTK widget extra development files
 Requires: %{name}-gtk = %{version}, %{name}-devel = %{version}, gtk2-devel
 
 %description gtk-devel
-The ZBar Barcode Reader is a library for scanning and decoding bar
+The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
 intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
 Interleaved 2 of 5. The flexible, layered architecture features a
@@ -71,7 +71,7 @@ Summary: bar code reader PyGTK widget
 Requires: %{name} = %{version}, pygtk2
 
 %description pygtk
-The ZBar Barcode Reader is a library for scanning and decoding bar
+The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
 intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
 Interleaved 2 of 5. The flexible, layered architecture features a
@@ -86,7 +86,7 @@ Summary: bar code reader Qt widget
 Requires: %{name} = %{version}, qt >= 4
 
 %description qt
-The ZBar Barcode Reader is a library for scanning and decoding bar
+The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
 intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
 Interleaved 2 of 5. The flexible, layered architecture features a
@@ -101,7 +101,7 @@ Summary: bar code reader Qt widget extra development files
 Requires: %{name}-qt = %{version}, %{name}-devel = %{version}, qt-devel >= 4
 
 %description qt-devel
-The ZBar Barcode Reader is a library for scanning and decoding bar
+The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
 intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
 Interleaved 2 of 5. The flexible, layered architecture features a
@@ -194,8 +194,8 @@ ldconfig
 %{_includedir}/zbar/QZBar*.h
 
 %changelog
-* Thu Apr 16 2009 spadix <spadix@users.sourceforge.net>
-- project name change
+* Thu Apr 21 2009 spadix <spadix@users.sourceforge.net>
+- version 0.7 project name change
 
 * Thu Jul 24 2008 spadix <spadix@users.sourceforge.net>
 - version 0.5 updates (new widget packages)

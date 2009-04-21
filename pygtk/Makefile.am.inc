@@ -6,9 +6,11 @@ pygtk_zbarpygtk_la_LDFLAGS = -shared -module -avoid-version -export-dynamic \
 pygtk_zbarpygtk_la_LIBADD = \
     $(PYTHON_LIBS) $(PYGTK_LIBS) gtk/libzbargtk.la $(AM_LIBADD)
 
-pygtk_zbarpygtk_la_SOURCES = pygtk/zbarpygtkmodule.c pygtk/zbarpygtk.c
+dist_pygtk_zbarpygtk_la_SOURCES = pygtk/zbarpygtkmodule.c
+nodist_pygtk_zbarpygtk_la_SOURCES = pygtk/zbarpygtk.c
 BUILT_SOURCES += pygtk/zbarpygtk.c pygtk/zbarpygtk.defs
-EXTRA_DIST += pygtk/zbarpygtk.override pygtk/zbarpygtk.c pygtk/zbarpygtk.defs
+CLEANFILES += pygtk/zbarpygtk.c pygtk/zbarpygtk.defs
+EXTRA_DIST += pygtk/zbarpygtk.override
 
 # FIXME ugly hack to fixup new name... now non-standard?
 pygtk/zbarpygtk.defs: include/zbar/zbargtk.h

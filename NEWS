@@ -1,5 +1,12 @@
 ZBar Barcode Reader
 
+version 0.7 (2009-04-21):
+  Welcome to ZBar!  In addition to finalizing the project name change,
+  this release adds new bindings for Python and fixes a few bugs with
+  the Perl interface.  The decoder also has several new features and
+  addresses missing checks that will improve reliability with
+  excessively noisy images.
+
 version 0.6 (2009-02-28):
   This release fixes many bugs and adds several improvements suggested
   by users:  support for decoding UPC-E is finished.  zebraimg is

@@ -1,4 +1,6 @@
 version 0.7:
+  * release updates (version, NEWS, packaging)
+  * adjust [py]gtk distributed files
   * draw new logo (rough, no Xrender yet)
   * fix Makefile.am syntax error
   * fixup some perl distribution details

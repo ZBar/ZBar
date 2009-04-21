@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.61])
-AC_INIT([zbar], [0.6], [spadix@users.sourceforge.net])
+AC_INIT([zbar], [0.7], [spadix@users.sourceforge.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AM_INIT_AUTOMAKE([1.10 -Wall -Werror foreign subdir-objects std-options dist-bzip2])
@@ -21,7 +21,7 @@ dnl     then increment age.
 dnl   - If any interfaces have been removed since the last public release,
 dnl     then set age to 0. 
 AC_SUBST([LIB_VERSION], [0:0:0])
-AC_SUBST([RELDATE], [2009-02-28])
+AC_SUBST([RELDATE], [2009-04-21])
 
 dnl widget libraries use their own versioning.
 dnl NB pygtk wrapper is *unversioned*

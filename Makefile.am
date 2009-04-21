@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(srcdir)/include
-AM_CFLAGS = -Wall -Werror
+AM_CFLAGS = -Wall
 AM_CXXFLAGS = $(AM_CFLAGS)
 ACLOCAL_AMFLAGS = -I config
 bin_PROGRAMS =
@@ -44,8 +44,12 @@ endif
 include $(srcdir)/test/Makefile.am.inc
 include $(srcdir)/doc/Makefile.am.inc
 
+EXTRA_DIST += zbar.spec.in zbar.spec
+
 EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py examples/paginate.pl \
-    zbar.spec.in zbar.spec
+    examples/barcode.png examples/processor.pl examples/processor.py \
+    examples/scan_image.c examples/scan_image.cpp examples/scan_image.pl \
+    examples/scan_image.py
 
 EXTRA_DIST += perl/MANIFEST perl/README perl/Changes perl/COPYING.LIB \
     perl/Makefile.PL perl/typemap perl/ZBar.xs perl/ppport.h \
