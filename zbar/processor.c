@@ -678,9 +678,9 @@ int zbar_processor_set_visible (zbar_processor_t *proc,
     int rc = 0;
     if(proc->window) {
         if(proc->video)
-            rc = _zbar_window_resize(proc,
-                                      zbar_video_get_width(proc->video),
-                                      zbar_video_get_height(proc->video));
+            rc = _zbar_window_set_size(proc,
+                                       zbar_video_get_width(proc->video),
+                                       zbar_video_get_height(proc->video));
         if(!rc)
             rc = _zbar_window_set_visible(proc, visible);
     }
@@ -718,6 +718,7 @@ int zbar_processor_set_active (zbar_processor_t *proc,
         return(-1);
     }
     zbar_image_scanner_enable_cache(proc->scanner, active);
+
     int rc = zbar_video_enable(proc->video, active);
     if(!rc) {
         int vid_fd = zbar_video_get_fd(proc->video);
@@ -733,6 +734,11 @@ int zbar_processor_set_active (zbar_processor_t *proc,
     }
     else
         err_copy(proc, proc->video);
+
+    if(!active && proc->window &&
+       (zbar_window_draw(proc->window, NULL) ||
+        _zbar_window_invalidate(proc->window)) && !rc)
+        rc = err_copy(proc, proc->window);
 
 #ifdef HAVE_LIBPTHREAD
     if(proc->threaded) {
@@ -786,9 +792,9 @@ int zbar_process_image (zbar_processor_t *proc,
         return(-1);
     int rc = 0;
     if(img && proc->window)
-        rc = _zbar_window_resize(proc,
-                                  zbar_image_get_width(img),
-                                  zbar_image_get_height(img));
+        rc = _zbar_window_set_size(proc,
+                                   zbar_image_get_width(img),
+                                   zbar_image_get_height(img));
     if(!rc) {
         zbar_image_scanner_enable_cache(proc->scanner, 0);
         rc = process_image(proc, img);

@@ -24,7 +24,7 @@
 #include "window.h"
 #include "image.h"
 
-extern int _zbar_draw_logo(zbar_window_t *w);
+extern int _zbar_window_draw_logo(zbar_window_t *w);
 
 zbar_window_t *zbar_window_create ()
 {
@@ -98,7 +98,7 @@ inline int zbar_window_redraw (zbar_window_t *w)
     if(w->image)
         rc = w->draw_image(w, w->image);
     else
-        _zbar_draw_logo(w);
+        _zbar_window_draw_logo(w);
     if(!rc)
         rc = window_draw_overlay(w);
     (void)window_unlock(w);
@@ -142,5 +142,6 @@ int zbar_window_resize (zbar_window_t *w,
         return(-1);
     w->width = width;
     w->height = height;
+    _zbar_window_resize(w);
     return(window_unlock(w));
 }

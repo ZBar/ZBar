@@ -176,7 +176,7 @@ extern int _zbar_window_open(zbar_processor_t*, char*, unsigned, unsigned);
 extern int _zbar_window_close(zbar_processor_t*);
 extern int _zbar_window_set_visible(zbar_processor_t*, int);
 extern int _zbar_window_invalidate(zbar_window_t*);
-extern int _zbar_window_resize(zbar_processor_t*, unsigned, unsigned);
+extern int _zbar_window_set_size(zbar_processor_t*, unsigned, unsigned);
 extern int _zbar_window_handle_events(zbar_processor_t*, int);
 
 #endif

@@ -232,7 +232,8 @@ int main (int argc, const char *argv[])
     }
 
     /* start video */
-    if(zbar_processor_set_active(proc, 1))
+    int active = 1;
+    if(zbar_processor_set_active(proc, active))
         return(zbar_processor_error_spew(proc, 0));
 
     /* let the callback handle data */
@@ -240,6 +241,11 @@ int main (int argc, const char *argv[])
     while((rc = zbar_processor_user_wait(proc, -1)) >= 0) {
         if(rc == 'q')
             break;
+        if(rc == ' ') {
+            active = !active;
+            if(zbar_processor_set_active(proc, active))
+                return(zbar_processor_error_spew(proc, 0));
+        }
     }
 
     /* report any errors that aren't "window closed" */

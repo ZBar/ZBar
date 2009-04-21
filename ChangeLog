@@ -1,4 +1,6 @@
 version 0.7:
+  * draw new logo (rough, no Xrender yet)
+  * fix Makefile.am syntax error
   * fixup some perl distribution details
   * project name change: everything "zebra" becomes "zbar"
   * remove old logo

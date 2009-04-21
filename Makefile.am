@@ -49,7 +49,7 @@ EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py examples/paginate.pl \
 
 EXTRA_DIST += perl/MANIFEST perl/README perl/Changes perl/COPYING.LIB \
     perl/Makefile.PL perl/typemap perl/ZBar.xs perl/ppport.h \
-    perl/ZBar.pm perl/inc/Devel/CheckLib.pm perl/ZBar/Image.pod
+    perl/ZBar.pm perl/inc/Devel/CheckLib.pm perl/ZBar/Image.pod \
     perl/ZBar/ImageScanner.pod perl/ZBar/Processor.pod perl/ZBar/Symbol.pod \
     perl/examples/paginate.pl perl/examples/processor.pl \
     perl/examples/scan_image.pl \

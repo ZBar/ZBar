@@ -90,6 +90,15 @@ struct zbar_window_s {
 # endif
 
     unsigned long colors[8];    /* pre-allocated colors */
+
+    Region exposed;
+
+    /* pre-calculated logo geometries */
+    int logo_scale;
+    unsigned long logo_colors[2];
+    Region logo_zbars;
+    XPoint logo_z[4];
+    XRectangle logo_bars[5];
 #endif
 
 #ifdef HAVE_LIBPTHREAD
@@ -150,19 +159,22 @@ extern int _zbar_window_probe_ximage(zbar_window_t*);
 extern int _zbar_window_probe_xshm(zbar_window_t*);
 extern int _zbar_window_probe_xv(zbar_window_t*);
 
-extern int _zbar_window_attach(zbar_window_t*, void*, unsigned long);
+extern int _zbar_window_attach(zbar_window_t*,
+                               void*,
+                               unsigned long);
+extern int _zbar_window_resize(zbar_window_t *w);
 
 extern int _zbar_window_clear(zbar_window_t*);
 
 extern int _zbar_window_draw_marker(zbar_window_t*, uint32_t,
-                                     const point_t*);
+                                    const point_t*);
 #if 0
 extern int _zbar_window_draw_line(zbar_window_t*, uint32_t,
-                                   const point_t*, const point_t*);
+                                  const point_t*, const point_t*);
 extern int _zbar_window_draw_outline(zbar_window_t*, uint32_t,
-                                      const symbol_t*);
+                                     const symbol_t*);
 extern int _zbar_window_draw_text(zbar_window_t*, uint32_t,
-                                   const point_t*, const char*);
+                                  const point_t*, const char*);
 #endif
 
 #endif

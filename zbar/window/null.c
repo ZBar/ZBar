@@ -30,6 +30,11 @@ static inline int null_error (void *m,
                        "not compiled with output window support"));
 }
 
+int _zbar_window_resize (zbar_window_t *w)
+{
+    return(0);
+}
+
 int _zbar_window_attach (zbar_window_t *w,
                          void *display,
                          unsigned long win)
@@ -56,9 +61,9 @@ int _zbar_window_close (zbar_processor_t *proc)
     return(null_error(proc, __func__));
 }
 
-int _zbar_window_resize (zbar_processor_t *proc,
-                         unsigned width,
-                         unsigned height)
+int _zbar_window_set_size (zbar_processor_t *proc,
+                           unsigned width,
+                           unsigned height)
 {
     return(null_error(proc, __func__));
 }
@@ -82,6 +87,11 @@ int _zbar_window_invalidate (zbar_window_t *w)
 int _zbar_window_draw_marker(zbar_window_t *w,
                              uint32_t rgb,
                              const point_t *p)
+{
+    return(null_error(w, __func__));
+}
+
+int _zbar_window_draw_logo (zbar_window_t *w)
 {
     return(null_error(w, __func__));
 }
