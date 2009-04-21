@@ -19,3 +19,4 @@ t/Scanner.t
 t/ZBar.t
 t/pod.t
 t/pod-coverage.t
+inc/Devel/CheckLib.pm

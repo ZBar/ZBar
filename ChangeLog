@@ -1,4 +1,5 @@
 version 0.7:
+  * fix perl MANIFEST
   * release updates (version, NEWS, packaging)
   * adjust [py]gtk distributed files
   * draw new logo (rough, no Xrender yet)
