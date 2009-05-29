@@ -139,11 +139,7 @@ static inline int process_image (zbar_processor_t *proc,
        (zbar_window_draw(proc->window, img) ||
         _zbar_window_invalidate(proc->window)))
         return(err_copy(proc, proc->window));
-#if 0
-    /* FIXME still don't understand why we need this */
-    if(proc->window && _zbar_window_handle_events(proc, 0))
-        return(-1);
-#endif
+
     if(proc->force_output && img)
         zbar_image_destroy(img);
     return(0);

@@ -35,6 +35,21 @@ AC_DEFINE_UNQUOTED([ZBAR_VERSION_MINOR],
   [[`echo "$PACKAGE_VERSION" | sed -e 's/^[^.]*\.\([^.]*\)$/\1/'`]],
   [Program minor version (after '.') as a number])
 
+dnl windows build
+
+AC_CANONICAL_HOST
+case $host_os in
+  *cygwin* | *mingw* | *uwin* | *djgpp* | *ems* )
+    win32="yes"
+    AC_DEFINE([_WIN32_WINNT], [0x0500], [Minimum Windows API version])
+  ;;
+  * )
+    win32="no"
+  ;;
+esac
+
+AM_CONDITIONAL([WIN32], [test "x$win32" = "xyes"])
+
 dnl programs
 
 AC_PROG_CC
@@ -83,6 +98,7 @@ AC_SEARCH_LIBS([clock_gettime], [rt])
 
 dnl poll support
 dnl without poll() we exclude processor layer
+dnl FIXME superceded by WIN32 checks(?)
 
 have_poll="no"
 AC_CHECK_HEADERS([poll.h], [have_poll="yes"])

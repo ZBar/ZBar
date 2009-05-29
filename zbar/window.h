@@ -44,6 +44,10 @@
 # include <pthread.h>
 #endif
 
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
 #include <zbar.h>
 #include "image.h"
 #include "error.h"
@@ -58,6 +62,9 @@ struct zbar_window_s {
     uint32_t format;            /* output format */
     unsigned width, height;     /* current output size */
     unsigned max_width, max_height;
+
+    uint32_t src_format;        /* current input format */
+    unsigned dst_width;         /* conversion target */
 
     uint32_t *formats;          /* supported formats (zero terminated) */
 
@@ -75,11 +82,10 @@ struct zbar_window_s {
         XvImage *xv;
 #endif
     } img;
-    uint32_t src_format;        /* current input format */
+    XID img_port;               /* current format port */
+
     unsigned src_width;         /* last displayed image size */
     unsigned src_height;
-    unsigned dst_width;         /* conversion target */
-    XID img_port;               /* current format port */
 
     XID *xv_ports;              /* best port for format */
     int num_xv_adaptors;        /* number of adaptors */
@@ -103,6 +109,20 @@ struct zbar_window_s {
 
 #ifdef HAVE_LIBPTHREAD
     pthread_mutex_t imglock;    /* lock displayed image */
+#endif
+
+#ifdef _WIN32
+    HWND hwnd;
+    void* hdd;
+
+    BITMAPINFOHEADER bih;
+    unsigned dst_height;
+
+    /* pre-calculated logo geometries */
+    int logo_scale;
+    HRGN logo_zbars;
+    HPEN logo_zpen, logo_zbpen;
+    POINT logo_z[4];
 #endif
 };
 
@@ -142,7 +162,7 @@ static inline int window_unlock (zbar_window_t *w)
 #endif
 
 static inline int _zbar_window_add_format (zbar_window_t *w,
-                                            uint32_t fmt)
+                                           uint32_t fmt)
 {
     int i;
     for(i = 0; w->formats && w->formats[i]; i++)
@@ -154,10 +174,6 @@ static inline int _zbar_window_add_format (zbar_window_t *w,
     w->formats[i + 1] = 0;
     return(i);
 }
-
-extern int _zbar_window_probe_ximage(zbar_window_t*);
-extern int _zbar_window_probe_xshm(zbar_window_t*);
-extern int _zbar_window_probe_xv(zbar_window_t*);
 
 extern int _zbar_window_attach(zbar_window_t*,
                                void*,

@@ -24,6 +24,10 @@
 #include "error.h"
 #include <string.h>
 
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
 int _zbar_verbosity = 0;
 
 static const char * const sev_str[] = {
@@ -155,6 +159,21 @@ const char *_zbar_error_string (const void *container,
         err->buf = realloc(err->buf, len + strlen(sysfmt) + strlen(syserr));
         len += sprintf(err->buf + len, sysfmt, syserr, err->errnum);
     }
+#ifdef _WIN32
+    else if(err->type == ZBAR_ERR_WINAPI) {
+        char *syserr = NULL;
+        if(FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
+                         FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                         FORMAT_MESSAGE_IGNORE_INSERTS,
+                         NULL, err->errnum, 0, (LPTSTR)&syserr, 1, NULL) &&
+           syserr) {
+            char sysfmt[] = ": %s (%d)\n";
+            err->buf = realloc(err->buf, len + strlen(sysfmt) + strlen(syserr));
+            len += sprintf(err->buf + len, sysfmt, syserr, err->errnum);
+            LocalFree(syserr);
+        }
+    }
+#endif
     else {
         err->buf = realloc(err->buf, len + 2);
         len += sprintf(err->buf + len, "\n");

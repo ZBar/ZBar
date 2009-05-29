@@ -1,3 +1,10 @@
+current:
+  * initial Windows support for window interface
+    - currently supports VFW DrawDib interface for image display
+      (DirectDraw and others TBD)
+    - also basic processor window creation/manipulation
+    - Windows configure tests
+
 version 0.7:
   * fix perl MANIFEST
   * release updates (version, NEWS, packaging)

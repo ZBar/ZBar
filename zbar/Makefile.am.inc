@@ -6,14 +6,10 @@ zbar_libzbar_la_LIBADD =
 
 zbar_libzbar_la_SOURCES = zbar/debug.h zbar/config.c \
     zbar/error.h zbar/error.c zbar/symbol.h zbar/symbol.c \
-    zbar/image.h zbar/image.c zbar/convert.c zbar/logo.c \
-    zbar/window.h zbar/window.c zbar/video.h zbar/video.c \
+    zbar/image.h zbar/image.c zbar/convert.c \
+    zbar/window.h zbar/window.c zbar/video.h zbar/video.c zbar/processor.h \
     zbar/img_scanner.c zbar/scanner.c \
     zbar/decoder.h zbar/decoder.c
-
-if HAVE_POLL
-zbar_libzbar_la_SOURCES += zbar/processor.h zbar/processor.c
-endif
 
 if ENABLE_EAN
 zbar_libzbar_la_SOURCES += zbar/decoder/ean.h zbar/decoder/ean.c
@@ -30,6 +26,16 @@ endif
 if ENABLE_PDF417
 zbar_libzbar_la_SOURCES += zbar/decoder/pdf417.h zbar/decoder/pdf417.c \
     zbar/decoder/pdf417_hash.h
+endif
+
+if HAVE_POLL
+zbar_libzbar_la_SOURCES += zbar/processor.c
+# FIXME
+# zbar/processor/posix.c
+endif
+if WIN32
+# FIXME
+#zbar_libzbar_la_SOURCES += zbar/processor/win32.c
 endif
 
 if HAVE_V4L1
@@ -55,7 +61,12 @@ zbar_libzbar_la_SOURCES += zbar/window/xv.c
 zbar_libzbar_la_LIBADD += $(XV_LIBS)
 endif
 else
+if WIN32
+zbar_libzbar_la_SOURCES += zbar/window/win.c zbar/window/vfw.c
+zbar_libzbar_la_LIBADD += -lgdi32 -lvfw32
+else
 zbar_libzbar_la_SOURCES += zbar/window/null.c
+endif
 endif
 
 zbar_libzbar_la_LDFLAGS += $(AM_LDFLAGS)

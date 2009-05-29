@@ -90,17 +90,14 @@ inline int zbar_window_redraw (zbar_window_t *w)
 {
     if(window_lock(w))
         return(-1);
-    if(!w->draw_image) {
-        (void)window_unlock(w);
-        return(_zbar_window_clear(w));
-    }
     int rc = 0;
-    if(w->image)
+    if(w->draw_image && w->image) {
         rc = w->draw_image(w, w->image);
+        if(!rc)
+            rc = window_draw_overlay(w);
+    }
     else
         _zbar_window_draw_logo(w);
-    if(!rc)
-        rc = window_draw_overlay(w);
     (void)window_unlock(w);
     return(rc);
 }

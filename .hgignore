@@ -1,0 +1,21 @@
+syntax: glob
+
+*~
+Makefile
+Makefile.in
+aclocal.m4
+configure
+config
+config.guess
+config.h
+config.h.in
+config.log
+config.status
+config.sub
+depcomp
+compile
+install-sh
+libtool
+ltmain.sh
+autom4te.cache
+missing

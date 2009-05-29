@@ -25,6 +25,10 @@
 #include "processor.h"
 #include <X11/keysym.h>
 
+extern int _zbar_window_probe_ximage(zbar_window_t*);
+extern int _zbar_window_probe_xshm(zbar_window_t*);
+extern int _zbar_window_probe_xv(zbar_window_t*);
+
 static inline unsigned long window_alloc_color (zbar_window_t *w,
                                                 Colormap cmap,
                                                 unsigned short r,

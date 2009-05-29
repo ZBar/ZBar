@@ -30,7 +30,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <poll.h>
+#ifdef HAVE_POLL_H
+# include <poll.h>
+#endif
 
 #ifdef HAVE_X
 # include <X11/Xlib.h>
@@ -40,9 +42,14 @@
 # include <pthread.h>
 #endif
 
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
 #include <zbar.h>
 #include "error.h"
 
+#ifdef HAVE_POLL_H
 typedef int (poll_handler_t)(zbar_processor_t*, int);
 
 /* poll information */
@@ -51,6 +58,7 @@ typedef struct poll_desc_s {
     struct pollfd *fds;                 /* poll descriptors */
     poll_handler_t **handlers;          /* poll handlers */
 } poll_desc_t;
+#endif
 
 struct zbar_processor_s {
     errinfo_t err;                      /* error reporting */
@@ -78,9 +86,11 @@ struct zbar_processor_s {
 
     int input;                          /* user input status */
 
+#ifdef HAVE_POLL_H
     volatile poll_desc_t polling;       /* polling registration */
     poll_desc_t thr_polling;            /* thread copy */
     int kick_fds[2];                    /* poll kicker */
+#endif
 
 #ifdef HAVE_LIBPTHREAD
     int sem;                            /* window access semaphore */
@@ -97,12 +107,15 @@ struct zbar_processor_s {
 #ifdef HAVE_X
     Display *display;                   /* X display connection */
     Window xwin;                        /* toplevel window */
-#else
-    void *display;                      /* generic placeholder */
-    unsigned long xwin;                 /* unused */
+#endif
+
+#ifdef _WIN32
+    HWND display;                       /* window handle */
+    long xwin;                          /* unused */
 #endif
 };
 
+#ifdef HAVE_POLL_H
 static inline int alloc_polls (volatile poll_desc_t *p)
 {
     p->fds = realloc(p->fds, p->num * sizeof(struct pollfd));
@@ -160,6 +173,7 @@ static inline int remove_poll (zbar_processor_t *proc,
 #endif
     return(rc);
 }
+#endif
 
 static inline void emit (zbar_processor_t *proc,
                          unsigned mask)

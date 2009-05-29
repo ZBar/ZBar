@@ -35,14 +35,13 @@
 #include "processor.h"
 #include "test_images.h"
 
-extern int _zbar_draw_logo(zbar_image_t *img);
-
 zbar_processor_t proc;
 
 static void input_wait ()
 {
     fprintf(stderr, "waiting for input...\n");
-    _zbar_window_handle_events(&proc, 1);
+    if(_zbar_window_handle_events(&proc, 1) < 0)
+        zbar_processor_error_spew(&proc, 1);
 }
 
 int main (int argc, char *argv[])
@@ -56,8 +55,8 @@ int main (int argc, char *argv[])
         return(1);
     }
 
-    int width = 640 * .25;
-    int height = 480 * .25;
+    int width = 640;
+    int height = 480;
 
     if(_zbar_window_open(&proc, "zbar window test", width, height) ||
        zbar_window_attach(proc.window, proc.display, proc.xwin) ||
@@ -69,15 +68,14 @@ int main (int argc, char *argv[])
 
     zbar_image_t *img = zbar_image_create();
     zbar_image_set_size(img, width, height);
-    /*zbar_image_set_format(img, fourcc('Y','8','0','0'));*/
+    zbar_image_set_format(img, fourcc('B','G','R','4'));
     /*fourcc('I','4','2','0')*/
     /*fourcc('Y','V','1','2')*/
     /*fourcc('U','Y','V','Y')*/
     /*fourcc('Y','U','Y','V')*/
     /*fourcc('R','G','B','3')*/
     /*fourcc('Y','8','0','0')*/
-    /*test_image_bars(img);*/
-    _zbar_draw_logo(img);
+    test_image_bars(img);
 
     if(zbar_window_draw(proc.window, img) ||
        zbar_window_redraw(proc.window)) {
