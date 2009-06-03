@@ -1,3 +1,6 @@
+current:
+  * switchover from subversion to mercurial
+
 version 0.7:
   * fix perl MANIFEST
   * release updates (version, NEWS, packaging)

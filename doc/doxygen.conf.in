@@ -4,7 +4,7 @@ PROJECT_NUMBER = "version @VERSION@"
 INPUT = @top_srcdir@/include
 RECURSIVE = YES
 EXCLUDE = @top_srcdir@/include/zbar/zbargtk.h
-EXCLUDE_PATTERNS = */.svn/*
+EXCLUDE_PATTERNS = */.svn/* */.hg/*
 STRIP_FROM_PATH = @top_srcdir@
 
 OUTPUT_DIRECTORY = doc/api

@@ -1,22 +1,26 @@
-if you're hacking at ZBar, PLEASE send patches against the latest SVN!
-if you haven't already, get ZBar from SVN by running:
+when hacking at ZBar, PLEASE send patches against the latest Mercurial!
+if you haven't already, grab the ZBar Mercurial repository by running:
 
-    svn co https://zbar.svn.sourceforge.net/svnroot/zbar/trunk zbar
+    hg clone http://zbar.hg.sourceforge.net:8000/hgroot/zbar
     cd zbar
     autoreconf --install
 
 this will generate configure and all that other foo you usually get with
-a release.  you will need to have some basic "developer tools" installed
-in order for this to work (particularly GNU autotools)
+a release.  you will need to have recent versions of some basic "developer
+tools" installed in order for this to work, particularly GNU autotools.
+these versions of autotools are known to work (newer versions should also
+be fine):
+    GNU autoconf 2.61
+    GNU automake 1.10.1
+    GNU libtool 2.2.6
 
 when you're done hacking and want to make your patch, run:
 
-    svn diff > hacked.patch
+    hg diff --git > hacked.patch
 
-from the toplevel directory, and go post this file in the patches
-section off the project page:
+and go post this file in the patches section off the project page:
 
-    https://sourceforge.net/tracker/?group_id=189236&atid=928517
+    http://sourceforge.net/tracker/?group_id=189236&atid=928517
 
 finally, some interesting reading if you want to increase your chances
 of patch acceptance:
