@@ -66,6 +66,7 @@ static const char *note_usage =
     "    -d, --display   enable display of following images to the screen\n"
     "    -D, --nodisplay disable display of following images (default)\n"
     "    --xml, --noxml  enable/disable XML output format\n"
+    "    --raw           output decoded symbol data without symbology prefix\n"
     "    -S<CONFIG>[=<VALUE>], --set <CONFIG>[=<VALUE>]\n"
     "                    set decoder/scanner <CONFIG> to <VALUE> (or 1)\n"
     // FIXME overlay level
@@ -125,6 +126,8 @@ static void scan_image (const std::string& filename)
         {
             if(!xmllvl)
                 cout << *sym << endl;
+            else if(xmllvl < 0)
+                cout << sym->get_data() << endl;
             else {
                 if(xmllvl < 2) {
                     xmllvl++;
@@ -233,6 +236,7 @@ int main (int argc, const char *argv[])
                 arg == "--set" ||
                 arg == "--xml" ||
                 arg == "--noxml" ||
+                arg == "--raw" ||
                 arg.substr(0, 6) == "--set=")
             continue;
         else if(arg == "--") {
@@ -281,11 +285,13 @@ int main (int argc, const char *argv[])
                     cout << xml_head << endl;
                 }
             }
-            else if(arg == "--noxml") {
+            else if(arg == "--noxml" || arg == "--raw") {
                 if(xmllvl > 0) {
                     xmllvl--;
                     cout << xml_foot << endl;
                 }
+                if(arg == "--raw")
+                    xmllvl = -1;
             }
             else if(arg == "--set") {
                 if(parse_config(string(argv[++i]), "--set"))

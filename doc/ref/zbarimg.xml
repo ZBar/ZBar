@@ -122,6 +122,15 @@
         </listitem>
       </varlistentry>
 
+      <varlistentry>
+        <term><option>--raw</option></term>
+        <listitem>
+          <simpara>Enable raw symbol data output.  This format prints symbol
+          data separated by newlines without the additional symbology type
+          information that is printed by default</simpara>
+        </listitem>
+      </varlistentry>
+
     </variablelist>
   </refsection>
 

@@ -43,6 +43,7 @@ static const char *note_usage =
     "    -v, --verbose   increase debug output level\n"
     "    --verbose=N     set specific debug output level\n"
     "    --xml           use XML output format\n"
+    "    --raw           output decoded symbol data without symbology prefix\n"
     "    --nodisplay     disable video display window\n"
     "    --prescale=<W>x<H>\n"
     "                    request alternate video image size from driver\n"
@@ -59,7 +60,9 @@ static const char *xml_foot =
 
 static zbar_processor_t *proc;
 static int quiet = 0;
-static int xml = 0;
+static enum {
+    DEFAULT, RAW, XML
+} format = DEFAULT;
 
 static char *xml_buf = NULL;
 static unsigned xml_len = 0;
@@ -93,13 +96,15 @@ static void data_handler (zbar_image_t *img, const void *userdata)
     for(; sym; sym = zbar_symbol_next(sym)) {
         if(zbar_symbol_get_count(sym))
             continue;
-        if(!xml) {
+        if(!format) {
             zbar_symbol_type_t type = zbar_symbol_get_type(sym);
             printf("%s%s:%s\n",
                    zbar_get_symbol_name(type), zbar_get_addon_name(type),
                    zbar_symbol_get_data(sym));
         }
-        else {
+        else if(format == RAW)
+            printf("%s\n", zbar_symbol_get_data(sym));
+        else if(format == XML) {
             if(!n)
                 printf("<index num='%u'>\n", zbar_image_get_sequence(img));
             printf("%s\n", zbar_symbol_xml(sym, &xml_buf, &xml_len));
@@ -107,7 +112,7 @@ static void data_handler (zbar_image_t *img, const void *userdata)
         n++;
     }
 
-    if(xml && n)
+    if(format == XML && n)
         printf("</index>\n");
     fflush(stdout);
 
@@ -175,7 +180,9 @@ int main (int argc, const char *argv[])
         else if(!strcmp(argv[i], "--quiet"))
             quiet = 1;
         else if(!strcmp(argv[i], "--xml"))
-            xml = 1;
+            format = XML;
+        else if(!strcmp(argv[i], "--raw"))
+            format = RAW;
         else if(!strcmp(argv[i], "--nodisplay"))
             display = 0;
         else if(!strcmp(argv[i], "--verbose"))
@@ -226,7 +233,7 @@ int main (int argc, const char *argv[])
        (display && zbar_processor_set_visible(proc, 1)))
         return(zbar_processor_error_spew(proc, 0));
 
-    if(xml) {
+    if(format == XML) {
         printf(xml_head, video_device);
         fflush(stdout);
     }
@@ -256,7 +263,7 @@ int main (int argc, const char *argv[])
     /* free resources (leak check) */
     zbar_processor_destroy(proc);
 
-    if(xml) {
+    if(format == XML) {
         printf(xml_foot);
         fflush(stdout);
     }

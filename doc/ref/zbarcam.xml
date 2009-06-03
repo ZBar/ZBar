@@ -100,7 +100,17 @@
           <simpara>Stream results using an XML output format.  This
           format wraps the raw data from the symbol with information
           about the scan in an easy to parse format.  The latest
-          schema is available from <link xlink:href="http://zbar.sourceforge.net/2008/barcode.xsd"/>.</simpara>
+          schema is available from <link xlink:href="http://zbar.sourceforge.net/2008/barcode.xsd"/></simpara>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--raw</option></term>
+        <listitem>
+          <simpara>Use raw symbol data output format.  This format
+          prints symbol data separated by newlines without the
+          additional symbology type information that is printed by
+          default</simpara>
         </listitem>
       </varlistentry>
 
@@ -112,7 +122,7 @@
           <simpara>Request video input scaling from the camera driver.
           Possibly useful for reducing huge frames to achieve a higher
           frame rate.  Note that the driver may adjust or completely
-          ignore the scaling request.</simpara>
+          ignore the scaling request</simpara>
         </listitem>
       </varlistentry>
 
