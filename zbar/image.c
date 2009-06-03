@@ -110,8 +110,15 @@ inline void zbar_image_free_data (zbar_image_t *img)
         img->srcidx = -1;
     }
     else if(img->cleanup && img->data) {
-        if(img->cleanup != zbar_image_free_data)
-            img->cleanup(img);
+        if(img->cleanup != zbar_image_free_data) {
+            /* using function address to detect this case is a bad idea;
+             * windows link libraries add an extra layer of indirection...
+             * this works around that problem (bug #2796277)
+             */
+            zbar_image_cleanup_handler_t *cleanup = img->cleanup;
+            img->cleanup = zbar_image_free_data;
+            cleanup(img);
+        }
         else
             free((void*)img->data);
     }

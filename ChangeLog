@@ -1,4 +1,5 @@
 current:
+  * fix zbar_image_free_data windows recursion loop (bug #2796277)
   * fix uninitialized decoder configs (bug #2800163)
   * switchover from subversion to mercurial
 

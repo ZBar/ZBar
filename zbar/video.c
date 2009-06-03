@@ -331,7 +331,6 @@ zbar_image_t *zbar_video_next_image (zbar_video_t *vdo)
                 img->refcnt = 0;
                 img->src = vdo;
                 /* recycle the shadow images */
-                img->cleanup = _zbar_video_recycle_shadow;
 
                 img->format = vdo->format;
                 img->width = vdo->width;
@@ -339,10 +338,13 @@ zbar_image_t *zbar_video_next_image (zbar_video_t *vdo)
                 img->datalen = vdo->datalen;
                 img->data = malloc(vdo->datalen);
             }
+            img->cleanup = _zbar_video_recycle_shadow;
             img->seq = frame;
             memcpy((void*)img->data, tmp->data, img->datalen);
             _zbar_video_recycle_image(tmp);
         }
+        else
+            img->cleanup = _zbar_video_recycle_image;
         img->refcnt++;
     }
     return(img);
