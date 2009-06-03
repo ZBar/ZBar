@@ -1,4 +1,5 @@
 current:
+  * fix uninitialized decoder configs (bug #2800163)
   * switchover from subversion to mercurial
 
 version 0.7:
