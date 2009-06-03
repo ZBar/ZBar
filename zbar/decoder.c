@@ -60,7 +60,7 @@ zbar_decoder_t *zbar_decoder_create ()
 #endif
 #ifdef ENABLE_CODE39
     dcode->code39.config = 1 << ZBAR_CFG_ENABLE;
-    CFG(dcode->code39, ZBAR_CFG_MIN_LEN) = 6;
+    CFG(dcode->code39, ZBAR_CFG_MIN_LEN) = 1;
 #endif
 #ifdef ENABLE_CODE128
     dcode->code128.config = 1 << ZBAR_CFG_ENABLE;

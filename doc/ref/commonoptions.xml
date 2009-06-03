@@ -109,6 +109,22 @@
             except that it's not implemented either...</simpara>
         </listitem>
       </varlistentry>
+
+      <varlistentry>
+        <term><option>min-length=<replaceable class="parameter">n</replaceable></option></term>
+        <term><option>max-length=<replaceable class="parameter">n</replaceable></option></term>
+        <listitem>
+          <simpara>Bound the number of decoded characters in a valid symbol.
+          If a decode result is outside the configured min/max range
+          (inclusive), it will not be reported.  Set to 0 to disable the
+          corresponding check.  This setting applies to variable-length
+          symbologies: <option>i25</option>, <option>code39</option>,
+          <option>code128</option> and <option>pdf417</option>.
+          <option>min-length</option> defaults to 6 for <option>i25</option>
+          and 1 for <option>code39</option> (per Code 39 autodiscrimination
+          recommendation); all others default to 0</simpara>
+        </listitem>
+      </varlistentry>
     </variablelist>
 
   </listitem>
