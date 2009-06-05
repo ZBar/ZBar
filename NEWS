@@ -1,5 +1,10 @@
 ZBar Barcode Reader
 
+version 0.8 (2009-06-05):
+  This is a bugfix release just to clean up a few issues found in the
+  last release.  Existing users are encouraged to upgrade to pick up
+  these fixes.
+
 version 0.7 (2009-04-21):
   Welcome to ZBar!  In addition to finalizing the project name change,
   this release adds new bindings for Python and fixes a few bugs with
