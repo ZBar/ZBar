@@ -18,7 +18,6 @@ test_test_convert_LDADD = zbar/libzbar.la $(AM_LDADD)
 #test_test_convert_SOURCES = test/test_video.c $(TEST_IMAGE_SOURCES)
 #test_test_convert_LDADD = zbar/libzbar.la $(AM_LDADD)
 
-if HAVE_POLL
 check_PROGRAMS += test/test_proc
 test_test_proc_SOURCES = test/test_proc.c $(TEST_IMAGE_SOURCES)
 test_test_proc_LDADD = zbar/libzbar.la $(AM_LDADD)
@@ -31,7 +30,6 @@ if HAVE_JPEG
 check_PROGRAMS += test/test_jpeg
 test_test_jpeg_SOURCES = test/test_jpeg.c
 test_test_jpeg_LDADD = zbar/libzbar.la $(AM_LDADD)
-endif
 endif
 
 if HAVE_MAGICK

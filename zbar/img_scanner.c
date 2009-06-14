@@ -314,7 +314,7 @@ void zbar_image_scanner_enable_cache(zbar_image_scanner_t *iscn,
         iscn->syms = iscn->cache;
         iscn->cache = NULL;
     }
-    iscn->enable_cache = enable;
+    iscn->enable_cache = (enable) ? 1 : 0;
 }
 
 static inline void quiet_border (zbar_image_scanner_t *iscn,

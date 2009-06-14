@@ -1,4 +1,7 @@
 current:
+  * refactor processor implementation to support cross-platform
+    - first pass windows processor (before debugging)
+    - make processor locks reentrant (call APIs from callback)
   * initial Windows support for window interface
     - currently supports VFW DrawDib interface for image display
       (DirectDraw and others TBD)

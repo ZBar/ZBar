@@ -97,7 +97,7 @@ inline int zbar_window_redraw (zbar_window_t *w)
             rc = window_draw_overlay(w);
     }
     else
-        _zbar_window_draw_logo(w);
+        rc = _zbar_window_draw_logo(w);
     (void)window_unlock(w);
     return(rc);
 }

@@ -56,7 +56,7 @@ vfw_init (zbar_window_t *w,
         w->bih.biYPelsPerMeter =
             1000L * GetDeviceCaps(hdc, VERTRES) / GetDeviceCaps(hdc, VERTSIZE);
 
-        switch(img->format) {
+        switch(w->format) {
         case fourcc('J','P','E','G'): {
             w->bih.biBitCount = 0;
             w->bih.biCompression = BI_JPEG;

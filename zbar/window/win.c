@@ -22,197 +22,8 @@
  *------------------------------------------------------------------------*/
 
 #include "window.h"
-#include "processor.h"
 
 int _zbar_window_vfw_init(zbar_window_t *w);
-
-static LRESULT CALLBACK
-proc_handle_event (HWND hwnd,
-                   UINT message,
-                   WPARAM wparam,
-                   LPARAM lparam)
-{
-    zbar_processor_t *proc =
-        (zbar_processor_t*)GetWindowLongPtr(hwnd, GWL_USERDATA);
-
-    switch(message) {
-
-    case WM_NCCREATE:
-        proc = ((LPCREATESTRUCT)lparam)->lpCreateParams;
-        SetWindowLongPtr(hwnd, GWL_USERDATA, (LONG_PTR)proc);
-        proc->display = hwnd;
-        break;
-
-    case WM_SIZE: {
-        RECT r;
-        GetClientRect(hwnd, &r);
-        assert(proc);
-        zbar_window_resize(proc->window, r.right, r.bottom);
-        return(0);
-    }
-
-    case WM_PAINT: {
-        PAINTSTRUCT ps;
-        zbar_window_redraw(proc->window);
-        EndPaint(hwnd, &ps);
-        return(0);
-    }
-
-    case WM_CHAR: {
-        proc->input = wparam;
-        return(0);
-    }
-
-    case WM_LBUTTONDOWN: {
-        proc->input = 1;
-        return(0);
-    }
-
-    case WM_MBUTTONDOWN: {
-        proc->input = 2;
-        return(0);
-    }
-
-    case WM_RBUTTONDOWN: {
-        proc->input = 3;
-        return(0);
-    }
-
-    case WM_DESTROY:
-        zprintf(1, "DESTROY\n");
-        proc->display = NULL;
-        _zbar_window_attach(proc->window, NULL, 0);
-        PostQuitMessage(0);
-        return(0);
-    }
-    return(DefWindowProc(hwnd, message, wparam, lparam));
-}
-
-static inline ATOM
-proc_register_class (HINSTANCE hmod)
-{
-    BYTE and_mask[1] = { 0xff };
-    BYTE xor_mask[1] = { 0x00 };
-
-    WNDCLASSEX wc = { sizeof(WNDCLASSEX), 0, };
-    wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-    wc.hInstance = hmod;
-    wc.lpfnWndProc = proc_handle_event;
-    wc.lpszClassName = "_ZBar Class";
-    wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-    wc.hCursor = CreateCursor(hmod, 0, 0, 1, 1, and_mask, xor_mask);
-
-    return(RegisterClassEx(&wc));
-}
-
-int
-_zbar_window_open (zbar_processor_t *proc,
-                   char *title,
-                   unsigned width,
-                   unsigned height)
-{
-    HMODULE hmod = NULL;
-    if(!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                          GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                          (void*)_zbar_window_open, (HINSTANCE*)&hmod)) {
-        proc->err.errnum = GetLastError();
-        return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
-                           "failed to obtain module handle"));
-    }
-    zprintf(1, "hmod=%p\n", hmod);
-
-    ATOM wca = proc_register_class(hmod);
-    zprintf(1, "wca=%x\n", wca);
-    if(!wca) {
-        proc->err.errnum = GetLastError();
-        return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
-                           "failed to register window class"));
-    }
-
-    DWORD style = WS_OVERLAPPEDWINDOW;
-    DWORD exstyle = (WS_EX_APPWINDOW |
-                     WS_EX_OVERLAPPEDWINDOW /*|
-                     WS_EX_ACCEPTFILES*/);
-
-    proc->display = CreateWindowEx(exstyle, (LPCTSTR)(long)wca, "ZBar", style,
-                                   CW_USEDEFAULT, CW_USEDEFAULT, width, height,
-                                   NULL, NULL, hmod, proc);
-    if(!proc->display) {
-        proc->err.errnum = GetLastError();
-        return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
-                           "failed to open window"));
-    }
-
-    return(0);
-}
-
-int _zbar_window_close (zbar_processor_t *proc)
-{
-    if(proc->display) {
-        DestroyWindow(proc->display);
-        proc->display = NULL;
-    }
-    return(0);
-}
-
-int
-_zbar_window_set_visible (zbar_processor_t *proc,
-                          int visible)
-{
-    zprintf(1, "\n");
-    ShowWindow(proc->display, (visible) ? SW_SHOWNORMAL : SW_HIDE);
-    if(visible)
-        UpdateWindow(proc->display);
-    proc->visible = (visible != 0);
-    /* no error conditions */
-    return(0);
-}
-
-int _zbar_window_invalidate (zbar_window_t *w)
-{
-    if(!InvalidateRect(w->hwnd, NULL, 0))
-        return(-1/*FIXME*/);
-
-    return(0);
-}
-
-int
-_zbar_window_handle_events (zbar_processor_t *proc,
-                            int block)
-{
-    MSG msg;
-    proc->input = 0;
-    while(!proc->input) {
-        int rc = 0;
-        if(proc->display) {
-            if(block)
-                rc = GetMessage(&msg, proc->display, 0, 0);
-            else {
-                rc = PeekMessage(&msg, proc->display, 0, 0,
-                                 PM_NOYIELD | PM_REMOVE);
-                if(!rc)
-                    break;
-            }
-            /*zprintf(1, "rc=%d blk=%d msg=%d\n", rc, block, msg.message);*/
-            if(rc < 0) {
-                proc->err.errnum = GetLastError();
-                return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
-                                   "failed to obtain event"));
-            }
-        }
-
-        if(!rc || msg.message == WM_QUIT) {
-            zprintf(1, "QUIT\n");
-            _zbar_window_set_visible(proc, 0);
-            return(err_capture(proc, SEV_WARNING, ZBAR_ERR_CLOSED, __func__,
-                               "user closed display window"));
-        }
-
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-    return(proc->input);
-}
 
 int
 _zbar_window_draw_marker(zbar_window_t *w,
@@ -220,18 +31,6 @@ _zbar_window_draw_marker(zbar_window_t *w,
                          const point_t *p)
 {
     return(-1);
-}
-
-int _zbar_window_set_size (zbar_processor_t *proc,
-                           unsigned width,
-                           unsigned height)
-{
-    if(!SetWindowPos(proc->display, NULL, 0, 0, width, height,
-                     SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOMOVE |
-                     SWP_NOZORDER | SWP_NOREPOSITION))
-        return(-1/*FIXME*/);
-
-    return(0);
 }
 
 int
@@ -245,6 +44,7 @@ _zbar_window_resize (zbar_window_t *w)
     if(lbw < 1)
         lbw = 1;
     w->logo_scale = lbw;
+    zprintf(7, "%dx%d scale=%d\n", w->width, w->height, lbw);
     if(w->logo_zbars) {
         DeleteObject(w->logo_zbars);
         w->logo_zbars = NULL;
@@ -302,7 +102,6 @@ _zbar_window_attach (zbar_window_t *w,
                      void *display,
                      unsigned long win)
 {
-    zprintf(1, "\n");
     if(w->hwnd) {
         /* FIXME cleanup existing resources */
         w->hwnd = NULL;
@@ -334,15 +133,15 @@ _zbar_window_clear (zbar_window_t *w)
 int
 _zbar_window_draw_logo (zbar_window_t *w)
 {
+    if(!w->hwnd)
+        return(-1);
+
     HDC hdc = GetDC(w->hwnd);
     if(!hdc || !SaveDC(hdc))
         return(-1/*FIXME*/);
 
-    HRGN rgn = CreateRectRgn(0, 0, 0, 0);
-    GetUpdateRgn(w->hwnd, rgn, 0);
-    SelectClipRgn(hdc, rgn);
-
-    SetRectRgn(rgn, 0, 0, w->width, w->height);
+    /* FIXME buffer offscreen */
+    HRGN rgn = CreateRectRgn(0, 0, w->width, w->height);
     CombineRgn(rgn, rgn, w->logo_zbars, RGN_DIFF);
     FillRgn(hdc, rgn, GetStockObject(WHITE_BRUSH));
     DeleteObject(rgn);

@@ -52,6 +52,7 @@ static const char const * err_str[] = {
     "X11 display error",        /* XDISPLAY */
     "X11 protocol error",       /* XPROTO */
     "output window is closed",  /* CLOSED */
+    "windows system error",     /* WINAPI */
     "unknown error"             /* NUM */
 };
 #define ERR_MAX (strlen(err_str[ZBAR_ERR_CLOSED]))

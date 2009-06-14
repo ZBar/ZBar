@@ -80,7 +80,7 @@ extern int _zbar_verbosity;
 /* FIXME don't we need varargs hacks here? */
 
 #define zprintf(level, format, ...) do {                                \
-        if(_zbar_verbosity >= level)                                   \
+        if(_zbar_verbosity >= level)                                    \
             fprintf(stderr, "%s: " format, __func__ , ##__VA_ARGS__);   \
     } while(0)
 

@@ -7,7 +7,8 @@ zbar_libzbar_la_LIBADD =
 zbar_libzbar_la_SOURCES = zbar/debug.h zbar/config.c \
     zbar/error.h zbar/error.c zbar/symbol.h zbar/symbol.c \
     zbar/image.h zbar/image.c zbar/convert.c \
-    zbar/window.h zbar/window.c zbar/video.h zbar/video.c zbar/processor.h \
+    zbar/processor.c zbar/processor.h \
+    zbar/window.h zbar/window.c zbar/video.h zbar/video.c \
     zbar/img_scanner.c zbar/scanner.c \
     zbar/decoder.h zbar/decoder.c
 
@@ -29,13 +30,10 @@ zbar_libzbar_la_SOURCES += zbar/decoder/pdf417.h zbar/decoder/pdf417.c \
 endif
 
 if HAVE_POLL
-zbar_libzbar_la_SOURCES += zbar/processor.c
-# FIXME
-# zbar/processor/posix.c
+zbar_libzbar_la_SOURCES += zbar/processor/posix.h zbar/processor/posix.c
 endif
 if WIN32
-# FIXME
-#zbar_libzbar_la_SOURCES += zbar/processor/win32.c
+zbar_libzbar_la_SOURCES += zbar/processor/win.h zbar/processor/win.c
 endif
 
 if HAVE_V4L1
@@ -52,7 +50,8 @@ zbar_libzbar_la_SOURCES += zbar/jpeg.c
 endif
 
 if HAVE_X
-zbar_libzbar_la_SOURCES += zbar/window/x.c zbar/window/ximage.c
+zbar_libzbar_la_SOURCES +=  zbar/processor/x.c \
+    zbar/window/x.c zbar/window/ximage.c
 zbar_libzbar_la_CPPFLAGS += $(X_CFLAGS)
 zbar_libzbar_la_LDFLAGS += $(X_LIBS)
 zbar_libzbar_la_LIBADD += $(X_PRE_LIBS) -lX11 $(X_EXTRA_LIBS)
