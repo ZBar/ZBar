@@ -25,6 +25,13 @@
 #include "win.h"
 #include <assert.h>
 
+#define WIN_STYLE (WS_CAPTION | \
+                   WS_SYSMENU | \
+                   WS_THICKFRAME | \
+                   WS_MINIMIZEBOX | \
+                   WS_MAXIMIZEBOX)
+#define EXT_STYLE (WS_EX_APPWINDOW | WS_EX_OVERLAPPEDWINDOW)
+
 static inline int proc_lock (processor_state_t *state,
                              DWORD self)
 {
@@ -359,7 +366,7 @@ static LRESULT CALLBACK proc_handle_event (HWND hwnd,
     case WM_SIZE: {
         RECT r;
         GetClientRect(hwnd, &r);
-        zprintf(3, "WM_SIZE %dx%d\n", r.right, r.bottom);
+        zprintf(3, "WM_SIZE %ldx%ld\n", r.right, r.bottom);
         assert(proc);
         zbar_window_resize(proc->window, r.right, r.bottom);
         InvalidateRect(hwnd, NULL, 0);
@@ -481,13 +488,12 @@ static inline int proc_open (zbar_processor_t *proc,
                            "failed to register window class"));
     }
 
-    DWORD style = WS_OVERLAPPEDWINDOW;
-    DWORD exstyle = (WS_EX_APPWINDOW |
-                     WS_EX_OVERLAPPEDWINDOW /*|
-                     WS_EX_ACCEPTFILES*/);
-
-    state->hwnd = CreateWindowEx(exstyle, (LPCTSTR)(long)wca, "ZBar", style,
-                                 CW_USEDEFAULT, CW_USEDEFAULT, width, height,
+    RECT r = { 0, 0, width, height };
+    AdjustWindowRectEx(&r, WIN_STYLE, 0, EXT_STYLE);
+    state->hwnd = CreateWindowEx(EXT_STYLE, (LPCTSTR)(long)wca,
+                                 "ZBar", WIN_STYLE,
+                                 CW_USEDEFAULT, CW_USEDEFAULT,
+                                 r.right - r.left, r.bottom - r.top,
                                  NULL, NULL, hmod, proc);
 
     if(!state->hwnd) {
@@ -583,9 +589,15 @@ int _zbar_processor_set_size (zbar_processor_t *proc,
                               unsigned width,
                               unsigned height)
 {
+    RECT r = { 0, 0, width, height };
     processor_state_t *state = proc->state;
-    if(!SetWindowPos(state->hwnd, NULL, 0, 0, width, height,
-                     SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOMOVE |
+    int rc = AdjustWindowRectEx(&r, GetWindowLong(state->hwnd, GWL_STYLE),
+                                0, GetWindowLong(state->hwnd, GWL_EXSTYLE));
+    zprintf(5, "%dx%d %ld,%ld-%ld,%ld (%d)\n", width, height,
+            r.left, r.top, r.right, r.bottom, rc);
+    if(!SetWindowPos(state->hwnd, NULL,
+                     0, 0, r.right - r.left, r.bottom - r.top,
+                     SWP_NOACTIVATE | SWP_NOMOVE |
                      SWP_NOZORDER | SWP_NOREPOSITION))
         return(-1/*FIXME*/);
 

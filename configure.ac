@@ -242,20 +242,18 @@ AC_ARG_WITH([imagemagick],
   [with_imagemagick="yes"])
 
 AS_IF([test "x$with_imagemagick" != "xno"],
-  [PKG_CHECK_MODULES([MAGICK], [ImageMagick++ >= 6.2.6])
-   MAGICK_VERSION=`$PKG_CONFIG ImageMagick++ --modversion`
+  [PKG_CHECK_MODULES([MAGICK], [MagickWand >= 6.2.6])
+   MAGICK_VERSION=`$PKG_CONFIG MagickWand --modversion`
    AC_MSG_NOTICE([using ImageMagick version $MAGICK_VERSION])
 
 dnl double check ImageMagick install (bug #2582232)
-   AC_LANG_PUSH([C++])
    CPPFLAGS_save="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS $MAGICK_CFLAGS"
-   AC_CHECK_HEADER([Magick++.h], [],
-     [AC_MSG_FAILURE([ImageMagick++ package found but Magick++.h not installed?!
+   AC_CHECK_HEADER([wand/MagickWand.h], [],
+     [AC_MSG_FAILURE([ImageMagick package found but wand/MagickWand.h not installed?!
 this is a problem with your ImageMagick install,
 please resolve the inconsistency and try again...])])
-   CPPFLAGS="$CPPFLAGS_save"
-   AC_LANG_POP([C++])])
+   CPPFLAGS="$CPPFLAGS_save"])
 
 AM_CONDITIONAL([HAVE_MAGICK], [test "x$with_imagemagick" = "xyes"])
 

@@ -1,4 +1,8 @@
 current:
+  * convert zbarimg to C (cross compiled C++ cannot run w/native libraries)
+    - fix DrawDib image width granularity
+    - fix window resize dimensions to include decorations
+    - images still inverted, otherwise zbarimg now "working" in windows
   * refactor processor implementation to support cross-platform
     - first pass windows processor (before debugging)
     - make processor locks reentrant (call APIs from callback)

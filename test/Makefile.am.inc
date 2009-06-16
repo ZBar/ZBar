@@ -33,7 +33,7 @@ test_test_jpeg_LDADD = zbar/libzbar.la $(AM_LDADD)
 endif
 
 if HAVE_MAGICK
-check_PROGRAMS += test/dbg_scan
+EXTRA_PROGRAMS += test/dbg_scan
 test_dbg_scan_SOURCES = test/dbg_scan.cpp
 test_dbg_scan_CPPFLAGS = $(MAGICK_CFLAGS) $(AM_CPPFLAGS)
 test_dbg_scan_LDADD = $(MAGICK_LIBS) zbar/libzbar.la $(AM_LDADD)

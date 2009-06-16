@@ -77,17 +77,23 @@ vfw_init (zbar_window_t *w,
             /* FIXME PNG? */
         }
         w->bih.biSizeImage = img->datalen;
+        zprintf(20, "%.4s(%08x)%dx%d->%.4s(%08x) ppm=%ldx%ld comp=%d bpp=%d\n",
+                (char*)&img->format, img->format, img->width, img->height,
+                (char*)&w->format, w->format,
+                w->bih.biXPelsPerMeter, w->bih.biYPelsPerMeter,
+                (int)w->bih.biCompression, w->bih.biBitCount);
     }
 
     w->bih.biSize = sizeof(w->bih);
-    w->bih.biWidth = img->width;
+    w->bih.biWidth = (img->width + 3) & ~3;
     w->bih.biHeight = img->height;
     w->dst_width = w->width;
     w->dst_height = w->height;
 
     if(!DrawDibBegin(w->hdd, hdc, w->width, w->height,
-                     &w->bih, img->width, img->height, 0))
+                     &w->bih, w->bih.biWidth, w->bih.biHeight, 0))
         return(-1/*FIXME*/);
+    zprintf(24, "out=%ldx%ld\n", w->bih.biWidth, w->bih.biHeight);
     return(0);
 }
 
@@ -99,23 +105,28 @@ vfw_draw (zbar_window_t *w,
     if(!hdc)
         return(-1/*FIXME*/);
 
+    int width = (img->width + 3) & ~3;
+
     if(((img->format != w->src_format &&
          img->format != w->format) ||
-        img->width != w->bih.biWidth ||
+        width != w->bih.biWidth ||
         img->height != w->bih.biHeight ||
         w->width != w->dst_width ||
         w->height != w->dst_height) &&
        vfw_init(w, img, hdc))
         return(-1);
 
-    if(img->format != w->format) {
-        w->image = zbar_image_convert(img, w->format);
+    if(img->format != w->format ||
+       img->width != width) {
+        w->image = zbar_image_convert_resize(img, w->format,
+                                             width, img->height);
         zbar_image_destroy(img);
         img = w->image;
     }
 
     zprintf(24, "DrawDibDraw(%dx%d -> %dx%d)\n",
             img->width, img->height, w->width, w->height);
+
     DrawDibDraw(w->hdd, hdc,
                 0, 0, w->width, w->height,
                 &w->bih, (void*)img->data,
