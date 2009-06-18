@@ -45,22 +45,10 @@ static int xv_cleanup (zbar_window_t *w)
 }
 
 static inline int xv_init (zbar_window_t *w,
-                           zbar_image_t *img)
+                           zbar_image_t *img,
+                           int format_change)
 {
-    if(w->img.xv) {
-        XFree(w->img.xv);
-        w->img.xv = NULL;
-    }
-    if(w->src_format != img->format &&
-       w->format != img->format) {
-        _zbar_best_format(img->format, &w->format, w->formats);
-        if(!w->format) {
-            err_capture_int(w, SEV_ERROR, ZBAR_ERR_UNSUPPORTED, __func__,
-                            "no conversion from %x to supported Xv formats",
-                            img->format);
-            return(-1);
-        }
-        w->src_format = img->format;
+    if(format_change) {
         /* lookup port for format */
         w->img_port = 0;
         int i;
@@ -71,8 +59,10 @@ static inline int xv_init (zbar_window_t *w,
             }
         assert(w->img_port > 0);
     }
-    w->src_width = img->width;
-    w->src_height = img->height;
+    if(w->img.xv) {
+        XFree(w->img.xv);
+        w->img.xv = NULL;
+    }
     XvImage *xvimg = XvCreateImage(w->display, w->img_port, w->format,
                                    NULL, img->width, img->height);
     zprintf(3, "new XvImage %.4s(%08" PRIx32 ") %dx%d(%d)"
@@ -87,6 +77,7 @@ static inline int xv_init (zbar_window_t *w,
     w->dst_width = ((xvimg->num_planes <= 1)
                     ? xvimg->width
                     : xvimg->pitches[0]);
+    w->dst_height = xvimg->height;
 
     /* FIXME datalen check */
     if(w->dst_width < img->width || xvimg->height < img->height) {
@@ -104,31 +95,7 @@ static int xv_draw (zbar_window_t *w,
                     zbar_image_t *img)
 {
     XvImage *xvimg = w->img.xv;
-    /* FIXME preserve aspect ratio (config?) */
-    if(!xvimg ||
-       (img->format != w->src_format &&
-        img->format != w->format) ||
-       (img->width != w->src_width  &&
-        img->width != w->dst_width) ||
-       (img->height != w->src_height  &&
-        img->height != xvimg->height)) {
-        if(xv_init(w, img))
-            return(-1);
-        xvimg = w->img.xv;
-    }
-    if(img->format != w->format ||
-       img->width != w->dst_width ||
-       img->height != xvimg->height) {
-        w->src_width = img->width;
-        w->src_height = img->height;
-        /* save *converted* image for redraw */
-        w->image = zbar_image_convert_resize(img, w->format,
-                                              w->dst_width,
-                                              xvimg->height);
-        zbar_image_destroy(img);
-        img = w->image;
-    }
-
+    assert(xvimg);
     xvimg->data = (void*)img->data;
     zprintf(24, "XvPutImage(%dx%d -> %dx%d)\n",
             w->src_width, w->src_height, w->width, w->height);
@@ -289,6 +256,7 @@ int _zbar_window_probe_xv (zbar_window_t *w)
         }
     }
 
+    w->init = xv_init;
     w->draw_image = xv_draw;
     w->cleanup = xv_cleanup;
     return(0);

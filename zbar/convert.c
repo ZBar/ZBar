@@ -349,7 +349,7 @@ static void convert_copy (zbar_image_t *dst,
         dst->datalen = src->datalen;
         dst->cleanup = cleanup_ref;
         dst->next = (zbar_image_t*)src;
-        ((zbar_image_t*)src)->refcnt++;
+        _zbar_image_refcnt((zbar_image_t*)src, 1);
     }
     else
         /* NB only for GRAY/YUV_PLANAR formats */

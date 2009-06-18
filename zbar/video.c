@@ -343,7 +343,7 @@ zbar_image_t *zbar_video_next_image (zbar_video_t *vdo)
             memcpy((void*)img->data, tmp->data, img->datalen);
             _zbar_video_recycle_image(tmp);
         }
-        img->refcnt++;
+        _zbar_image_refcnt(img, 1);
     }
     return(img);
 }

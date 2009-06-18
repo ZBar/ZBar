@@ -65,7 +65,7 @@ static inline wait_entry_t *proc_entry_alloc (processor_state_t *state,
     if(entry)
         state->free_entry = entry->next;
     else {
-        entry = malloc(sizeof(wait_queue_t));
+        entry = malloc(sizeof(wait_entry_t));
         entry->notify = CreateEvent(NULL, 0, 0, NULL);
     }
     entry->next = NULL;

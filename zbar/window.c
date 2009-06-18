@@ -23,6 +23,7 @@
 
 #include "window.h"
 #include "image.h"
+#include "refcnt.h"
 
 extern int _zbar_window_draw_logo(zbar_window_t *w);
 
@@ -33,6 +34,12 @@ zbar_window_t *zbar_window_create ()
         return(NULL);
     err_init(&w->err, ZBAR_MOD_WINDOW);
     w->overlay = 1;
+#ifdef HAVE_LIBPTHREAD
+    pthread_mutex_init(&w->imglock, NULL);
+#endif
+#ifdef _WIN32
+    InitializeCriticalSection(&w->imglock);
+#endif
     return(w);
 }
 
@@ -59,6 +66,9 @@ int zbar_window_attach (zbar_window_t *w,
         free(w->formats);
         w->formats = NULL;
     }
+    w->src_format = 0;
+    w->src_width = w->src_height = 0;
+    w->dst_width = w->dst_height = 0;
     return(_zbar_window_attach(w, display, drawable));
 }
 
@@ -91,8 +101,49 @@ inline int zbar_window_redraw (zbar_window_t *w)
     if(window_lock(w))
         return(-1);
     int rc = 0;
-    if(w->draw_image && w->image) {
-        rc = w->draw_image(w, w->image);
+    zbar_image_t *img = w->image;
+    if(w->init && w->draw_image && img) {
+        int format_change = (w->src_format != img->format &&
+                             w->format != img->format);
+        if(format_change) {
+            _zbar_best_format(img->format, &w->format, w->formats);
+            if(!w->format)
+                rc = err_capture_int(w, SEV_ERROR, ZBAR_ERR_UNSUPPORTED, __func__,
+                                     "no conversion from %x to supported formats",
+                                     img->format);
+            w->src_format = img->format;
+            w->src_width = img->width;
+            w->src_height = img->height;
+        }
+
+        /* FIXME preserve aspect ratio (config?) */
+        if(!rc &&
+           (format_change ||
+            (img->width != w->src_width  && img->width != w->dst_width) ||
+            (img->height != w->src_height && img->height != w->dst_height))) {
+            rc = w->init(w, img, format_change);
+            zprintf(24, "src=%.4s(%08x) %dx%d dst=%.4s(%08x) %dx%d\n",
+                    (char*)&w->src_format, w->src_format,
+                    w->src_width, w->src_height,
+                    (char*)&w->format, w->format,
+                    w->dst_width, w->dst_height);
+        }
+
+        if(!rc &&
+           (img->format != w->format ||
+            img->width != w->dst_width ||
+            img->height != w->dst_height)) {
+            w->src_width = img->width;
+            w->src_height = img->height;
+            /* save *converted* image for redraw */
+            w->image = zbar_image_convert_resize(img, w->format,
+                                                 w->dst_width, w->dst_height);
+            zbar_image_destroy(img);
+            img = w->image;
+        }
+
+        if(!rc)
+            rc = w->draw_image(w, w->image);
         if(!rc)
             rc = window_draw_overlay(w);
     }
@@ -109,11 +160,11 @@ int zbar_window_draw (zbar_window_t *w,
         return(-1);
     if(!w->draw_image)
         img = NULL;
+    if(img)
+        _zbar_image_refcnt(img, 1);
     if(w->image)
         _zbar_image_refcnt(w->image, -1);
     w->image = img;
-    if(img)
-        img->refcnt++;
     return(window_unlock(w));
 }
 

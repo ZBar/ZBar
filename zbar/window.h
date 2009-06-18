@@ -64,11 +64,16 @@ struct zbar_window_s {
     unsigned max_width, max_height;
 
     uint32_t src_format;        /* current input format */
+    unsigned src_width;         /* last displayed image size */
+    unsigned src_height;
+
     unsigned dst_width;         /* conversion target */
+    unsigned dst_height;
 
     uint32_t *formats;          /* supported formats (zero terminated) */
 
     /* interface dependent methods */
+    int (*init)(zbar_window_t*, zbar_image_t*, int);
     int (*draw_image)(zbar_window_t*, zbar_image_t*);
     int (*cleanup)(zbar_window_t*);
 
@@ -83,9 +88,6 @@ struct zbar_window_s {
 #endif
     } img;
     XID img_port;               /* current format port */
-
-    unsigned src_width;         /* last displayed image size */
-    unsigned src_height;
 
     XID *xv_ports;              /* best port for format */
     int num_xv_adaptors;        /* number of adaptors */
@@ -116,16 +118,16 @@ struct zbar_window_s {
     void* hdd;
 
     BITMAPINFOHEADER bih;
-    unsigned dst_height;
 
     /* pre-calculated logo geometries */
     int logo_scale;
     HRGN logo_zbars;
     HPEN logo_zpen, logo_zbpen;
     POINT logo_z[4];
+
+    CRITICAL_SECTION imglock;
 #endif
 };
-
 
 #ifdef HAVE_LIBPTHREAD
 
@@ -157,8 +159,24 @@ static inline int window_unlock (zbar_window_t *w)
 }
 
 #else
-# define window_lock(...) (0)
-# define window_unlock(...) (0)
+# ifdef _WIN32
+
+static inline int window_lock (zbar_window_t *w)
+{
+    EnterCriticalSection(&w->imglock);
+    return(0);
+}
+
+static inline int window_unlock (zbar_window_t *w)
+{
+    LeaveCriticalSection(&w->imglock);
+    return(0);
+}
+
+# else
+#  define window_lock(...) (0)
+#  define window_unlock(...) (0)
+# endif
 #endif
 
 static inline int _zbar_window_add_format (zbar_window_t *w,
@@ -191,6 +209,10 @@ extern int _zbar_window_draw_outline(zbar_window_t*, uint32_t,
                                      const symbol_t*);
 extern int _zbar_window_draw_text(zbar_window_t*, uint32_t,
                                   const point_t*, const char*);
+#endif
+
+#ifdef _WIN32
+extern int _zbar_window_bih_init(zbar_window_t*, zbar_image_t*);
 #endif
 
 #endif

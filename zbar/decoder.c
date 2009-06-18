@@ -22,7 +22,7 @@
  *------------------------------------------------------------------------*/
 
 #include <config.h>
-#include <stdlib.h>     /* malloc, free */
+#include <stdlib.h>     /* malloc, calloc, free */
 #include <stdio.h>      /* snprintf */
 #include <string.h>     /* memset, strlen */
 
@@ -38,10 +38,9 @@
 
 zbar_decoder_t *zbar_decoder_create ()
 {
-    zbar_decoder_t *dcode = malloc(sizeof(zbar_decoder_t));
+    zbar_decoder_t *dcode = calloc(1, sizeof(zbar_decoder_t));
     dcode->buflen = BUFFER_MIN;
     dcode->buf = malloc(dcode->buflen);
-    dcode->handler = dcode->userdata = NULL;
 
     /* initialize default configs */
 #ifdef ENABLE_EAN

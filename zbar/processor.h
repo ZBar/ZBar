@@ -55,11 +55,11 @@ struct zbar_processor_s {
     int input;                          /* user input status */
 
     /* state flags */
-    unsigned threaded        : 1;
-    unsigned visible         : 1;       /* output window mapped to display */
-    volatile unsigned active : 1;       /* async processor thread running */
+    int threaded;
+    int visible;                        /* output window mapped to display */
+    int active;                         /* async processor thread running */
 
-    volatile unsigned events;           /* synchronization events */
+    unsigned events;                    /* synchronization events */
 #define EVENT_INPUT     0x01            /* user input */
 #define EVENT_OUTPUT    0x02            /* decoded output data available */
 

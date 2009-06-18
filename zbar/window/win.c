@@ -24,6 +24,7 @@
 #include "window.h"
 
 int _zbar_window_vfw_init(zbar_window_t *w);
+int _zbar_window_dib_init(zbar_window_t *w);
 
 int
 _zbar_window_draw_marker(zbar_window_t *w,
@@ -112,7 +113,19 @@ _zbar_window_attach (zbar_window_t *w,
 
     w->hwnd = display;
 
-    return(_zbar_window_vfw_init(w));
+    w->bih.biSize = sizeof(w->bih);
+    w->bih.biPlanes = 1;
+
+    HDC hdc = GetDC(w->hwnd);
+    if(!hdc)
+        return(-1/*FIXME*/);
+    w->bih.biXPelsPerMeter =
+        1000L * GetDeviceCaps(hdc, HORZRES) / GetDeviceCaps(hdc, HORZSIZE);
+    w->bih.biYPelsPerMeter =
+        1000L * GetDeviceCaps(hdc, VERTRES) / GetDeviceCaps(hdc, VERTSIZE);
+    ReleaseDC(w->hwnd, hdc);
+
+    return(_zbar_window_dib_init(w));
 }
 
 int
@@ -158,5 +171,36 @@ _zbar_window_draw_logo (zbar_window_t *w)
     RestoreDC(hdc, -1);
     ReleaseDC(w->hwnd, hdc);
     ValidateRect(w->hwnd, NULL);
+    return(0);
+}
+
+int _zbar_window_bih_init (zbar_window_t *w,
+                           zbar_image_t *img)
+{
+    switch(w->format) {
+    case fourcc('J','P','E','G'): {
+        w->bih.biBitCount = 0;
+        w->bih.biCompression = BI_JPEG;
+        break;
+    }
+    case fourcc('B','G','R','3'): {
+        w->bih.biBitCount = 24;
+        w->bih.biCompression = BI_RGB;
+        break;
+    }
+    case fourcc('B','G','R','4'): {
+        w->bih.biBitCount = 32;
+        w->bih.biCompression = BI_RGB;
+        break;
+    }
+    default:
+        assert(0);
+        /* FIXME PNG? */
+    }
+    w->bih.biSizeImage = img->datalen;
+
+    zprintf(20, "biCompression=%d biBitCount=%d\n",
+            (int)w->bih.biCompression, w->bih.biBitCount);
+
     return(0);
 }

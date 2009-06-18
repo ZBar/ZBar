@@ -32,22 +32,12 @@ static int ximage_cleanup (zbar_window_t *w)
 }
 
 static inline int ximage_init (zbar_window_t *w,
-                               zbar_image_t *img)
+                               zbar_image_t *img,
+                               int format_change)
 {
     if(w->img.x) {
         free(w->img.x);
         w->img.x = NULL;
-    }
-    if(w->src_format != img->format &&
-       w->format != img->format) {
-        _zbar_best_format(img->format, &w->format, w->formats);
-        if(!w->format) {
-            err_capture_int(w, SEV_ERROR, ZBAR_ERR_UNSUPPORTED, __func__,
-                            "no conversion from %x to supported formats",
-                            img->format);
-            return(-1);
-        }
-        w->src_format = img->format;
     }
     XImage *ximg = w->img.x = calloc(1, sizeof(XImage));
     ximg->width = img->width;
@@ -80,6 +70,10 @@ static inline int ximage_init (zbar_window_t *w,
         return(err_capture_int(w, SEV_ERROR, ZBAR_ERR_XPROTO, __func__,
                                "unable to init XImage for format %x",
                                w->format));
+
+    w->dst_width = img->width;
+    w->dst_height = img->height;
+
     zprintf(3, "new XImage %.4s(%08" PRIx32 ") %dx%d"
             " from %.4s(%08" PRIx32 ") %dx%d\n",
             (char*)&w->format, w->format, ximg->width, ximg->height,
@@ -93,22 +87,7 @@ static int ximage_draw (zbar_window_t *w,
                         zbar_image_t *img)
 {
     XImage *ximg = w->img.x;
-    if(!ximg ||
-       (w->src_format != img->format &&
-        w->format != img->format) ||
-       ximg->width != img->width ||
-       ximg->height != img->height) {
-        if(ximage_init(w, img))
-            return(-1);
-        ximg = w->img.x;
-    }
-    if(img->format != w->format) {
-        /* save *converted* image for redraw */
-        w->image = zbar_image_convert(img, w->format);
-        zbar_image_destroy(img);
-        img = w->image;
-    }
-
+    assert(ximg);
     ximg->data = (void*)img->data;
 
     int screen = DefaultScreen(w->display);
@@ -247,6 +226,7 @@ int _zbar_window_probe_ximage (zbar_window_t *w)
         return(err_capture(w, SEV_ERROR, ZBAR_ERR_UNSUPPORTED, __func__,
                            "no usable XImage formats found"));
 
+    w->init = ximage_init;
     w->draw_image = ximage_draw;
     w->cleanup = ximage_cleanup;
     return(0);

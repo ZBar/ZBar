@@ -444,9 +444,11 @@ int _zbar_processor_threads_cleanup (zbar_processor_t *proc)
 {
     processor_state_t *state = proc->state;
 #ifdef HAVE_LIBPTHREAD
-    pthread_cond_destroy(&state->event);
-    pthread_cond_destroy(&state->cond);
-    pthread_mutex_destroy(&state->mutex);
+    if(proc->threaded) {
+        pthread_cond_destroy(&state->event);
+        pthread_cond_destroy(&state->cond);
+        pthread_mutex_destroy(&state->mutex);
+    }
 #endif
     if(state->polling.fds) {
         free(state->polling.fds);

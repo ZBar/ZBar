@@ -115,10 +115,6 @@ static int scan_image (const char *filename)
     if(!MagickReadImage(images, filename) && dump_error(images))
         return(-1);
 
-    zbar_image_t *zimage = zbar_image_create();
-    assert(zimage);
-    zbar_image_set_format(zimage, *(unsigned long*)"Y800");
-
     unsigned seq, n = MagickGetNumberImages(images);
     for(seq = 0; seq < n; seq++) {
         if(!MagickSetIteratorIndex(images, seq) && dump_error(images))
@@ -133,6 +129,10 @@ static int scan_image (const char *filename)
 
         if(!MagickSetDepth(images, 8) && dump_error(images))
             return(-1);
+
+        zbar_image_t *zimage = zbar_image_create();
+        assert(zimage);
+        zbar_image_set_format(zimage, *(unsigned long*)"Y800");
 
         int width = MagickGetImageWidth(images);
         int height = MagickGetImageHeight(images);
@@ -179,12 +179,17 @@ static int scan_image (const char *filename)
         }
         fflush(stdout);
 
-        num_images++;
-        if(zbar_processor_is_visible(processor))
-            zbar_processor_user_wait(processor, -1);
-    }
+        zbar_image_destroy(zimage);
 
-    zbar_image_destroy(zimage);
+        num_images++;
+        if(zbar_processor_is_visible(processor)) {
+            int rc = zbar_processor_user_wait(processor, -1);
+            if(rc < 0 || rc == 'q' || rc == 'Q') {
+                exit_code = 3;
+                return(-1);
+            }
+        }
+    }
 
     if(xmllvl > 1) {
         xmllvl--;
@@ -193,6 +198,8 @@ static int scan_image (const char *filename)
 
     if(!found)
         notfound++;
+
+    DestroyMagickWand(images);
     return(0);
 }
 
@@ -237,6 +244,7 @@ int main (int argc, const char *argv[])
             for(j = 1; arg[j]; j++) {
                 if(arg[j] == 'S') {
                     if(!arg[++j] && ++i >= argc)
+                        /* FIXME parse check */
                         return(parse_config("", "-S"));
                     break;
                 }
@@ -284,6 +292,8 @@ int main (int argc, const char *argv[])
     if(!num_images)
         return(usage(1, "ERROR: specify image file(s) to scan", NULL));
     num_images = 0;
+
+    MagickWandGenesis();
 
     processor = zbar_processor_create(0);
     assert(processor);
@@ -374,5 +384,8 @@ int main (int argc, const char *argv[])
         if(notfound)
             fprintf(stderr, warning_not_found);
     }
+
+    zbar_processor_destroy(processor);
+    MagickWandTerminus();
     return(exit_code);
 }

@@ -1,4 +1,9 @@
 current:
+  * zbarimg working in windows
+    - switch to StretchDIBits over DrawDib
+    - refactor some window drawing code to remove redundancies
+    - make refcounts thread safe
+    - clean up alloc/free bugs
   * convert zbarimg to C (cross compiled C++ cannot run w/native libraries)
     - fix DrawDib image width granularity
     - fix window resize dimensions to include decorations
