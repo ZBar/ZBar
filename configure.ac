@@ -8,6 +8,7 @@ AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_SRCDIR(zbar/scanner.c)
 LT_PREREQ([2.2])
 LT_INIT([dlopen win32-dll])
+LT_LANG([Windows Resource])
 
 dnl update these just before each release (along w/pacakge version above)
 dnl   LIB_VERSION update instructions copied from libtool docs:
@@ -34,6 +35,16 @@ AC_DEFINE_UNQUOTED([ZBAR_VERSION_MAJOR],
 AC_DEFINE_UNQUOTED([ZBAR_VERSION_MINOR],
   [[`echo "$PACKAGE_VERSION" | sed -e 's/^[^.]*\.\([^.]*\)$/\1/'`]],
   [Program minor version (after '.') as a number])
+
+cur=`echo "$LIB_VERSION" | sed -e 's/:.*$//'`
+age=`echo "$LIB_VERSION" | sed -e 's/^.*://'`
+AC_DEFINE_UNQUOTED([LIB_VERSION_MAJOR], [[$(( $cur - $age ))]],
+  [Library major version])
+AC_DEFINE_UNQUOTED([LIB_VERSION_MINOR], [[$age]],
+  [Library minor version])
+AC_DEFINE_UNQUOTED([LIB_VERSION_REVISION],
+  [[`echo "$LIB_VERSION" | sed -e 's/^[^:]*:\([^:]*\):.*$/\1/'`]],
+  [Library revision])
 
 dnl windows build
 

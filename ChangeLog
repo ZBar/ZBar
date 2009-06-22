@@ -1,4 +1,6 @@
 current:
+  * first pass installer
+    - add version and icon resources for libzbar, zbarimg
   * zbarimg working in windows
     - switch to StretchDIBits over DrawDib
     - refactor some window drawing code to remove redundancies
