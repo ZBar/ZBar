@@ -23,11 +23,13 @@
 
 #include "error.h"
 #include "image.h"
+#include "refcnt.h"
 
 zbar_image_t *zbar_image_create ()
 {
     zbar_image_t *img = calloc(1, sizeof(zbar_image_t));
-    img->refcnt = 1;
+    _zbar_refcnt_init();
+    _zbar_image_refcnt(img, 1);
     img->srcidx = -1;
     return(img);
 }
@@ -99,7 +101,7 @@ inline void zbar_image_free_data (zbar_image_t *img)
         return;
     if(img->src) {
         /* replace video image w/new copy */
-        assert(img->refcnt);
+        assert(img->refcnt); /* FIXME needs lock */
         zbar_image_t *newimg = zbar_image_create();
         memcpy(newimg, img, sizeof(zbar_image_t));
         /* recycle video image */

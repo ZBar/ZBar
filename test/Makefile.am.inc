@@ -9,7 +9,15 @@ check_PROGRAMS += test/test_convert
 test_test_convert_SOURCES = test/test_convert.c $(TEST_IMAGE_SOURCES)
 test_test_convert_LDADD = zbar/libzbar.la $(AM_LDADD)
 
-if HAVE_POLL
+#check_PROGRAMS += test/test_window
+#test_test_window_SOURCES = test/test_window.c $(TEST_IMAGE_SOURCES)
+#test_test_window_CPPFLAGS = -I$(srcdir)/zbar $(AM_CPPFLAGS)
+#test_test_window_LDADD = zbar/libzbar.la $(AM_LDADD)
+
+#check_PROGRAMS += test/test_video
+#test_test_convert_SOURCES = test/test_video.c $(TEST_IMAGE_SOURCES)
+#test_test_convert_LDADD = zbar/libzbar.la $(AM_LDADD)
+
 check_PROGRAMS += test/test_proc
 test_test_proc_SOURCES = test/test_proc.c $(TEST_IMAGE_SOURCES)
 test_test_proc_LDADD = zbar/libzbar.la $(AM_LDADD)
@@ -23,10 +31,9 @@ check_PROGRAMS += test/test_jpeg
 test_test_jpeg_SOURCES = test/test_jpeg.c
 test_test_jpeg_LDADD = zbar/libzbar.la $(AM_LDADD)
 endif
-endif
 
 if HAVE_MAGICK
-check_PROGRAMS += test/dbg_scan
+EXTRA_PROGRAMS += test/dbg_scan
 test_dbg_scan_SOURCES = test/dbg_scan.cpp
 test_dbg_scan_CPPFLAGS = $(MAGICK_CFLAGS) $(AM_CPPFLAGS)
 test_dbg_scan_LDADD = $(MAGICK_LIBS) zbar/libzbar.la $(AM_LDADD)

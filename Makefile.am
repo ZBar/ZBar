@@ -4,6 +4,7 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 ACLOCAL_AMFLAGS = -I config
 bin_PROGRAMS =
 check_PROGRAMS =
+EXTRA_PROGRAMS =
 lib_LTLIBRARIES =
 pyexec_LTLIBRARIES =
 CLEANFILES =
@@ -59,3 +60,29 @@ EXTRA_DIST += perl/MANIFEST perl/README perl/Changes perl/COPYING.LIB \
     perl/examples/scan_image.pl \
     perl/t/barcode.png perl/t/ZBar.t perl/t/Decoder.t perl/t/Image.t \
     perl/t/Processor.t perl/t/Scanner.t perl/t/pod.t perl/t/pod-coverage.t
+
+if WIN32
+dist_doc_DATA += README.windows
+pkgdata_DATA = $(srcdir)/examples/barcode.png \
+    $(srcdir)/examples/scan_image.cpp $(srcdir)/examples/scan_image.vcproj
+
+%-rc.o: %.rc
+	$(RC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) -o $@ $<
+%-rc.lo: %.rc
+	$(LIBTOOL) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=compile $(RC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) -o $@ $<
+
+# install to tmp dest and run NSIS to generate installer
+dist-nsis: html-local
+	test ! -e _nsis || test -d _nsis && rm -rf _nsis
+	mkdir _nsis
+	tmpinst=`cd _nsis && pwd | sed -e 's,^[^:\\/]:[\\/],/,'` \
+	  && $(MAKE) $(AM_MAKEFLAGS) DESTDIR=$$tmpinst prefix=/ install
+	cp zbar/.libs/libzbar-0.dll.def _nsis/lib/libzbar-0.def
+	cp -r doc/html _nsis/share/doc/zbar/
+	$(WINEXEC) lib.exe /machine:x86 /def:_nsis/lib/libzbar-0.def /out:_nsis/lib/libzbar-0.lib
+	cd _nsis && \
+	  makensis -NOCD -V2 -DVERSION=$(VERSION) $(srcdir)/zbar.nsi
+endif

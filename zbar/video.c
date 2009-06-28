@@ -345,7 +345,7 @@ zbar_image_t *zbar_video_next_image (zbar_video_t *vdo)
         }
         else
             img->cleanup = _zbar_video_recycle_image;
-        img->refcnt++;
+        _zbar_image_refcnt(img, 1);
     }
     return(img);
 }

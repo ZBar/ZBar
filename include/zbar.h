@@ -115,6 +115,7 @@ typedef enum zbar_error_e {
     ZBAR_ERR_XDISPLAY,          /**< X11 display error */
     ZBAR_ERR_XPROTO,            /**< X11 protocol error */
     ZBAR_ERR_CLOSED,            /**< output window is closed */
+    ZBAR_ERR_WINAPI,            /**< windows system error */
     ZBAR_ERR_NUM                /**< number of error codes */
 } zbar_error_t;
 

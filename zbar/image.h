@@ -33,6 +33,7 @@
 #include <zbar.h>
 #include "error.h"
 #include "symbol.h"
+#include "refcnt.h"
 
 /* adapted from v4l2 spec */
 #define fourcc(a, b, c, d)                      \
@@ -68,7 +69,7 @@ struct zbar_image_s {
 
     /* cleanup handler */
     zbar_image_cleanup_handler_t *cleanup;
-    int refcnt;                 /* reference count */
+    refcnt_t refcnt;            /* reference count */
     zbar_video_t *src;          /* originator */
     int srcidx;                 /* index used by originator */
     zbar_image_t *next;         /* internal image lists */
@@ -99,12 +100,11 @@ typedef struct zbar_format_def_s {
     } p;
 } zbar_format_def_t;
 
+
 static inline void _zbar_image_refcnt (zbar_image_t *img,
                                        int delta)
 {
-    img->refcnt += delta;
-    assert(img->refcnt >= 0);
-    if(!img->refcnt) {
+    if(!_zbar_refcnt(&img->refcnt, delta)) {
         if(img->cleanup)
             img->cleanup(img);
         if(!img->src)

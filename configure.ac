@@ -8,6 +8,7 @@ AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_SRCDIR(zbar/scanner.c)
 LT_PREREQ([2.2])
 LT_INIT([dlopen win32-dll])
+LT_LANG([Windows Resource])
 
 dnl update these just before each release (along w/pacakge version above)
 dnl   LIB_VERSION update instructions copied from libtool docs:
@@ -34,6 +35,31 @@ AC_DEFINE_UNQUOTED([ZBAR_VERSION_MAJOR],
 AC_DEFINE_UNQUOTED([ZBAR_VERSION_MINOR],
   [[`echo "$PACKAGE_VERSION" | sed -e 's/^[^.]*\.\([^.]*\)$/\1/'`]],
   [Program minor version (after '.') as a number])
+
+cur=`echo "$LIB_VERSION" | sed -e 's/:.*$//'`
+age=`echo "$LIB_VERSION" | sed -e 's/^.*://'`
+AC_DEFINE_UNQUOTED([LIB_VERSION_MAJOR], [[$(( $cur - $age ))]],
+  [Library major version])
+AC_DEFINE_UNQUOTED([LIB_VERSION_MINOR], [[$age]],
+  [Library minor version])
+AC_DEFINE_UNQUOTED([LIB_VERSION_REVISION],
+  [[`echo "$LIB_VERSION" | sed -e 's/^[^:]*:\([^:]*\):.*$/\1/'`]],
+  [Library revision])
+
+dnl windows build
+
+AC_CANONICAL_HOST
+case $host_os in
+  *cygwin* | *mingw* | *uwin* | *djgpp* | *ems* )
+    win32="yes"
+    AC_DEFINE([_WIN32_WINNT], [0x0500], [Minimum Windows API version])
+  ;;
+  * )
+    win32="no"
+  ;;
+esac
+
+AM_CONDITIONAL([WIN32], [test "x$win32" = "xyes"])
 
 dnl programs
 
@@ -83,6 +109,7 @@ AC_SEARCH_LIBS([clock_gettime], [rt])
 
 dnl poll support
 dnl without poll() we exclude processor layer
+dnl FIXME superceded by WIN32 checks(?)
 
 have_poll="no"
 AC_CHECK_HEADERS([poll.h], [have_poll="yes"])
@@ -226,20 +253,18 @@ AC_ARG_WITH([imagemagick],
   [with_imagemagick="yes"])
 
 AS_IF([test "x$with_imagemagick" != "xno"],
-  [PKG_CHECK_MODULES([MAGICK], [ImageMagick++ >= 6.2.6])
-   MAGICK_VERSION=`$PKG_CONFIG ImageMagick++ --modversion`
+  [PKG_CHECK_MODULES([MAGICK], [MagickWand >= 6.2.6])
+   MAGICK_VERSION=`$PKG_CONFIG MagickWand --modversion`
    AC_MSG_NOTICE([using ImageMagick version $MAGICK_VERSION])
 
 dnl double check ImageMagick install (bug #2582232)
-   AC_LANG_PUSH([C++])
    CPPFLAGS_save="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS $MAGICK_CFLAGS"
-   AC_CHECK_HEADER([Magick++.h], [],
-     [AC_MSG_FAILURE([ImageMagick++ package found but Magick++.h not installed?!
+   AC_CHECK_HEADER([wand/MagickWand.h], [],
+     [AC_MSG_FAILURE([ImageMagick package found but wand/MagickWand.h not installed?!
 this is a problem with your ImageMagick install,
 please resolve the inconsistency and try again...])])
-   CPPFLAGS="$CPPFLAGS_save"
-   AC_LANG_POP([C++])])
+   CPPFLAGS="$CPPFLAGS_save"])
 
 AM_CONDITIONAL([HAVE_MAGICK], [test "x$with_imagemagick" = "xyes"])
 

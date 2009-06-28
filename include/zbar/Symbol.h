@@ -30,6 +30,7 @@
 # error "include zbar.h in your application, **not** zbar/Symbol.h"
 #endif
 
+#include <stdlib.h>
 #include <string>
 #include <ostream>
 

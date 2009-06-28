@@ -224,12 +224,12 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
         /* consistency check and hysteresis */
         uint32_t age = sym->time - entry->time;
         entry->time = sym->time;
-        int near = (age < CACHE_PROXIMITY);
-        int far = (age >= CACHE_HYSTERESIS);
+        int near_thresh = (age < CACHE_PROXIMITY);
+        int far_thresh = (age >= CACHE_HYSTERESIS);
         int dup = (entry->cache_count >= 0);
-        if((!dup && !near) || far)
+        if((!dup && !near_thresh) || far_thresh)
             entry->cache_count = -CACHE_CONSISTENCY;
-        else if(dup || near)
+        else if(dup || near_thresh)
             entry->cache_count++;
 
         sym->cache_count = entry->cache_count;
@@ -314,7 +314,7 @@ void zbar_image_scanner_enable_cache(zbar_image_scanner_t *iscn,
         iscn->syms = iscn->cache;
         iscn->cache = NULL;
     }
-    iscn->enable_cache = enable;
+    iscn->enable_cache = (enable) ? 1 : 0;
 }
 
 static inline void quiet_border (zbar_image_scanner_t *iscn,

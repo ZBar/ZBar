@@ -1,0 +1,61 @@
+ZBAR BAR CODE READER
+====================
+
+The ZBar Bar Code Reader is a library for scanning and decoding bar
+codes from various sources such as video streams, image files or raw
+intensity sensors.  It supports EAN/UPC, Code 128, Code 39 and
+Interleaved 2 of 5.  Included with the library are basic applications
+for decoding captured bar code images and using a video device (eg,
+webcam) as a bar code scanner.  The flexible, layered architecture
+features a fast, streaming interface with a minimal memory footprint.
+
+Check the ZBar home page for the latest release, mailing lists, etc.
+    http://zbar.sourceforge.net/
+
+License information can be found in 'COPYING.LIB'.
+
+
+INSTALLING
+==========
+
+The zbarimg program uses ImageMagick to read image files.  You will
+need at least ImageMagick version 6.2.6 if you want to scan image
+files.  ImageMagick may be obtained from
+    http://www.imagemagick.org/
+
+Download and install the current Windows binary release, making sure
+that you select the *Dynamic* (DLL) version, eg:
+    ImageMagick-x.y.z-w-Q16-windows-dll.exe
+
+You will also want the "Update executable search path" box checked
+during installation.
+
+
+RUNNING
+=======
+
+This version of the package includes *only command line programs*.
+(The graphical interface is scheduled for a future release)
+
+Invoke Start -> Programs -> ZBar Bar Code Reader -> Start ZBar Command Prompt
+to open a shell that has the zbarimg command available (in the PATH).
+
+To decode an image file, type:
+    zbarimg "C:\path\to\barcode.png"
+
+For basic command instructions, type:
+    zbarimg --help
+
+Check the manual for more details.
+
+
+REPORTING BUGS
+==============
+
+Bugs can be reported on the SourceForge project page
+    http://www.sourceforge.net/projects/zbar/
+
+Please include the ZBar version number and a detailed description of
+the problem.  You'll probably have better luck if you're also familiar
+with the concepts from:
+    http://www.catb.org/~esr/faqs/smart-questions.html

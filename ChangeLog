@@ -1,3 +1,24 @@
+current:
+  * first pass installer
+    - add version and icon resources for libzbar, zbarimg
+  * zbarimg working in windows
+    - switch to StretchDIBits over DrawDib
+    - refactor some window drawing code to remove redundancies
+    - make refcounts thread safe
+    - clean up alloc/free bugs
+  * convert zbarimg to C (cross compiled C++ cannot run w/native libraries)
+    - fix DrawDib image width granularity
+    - fix window resize dimensions to include decorations
+    - images still inverted, otherwise zbarimg now "working" in windows
+  * refactor processor implementation to support cross-platform
+    - first pass windows processor (before debugging)
+    - make processor locks reentrant (call APIs from callback)
+  * initial Windows support for window interface
+    - currently supports VFW DrawDib interface for image display
+      (DirectDraw and others TBD)
+    - also basic processor window creation/manipulation
+    - Windows configure tests
+
 version 0.8:
   * release updates
   * add "raw" output option (without symbology prefix) to apps (req #2671863)
@@ -263,11 +284,11 @@ version 0.3:
   * configure dumps ImageMagick, SDL and firefox versions for debug
   * add NPAPI plugin stub and build infrastructure
   * flush zebracam output after each scanned symbol
-  * integrate RPM packaging spec file - thanks to Vít Hrachový for the draft!
+  * integrate RPM packaging spec file - thanks to Vï¿½t Hrachovï¿½ for the draft!
     (patch #1723536)
   * finally add HACKING to distribution/install (bug #1698202)
   * add extra documentation files to install (README NEWS INSTALL, etc)
-  * Debian package patch for 0.2 - thanks to Vít Hrachový:
+  * Debian package patch for 0.2 - thanks to Vï¿½t Hrachovï¿½:
     - add libsdl1.2-dev as a build dependency
     - update automake (>= 1:1.10) as a build dependency
     - new package
@@ -316,11 +337,11 @@ version 0.2:
     => reading both Code 128 *and* EAN still destabilized
   * add diagnostic program test_video to dump more verbose video debug
   * incorporate documentation into Debian package
-    - thanks to Vít Hrachový for the patch!
+    - thanks to Vï¿½t Hrachovï¿½ for the patch!
   * fix VPATH doc builds (requires automake-1.10 and autoconf-2.61)
   * build and dist fixes
     - suppress documentation rebuilds in distributed sources
-  * add Debian packaging sources - thanks to Vít Hrachový for the patch!
+  * add Debian packaging sources - thanks to Vï¿½t Hrachovï¿½ for the patch!
   * add DocBook template and build infrastructure
   * add manpages for zebracam and zebraimg
   * add GNU standard options to zebracam and zebraimg
