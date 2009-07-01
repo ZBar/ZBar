@@ -76,7 +76,7 @@ struct zbar_decoder_s {
     unsigned char idx;                  /* current width index */
     unsigned w[DECODE_WINDOW];          /* window of last N bar widths */
     zbar_symbol_type_t type;            /* type of last decoded data */
-    unsigned lock : 1;                  /* buffer lock */
+    zbar_symbol_type_t lock;            /* buffer lock */
 
     /* everything above here is automatically reset */
     unsigned char *buf;                 /* decoded characters */
@@ -161,11 +161,12 @@ static inline int decode_e (unsigned e,
 }
 
 /* acquire shared state lock */
-static inline char get_lock (zbar_decoder_t *dcode)
+static inline char get_lock (zbar_decoder_t *dcode,
+                             zbar_symbol_type_t req)
 {
     if(dcode->lock)
         return(1);
-    dcode->lock = 1;
+    dcode->lock = req;
     return(0);
 }
 

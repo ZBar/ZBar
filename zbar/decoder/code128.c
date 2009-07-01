@@ -450,8 +450,8 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
             return(0);
         }
         /* lock shared resources */
-        if(get_lock(dcode)) {
-            dprintf(2, " [locked]\n");
+        if(get_lock(dcode, ZBAR_CODE128)) {
+            dprintf(2, " [locked %d]\n", dcode->lock);
             dcode128->character = -1;
             return(0);
         }

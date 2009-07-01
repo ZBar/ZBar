@@ -187,9 +187,9 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
             dcode25->character, dcode25->element);
 
     /* lock shared resources */
-    if(!dcode25->character && get_lock(dcode)) {
+    if(!dcode25->character && get_lock(dcode, ZBAR_I25)) {
         dcode25->character = -1;
-        dprintf(2, " [locked]\n");
+        dprintf(2, " [locked %d]\n", dcode->lock);
         return(ZBAR_PARTIAL);
     }
 

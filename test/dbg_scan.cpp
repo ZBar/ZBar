@@ -68,10 +68,14 @@ void scan_image (const char *filename)
 
     unsigned inwidth = image.columns();
     unsigned flush1 = inwidth / 32;
+    if(flush1 < 8)
+        flush1 = 8;
     unsigned flush0 = 2;
     unsigned width = inwidth + flush1 + flush0;
     unsigned height = image.rows();
-    unsigned midy = (height + 1) / 2 + 2;
+    unsigned midy = height / 2;
+    cerr << "x+: " << midy << endl;
+
     image.crop(Magick::Geometry(inwidth, 1, 0, midy));
     image.size(Magick::Geometry(width, 1, 0, 0));
 
@@ -129,7 +133,7 @@ void scan_image (const char *filename)
             y.v(0);
             *pxp = y;
         }
-        y.y(max); /* flush scan FIXME? */
+        y.y(1.0); /* flush scan FIXME? */
         for(; i < inwidth + flush1; i++) {
             raw[i] = (unsigned)(y.y() * 0x100);
             svg << " " << i << "," << raw[i];

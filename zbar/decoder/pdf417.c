@@ -152,8 +152,8 @@ static inline signed char pdf417_decode_start(zbar_decoder_t *dcode)
     }
 
     /* lock shared resources */
-    if(get_lock(dcode)) {
-        dprintf(2, " [locked]\n");
+    if(get_lock(dcode, ZBAR_PDF417)) {
+        dprintf(2, " [locked %d]\n", dcode->lock);
         return(0);
     }
 

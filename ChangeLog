@@ -1,4 +1,7 @@
 current:
+  * fix Code39 max ICS checks
+    - add decoder lock owner tracking (debug)
+    - update dbg_scan to match img_scanner
   * first pass installer
     - add version and icon resources for libzbar, zbarimg
   * zbarimg working in windows

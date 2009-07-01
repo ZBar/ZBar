@@ -623,10 +623,10 @@ zbar_symbol_type_t _zbar_decode_ean (zbar_decoder_t *dcode)
                     dcode->ean.pass[0].state = dcode->ean.pass[1].state = -1;
                     dcode->ean.pass[2].state = dcode->ean.pass[3].state = -1;
                     if(sym > ZBAR_PARTIAL) {
-                        if(!get_lock(dcode))
+                        if(!get_lock(dcode, ZBAR_EAN13))
                             postprocess(dcode, sym);
                         else {
-                            dprintf(1, " [locked]");
+                            dprintf(1, " [locked %d]", dcode->lock);
                             sym = ZBAR_PARTIAL;
                         }
                     }
