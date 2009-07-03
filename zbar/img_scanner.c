@@ -318,18 +318,14 @@ void zbar_image_scanner_enable_cache(zbar_image_scanner_t *iscn,
 }
 
 static inline void quiet_border (zbar_image_scanner_t *iscn,
-                                 unsigned samples,
                                  int x,
                                  int y)
 {
-    unsigned i;
-    for(i = samples; i; i--)
-        if(zbar_scan_y(iscn->scn, 255))
-            symbol_handler(iscn, x, y);
-    /* flush final transition with 2 black pixels */
-    for(i = 2; i; i--)
-        if(zbar_scan_y(iscn->scn, 0))
-            symbol_handler(iscn, x, y);
+    /* flush scanner pipeline */
+    if(zbar_scanner_flush(iscn->scn))
+        symbol_handler(iscn, x, y);
+    if(zbar_scanner_flush(iscn->scn))
+        symbol_handler(iscn, x, y);
     if(zbar_scanner_new_scan(iscn->scn))
         symbol_handler(iscn, x, y);
 }
@@ -354,11 +350,6 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
     unsigned h = zbar_image_get_height(img);
     const uint8_t *data = zbar_image_get_data(img);
 
-    /* FIXME less arbitrary lead-out default */
-    int quiet = w / 32;
-    if(quiet < 8)
-        quiet = 8;
-
     int density = CFG(iscn, ZBAR_CFG_Y_DENSITY);
     if(density > 0) {
         const uint8_t *p = data;
@@ -380,7 +371,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
                     symbol_handler(iscn, x, y);
                 movedelta(1, 0);
             }
-            quiet_border(iscn, quiet, x, y);
+            quiet_border(iscn, x, y);
 
             movedelta(-1, density);
             if(y >= h)
@@ -393,7 +384,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
                     symbol_handler(iscn, x, y);
                 movedelta(-1, 0);
             }
-            quiet_border(iscn, quiet, x, y);
+            quiet_border(iscn, x, y);
 
             movedelta(1, density);
         }
@@ -417,7 +408,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
                     symbol_handler(iscn, x, y);
                 movedelta(0, 1);
             }
-            quiet_border(iscn, quiet, x, y);
+            quiet_border(iscn, x, y);
 
             movedelta(density, -1);
             if(x >= w)
@@ -430,7 +421,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
                     symbol_handler(iscn, x, y);
                 movedelta(0, -1);
             }
-            quiet_border(iscn, quiet, x, y);
+            quiet_border(iscn, x, y);
 
             movedelta(density, 1);
         }

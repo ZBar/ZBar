@@ -1,5 +1,11 @@
 current:
-  * fix Code39 max ICS checks
+  * fix scan (image) boundary QZ handling (bug #2807538)
+    - add linear scanner manual flush API
+    - linear scanner always starts/ends w/a space of width 0
+    - remove artificial image scanner border
+    - decoders special case 0 width space for QZ checks
+    - add missing Code 128 leading QZ check
+  * fix Code39 max ICS checks (bug #2807447)
     - add decoder lock owner tracking (debug)
     - update dbg_scan to match img_scanner
   * first pass installer

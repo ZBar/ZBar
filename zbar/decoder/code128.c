@@ -449,6 +449,11 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
             dprintf(2, " [invalid]\n");
             return(0);
         }
+        unsigned qz = get_width(dcode, 6);
+        if(qz && qz < (dcode->code128.s6 * 3) / 4) {
+            dprintf(2, " [invalid qz %d]\n");
+            return(0);
+        }
         /* lock shared resources */
         if(get_lock(dcode, ZBAR_CODE128)) {
             dprintf(2, " [locked %d]\n", dcode->lock);

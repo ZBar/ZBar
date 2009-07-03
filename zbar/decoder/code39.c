@@ -201,10 +201,9 @@ static inline signed char code39_decode_start (zbar_decoder_t *dcode)
         return(ZBAR_NONE);
     }
 
-    /* check leading quiet zone -  spec is 10x, we require at least 3x */
+    /* check leading quiet zone - spec is 10x */
     unsigned quiet = get_width(dcode, 9);
-    if(quiet && get_width(dcode, 10) &&
-       quiet < dcode39->s9 / 4) {
+    if(quiet && quiet < dcode39->s9 / 2) {
         dprintf(2, " [invalid quiet]\n");
         return(ZBAR_NONE);
     }
@@ -267,7 +266,7 @@ zbar_symbol_type_t _zbar_decode_code39 (zbar_decoder_t *dcode)
             zbar_symbol_type_t sym = ZBAR_CODE39;
 
             /* trailing quiet zone check */
-            if(space < dcode39->width / 2) {
+            if(space && space < dcode39->width / 2) {
                 dprintf(2, " [invalid qz]\n");
                 sym = ZBAR_NONE;
             }

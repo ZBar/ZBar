@@ -105,10 +105,9 @@ static inline signed char i25_decode_start (zbar_decoder_t *dcode)
        : i25_decode1(enc, get_width(dcode, i++), dcode25->s10))
         return(ZBAR_NONE);
 
-    /* check leading quiet zone - spec is 10x(?), we require at least 7x */
+    /* check leading quiet zone - spec is 10x(?) */
     unsigned quiet = get_width(dcode, i++);
-    if(quiet && get_width(dcode, i++) &&
-       quiet < dcode25->s10 / 4)
+    if(quiet && quiet < dcode25->s10 * 3 / 4)
         return(ZBAR_NONE);
 
     dcode25->direction = get_color(dcode);
@@ -122,7 +121,8 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
     i25_decoder_t *dcode25 = &dcode->i25;
 
     /* check trailing quiet zone */
-    if(get_width(dcode, 0) < dcode25->width / 4 ||
+    unsigned quiet = get_width(dcode, 0);
+    if((quiet && quiet < dcode25->width * 3 / 4) ||
        decode_e(get_width(dcode, 1), dcode25->width, 45) > 2 ||
        decode_e(get_width(dcode, 2), dcode25->width, 45) > 2)
         return(ZBAR_NONE);

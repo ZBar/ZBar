@@ -74,9 +74,18 @@ class Scanner {
 
     /// mark start of a new scan pass.
     /// see zbar_scanner_new_scan()
-    void new_scan ()
+    zbar_symbol_type_t new_scan ()
     {
-        zbar_scanner_new_scan(_scanner);
+        _type = zbar_scanner_new_scan(_scanner);
+        return(_type);
+    }
+
+    /// flush scanner pipeline.
+    /// see zbar_scanner_flush()
+    zbar_symbol_type_t flush ()
+    {
+        _type = zbar_scanner_flush(_scanner);
+        return(_type);
     }
 
     /// process next sample intensity value.

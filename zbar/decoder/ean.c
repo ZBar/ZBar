@@ -119,7 +119,8 @@ static inline signed char aux_end (zbar_decoder_t *dcode,
     unsigned s = calc_s(dcode, 4 + fwd, 4);
 
     /* check quiet zone */
-    if(!fwd && (get_width(dcode, 0) * 14 + 1) / s < 3) {
+    unsigned qz = get_width(dcode, 0);
+    if(!fwd && qz && qz < s * 3 / 4) {
         dprintf(2, " [invalid quiet]");
         return(-1);
     }
@@ -157,7 +158,8 @@ static inline signed char aux_start (zbar_decoder_t *dcode)
 
     if(get_color(dcode) == ZBAR_BAR) {
         /* check for quiet-zone */
-        if((get_width(dcode, 7) * 14 + 1) / dcode->ean.s4 >= 3) {
+        unsigned qz = get_width(dcode, 7);
+        if(!qz || qz >= dcode->ean.s4 * 3 / 4) {
             if(!E1) {
                 dprintf(2, " [valid normal]");
                 return(0); /* normal symbol start */

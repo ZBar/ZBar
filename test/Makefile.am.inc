@@ -36,7 +36,7 @@ if HAVE_MAGICK
 EXTRA_PROGRAMS += test/dbg_scan
 test_dbg_scan_SOURCES = test/dbg_scan.cpp
 test_dbg_scan_CPPFLAGS = $(MAGICK_CFLAGS) $(AM_CPPFLAGS)
-test_dbg_scan_LDADD = $(MAGICK_LIBS) zbar/libzbar.la $(AM_LDADD)
+test_dbg_scan_LDADD = $(MAGICK_LIBS) -lMagick++ zbar/libzbar.la $(AM_LDADD)
 endif
 
 if HAVE_GTK

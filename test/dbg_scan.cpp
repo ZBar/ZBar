@@ -67,17 +67,12 @@ void scan_image (const char *filename)
     ofstream svg((file + ".svg").c_str());
 
     unsigned inwidth = image.columns();
-    unsigned flush1 = inwidth / 32;
-    if(flush1 < 8)
-        flush1 = 8;
-    unsigned flush0 = 2;
-    unsigned width = inwidth + flush1 + flush0;
+    unsigned width = inwidth + 3;
     unsigned height = image.rows();
     unsigned midy = height / 2;
     cerr << "x+: " << midy << endl;
 
     image.crop(Magick::Geometry(inwidth, 1, 0, midy));
-    image.size(Magick::Geometry(width, 1, 0, 0));
 
     svg << "<?xml version='1.0'?>" << endl
         << "<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN'"
@@ -107,18 +102,18 @@ void scan_image (const char *filename)
         << "  text.space { fill: black }" << endl
         << "  text.data { fill: #44f; font-size: 16 }" << endl
         << "]]></style></defs>" << endl
-        << "<image width='" << width * 2 << "' height='384'"
+        << "<image width='" << inwidth * 2 << "' height='384'"
         << " preserveAspectRatio='none'"
         << " xlink:href='" << file << ".png'/>" << endl
         << "<g transform='translate(1,384) scale(2,-.5)'>" << endl;
 
     // brute force
-    unsigned raw[width];
+    unsigned raw[inwidth];
     {
         // extract scan from image pixels
         image.modifyImage();
         Magick::Pixels view(image);
-        Magick::PixelPacket *pxp = view.get(0, 0, width, 1);
+        Magick::PixelPacket *pxp = view.get(0, 0, inwidth, 1);
         Magick::ColorYUV y;
         double max = 0;
         svg << "<path id='raw' d='M";
@@ -133,18 +128,6 @@ void scan_image (const char *filename)
             y.v(0);
             *pxp = y;
         }
-        y.y(1.0); /* flush scan FIXME? */
-        for(; i < inwidth + flush1; i++) {
-            raw[i] = (unsigned)(y.y() * 0x100);
-            svg << " " << i << "," << raw[i];
-            *pxp++ = y;
-        }
-        y.y(0);
-        for(; i < width; i++) {
-            raw[i] = (unsigned)(y.y() * 0x100);
-            svg << " " << i << "," << raw[i];
-            *pxp++ = y;
-        }
         view.sync();
         svg << "'/>" << endl
             << "</g>" << endl;
@@ -158,27 +141,28 @@ void scan_image (const char *filename)
 
     svg << "<g transform='translate(-3)'>" << endl;
     for(unsigned i = 0; i < width; i++) {
-        int edge = scanner.scan_y(raw[i]);
+        int edge;
+        if(i < inwidth)
+            edge = scanner.scan_y(raw[i]);
+        else
+            edge = scanner.flush();
+
         unsigned x;
-        zbar_scanner_get_state(scanner.get_c_scanner(), &x,
-                                &cur_edge[i], &last_edge[i],
-                                &y0[i], &y1[i], &y2[i], &y1_thr[i]);
-#ifdef DEBUG_SCANNER
-        cerr << endl;
-#endif
-        cur_edge[i] += i - x;
+        zbar_scanner_get_state(scanner, &x,
+                               &cur_edge[i], &last_edge[i],
+                               &y0[i], &y1[i], &y2[i], &y1_thr[i]);
         if(edge) {
-            last_edge[i] += i - x;
             unsigned w = scanner.get_width();
-            svg << "<rect x='" << (2. * (last_edge[i] - w) / ZBAR_FRAC)
-                << "' width='" << (w * 2. / ZBAR_FRAC)
-                << "' height='32' class='"
-                << (scanner.get_color() ? "space" : "bar") << "'/>" << endl
-                << "<text transform='translate("
-                << ((2. * last_edge[i] - w) / ZBAR_FRAC) - 3
-                << ",16) rotate(90)' class='"
-                << (scanner.get_color() ? "space" : "bar") << "'>" << endl
-                << w << "</text>" << endl;
+            if(w)
+                svg << "<rect x='" << (2. * (last_edge[i] - w) / ZBAR_FRAC)
+                    << "' width='" << (w * 2. / ZBAR_FRAC)
+                    << "' height='32' class='"
+                    << (scanner.get_color() ? "space" : "bar") << "'/>" << endl
+                    << "<text transform='translate("
+                    << ((2. * last_edge[i] - w) / ZBAR_FRAC) - 3
+                    << ",16) rotate(90)' class='"
+                    << (scanner.get_color() ? "space" : "bar") << "'>" << endl
+                    << w << "</text>" << endl;
             zbar_symbol_type_t sym = decoder.decode_width(w);
             if(sym > ZBAR_PARTIAL) {
                 svg << "<text transform='translate("
@@ -187,7 +171,9 @@ void scan_image (const char *filename)
                     << decoder.get_data_string() << "</text>" << endl;
             }
         }
-        else
+        else if((!i)
+                ? last_edge[i]
+                : last_edge[i] == last_edge[i - 1])
             last_edge[i] = 0;
     }
 

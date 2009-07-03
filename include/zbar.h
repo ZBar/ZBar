@@ -1093,8 +1093,20 @@ extern zbar_symbol_type_t zbar_scanner_reset(zbar_scanner_t *scanner);
  * @returns any decode results flushed from the pipeline
  * @note when not using callback handlers, the return value should
  * be checked the same as zbar_scan_y()
+ * @note call zbar_scanner_flush() at least twice before calling this
+ * method to ensure no decode results are lost
  */
 extern zbar_symbol_type_t zbar_scanner_new_scan(zbar_scanner_t *scanner);
+
+/** flush scanner processing pipeline.
+ * forces current scanner position to be a scan boundary.
+ * call multiple times (max 3) to completely flush decoder.
+ * @returns any decode/scan results flushed from the pipeline
+ * @note when not using callback handlers, the return value should
+ * be checked the same as zbar_scan_y()
+ * @since 0.9
+ */
+extern zbar_symbol_type_t zbar_scanner_flush(zbar_scanner_t *scanner);
 
 /** process next sample intensity value.
  * intensity (y) is in arbitrary relative units.
