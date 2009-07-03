@@ -1,4 +1,5 @@
 current:
+  * initial hooks for QR Code, first pass at finder
   * fix zbarimg b&w format handling
   * fix scan (image) boundary QZ handling (bug #2807538)
     - add linear scanner manual flush API
