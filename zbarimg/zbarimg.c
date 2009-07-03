@@ -84,11 +84,6 @@ unsigned xmlbuflen = 0;
 
 static zbar_processor_t *processor = NULL;
 
-static void cleanup_blob (zbar_image_t *img)
-{
-    MagickRelinquishMemory((void*)zbar_image_get_data(img));
-}
-
 static inline int dump_error(MagickWand *wand)
 {
     char *desc;
@@ -142,10 +137,13 @@ static int scan_image (const char *filename)
         // extract grayscale image pixels
         // FIXME color!! ...preserve most color w/422P
         // (but only if it's a color image)
-        size_t bloblen = 0;
-        unsigned char *blob = MagickGetImageBlob(images, &bloblen);
-        assert(bloblen == width * height);
-        zbar_image_set_data(zimage, blob, bloblen, cleanup_blob);
+        size_t bloblen = width * height;
+        unsigned char *blob = malloc(bloblen);
+        zbar_image_set_data(zimage, blob, bloblen, zbar_image_free_data);
+
+        if(!MagickExportImagePixels(images, 0, 0, width, height,
+                                    "I", CharPixel, blob))
+            return(-1);
 
         zbar_process_image(processor, zimage);
 
