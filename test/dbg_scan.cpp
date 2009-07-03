@@ -71,7 +71,7 @@ void scan_image (const char *filename)
     unsigned flush0 = 2;
     unsigned width = inwidth + flush1 + flush0;
     unsigned height = image.rows();
-    unsigned midy = (height + 1) / 2 + 2;
+    unsigned midy = height / 2;
     image.crop(Magick::Geometry(inwidth, 1, 0, midy));
     image.size(Magick::Geometry(width, 1, 0, 0));
 

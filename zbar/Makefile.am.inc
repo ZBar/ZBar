@@ -28,6 +28,9 @@ if ENABLE_PDF417
 zbar_libzbar_la_SOURCES += zbar/decoder/pdf417.h zbar/decoder/pdf417.c \
     zbar/decoder/pdf417_hash.h
 endif
+if ENABLE_QR
+zbar_libzbar_la_SOURCES += zbar/decoder/qr_finder.h zbar/decoder/qr_finder.c
+endif
 
 if HAVE_POLL
 zbar_libzbar_la_SOURCES += zbar/processor/posix.h zbar/processor/posix.c

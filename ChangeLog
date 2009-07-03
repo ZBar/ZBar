@@ -1,4 +1,5 @@
 current:
+  * initial hooks for QR Code, first pass at finder
   * first pass installer
     - add version and icon resources for libzbar, zbarimg
   * zbarimg working in windows
