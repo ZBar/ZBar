@@ -112,6 +112,18 @@ static inline void _zbar_image_refcnt (zbar_image_t *img,
     }
 }
 
+static inline void _zbar_image_attach_symbol (zbar_image_t *img,
+                                              zbar_symbol_t *sym)
+{
+    /* symbols stored on root image */
+    while(img->next)
+        img = img->next;
+
+    sym->next = img->syms;
+    img->syms = sym;
+    img->nsyms++;
+}
+
 extern int _zbar_best_format(uint32_t, uint32_t*, const uint32_t*);
 extern const zbar_format_def_t *_zbar_format_lookup(uint32_t);
 

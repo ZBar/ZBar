@@ -4,11 +4,18 @@
 #include <zbar.h>
 #include "decoder.h"
 
-#ifdef DEBUG_QR
-# define DEBUG_LEVEL (DEBUG_QR)
+#ifdef DEBUG_QR_FINDER
+# define DEBUG_LEVEL (DEBUG_QR_FINDER)
 #endif
 #include "debug.h"
 
+/* at this point lengths are all decode unit offsets from the decode edge
+ * NB owned by finder
+ */
+qr_finder_line *_zbar_decoder_get_qr_finder_line (zbar_decoder_t *dcode)
+{
+    return(&dcode->qrf.line);
+}
 
 zbar_symbol_type_t _zbar_find_qr (zbar_decoder_t *dcode)
 {
@@ -27,54 +34,68 @@ zbar_symbol_type_t _zbar_find_qr (zbar_decoder_t *dcode)
     int ei = decode_e(pair_width(dcode, 1), s, 7);
     dprintf(2, " %d", ei);
     if(ei)
-        return(0);
+        goto invalid;
 
     ei = decode_e(pair_width(dcode, 2), s, 7);
     dprintf(2, "%d", ei);
     if(ei != 2)
-        return(0);
+        goto invalid;
 
     ei = decode_e(pair_width(dcode, 3), s, 7);
     dprintf(2, "%d", ei);
     if(ei != 2)
-        return(0);
+        goto invalid;
 
     ei = decode_e(pair_width(dcode, 4), s, 7);
     dprintf(2, "%d", ei);
     if(ei)
-        return(0);
+        goto invalid;
 
-    int tqz = get_width(dcode, 5);
-    if(tqz) {
-        tqz = (tqz + 1) * 7 / s;
-        dprintf(2, "%d", tqz);
-        if(tqz < 1)
-            return(0);
-    }
-    else
-        tqz = 4;
-
-    int lqz = get_width(dcode, 0);
+    int lqz = get_width(dcode, 6);
     if(lqz) {
         lqz = (lqz + 1) * 7 / s;
-        dprintf(2, "%d", lqz);
-        if(lqz < 0)
-            return(0);
+        if(lqz < 1)
+            goto invalid;
     }
     else
         lqz = 4;
+    dprintf(2, "%d", lqz);
+
+    int tqz = get_width(dcode, 0);
+    if(tqz) {
+        tqz = (tqz + 1) * 7 / s;
+        if(tqz < 0)
+            goto invalid;
+    }
+    else
+        tqz = 4;
+    dprintf(2, "%d", tqz);
 
     /* one border must be full QZ */
-    if(tqz < 3 && lqz < 3) {
+    if(lqz < 3 && tqz < 3) {
         dprintf(2, " [invalid qz]\n");
         return(0);
     }
 
-    /* valid QR finder symbol */
-    dprintf(2, " [valid]\n");
+    /* valid QR finder symbol
+     * mark positions needed by decoder
+     */
+    unsigned qz = get_width(dcode, 0);
+    unsigned w = get_width(dcode, 1);
+    qrf->line.eoffs = qz + (w + 1) / 2;
+    qrf->line.len = qz + w + get_width(dcode, 2);
+    qrf->line.pos[0] = qrf->line.len + get_width(dcode, 3);
+    qrf->line.pos[1] = qrf->line.pos[0];
+    w = get_width(dcode, 5);
+    qrf->line.boffs = qrf->line.pos[0] + get_width(dcode, 4) + (w + 1) / 2;
 
-    /* FIXME TBD: mark positions needed by decoder */
-    assert(0);
+    dprintf(2, " boff=%d pos=%d len=%d eoff=%d [valid]\n",
+            qrf->line.boffs, qrf->line.pos[0], qrf->line.len,
+            qrf->line.eoffs);
 
     return(ZBAR_QR);
+
+invalid:
+    dprintf(2, " [invalid]\n");
+    return(0);
 }

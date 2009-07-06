@@ -1,4 +1,11 @@
 current:
+  * zbar-side updates for QR Code integration
+    - add linear scanner position interface
+    - add QR finder position feedback
+    - integrate QR Code reader with img_scanner
+    - refactor some symbol/image interaction
+    - change default scanner density to 1
+    - add iconv to build infrastructure
   * initial hooks for QR Code, first pass at finder
   * fix zbarimg b&w format handling
   * fix scan (image) boundary QZ handling (bug #2807538)

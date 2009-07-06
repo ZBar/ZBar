@@ -1128,6 +1128,13 @@ static inline zbar_symbol_type_t zbar_scan_rgb24 (zbar_scanner_t *scanner,
 /** retrieve last scanned width. */
 extern unsigned zbar_scanner_get_width(const zbar_scanner_t *scanner);
 
+/** retrieve sample position of last edge.
+ * @since 0.9
+ */
+extern unsigned zbar_scanner_get_edge(const zbar_scanner_t *scn,
+                                      unsigned offset,
+                                      int prec);
+
 /** retrieve last scanned color. */
 extern zbar_color_t zbar_scanner_get_color(const zbar_scanner_t *scanner);
 

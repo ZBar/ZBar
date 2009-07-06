@@ -29,8 +29,9 @@
 #include <zbar.h>
 #include "decoder.h"
 
-#if defined(DEBUG_DECODER) || defined(DEBUG_EAN) || defined(DEBUG_CODE128) || \
-    defined(DEBUG_CODE39) || defined(DEBUG_I25) || defined(DEBUG_QR) || \
+#if defined(DEBUG_DECODER) || defined(DEBUG_EAN) ||             \
+    defined(DEBUG_CODE39) || defined(DEBUG_I25) ||              \
+    defined(DEBUG_CODE128) || defined(DEBUG_QR_FINDER) ||       \
     (defined(DEBUG_PDF417) && (DEBUG_PDF417 >= 4))
 # define DEBUG_LEVEL 1
 #endif

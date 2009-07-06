@@ -35,6 +35,9 @@
 #include <zbar.h>
 #include "error.h"
 #include "image.h"
+#ifdef ENABLE_QR
+# include "decoder/qrcode.h"
+#endif
 
 #if 1
 # define ASSERT_POS \
@@ -72,12 +75,16 @@
 struct zbar_image_scanner_s {
     zbar_scanner_t *scn;        /* associated linear intensity scanner */
     zbar_decoder_t *dcode;      /* associated symbol decoder */
+#ifdef ENABLE_QR
+    qr_reader *qr;              /* QR Code 2D reader */
+#endif
 
     const void *userdata;       /* application data */
     /* user result callback */
     zbar_image_data_handler_t *handler;
 
     zbar_image_t *img;          /* currently scanning image *root* */
+    int dx, dy;                 /* current scan direction */
     int nsyms;                  /* total cached symbols */
     zbar_symbol_t *syms;        /* recycled symbols */
 
@@ -112,9 +119,10 @@ static inline void recycle_syms (zbar_image_scanner_t *iscn,
     }
 }
 
-static inline zbar_symbol_t *alloc_sym (zbar_image_scanner_t *iscn,
-                                        zbar_symbol_type_t type,
-                                        const char *data)
+inline zbar_symbol_t*
+_zbar_image_scanner_alloc_sym (zbar_image_scanner_t *iscn,
+                               zbar_symbol_type_t type,
+                               const char *data)
 {
     /* recycle old or alloc new symbol */
     zbar_symbol_t *sym = iscn->syms;
@@ -165,6 +173,67 @@ static inline zbar_symbol_t *cache_lookup (zbar_image_scanner_t *iscn,
     return(*entry);
 }
 
+#ifdef ENABLE_QR
+extern qr_finder_line *_zbar_decoder_get_qr_finder_line(zbar_decoder_t*);
+
+# define QR_FIXED(v, rnd) ((((v) << 1) + (rnd)) << (QR_FINDER_SUBPREC - 1))
+# define PRINT_FIXED(val, prec) \
+    ((val) >> (prec)),         \
+        (1000 * ((val) & ((1 << (prec)) - 1)) / (1 << (prec)))
+
+static void qr_handler (zbar_image_scanner_t *iscn,
+                        int x,
+                        int y)
+{
+    qr_finder_line *line = _zbar_decoder_get_qr_finder_line(iscn->dcode);
+    assert(line);
+    unsigned u = zbar_scanner_get_edge(iscn->scn, line->pos[0],
+                                       QR_FINDER_SUBPREC);
+    line->boffs = u - zbar_scanner_get_edge(iscn->scn, line->boffs,
+                                            QR_FINDER_SUBPREC);
+    line->len = zbar_scanner_get_edge(iscn->scn, line->len,
+                                      QR_FINDER_SUBPREC);
+    line->eoffs = zbar_scanner_get_edge(iscn->scn, line->eoffs,
+                                        QR_FINDER_SUBPREC) - line->len;
+    line->len -= u;
+
+    if(iscn->dx) {
+        assert(!iscn->dy);
+        line->pos[1] = QR_FIXED(y, 1);
+        if(iscn->dx > 0)
+            line->pos[0] = u;
+        else {
+            line->pos[0] = QR_FIXED(iscn->img->width, 0) - u - line->len;
+        }
+    }
+    else {
+        assert(iscn->dy);
+        line->pos[0] = QR_FIXED(x, 1);
+        if(iscn->dy > 0)
+            line->pos[1] = u;
+        else {
+            line->pos[1] = QR_FIXED(iscn->img->height, 0) - u - line->len;
+        }
+    }
+    if(iscn->dx < 0 || iscn->dy < 0) {
+        int tmp = line->boffs;
+        line->boffs = line->eoffs;
+        line->eoffs = tmp;
+    }
+
+    zprintf(54, "qrf: u=%d.%03d boff=%d.%03d pos=%d.%03d,%d.%03d"
+            " len=%d.%03d eoff=%d.%03d\n",
+            PRINT_FIXED(u, QR_FINDER_SUBPREC),
+            PRINT_FIXED(line->boffs, QR_FINDER_SUBPREC),
+            PRINT_FIXED(line->pos[0], QR_FINDER_SUBPREC),
+            PRINT_FIXED(line->pos[1], QR_FINDER_SUBPREC),
+            PRINT_FIXED(line->len, QR_FINDER_SUBPREC),
+            PRINT_FIXED(line->eoffs, QR_FINDER_SUBPREC));
+
+    _zbar_qr_found_line(iscn->qr, !iscn->dx, line);
+}
+#endif
+
 static void symbol_handler (zbar_image_scanner_t *iscn,
                             int x,
                             int y)
@@ -174,6 +243,13 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
     /* FIXME debug flag to save/display all PARTIALs */
     if(type <= ZBAR_PARTIAL)
         return;
+
+#ifdef ENABLE_QR
+    if(type == ZBAR_QR) {
+        qr_handler(iscn, x, y);
+        return;
+    }
+#endif
 
     const char *data = zbar_decoder_get_data(iscn->dcode);
 
@@ -188,7 +264,7 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
             return;
         }
 
-    sym = alloc_sym(iscn, type, data);
+    sym = _zbar_image_scanner_alloc_sym(iscn, type, data);
 
     /* timestamp symbol */
 #if _POSIX_TIMERS > 0
@@ -206,14 +282,12 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
     sym_add_point(sym, x, y);
 
     /* attach to current root image */
-    sym->next = iscn->img->syms;
-    iscn->img->syms = sym;
-    iscn->img->nsyms++;
+    _zbar_image_attach_symbol(iscn->img, sym);
 
     if(iscn->enable_cache) {
         zbar_symbol_t *entry = cache_lookup(iscn, sym);
         if(!entry) {
-            entry = alloc_sym(iscn, sym->type, sym->data);
+            entry = _zbar_image_scanner_alloc_sym(iscn, sym->type, sym->data);
             entry->time = sym->time - CACHE_HYSTERESIS;
             entry->cache_count = -CACHE_CONSISTENCY;
             /* add to cache */
@@ -253,9 +327,13 @@ zbar_image_scanner_t *zbar_image_scanner_create ()
         return(NULL);
     }
 
+#ifdef ENABLE_QR
+    iscn->qr = qr_reader_alloc();
+#endif
+
     /* apply default configuration */
-    CFG(iscn, ZBAR_CFG_X_DENSITY) = 16;
-    CFG(iscn, ZBAR_CFG_Y_DENSITY) = 16;
+    CFG(iscn, ZBAR_CFG_X_DENSITY) = 1;
+    CFG(iscn, ZBAR_CFG_Y_DENSITY) = 1;
     return(iscn);
 }
 
@@ -272,6 +350,12 @@ void zbar_image_scanner_destroy (zbar_image_scanner_t *iscn)
         sym_destroy(iscn->syms);
         iscn->syms = next;
     }
+#ifdef ENABLE_QR
+    if(iscn->qr) {
+        qr_reader_free(iscn->qr);
+        iscn->qr = NULL;
+    }
+#endif
     free(iscn);
 }
 
@@ -326,6 +410,8 @@ static inline void quiet_border (zbar_image_scanner_t *iscn,
         symbol_handler(iscn, x, y);
     if(zbar_scanner_flush(iscn->scn))
         symbol_handler(iscn, x, y);
+    if(zbar_scanner_flush(iscn->scn))
+        symbol_handler(iscn, x, y);
     if(zbar_scanner_new_scan(iscn->scn))
         symbol_handler(iscn, x, y);
 }
@@ -341,6 +427,10 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 {
     recycle_syms(iscn, img);
 
+#ifdef ENABLE_QR
+    qr_reader_reset(iscn->qr);
+#endif
+
     /* get grayscale image, convert if necessary */
     img = zbar_image_convert(img, fourcc('Y','8','0','0'));
     if(!img)
@@ -354,6 +444,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
     if(density > 0) {
         const uint8_t *p = data;
         int x = 0, y = 0;
+        iscn->dy = 0;
 
         int border = (((h - 1) % density) + 1) / 2;
         if(border > h / 2)
@@ -364,7 +455,8 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             symbol_handler(iscn, x, y);
 
         while(y < h) {
-            zprintf(32, "img_x+: %03x,%03x @%p\n", x, y, p);
+            zprintf(32, "img_x+: %04d,%04d @%p\n", x, y, p);
+            iscn->dx = 1;
             while(x < w) {
                 ASSERT_POS;
                 if(zbar_scan_y(iscn->scn, *p))
@@ -377,8 +469,9 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             if(y >= h)
                 break;
 
-            zprintf(32, "img_x-: %03x,%03x @%p\n", x, y, p);
-            while(x > 0) {
+            zprintf(32, "img_x-: %04d,%04d @%p\n", x, y, p);
+            iscn->dx = -1;
+            while(x >= 0) {
                 ASSERT_POS;
                 if(zbar_scan_y(iscn->scn, *p))
                     symbol_handler(iscn, x, y);
@@ -394,6 +487,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
     if(density > 0) {
         const uint8_t *p = data;
         int x = 0, y = 0;
+        iscn->dx = 0;
 
         int border = (((w - 1) % density) + 1) / 2;
         if(border > w / 2)
@@ -401,7 +495,8 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
         movedelta(border, 0);
 
         while(x < w) {
-            zprintf(32, "img_y+: %03x,%03x @%p\n", x, y, p);
+            zprintf(32, "img_y+: %04d,%04d @%p\n", x, y, p);
+            iscn->dy = 1;
             while(y < h) {
                 ASSERT_POS;
                 if(zbar_scan_y(iscn->scn, *p))
@@ -414,7 +509,8 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             if(x >= w)
                 break;
 
-            zprintf(32, "img_y-: %03x,%03x @%p\n", x, y, p);
+            zprintf(32, "img_y-: %04d,%04d @%p\n", x, y, p);
+            iscn->dy = -1;
             while(y >= 0) {
                 ASSERT_POS;
                 if(zbar_scan_y(iscn->scn, *p))
@@ -426,6 +522,10 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             movedelta(density, 1);
         }
     }
+
+#ifdef ENABLE_QR
+    _zbar_qr_decode(iscn, iscn->qr, img);
+#endif
 
     /* release reference to converted image */
     zbar_image_destroy(img);

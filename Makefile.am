@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(srcdir)/include
-AM_CFLAGS = -Wall -Werror
+AM_CFLAGS = -Wall -Werror -Wno-parentheses
 AM_CXXFLAGS = $(AM_CFLAGS)
 ACLOCAL_AMFLAGS = -I config
 bin_PROGRAMS =

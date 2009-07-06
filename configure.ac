@@ -107,6 +107,7 @@ ZBAR_CHK_CODE([qr], [QR Code])
 dnl libraries
 
 AC_SEARCH_LIBS([clock_gettime], [rt])
+AM_ICONV()
 
 dnl poll support
 dnl without poll() we exclude processor layer
