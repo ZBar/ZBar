@@ -86,8 +86,8 @@ void qr_reader_free(qr_reader *_reader){
 /*A line crossing a finder pattern.
   Whether the line is horizontal or vertical is determined by context.
   The offsts to various parts of the finder pattern are as follows:
-    |*****|     |*****************|     |*****|
-    |*****|     |*****************|     |*****|
+    |*****|     |*****|*****|*****|     |*****|
+    |*****|     |*****|*****|*****|     |*****|
        ^        ^                 ^        ^
        |        |                 |        |
        |        |                 |       pos[v]+len+eoffs
@@ -248,6 +248,7 @@ static int qr_finder_cluster_lines(qr_finder_cluster *_clusters,
   int              nneighbors;
   int              nclusters;
   int              i;
+  /*TODO: Kalman filters!*/
   mark=(unsigned char *)calloc(_nlines,sizeof(*mark));
   neighbors=_neighbors;
   nclusters=0;
@@ -657,27 +658,22 @@ static void qr_line_fit(qr_line _l,int _x0,int _y0,
   int u;
   int v;
   int w;
-  /*This part can easily overflow with moderate sizes, so we compute a shift
-     factor to scale it down into a managable range.
-    What we really want is a way of computing sqrt(a*a+b*b) without actually
-     squaring a and b (e.g., an integer equivalent of hypot()).
-    We'd still need to scale down the result: we ensure that the product of any
-     two of _l[0] and _l[1] fits within _res bits, which allows computation of
-     line intersections without overflow.*/
   u=abs(_sxx-_syy);
   v=-_sxy<<1;
+  w=qr_ihypot(u,v);
+  /*Computations in later stages can easily overflow with moderate sizes, so we
+     compute a shift factor to scale things down into a managable range.
+    We ensure that the product of any two of _l[0] and _l[1] fits within _res
+     bits, which allows computation of line intersections without overflow.*/
   dshift=QR_MAXI(0,QR_MAXI(qr_ilog(u),qr_ilog(abs(v)))+1-(_res+1>>1));
   dround=(1<<dshift)>>1;
-  u=u+dround>>dshift;
-  v=v+dround>>dshift;
-  w=qr_isqrt(u*u+v*v);
   if(_sxx>_syy){
-    _l[0]=v;
-    _l[1]=u+w;
+    _l[0]=v+dround>>dshift;
+    _l[1]=u+w+dround>>dshift;
   }
   else{
-    _l[0]=u+w;
-    _l[1]=v;
+    _l[0]=u+w+dround>>dshift;
+    _l[1]=v+dround>>dshift;
   }
   _l[2]=-(_x0*_l[0]+_y0*_l[1]);
 }
@@ -712,8 +708,8 @@ static void qr_line_fit_points(qr_line _l,qr_point *_p,int _np,int _res){
     ymin=QR_MINI(ymin,_p[i][1]);
     ymax=QR_MAXI(ymax,_p[i][1]);
   }
-  xbar=((sx<<1)+_np)/(_np<<1);
-  ybar=((sy<<1)+_np)/(_np<<1);
+  xbar=(sx+(_np>>1))/_np;
+  ybar=(sy+(_np>>1))/_np;
   sshift=QR_MAXI(0,qr_ilog(_np*QR_MAXI(QR_MAXI(xmax-xbar,xbar-xmin),
    QR_MAXI(ymax-ybar,ybar-ymin)))-(QR_INT_BITS-1>>1));
   sround=(1<<sshift)>>1;
@@ -1059,8 +1055,8 @@ static void qr_finder_edge_pts_hom_classify(qr_finder *_f,const qr_hom *_hom){
 }
 
 /*TODO: Perhaps these thresholds should be on the module size instead?
-  Unfortunately, I'd need real-world images of code with larger versions to see
-   if these thresholds are still effective, but such versions aren't used
+  Unfortunately, I'd need real-world images of codes with larger versions to
+   see if these thresholds are still effective, but such versions aren't used
    often.*/
 
 /*The amount that the estimated version numbers are allowed to differ from the
@@ -1705,12 +1701,12 @@ static void qr_hom_cell_init(qr_hom_cell *_cell,int _u0,int _v0,
     The quotient is often exact (e.g., when the source points contain no
      projective distortion), and is never zero.
     Hence we can use zero to signal "infinity" when the divisor is zero.*/
-  if(i00)i00=QR_COPYSIGNI(QR_DIVROUND(i22,abs(i00)),i00);
-  if(i01)i01=QR_COPYSIGNI(QR_DIVROUND(i22,abs(i01)),i01);
-  if(i10)i10=QR_COPYSIGNI(QR_DIVROUND(i22,abs(i10)),i10);
-  if(i11)i11=QR_COPYSIGNI(QR_DIVROUND(i22,abs(i11)),i11);
-  if(i20)i20=QR_COPYSIGNI(QR_DIVROUND(i22,abs(i20)),i20);
-  if(i21)i21=QR_COPYSIGNI(QR_DIVROUND(i22,abs(i21)),i21);
+  if(i00)i00=QR_FLIPSIGNI(QR_DIVROUND(i22,abs(i00)),i00);
+  if(i01)i01=QR_FLIPSIGNI(QR_DIVROUND(i22,abs(i01)),i01);
+  if(i10)i10=QR_FLIPSIGNI(QR_DIVROUND(i22,abs(i10)),i10);
+  if(i11)i11=QR_FLIPSIGNI(QR_DIVROUND(i22,abs(i11)),i11);
+  if(i20)i20=QR_FLIPSIGNI(QR_DIVROUND(i22,abs(i20)),i20);
+  if(i21)i21=QR_FLIPSIGNI(QR_DIVROUND(i22,abs(i21)),i21);
   /*Now compute the map from the unit square into the image.*/
   dx10=_x1-_x0;
   dx20=_x2-_x0;

@@ -1,5 +1,7 @@
+#include <stdlib.h>
 #include "util.h"
 
+/*Computes floor(sqrt(_val)) exactly.*/
 unsigned qr_isqrt(unsigned _val){
   unsigned g;
   unsigned b;
@@ -22,13 +24,54 @@ unsigned qr_isqrt(unsigned _val){
   return g;
 }
 
-/*TODO: ihypot
-  a>b => g=a+r && add e iff (a+r+e)*(a+r+e) <= a*a+b*b
-                            2*(a-b+r+e)*(r+e) <= (b-r-e)*(b-r-e)
-                            2*(a/(b-r-e)-1)*(r+e) <= b-r-e
-                            2*a*(r+e)/(b-r-e) <= b+r+e
-                            2*(a-b+r+e)/(b-r-e) <= b/(r+e)
-*/
+/*Computes sqrt(_x*_x+_y*_y) using CORDIC.
+  This implementation is valid for all 32-bit inputs and returns a result
+   accurate to about 27 bits of precision.
+  It has been tested for all postiive 16-bit inputs, where it returns correctly
+   rounded results in 99.998% of cases and the maximum error is
+   0.500137134862598032 (for _x=48140, _y=63018).
+  Very nearly all results less than (1<<16) are correctly rounded.
+  All Pythagorean triples with a hypotenuse of less than ((1<<27)-1) evaluate
+   correctly, and the total bias over all Pythagorean triples is -0.04579, with
+   a relative RMS error of 7.2864E-10 and a relative peak error of 7.4387E-9.*/
+unsigned qr_ihypot(int _x,int _y){
+  unsigned x;
+  unsigned y;
+  int      mask;
+  int      shift;
+  int      u;
+  int      v;
+  int      i;
+  x=_x=abs(_x);
+  y=_y=abs(_y);
+  mask=-(x>y)&(_x^_y);
+  x^=mask;
+  y^=mask;
+  _y^=mask;
+  shift=31-qr_ilog(y);
+  shift=QR_MAXI(shift,0);
+  x=(unsigned)((x<<shift)*0x9B74EDAAULL>>32);
+  _y=(int)((_y<<shift)*0x9B74EDA9LL>>32);
+  u=x;
+  mask=-(_y<0);
+  x+=_y+mask^mask;
+  _y-=u+mask^mask;
+  u=x+1>>1;
+  v=_y+1>>1;
+  mask=-(_y<0);
+  x+=v+mask^mask;
+  _y-=u+mask^mask;
+  for(i=1;i<16;i++){
+    int r;
+    u=x+1>>2;
+    r=(1<<2*i)>>1;
+    v=_y+r>>2*i;
+    mask=-(_y<0);
+    x+=v+mask^mask;
+    _y=_y-(u+mask^mask)<<1;
+  }
+  return x+((1U<<shift)>>1)>>shift;
+}
 
 #if defined(__GNUC__)
 # include <features.h>

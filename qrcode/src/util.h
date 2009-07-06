@@ -5,12 +5,11 @@
 #define QR_MINI(_a,_b)      ((_a)+((_b)-(_a)&-((_b)<(_a))))
 #define QR_SIGNI(_x)        (((_x)>0)-((_x)<0))
 #define QR_SIGNMASK(_x)     (-((_x)<0))
-/*Unlike copysign(), simply inverts the sign of _a if _b is negative.
-  Call with abs(_a) to emulate the standard copysign() behavior.*/
-#define QR_COPYSIGNI(_a,_b) ((_a)+QR_SIGNMASK(_b)^QR_SIGNMASK(_b))
+/*Unlike copysign(), simply inverts the sign of _a if _b is negative.*/
+#define QR_FLIPSIGNI(_a,_b) ((_a)+QR_SIGNMASK(_b)^QR_SIGNMASK(_b))
+#define QR_COPYSIGNI(_a,_b) QR_FLIPSIGNI(abs(_a),_b)
 /*Divides a signed integer by a positive value with exact rounding.*/
-#define QR_DIVROUND(_x,_y) \
- (((_x)+QR_COPYSIGNI(_y>>1,_x))/(_y))
+#define QR_DIVROUND(_x,_y)  (((_x)+QR_FLIPSIGNI(_y>>1,_x))/(_y))
 #define QR_CLAMPI(_a,_b,_c) (QR_MAXI(_a,QR_MINI(_b,_c)))
 #define QR_CLAMP255(_x)     ((unsigned char)((((_x)<0)-1)&((_x)|-((_x)>255))))
 /*Swaps two integers _a and _b if _a>_b.*/
@@ -38,6 +37,7 @@
 #define QR_EXTMUL(_a,_b,_r)    ((_a)*(long long)(_b)+(_r))
 
 unsigned qr_isqrt(unsigned _val);
+unsigned qr_ihypot(int _x,int _y);
 int qr_ilog(unsigned _val);
 
 #endif

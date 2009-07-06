@@ -42,7 +42,7 @@ typedef enum qr_mode{
   Currently this is only modes with exactly one bit set.*/
 #define QR_MODE_HAS_DATA(_mode) (!((_mode)&(_mode)-1))
 
-/*ECI may be used to signal a character encode for the data.*/
+/*ECI may be used to signal a character encoding for the data.*/
 typedef enum qr_eci_encoding{
   /*GLI0 is like CP437, but the encoding is reset at the beginning of each
      structured append symbol.*/
@@ -50,7 +50,8 @@ typedef enum qr_eci_encoding{
   /*GLI1 is like ISO8859_1, but the encoding is reset at the beginning of each
      structured append symbol.*/
   QR_ECI_GLI1,
-  /*The remaining encodings do not reset at next structured append symbol.*/
+  /*The remaining encodings do not reset at the start of the next structured
+     append symbol.*/
   QR_ECI_CP437,
   /*Western European.*/
   QR_ECI_ISO8859_1,
