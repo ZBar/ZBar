@@ -1,3 +1,5 @@
+/*Written by Timothy B. Terriberry (tterribe@xiph.org) 1999-2009 public domain.
+  Based on the public domain implementation by Robert J. Jenkins Jr.*/
 #if !defined(_isaac_H)
 # define _isaac_H (1)
 

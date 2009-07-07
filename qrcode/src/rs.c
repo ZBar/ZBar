@@ -1,3 +1,9 @@
+/*Copyright (C) 1991-1995  Henry Minsky (hqm@ua.com, hqm@ai.mit.edu)
+  Copyright (C) 2008-2009  Timothy B. Terriberry (tterribe@xiph.org)
+  You can redistribute this library and/or modify it under the terms of the
+   GNU Lesser General Public License as published by the Free Software
+   Foundation; either version 2.1 of the License, or (at your option) any later
+   version.*/
 #include <stdlib.h>
 #include <string.h>
 #include "rs.h"
@@ -5,7 +11,7 @@
 /*Reed-Solomon encoder and decoder.
   Original implementation (C) Henry Minsky (hqm@ua.com, hqm@ai.mit.edu),
    Universal Access 1991-1995.
-  Updates by Timothy B. Terriberry (C) 2008:
+  Updates by Timothy B. Terriberry (C) 2008-2009:
    - Properly reject codes when error-locator polynomial has repeated roots or
       non-trivial irreducible factors.
    - Removed the hard-coded parity size and performed general API cleanup.
