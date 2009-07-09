@@ -42,7 +42,7 @@ const char *zbar_get_symbol_name (zbar_symbol_type_t sym)
     case ZBAR_CODE39: return("CODE-39");
     case ZBAR_CODE128: return("CODE-128");
     case ZBAR_PDF417: return("PDF417");
-    case ZBAR_QR: return("QR");
+    case ZBAR_QRCODE: return("QR-Code");
     default: return("UNKNOWN");
     }
 }

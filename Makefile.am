@@ -15,7 +15,7 @@ EXTRA_DIST =
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = zbar.pc
 
-dist_doc_DATA = COPYING.LIB HACKING INSTALL NEWS README TODO
+dist_doc_DATA = COPYING HACKING INSTALL LICENSE NEWS README TODO
 
 include $(srcdir)/include/Makefile.am.inc
 include $(srcdir)/zbar/Makefile.am.inc

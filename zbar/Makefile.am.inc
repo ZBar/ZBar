@@ -28,15 +28,15 @@ if ENABLE_PDF417
 zbar_libzbar_la_SOURCES += zbar/decoder/pdf417.h zbar/decoder/pdf417.c \
     zbar/decoder/pdf417_hash.h
 endif
-if ENABLE_QR
+if ENABLE_QRCODE
 zbar_libzbar_la_SOURCES += zbar/decoder/qrcode.h \
     zbar/decoder/qr_finder.h zbar/decoder/qr_finder.c \
-    zbar/decoder/qr/qrdec.c zbar/decoder/qr/qrdectxt.c \
-    zbar/decoder/qr/rs.h zbar/decoder/qr/rs.c \
-    zbar/decoder/qr/isaac.h zbar/decoder/qr/isaac.c \
-    zbar/decoder/qr/bch15_5.h zbar/decoder/qr/bch15_5.c \
-    zbar/decoder/qr/binarize.h zbar/decoder/qr/binarize.c \
-    zbar/decoder/qr/util.h zbar/decoder/qr/util.c
+    zbar/decoder/qrcode/qrdec.c zbar/decoder/qrcode/qrdectxt.c \
+    zbar/decoder/qrcode/rs.h zbar/decoder/qrcode/rs.c \
+    zbar/decoder/qrcode/isaac.h zbar/decoder/qrcode/isaac.c \
+    zbar/decoder/qrcode/bch15_5.h zbar/decoder/qrcode/bch15_5.c \
+    zbar/decoder/qrcode/binarize.h zbar/decoder/qrcode/binarize.c \
+    zbar/decoder/qrcode/util.h zbar/decoder/qrcode/util.c
 endif
 
 if HAVE_POLL

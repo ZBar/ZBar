@@ -7,15 +7,16 @@
 #include <limits.h>
 #include <string.h>
 #include <time.h>
-#include "qrcode.h"
+#include "decoder/qrcode.h"
 #include "bch15_5.h"
 #include "rs.h"
 #include "isaac.h"
 #include "util.h"
+#include "binarize.h"
+#include "image.h"
 
 typedef int qr_line[3];
 
-typedef struct qr_finder_line    qr_finder_line;
 typedef struct qr_finder_cluster qr_finder_cluster;
 typedef struct qr_finder_edge_pt qr_finder_edge_pt;
 typedef struct qr_finder_center  qr_finder_center;
@@ -35,11 +36,13 @@ typedef struct qr_pack_buf      qr_pack_buf;
 #define QR_INT_BITS    ((int)sizeof(int)*CHAR_BIT)
 #define QR_INT_LOGBITS (QR_ILOG(QR_INT_BITS))
 
+#ifdef SPADIX /* moved to qrcode.h */
 /*The number of bits of subpel precision to store image coordinates in.
   This helps when estimating positions in low-resolution images, which may have
    a module pitch only a pixel or two wide, making rounding errors matter a
    great deal.*/
 #define QR_FINDER_SUBPREC (2)
+#endif
 
 /*A 14 bit resolution for a homography ensures that the ideal module size for a
    version 40 code differs from that of a version 39 code by at least 2.*/
@@ -55,12 +58,20 @@ typedef struct qr_pack_buf      qr_pack_buf;
 #define QR_ALIGN_SUBPREC (2)
 
 
+/* collection of finder lines */
+typedef struct qr_finder_lines {
+    int num_lines, max_lines;
+    qr_finder_line *lines;
+} qr_finder_lines;
+
 
 struct qr_reader{
   /*The GF(256) representation used in Reed-Solomon decoding.*/
   rs_gf256  gf;
   /*The random number generator used by RANSAC.*/
   isaac_ctx isaac;
+  /* current finder state, horizontal and vertical lines */
+  qr_finder_lines finder_lines[2];
 };
 
 
@@ -76,17 +87,30 @@ static void qr_reader_init(qr_reader *_reader){
 /*Allocates a client reader handle.*/
 qr_reader *qr_reader_alloc(void){
   qr_reader *reader;
-  reader=(qr_reader *)malloc(sizeof(*reader));
+  reader=(qr_reader *)calloc(1, sizeof(*reader));
   qr_reader_init(reader);
   return reader;
 }
 
 /*Frees a client reader handle.*/
 void qr_reader_free(qr_reader *_reader){
+  if(_reader->finder_lines[0].lines)
+    free(_reader->finder_lines[0].lines);
+  if(_reader->finder_lines[1].lines)
+    free(_reader->finder_lines[1].lines);
   free(_reader);
 }
 
+/* reset finder state between scans */
+void qr_reader_reset (qr_reader *reader)
+{
+  reader->finder_lines[0].num_lines = 0;
+  reader->finder_lines[1].num_lines = 0;
+}
 
+
+#ifdef SPADIX /* moved to qrcode.h */
+typedef struct qr_finder_line    qr_finder_line;
 
 /*A line crossing a finder pattern.
   Whether the line is horizontal or vertical is determined by context.
@@ -120,6 +144,8 @@ struct qr_finder_line{
      reliably.*/
   int      eoffs;
 };
+
+#endif
 
 
 /*A cluster of lines crossing a finder pattern (all in the same direction).*/
@@ -162,7 +188,7 @@ struct qr_finder_center{
   int                nedge_pts;
 };
 
-
+#ifdef SPADIX
 /*Check to see if a set of lengths for a (dark:light:dark:light:dark) pattern
    roughly has the ratios 1:1:3:1:1.
   If it does, the location of the line segments are stored in _line.
@@ -224,6 +250,7 @@ static int qr_finder_check_pattern(qr_finder_line *_line,int _len_buf[5],
   _line->eoffs=x3-x2;
   return 1;
 }
+#endif
 
 static int qr_finder_vline_cmp(const void *_a,const void *_b){
   const qr_finder_line *a;
@@ -478,8 +505,9 @@ static int qr_finder_find_crossings(qr_finder_center *_centers,
   _height:   The height of the image.
   Return: The number of putative finder centers located.*/
 static int qr_finder_centers_locate(qr_finder_center **_centers,
- qr_finder_edge_pt **_edge_pts,const unsigned char *_img,
+ qr_finder_edge_pt **_edge_pts, qr_reader *reader,
  int _width,int _height){
+#ifdef SPADIX
   typedef int vect5i[5];
   qr_finder_line     *hlines;
   int                 nhlines;
@@ -489,13 +517,6 @@ static int qr_finder_centers_locate(qr_finder_center **_centers,
   int                 cvlines;
   vect5i             *ylen_bufs;
   int                *ybps;
-  qr_finder_line    **hneighbors;
-  qr_finder_cluster  *hclusters;
-  int                 nhclusters;
-  qr_finder_line    **vneighbors;
-  qr_finder_cluster  *vclusters;
-  int                 nvclusters;
-  int                 ncenters;
   int                 x;
   int                 y;
   if(_width<1||_height<1)return 0;
@@ -553,6 +574,21 @@ static int qr_finder_centers_locate(qr_finder_center **_centers,
   }
   free(ybps);
   free(ylen_bufs);
+#else
+  qr_finder_line     *hlines = reader->finder_lines[0].lines;
+  int                 nhlines = reader->finder_lines[0].num_lines;
+  qr_finder_line     *vlines = reader->finder_lines[1].lines;
+  int                 nvlines = reader->finder_lines[1].num_lines;
+#endif
+
+  qr_finder_line    **hneighbors;
+  qr_finder_cluster  *hclusters;
+  int                 nhclusters;
+  qr_finder_line    **vneighbors;
+  qr_finder_cluster  *vclusters;
+  int                 nvclusters;
+  int                 ncenters;
+
   /*Cluster the detected lines.*/
   hneighbors=(qr_finder_line **)malloc(nhlines*sizeof(*hneighbors));
   /*We require more than one line per cluster, so there are at most nhlines/2.*/
@@ -590,8 +626,10 @@ static int qr_finder_centers_locate(qr_finder_center **_centers,
   free(vneighbors);
   free(hclusters);
   free(hneighbors);
+#ifdef SPADIX
   free(vlines);
   free(hlines);
+#endif
   return ncenters;
 }
 
@@ -4004,7 +4042,7 @@ int qr_reader_locate(qr_reader *_reader,qr_code_data_list *_qrlist,
   centers=NULL;
   edge_pts=NULL;
   nqrdata=_qrlist->nqrdata;
-  ncenters=qr_finder_centers_locate(&centers,&edge_pts,_img,_width,_height);
+  ncenters=qr_finder_centers_locate(&centers,&edge_pts,NULL,_width,_height);
   if(ncenters>=3){
     qr_reader_match_centers(_reader,_qrlist,centers,ncenters,
      _img,_width,_height);
@@ -4019,7 +4057,7 @@ int qr_reader_extract_text(qr_reader *_reader,const unsigned char *_img,
   qr_code_data_list qrlist;
   int               ntext;
   qr_code_data_list_init(&qrlist);
-  if(qr_reader_locate(_reader,&qrlist,_img,_width,_height)>0){
+  if(qr_reader_locate(_reader,&qrlist,NULL,_width,_height)>0){
     ntext=qr_code_data_list_extract_text(&qrlist,_text,_allow_partial_sa);
     qr_code_data_list_clear(&qrlist);
   }
@@ -4028,4 +4066,68 @@ int qr_reader_extract_text(qr_reader *_reader,const unsigned char *_img,
     ntext=0;
   }
   return ntext;
+}
+
+int _zbar_qr_found_line (qr_reader *reader,
+                         int direction,
+                         const qr_finder_line *line)
+{
+    /* minimally intrusive brute force version */
+    qr_finder_lines *lines = &reader->finder_lines[direction];
+
+    if(lines->num_lines >= lines->max_lines) {
+        lines->max_lines *= 2;
+        lines->lines = realloc(lines->lines,
+                               ++lines->max_lines * sizeof(*lines->lines));
+    }
+
+    memcpy(lines->lines + lines->num_lines++, line, sizeof(*line));
+    return(1);
+}
+
+/* FIXME API cleanup */
+zbar_symbol_t *_zbar_image_scanner_alloc_sym(zbar_image_scanner_t *iscn,
+                                             zbar_symbol_type_t type,
+                                             const char *data);
+
+int _zbar_qr_decode (zbar_image_scanner_t *iscn,
+                     qr_reader *reader,
+                     zbar_image_t *img)
+{
+    int nqrdata = 0;
+    qr_finder_edge_pt *edge_pts = NULL;
+    qr_finder_center *centers = NULL;
+
+    int ncenters = qr_finder_centers_locate(&centers, &edge_pts, reader, 0, 0);
+
+    if(ncenters >= 3) {
+        void *bin = qr_binarize(img->data, img->width, img->height);
+
+        qr_code_data_list qrlist;
+        qr_code_data_list_init(&qrlist);
+
+        qr_reader_match_centers(reader, &qrlist, centers, ncenters,
+                                bin, img->width, img->height);
+
+        if(qrlist.nqrdata > 0) {
+            char **text;
+            int i, ntext = qr_code_data_list_extract_text(&qrlist, &text, 1);
+            for(i = 0; i < ntext; i++) {
+                zbar_symbol_t *sym;
+                sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, text[i]);
+                _zbar_image_attach_symbol(img, sym);
+            }
+            qr_text_list_free(text, ntext);
+        }
+
+        nqrdata = qrlist.nqrdata;
+        qr_code_data_list_clear(&qrlist);
+        free(bin);
+    }
+
+    if(centers)
+        free(centers);
+    if(edge_pts)
+        free(edge_pts);
+    return(nqrdata);
 }

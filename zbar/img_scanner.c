@@ -35,7 +35,7 @@
 #include <zbar.h>
 #include "error.h"
 #include "image.h"
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
 # include "decoder/qrcode.h"
 #endif
 
@@ -75,7 +75,7 @@
 struct zbar_image_scanner_s {
     zbar_scanner_t *scn;        /* associated linear intensity scanner */
     zbar_decoder_t *dcode;      /* associated symbol decoder */
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
     qr_reader *qr;              /* QR Code 2D reader */
 #endif
 
@@ -173,7 +173,7 @@ static inline zbar_symbol_t *cache_lookup (zbar_image_scanner_t *iscn,
     return(*entry);
 }
 
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
 extern qr_finder_line *_zbar_decoder_get_qr_finder_line(zbar_decoder_t*);
 
 # define QR_FIXED(v, rnd) ((((v) << 1) + (rnd)) << (QR_FINDER_SUBPREC - 1))
@@ -244,8 +244,8 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
     if(type <= ZBAR_PARTIAL)
         return;
 
-#ifdef ENABLE_QR
-    if(type == ZBAR_QR) {
+#ifdef ENABLE_QRCODE
+    if(type == ZBAR_QRCODE) {
         qr_handler(iscn, x, y);
         return;
     }
@@ -327,7 +327,7 @@ zbar_image_scanner_t *zbar_image_scanner_create ()
         return(NULL);
     }
 
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
     iscn->qr = qr_reader_alloc();
 #endif
 
@@ -350,7 +350,7 @@ void zbar_image_scanner_destroy (zbar_image_scanner_t *iscn)
         sym_destroy(iscn->syms);
         iscn->syms = next;
     }
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
     if(iscn->qr) {
         qr_reader_free(iscn->qr);
         iscn->qr = NULL;
@@ -427,7 +427,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 {
     recycle_syms(iscn, img);
 
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
     qr_reader_reset(iscn->qr);
 #endif
 
@@ -523,7 +523,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
         }
     }
 
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
     _zbar_qr_decode(iscn, iscn->qr, img);
 #endif
 

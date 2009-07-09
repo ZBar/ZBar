@@ -520,9 +520,9 @@ void qr_binarize(unsigned char *_img,int _width,int _height){
 /*A simplified adaptive thresholder.
   This compares the current pixel value to the mean value of a (large) window
    surrounding it.*/
-void qr_binarize(unsigned char *_img,int _width,int _height){
+unsigned char *qr_binarize(const unsigned char *_img,int _width,int _height){
+  unsigned char *mask = NULL;
   if(_width>0&&_height>0){
-    unsigned char *mask;
     unsigned      *col_sums;
     int            logwindw;
     int            logwindh;
@@ -587,8 +587,6 @@ void qr_binarize(unsigned char *_img,int _width,int _height){
       }
     }
     free(col_sums);
-    memcpy(_img,mask,_width*_height*sizeof(*_img));
-    free(mask);
   }
 #if defined(QR_DEBUG)
   {
@@ -598,6 +596,7 @@ void qr_binarize(unsigned char *_img,int _width,int _height){
     fclose(fout);
   }
 #endif
+  return(mask);
 }
 #endif
 

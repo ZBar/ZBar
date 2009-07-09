@@ -69,7 +69,7 @@ zbar_decoder_t *zbar_decoder_create ()
 #ifdef ENABLE_PDF417
     dcode->pdf417.config = 1 << ZBAR_CFG_ENABLE;
 #endif
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
     dcode->qrf.config = 1 << ZBAR_CFG_ENABLE;
 #endif
 
@@ -102,7 +102,7 @@ void zbar_decoder_reset (zbar_decoder_t *dcode)
 #ifdef ENABLE_PDF417
     pdf417_reset(&dcode->pdf417);
 #endif
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
     qr_finder_reset(&dcode->qrf);
 #endif
 }
@@ -128,7 +128,7 @@ void zbar_decoder_new_scan (zbar_decoder_t *dcode)
 #ifdef ENABLE_PDF417
     pdf417_reset(&dcode->pdf417);
 #endif
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
     qr_finder_reset(&dcode->qrf);
 #endif
 }
@@ -203,7 +203,7 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
        (sym = _zbar_decode_pdf417(dcode)) > ZBAR_PARTIAL)
         dcode->type = sym;
 #endif
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
     if(TEST_CFG(dcode->qrf.config, ZBAR_CFG_ENABLE) &&
        (sym = _zbar_find_qr(dcode)) > ZBAR_PARTIAL)
         dcode->type = sym;
@@ -276,8 +276,8 @@ static inline int decoder_set_config_bool (zbar_decoder_t *dcode,
         break;
 #endif
 
-#ifdef ENABLE_QR
-    case ZBAR_QR:
+#ifdef ENABLE_QRCODE
+    case ZBAR_QRCODE:
         config = &dcode->qrf.config;
         break;
 #endif
@@ -360,7 +360,7 @@ int zbar_decoder_set_config (zbar_decoder_t *dcode,
         zbar_decoder_set_config(dcode, ZBAR_CODE39, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_CODE128, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_PDF417, cfg, val);
-        zbar_decoder_set_config(dcode, ZBAR_QR, cfg, val);
+        zbar_decoder_set_config(dcode, ZBAR_QRCODE, cfg, val);
         return(0);
     }
 

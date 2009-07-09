@@ -96,7 +96,7 @@ FunctionEnd
     ZBar Bar Code Reader version ${VERSION}."
 
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "share\doc\zbar\COPYING.LIB"
+!insertmacro MUI_PAGE_LICENSE "share\doc\zbar\LICENSE"
 
 !define MUI_COMPONENTSPAGE_SMALLDESC
 !define MUI_COMPONENTSPAGE_CHECKBITMAP ${NSISDIR}\Contrib\Graphics\Checks\simple-round2.bmp
@@ -131,7 +131,8 @@ Section "ZBar Core Files (required)" SecCore
     File share\doc\zbar\README.windows
     File share\doc\zbar\NEWS
     File share\doc\zbar\TODO
-    File share\doc\zbar\COPYING.LIB
+    File share\doc\zbar\COPYING
+    File share\doc\zbar\LICENSE
 
     # emit a batch file to add the install directory to the path
     FileOpen $0 zbarvars.bat w

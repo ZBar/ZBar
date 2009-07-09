@@ -1,4 +1,5 @@
 current:
+  * finish initial integration of QR Code reader from maemo-barcode project
   * zbar-side updates for QR Code integration
     - add linear scanner position interface
     - add QR finder position feedback

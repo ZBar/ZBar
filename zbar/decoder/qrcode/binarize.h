@@ -12,6 +12,6 @@ void qr_image_cross_masking_median_filter(unsigned char *_img,
 void qr_wiener_filter(unsigned char *_img,int _width,int _height);
 
 /*Binarizes a grayscale image.*/
-void qr_binarize(unsigned char *_img,int _width,int _height);
+unsigned char *qr_binarize(const unsigned char *_img,int _width,int _height);
 
 #endif

@@ -45,7 +45,7 @@
 #ifdef ENABLE_PDF417
 # include "decoder/pdf417.h"
 #endif
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
 # include "decoder/qr_finder.h"
 #endif
 
@@ -103,7 +103,7 @@ struct zbar_decoder_s {
 #ifdef ENABLE_PDF417
     pdf417_decoder_t pdf417;            /* PDF417 decode state */
 #endif
-#ifdef ENABLE_QR
+#ifdef ENABLE_QRCODE
     qr_finder_t qrf;                    /* QR Code finder state */
 #endif
 };

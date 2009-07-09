@@ -12,7 +12,7 @@ C, C++, Python and Perl as well as GUI widgets for Qt, GTK and PyGTK.
 Check the zbar home page for the latest release, mailing lists, etc.
     http://zbar.sourceforge.net/
 
-License information can be found in 'COPYING.LIB'.
+License information can be found in 'COPYING'.
 
 
 BUILDING
