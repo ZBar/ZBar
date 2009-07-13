@@ -14,6 +14,7 @@
 #include "util.h"
 #include "binarize.h"
 #include "image.h"
+#include "error.h"
 
 typedef int qr_line[3];
 
@@ -323,7 +324,7 @@ static int qr_finder_cluster_lines(qr_finder_cluster *_clusters,
       We accept the cluster if size is at least 1/3 their average length (this
        is a very small threshold, but was needed for some test images).*/
     len=((len<<1)+nneighbors)/(nneighbors<<1);
-    if(nneighbors*(3<<QR_FINDER_SUBPREC)>=len){
+    if(nneighbors*(5<<QR_FINDER_SUBPREC)>=len){
       _clusters[nclusters].lines=neighbors;
       _clusters[nclusters].nlines=nneighbors;
       for(j=0;j<nneighbors;j++)mark[neighbors[j]-_lines]=1;
@@ -4099,6 +4100,25 @@ int _zbar_qr_decode (zbar_image_scanner_t *iscn,
     qr_finder_center *centers = NULL;
 
     int ncenters = qr_finder_centers_locate(&centers, &edge_pts, reader, 0, 0);
+
+    zprintf(14, "%dx%d finders, %d centers:\n",
+            reader->finder_lines[0].num_lines,
+            reader->finder_lines[1].num_lines,
+            ncenters);
+    if(_zbar_verbosity >= 18) {
+        int i, j;
+        for(i = 0; i < ncenters; i++) {
+            qr_finder_center *cen = centers + i;
+            fprintf(stderr, "\t[%d] %d,%d:", i, cen->pos[0], cen->pos[1]);
+            for(j = 0; j < cen->nedge_pts; j++) {
+                qr_finder_edge_pt *edge = cen->edge_pts + j;
+                fprintf(stderr, " %d,%dx%d@%d",
+                        edge->pos[0], edge->pos[1],
+                        edge->extent, edge->edge);
+            }
+            fprintf(stderr, "\n");
+        }
+    }
 
     if(ncenters >= 3) {
         void *bin = qr_binarize(img->data, img->width, img->height);

@@ -51,32 +51,6 @@ zbar_symbol_type_t _zbar_find_qr (zbar_decoder_t *dcode)
     if(ei)
         goto invalid;
 
-    int lqz = get_width(dcode, 6);
-    if(lqz) {
-        lqz = (lqz + 1) * 7 / s;
-        if(lqz < 1)
-            goto invalid;
-    }
-    else
-        lqz = 4;
-    dprintf(2, "%d", lqz);
-
-    int tqz = get_width(dcode, 0);
-    if(tqz) {
-        tqz = (tqz + 1) * 7 / s;
-        if(tqz < 0)
-            goto invalid;
-    }
-    else
-        tqz = 4;
-    dprintf(2, "%d", tqz);
-
-    /* one border must be full QZ */
-    if(lqz < 3 && tqz < 3) {
-        dprintf(2, " [invalid qz]\n");
-        return(0);
-    }
-
     /* valid QR finder symbol
      * mark positions needed by decoder
      */
