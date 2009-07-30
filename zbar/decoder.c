@@ -39,8 +39,8 @@
 zbar_decoder_t *zbar_decoder_create ()
 {
     zbar_decoder_t *dcode = calloc(1, sizeof(zbar_decoder_t));
-    dcode->buflen = BUFFER_MIN;
-    dcode->buf = malloc(dcode->buflen);
+    dcode->buf_alloc = BUFFER_MIN;
+    dcode->buf = malloc(dcode->buf_alloc);
 
     /* initialize default configs */
 #ifdef ENABLE_EAN
@@ -82,7 +82,7 @@ void zbar_decoder_destroy (zbar_decoder_t *dcode)
 
 void zbar_decoder_reset (zbar_decoder_t *dcode)
 {
-    memset(dcode, 0, (long)&dcode->buf - (long)dcode);
+    memset(dcode, 0, (long)&dcode->buf_alloc - (long)dcode);
 #ifdef ENABLE_EAN
     ean_reset(&dcode->ean);
 #endif
@@ -132,6 +132,11 @@ zbar_color_t zbar_decoder_get_color (const zbar_decoder_t *dcode)
 const char *zbar_decoder_get_data (const zbar_decoder_t *dcode)
 {
     return((char*)dcode->buf);
+}
+
+unsigned int zbar_decoder_get_data_length (const zbar_decoder_t *dcode)
+{
+    return(dcode->buflen);
 }
 
 zbar_decoder_handler_t *

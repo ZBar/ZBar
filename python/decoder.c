@@ -107,7 +107,8 @@ static PyObject*
 decoder_get_data (zbarDecoder *self,
                   void *closure)
 {
-    return(PyString_FromString(zbar_decoder_get_data(self->zdcode)));
+    return(PyString_FromStringAndSize(zbar_decoder_get_data(self->zdcode),
+                                      zbar_decoder_get_data_length(self->zdcode)));
 }
 
 static PyGetSetDef decoder_getset[] = {

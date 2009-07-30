@@ -72,7 +72,9 @@ symbol_get_data (zbarSymbol *self,
                  void *closure)
 {
     if(!self->data) {
-        self->data = PyString_FromString(zbar_symbol_get_data(self->zsym));
+        self->data =
+            PyString_FromStringAndSize(zbar_symbol_get_data(self->zsym),
+                                       zbar_symbol_get_data_length(self->zsym));
         if(!self->data)
             return(NULL);
     }

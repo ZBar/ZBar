@@ -207,10 +207,15 @@ typedef struct zbar_symbol_s zbar_symbol_t;
  */
 extern zbar_symbol_type_t zbar_symbol_get_type(const zbar_symbol_t *symbol);
 
-/** retrieve ASCII data decoded from symbol.
+/** retrieve data decoded from symbol.
  * @returns the data string
  */
 extern const char *zbar_symbol_get_data(const zbar_symbol_t *symbol);
+
+/** retrieve length of binary data.
+ * @returns the length of the decoded data
+ */
+extern unsigned int zbar_symbol_get_data_length(const zbar_symbol_t *symbol);
 
 /** retrieve current cache count.  when the cache is enabled for the
  * image_scanner this provides inter-frame reliability and redundancy
@@ -372,7 +377,7 @@ extern const void *zbar_image_get_data(const zbar_image_t *image);
 /** return the size of image data.
  * @since 0.6
  */
-unsigned long zbar_image_get_data_length(const zbar_image_t *img);
+extern unsigned long zbar_image_get_data_length(const zbar_image_t *img);
 
 /** image_scanner decode result iterator.
  * @returns the first decoded symbol result for an image
@@ -1026,13 +1031,20 @@ extern zbar_symbol_type_t zbar_decode_width(zbar_decoder_t *decoder,
  * zbar_decode_width(). */
 extern zbar_color_t zbar_decoder_get_color(const zbar_decoder_t *decoder);
 
-/** retrieve last decoded data in ASCII format.
+/** retrieve last decoded data.
  * @returns the data string or NULL if no new data available.
  * the returned data buffer is owned by library, contents are only
  * valid between non-0 return from zbar_decode_width and next library
  * call
  */
 extern const char *zbar_decoder_get_data(const zbar_decoder_t *decoder);
+
+/** retrieve length of binary data.
+ * @returns the length of the decoded data or 0 if no new data
+ * available.
+ */
+extern unsigned int
+zbar_decoder_get_data_length(const zbar_decoder_t *decoder);
 
 /** retrieve last decoded symbol type.
  * @returns the type or ::ZBAR_NONE if no new data available

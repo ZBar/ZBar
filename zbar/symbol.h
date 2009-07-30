@@ -32,10 +32,11 @@ typedef struct point_s {
 
 struct zbar_symbol_s {
     zbar_symbol_type_t type;    /* symbol type */
-    unsigned int datalen;       /* allocation size of data */
-    char *data;                 /* ascii symbol data */
+    unsigned int data_alloc;    /* allocation size of data */
+    unsigned int datalen;       /* length of binary symbol data */
+    char *data;                 /* symbol data */
 
-    unsigned ptslen;            /* allocation size of pts */
+    unsigned pts_alloc;         /* allocation size of pts */
     unsigned npts;              /* number of points in location polygon */
     point_t *pts;               /* list of points in location polygon */
 
@@ -49,8 +50,8 @@ static inline void sym_add_point (zbar_symbol_t *sym,
                                   int y)
 {
     int i = sym->npts;
-    if(++sym->npts >= sym->ptslen)
-        sym->pts = realloc(sym->pts, ++sym->ptslen * sizeof(point_t));
+    if(++sym->npts >= sym->pts_alloc)
+        sym->pts = realloc(sym->pts, ++sym->pts_alloc * sizeof(point_t));
     sym->pts[i].x = x;
     sym->pts[i].y = y;
 }
@@ -59,7 +60,7 @@ static inline void sym_destroy (zbar_symbol_t *sym)
 {
     if(sym->pts)
         free(sym->pts);
-    if(sym->data)
+    if(sym->data_alloc && sym->data)
         free(sym->data);
     free(sym);
 }

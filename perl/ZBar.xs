@@ -233,6 +233,7 @@ BOOT:
         CONSTANT(error, ERR_, XDISPLAY, "X11 display error");
         CONSTANT(error, ERR_, XPROTO, "X11 protocol error");
         CONSTANT(error, ERR_, CLOSED, "output window is closed");
+        CONSTANT(error, ERR_, WINAPI, "windows system error");
     }
 
 zbar_error_t
@@ -295,9 +296,14 @@ zbar_symbol_type_t
 zbar_symbol_get_type(symbol)
 	Barcode::ZBar::Symbol symbol
 
-const char *
+SV *
 zbar_symbol_get_data(symbol)
 	Barcode::ZBar::Symbol symbol
+    CODE:
+	RETVAL = newSVpvn(zbar_symbol_get_data(symbol),
+                          zbar_symbol_get_data_length(symbol));
+    OUTPUT:
+        RETVAL
 
 int
 zbar_symbol_get_count(symbol)
@@ -645,9 +651,14 @@ zbar_color_t
 zbar_decoder_get_color(decoder)
 	Barcode::ZBar::Decoder	decoder
 
-const char *
+SV *
 zbar_decoder_get_data(decoder)
 	Barcode::ZBar::Decoder	decoder
+    CODE:
+	RETVAL = newSVpvn(zbar_decoder_get_data(decoder),
+                          zbar_decoder_get_data_length(decoder));
+    OUTPUT:
+        RETVAL
 
 zbar_symbol_type_t
 zbar_decoder_get_type(decoder)

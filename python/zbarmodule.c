@@ -35,6 +35,7 @@ static char *exc_names[] = {
     "zbar.X11DisplayError",
     "zbar.X11ProtocolError",
     "zbar.WindowClosed",
+    "zbar.WinAPI",
 };
 
 int

@@ -232,6 +232,7 @@ static inline void code39_postprocess (zbar_decoder_t *dcode)
         dcode->buf[i] = ((dcode->buf[i] < 0x2b)
                          ? code39_characters[(unsigned)dcode->buf[i]]
                          : '?');
+    dcode->buflen = i;
     dcode->buf[i] = '\0';
 }
 

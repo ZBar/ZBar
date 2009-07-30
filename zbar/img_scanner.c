@@ -29,7 +29,7 @@
 #include <stdlib.h>     /* malloc, free */
 #include <time.h>       /* clock_gettime */
 #include <sys/time.h>   /* gettimeofday */
-#include <string.h>     /* strlen, strcmp, memset, memcpy */
+#include <string.h>     /* memcmp, memset, memcpy */
 #include <assert.h>
 
 #include <zbar.h>
@@ -114,7 +114,8 @@ static inline void recycle_syms (zbar_image_scanner_t *iscn,
 
 static inline zbar_symbol_t *alloc_sym (zbar_image_scanner_t *iscn,
                                         zbar_symbol_type_t type,
-                                        const char *data)
+                                        const char *data,
+                                        int datalen)
 {
     /* recycle old or alloc new symbol */
     zbar_symbol_t *sym = iscn->syms;
@@ -130,12 +131,12 @@ static inline zbar_symbol_t *alloc_sym (zbar_image_scanner_t *iscn,
 
     /* save new symbol data */
     sym->type = type;
-    int datalen = strlen(data) + 1;
-    if(sym->datalen < datalen) {
+    sym->datalen = datalen++;
+    if(sym->data_alloc < datalen) {
         if(sym->data)
             free(sym->data);
+        sym->data_alloc = datalen;
         sym->data = malloc(datalen);
-        sym->datalen = datalen;
     }
     memcpy(sym->data, data, datalen);
 
@@ -149,7 +150,8 @@ static inline zbar_symbol_t *cache_lookup (zbar_image_scanner_t *iscn,
     zbar_symbol_t **entry = &iscn->cache;
     while(*entry) {
         if((*entry)->type == sym->type &&
-           !strcmp((*entry)->data, sym->data))
+           (*entry)->datalen == sym->datalen &&
+           !memcmp((*entry)->data, sym->data, sym->datalen))
             break;
         if((sym->time - (*entry)->time) > CACHE_TIMEOUT) {
             /* recycle stale cache entry */
@@ -176,19 +178,21 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
         return;
 
     const char *data = zbar_decoder_get_data(iscn->dcode);
+    unsigned datalen = zbar_decoder_get_data_length(iscn->dcode);
 
     /* FIXME deprecate - instead check (x, y) inside existing polygon */
     zbar_symbol_t *sym;
     for(sym = iscn->img->syms; sym; sym = sym->next)
         if(sym->type == type &&
-           !strcmp(sym->data, data)) {
+           sym->datalen == datalen &&
+           !memcmp(sym->data, data, datalen)) {
             /* add new point to existing set */
             /* FIXME should be polygon */
             sym_add_point(sym, x, y);
             return;
         }
 
-    sym = alloc_sym(iscn, type, data);
+    sym = alloc_sym(iscn, type, data, datalen);
 
     /* timestamp symbol */
 #if _POSIX_TIMERS > 0
@@ -213,7 +217,7 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
     if(iscn->enable_cache) {
         zbar_symbol_t *entry = cache_lookup(iscn, sym);
         if(!entry) {
-            entry = alloc_sym(iscn, sym->type, sym->data);
+            entry = alloc_sym(iscn, sym->type, sym->data, sym->datalen);
             entry->time = sym->time - CACHE_HYSTERESIS;
             entry->cache_count = -CACHE_CONSISTENCY;
             /* add to cache */

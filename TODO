@@ -29,7 +29,6 @@ symbologies:
   * finish addon decoding
 
 decoder:
-  * support for binary symbol data (PDF417, Code 128)
   * start/stop/abort and location detail APIs (PDF417, OMR)
   * more configuration options
     * disable for at least UPC-E (maybe UPC-A?)
