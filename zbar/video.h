@@ -36,8 +36,13 @@
 # include <pthread.h>
 #endif
 
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
 #include <zbar.h>
 
+#include "image.h"
 #include "error.h"
 
 /* number of images to preallocate */
@@ -47,6 +52,7 @@ typedef enum video_interface_e {
     VIDEO_INVALID = 0,          /* uninitialized */
     VIDEO_V4L1,                 /* v4l protocol version 1 */
     VIDEO_V4L2,                 /* v4l protocol version 2 */
+    VIDEO_VFW,                  /* video for windows */
 } video_interface_t;
 
 typedef enum video_iomode_e {
@@ -81,6 +87,14 @@ struct zbar_video_s {
 
 #ifdef HAVE_LIBPTHREAD
     pthread_mutex_t qlock;      /* lock image queue */
+#endif
+#ifdef _WIN32
+    HWND hwnd;                  /* vfw interface */
+    CRITICAL_SECTION qlock;     /* lock image queue */
+    HANDLE notify;              /* capture thread status change */
+    int bi_size;                /* size of bih */
+    BITMAPINFOHEADER *bih;      /* video format details */
+    zbar_image_t *image;        /* currently capturing frame */
 #endif
 
 #ifdef HAVE_LIBJPEG
@@ -130,11 +144,57 @@ static inline int video_unlock (zbar_video_t *vdo)
 }
 
 #else
-# define video_lock(...) (0)
-# define video_unlock(...) (0)
+# ifdef _WIN32
+
+static inline int video_lock (zbar_video_t *vdo)
+{
+    EnterCriticalSection(&vdo->qlock);
+    return(0);
+}
+
+static inline int video_unlock (zbar_video_t *vdo)
+{
+    LeaveCriticalSection(&vdo->qlock);
+    return(0);
+}
+
+# else
+#  define video_lock(...) (0)
+#  define video_unlock(...) (0)
+# endif
 #endif
 
+static inline int video_nq_image (zbar_video_t *vdo,
+                                  zbar_image_t *img)
+{
+    /* maintains queued buffers in order */
+    img->next = NULL;
+    if(vdo->nq_image)
+        vdo->nq_image->next = img;
+    vdo->nq_image = img;
+    if(!vdo->dq_image)
+        vdo->dq_image = img;
+    return(video_unlock(vdo));
+}
+
+static inline zbar_image_t *video_dq_image (zbar_video_t *vdo)
+{
+    zbar_image_t *img = vdo->dq_image;
+    if(img) {
+        vdo->dq_image = img->next;
+        img->next = NULL;
+    }
+    if(video_unlock(vdo))
+        /* FIXME reclaim image */
+        return(NULL);
+
+    if(!img)
+        /* FIXME block until available? */
+        err_capture(vdo, SEV_ERROR, ZBAR_ERR_BUSY, __func__,
+                    "all allocated video images busy");
+    return(img);
+}
+
 extern int _zbar_video_open(zbar_video_t*, const char*);
-extern int _zbar_v4l2_probe(zbar_video_t*);
 
 #endif

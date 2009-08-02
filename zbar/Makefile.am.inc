@@ -37,6 +37,7 @@ zbar_libzbar_la_SOURCES += zbar/processor/win.h zbar/processor/win.c \
     zbar/libzbar.rc
 zbar_libzbar_la_CPPFLAGS += -mthreads
 zbar_libzbar_la_LDFLAGS += -mthreads
+# FIXME broken
 zbar_libzbar_la_LIBADD += zbar/libzbar-rc.lo
 endif
 
@@ -45,7 +46,14 @@ zbar_libzbar_la_SOURCES += zbar/video/v4l1.c
 if HAVE_V4L2
 zbar_libzbar_la_SOURCES += zbar/video/v4l2.c
 endif
-else
+endif
+if WIN32
+if HAVE_VIDEO
+zbar_libzbar_la_SOURCES += zbar/video/vfw.c
+zbar_libzbar_la_LIBADD += -lvfw32
+endif
+endif
+if !HAVE_VIDEO
 zbar_libzbar_la_SOURCES += zbar/video/null.c
 endif
 

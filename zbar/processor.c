@@ -131,6 +131,13 @@ int zbar_processor_init (zbar_processor_t *proc,
 
     _zbar_processor_threads_stop(proc);
 
+    _zbar_processor_close(proc);
+
+    if(proc->window) {
+        zbar_window_destroy(proc->window);
+        proc->window = NULL;
+    }
+
     int rc = 0;
     if(proc->video) {
         if(dev)
@@ -139,13 +146,6 @@ int zbar_processor_init (zbar_processor_t *proc,
             zbar_video_destroy(proc->video);
             proc->video = NULL;
         }
-    }
-
-    _zbar_processor_close(proc);
-
-    if(proc->window) {
-        zbar_window_destroy(proc->window);
-        proc->window = NULL;
     }
 
     if(!dev && !enable_display)
@@ -173,15 +173,14 @@ int zbar_processor_init (zbar_processor_t *proc,
                                      proc->req_width, proc->req_height);
         if(proc->req_intf)
             zbar_video_request_interface(proc->video, proc->req_intf);
-        if((proc->req_iomode &&
-            zbar_video_request_iomode(proc->video, proc->req_iomode)) ||
-           zbar_video_open(proc->video, dev)) {
+        if(proc->req_iomode &&
+           zbar_video_request_iomode(proc->video, proc->req_iomode)) {
             rc = err_copy(proc, proc->video);
             goto done;
         }
     }
 
-    rc = _zbar_processor_threads_start(proc);
+    rc = _zbar_processor_threads_start(proc, dev);
     if(rc)
         goto done;
 

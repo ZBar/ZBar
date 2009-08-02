@@ -395,8 +395,13 @@ int _zbar_processor_threads_init (zbar_processor_t *proc,
     return(0);
 }
 
-int _zbar_processor_threads_start (zbar_processor_t *proc)
+int _zbar_processor_threads_start (zbar_processor_t *proc,
+                                   const char *dev)
 {
+    if(proc->video &&
+       zbar_video_open(proc->video, dev))
+        return(err_copy(proc, proc->video));
+
     if(!proc->threaded)
         return(0);
 

@@ -4,9 +4,10 @@ general:
   * handle video destroyed w/images outstanding
   * dbg_scan background image stretched (still...)
   * profile and weed out obvious oversights
-  * windows port
-    * fix processor layer and/or add more appropriate windows interface
   * example using SANE to scan symbol(s)
+
+windows port:
+  * libzbar-0.dll should be zbar-0.dll
 
 wrappers:
   * build API docs for zbargtk, zbarpygtk

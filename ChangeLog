@@ -1,4 +1,11 @@
 current:
+  * initial VFW video support
+    - mostly working with uvc driver, broken for others
+    - factor out common video buffer handling
+    - fix processor to destroy window *before* video (ref TODO)
+    - use /dev/video* VFW pseudo-devices
+    - windows configure skip non-windows checks
+    - prep for platform refactoring
   * fix zbarimg b&w format handling
   * fix scan (image) boundary QZ handling (bug #2807538)
     - add linear scanner manual flush API

@@ -48,32 +48,28 @@
 static int v4l2_nq (zbar_video_t *vdo,
                     zbar_image_t *img)
 {
-    if(vdo->iomode != VIDEO_READWRITE) {
-        if(video_unlock(vdo))
-            return(-1);
+    if(vdo->iomode == VIDEO_READWRITE)
+        return(video_nq_image(vdo, img));
 
-        struct v4l2_buffer vbuf;
-        memset(&vbuf, 0, sizeof(vbuf));
-        vbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if(vdo->iomode == VIDEO_MMAP) {
-            vbuf.memory = V4L2_MEMORY_MMAP;
-            vbuf.index = img->srcidx;
-        }
-        else {
-            vbuf.memory = V4L2_MEMORY_USERPTR;
-            vbuf.m.userptr = (unsigned long)img->data;
-            vbuf.length = img->datalen;
-            vbuf.index = img->srcidx; /* FIXME workaround broken drivers */
-        }
-        if(ioctl(vdo->fd, VIDIOC_QBUF, &vbuf) < 0)
-            return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
-                               "queuing video buffer (VIDIOC_QBUF)"));
+    if(video_unlock(vdo))
+        return(-1);
+
+    struct v4l2_buffer vbuf;
+    memset(&vbuf, 0, sizeof(vbuf));
+    vbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if(vdo->iomode == VIDEO_MMAP) {
+        vbuf.memory = V4L2_MEMORY_MMAP;
+        vbuf.index = img->srcidx;
     }
     else {
-        img->next = vdo->nq_image;
-        vdo->nq_image = img;
-        return(video_unlock(vdo));
+        vbuf.memory = V4L2_MEMORY_USERPTR;
+        vbuf.m.userptr = (unsigned long)img->data;
+        vbuf.length = img->datalen;
+        vbuf.index = img->srcidx; /* FIXME workaround broken drivers */
     }
+    if(ioctl(vdo->fd, VIDIOC_QBUF, &vbuf) < 0)
+        return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
+                           "queuing video buffer (VIDIOC_QBUF)"));
     return(0);
 }
 
@@ -116,17 +112,9 @@ static zbar_image_t *v4l2_dq (zbar_video_t *vdo)
         }
     }
     else {
-        /* FIXME block until image available? */
-        img = vdo->nq_image;
-        if(img)
-            vdo->nq_image = img->next;
-        if(video_unlock(vdo))
+        zbar_image_t *img = video_dq_image(vdo);
+        if(!img)
             return(NULL);
-        if(!img) {
-            err_capture(vdo, SEV_ERROR, ZBAR_ERR_BUSY, __func__,
-                        "all allocated video images busy");
-            return(NULL);
-        }
 
         /* FIXME should read entire image */
         unsigned long datalen = read(vdo->fd, (void*)img->data, img->datalen);
@@ -144,13 +132,6 @@ static zbar_image_t *v4l2_dq (zbar_video_t *vdo)
 
 static int v4l2_start (zbar_video_t *vdo)
 {
-    /* enqueue all buffers */
-    int i;
-    for(i = 0; i < vdo->num_images; i++)
-        if(vdo->nq(vdo, vdo->images[i]) ||
-           ((i + 1 < vdo->num_images) && video_lock(vdo)))
-            return(-1);
-
     if(vdo->iomode == VIDEO_READWRITE)
         return(0);
 
@@ -163,13 +144,6 @@ static int v4l2_start (zbar_video_t *vdo)
 
 static int v4l2_stop (zbar_video_t *vdo)
 {
-    int i;
-    for(i = 0; i < vdo->num_images; i++)
-        vdo->images[i]->next = NULL;
-    vdo->nq_image = vdo->dq_image = NULL;
-    if(video_unlock(vdo))
-        return(-1);
-
     if(vdo->iomode == VIDEO_READWRITE)
         return(0);
 

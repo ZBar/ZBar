@@ -42,6 +42,7 @@ typedef struct thread_state_s {
 } thread_state_t;
 
 struct processor_state_s {
+    char *video_dev;                    /* device name */
     HWND hwnd;                          /* window handle */
     int input;
     unsigned width, height;

@@ -24,10 +24,6 @@
 #include "error.h"
 #include <string.h>
 
-#ifdef _WIN32
-# include <windows.h>
-#endif
-
 int _zbar_verbosity = 0;
 
 static const char * const sev_str[] = {

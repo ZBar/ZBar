@@ -69,6 +69,10 @@ zbar_video_t *zbar_video_create ()
         return(NULL);
     }
 #endif
+#ifdef _WIN32
+    InitializeCriticalSection(&vdo->qlock);
+    vdo->notify = CreateEvent(NULL, 0, 0, NULL);
+#endif
 
     /* pre-allocate images */
     vdo->num_images = ZBAR_VIDEO_IMAGES_MAX;
@@ -120,6 +124,10 @@ void zbar_video_destroy (zbar_video_t *vdo)
 #ifdef HAVE_LIBPTHREAD
     pthread_mutex_destroy(&vdo->qlock);
 #endif
+#ifdef _WIN32
+    DeleteCriticalSection(&vdo->qlock);
+    CloseHandle(vdo->notify);
+#endif
 #ifdef HAVE_LIBJPEG
     if(vdo->jpeg_img) {
         zbar_image_destroy(vdo->jpeg_img);
@@ -141,15 +149,14 @@ int zbar_video_open (zbar_video_t *vdo,
 
 int zbar_video_get_fd (const zbar_video_t *vdo)
 {
-    if(vdo->fd >= 0 && vdo->intf == VIDEO_V4L2)
-        return(vdo->fd);
-
-    if(vdo->intf != VIDEO_V4L2)
+    if(vdo->intf == VIDEO_INVALID)
+        return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
+                           "video device not opened"));
+    if(vdo->intf == VIDEO_V4L1)
         return(err_capture(vdo, SEV_WARNING, ZBAR_ERR_UNSUPPORTED, __func__,
                            "v4l1 API does not support polling"));
-
-    return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
-                       "video device not opened"));
+    assert(vdo->fd >= 0);
+    return(vdo->fd);
 }
 
 int zbar_video_request_size (zbar_video_t *vdo,
@@ -170,7 +177,7 @@ int zbar_video_request_size (zbar_video_t *vdo,
 int zbar_video_request_interface (zbar_video_t *vdo,
                                   int ver)
 {
-    if(vdo->fd >= 0)
+    if(vdo->intf != VIDEO_INVALID)
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
                          "device already opened, unable to change interface"));
     vdo->intf = (video_interface_t)ver;
@@ -181,7 +188,7 @@ int zbar_video_request_interface (zbar_video_t *vdo,
 int zbar_video_request_iomode (zbar_video_t *vdo,
                                int iomode)
 {
-    if(vdo->fd >= 0)
+    if(vdo->intf != VIDEO_INVALID)
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
                          "device already opened, unable to change iomode"));
     if(iomode < 0 || iomode > VIDEO_USERPTR)
@@ -233,11 +240,13 @@ static inline int video_init_images (zbar_video_t *vdo)
             img->data = vdo->buf + offset;
             zprintf(2, "    [%02d] @%08lx\n", i, offset);
         }
+#ifndef _WIN32
         else {
             assert(img->data);
             assert(img->datalen);
             assert(img->datalen >= vdo->datalen);
         }
+#endif
     }
     return(0);
 }
@@ -283,7 +292,7 @@ int zbar_video_enable (zbar_video_t *vdo,
         return(0);
 
     if(enable) {
-        if(vdo->fd < 0)
+        if(vdo->intf == VIDEO_INVALID)
             return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
                                "video device not opened"));
 
@@ -295,10 +304,26 @@ int zbar_video_enable (zbar_video_t *vdo,
     if(video_lock(vdo))
         return(-1);
     vdo->active = enable;
-    if(enable)
+    if(enable) {
+        /* enqueue all buffers */
+        int i;
+        for(i = 0; i < vdo->num_images; i++)
+            if(vdo->nq(vdo, vdo->images[i]) ||
+               ((i + 1 < vdo->num_images) && video_lock(vdo)))
+                return(-1);
+        
         return(vdo->start(vdo));
-    else
+    }
+    else {
+        int i;
+        for(i = 0; i < vdo->num_images; i++)
+            vdo->images[i]->next = NULL;
+        vdo->nq_image = vdo->dq_image = NULL;
+        if(video_unlock(vdo))
+            return(-1);
+
         return(vdo->stop(vdo));
+    }
 }
 
 zbar_image_t *zbar_video_next_image (zbar_video_t *vdo)

@@ -213,6 +213,10 @@ static inline int proc_thread_stop (processor_state_t *state,
 int _zbar_processor_threads_init (zbar_processor_t *proc,
                                   int threaded)
 {
+    if(!threaded)
+        err_capture(proc, SEV_WARNING, ZBAR_ERR_UNSUPPORTED,
+                    __func__, "windows processor does not support unthreaded");
+
     processor_state_t *state = proc->state =
         calloc(1, sizeof(processor_state_t));
 
@@ -242,6 +246,11 @@ int _zbar_processor_threads_cleanup (zbar_processor_t *proc)
 
     DeleteCriticalSection(&state->mutex);
 
+    if(state->video_dev) {
+        free(state->video_dev);
+        state->video_dev = NULL;
+    }
+
     free(state);
     proc->state = NULL;
     return(0);
@@ -256,7 +265,15 @@ static DWORD WINAPI proc_video_thread (void *arg)
     DWORD self = GetCurrentThreadId();
     int rc = 0;
 
+    /* windows video must be opened from driving thread */
+    if(zbar_video_open(proc->video, state->video_dev)) {
+        err_copy(proc, proc->video);
+        SetEvent(tstate->stopped);
+        return(0);
+    }
+
     EnterCriticalSection(&state->mutex);
+    zprintf(4, "spawned video thread\n");
     SetEvent(tstate->started);
 
     wait_entry_t *entry = proc_entry_alloc(state, self);
@@ -305,12 +322,15 @@ static DWORD WINAPI proc_video_thread (void *arg)
         zbar_image_destroy(img);
 
         EnterCriticalSection(&state->mutex);
+        assert(state->lock_level == 1);
 
         wait_entry_t *next = proc_entry_dequeue(&state->lock_queue);
         if(next) {
             state->lock_owner = next->requester;
             SetEvent(next->notify);
         }
+        else
+            state->lock_level = 0;
     }
 
     proc_entry_free(state, entry);
@@ -321,10 +341,14 @@ static DWORD WINAPI proc_video_thread (void *arg)
     return(0);
 }
 
-int _zbar_processor_threads_start (zbar_processor_t *proc)
+int _zbar_processor_threads_start (zbar_processor_t *proc,
+                                   const char *dev)
 {
-    return(proc_thread_start(proc, &proc->state->video_thread,
-                             proc_video_thread));
+    processor_state_t *state = proc->state;
+    if(state->video_dev)
+        free(state->video_dev);
+    state->video_dev = strdup(dev);
+    return(proc_thread_start(proc, &state->video_thread, proc_video_thread));
 }
 
 int _zbar_processor_threads_stop (zbar_processor_t *proc)
@@ -431,11 +455,9 @@ static inline int proc_handle_events (zbar_processor_t *proc)
         int rc = PeekMessage(&msg, state->hwnd, 0, 0, PM_NOYIELD | PM_REMOVE);
         if(!rc)
             return(0);
-        if(rc < 0) {
-            proc->err.errnum = GetLastError();
+        if(rc < 0)
             return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
                                "failed to obtain event"));
-        }
 
         TranslateMessage(&msg);
         DispatchMessage(&msg);
@@ -475,18 +497,14 @@ static inline int proc_open (zbar_processor_t *proc,
     HMODULE hmod = NULL;
     if(!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
                           GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                          (void*)_zbar_processor_open, (HINSTANCE*)&hmod)) {
-        proc->err.errnum = GetLastError();
+                          (void*)_zbar_processor_open, (HINSTANCE*)&hmod))
         return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
                            "failed to obtain module handle"));
-    }
 
     ATOM wca = proc_register_class(hmod);
-    if(!wca) {
-        proc->err.errnum = GetLastError();
+    if(!wca)
         return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
                            "failed to register window class"));
-    }
 
     RECT r = { 0, 0, width, height };
     AdjustWindowRectEx(&r, WIN_STYLE, 0, EXT_STYLE);
@@ -496,11 +514,9 @@ static inline int proc_open (zbar_processor_t *proc,
                                  r.right - r.left, r.bottom - r.top,
                                  NULL, NULL, hmod, proc);
 
-    if(!state->hwnd) {
-        proc->err.errnum = GetLastError();
+    if(!state->hwnd)
         return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
                            "failed to open window"));
-    }
     return(0);
 }
 
@@ -518,6 +534,7 @@ static DWORD WINAPI proc_input_thread (void *arg)
     }
 
     EnterCriticalSection(&state->mutex);
+    zprintf(4, "spawned input thread\n");
     SetEvent(tstate->started);
 
     while(!rc && tstate->running) {

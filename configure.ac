@@ -58,7 +58,6 @@ case $host_os in
     win32="no"
   ;;
 esac
-
 AM_CONDITIONAL([WIN32], [test "x$win32" = "xyes"])
 
 dnl programs
@@ -108,8 +107,6 @@ dnl libraries
 AC_SEARCH_LIBS([clock_gettime], [rt])
 
 dnl poll support
-dnl without poll() we exclude processor layer
-dnl FIXME superceded by WIN32 checks(?)
 
 have_poll="no"
 AC_CHECK_HEADERS([poll.h], [have_poll="yes"])
@@ -119,11 +116,12 @@ dnl pthreads
 dnl FIXME this doesn't port well, integrate something like this:
 dnl     http://autoconf-archive.cryp.to/acx_pthread.html
 
+enable_pthread="no"
 AC_ARG_ENABLE([pthread],
   [AS_HELP_STRING([--disable-pthread],
     [omit support for threaded applications])],
   [],
-  [enable_pthread="yes"])
+  [AS_IF([test "x$win32" = "xno"], [enable_pthread="yes"])])
 
 AS_IF([test "x$enable_pthread" != "xno"],
   [AC_CHECK_HEADERS([pthread.h], [],
@@ -144,12 +142,16 @@ AC_ARG_ENABLE([video],
 
 with_video="no"
 AS_IF([test "x$enable_video" != "xno"],
-  [AC_CHECK_HEADERS([linux/videodev.h], [with_video="v4l1"],
-     [AC_MSG_FAILURE([test for video support failed!
+  [AS_IF([test "x$win32" = "xno"],
+    [AC_CHECK_HEADERS([linux/videodev.h], [with_video="v4l1"],
+      [AC_MSG_FAILURE([test for video support failed!
 rebuild your kernel to include video4linux support or
 configure --disable-video to skip building video support.])])
-   AC_CHECK_HEADERS([linux/videodev2.h], [with_video="v4l2"],
-     [AC_MSG_WARN([v4l2 API not detected, upgrade your kernel!])])
+       AC_CHECK_HEADERS([linux/videodev2.h], [with_video="v4l2"],
+         [AC_MSG_WARN([v4l2 API not detected, upgrade your kernel!])])],
+    [AC_CHECK_HEADERS([vfw.h], [with_video="vfw"],
+      [AC_MSG_FAILURE([test for VfW video support failed!
+configure --disable-video to skip building vidoe support.])])])
 ])
 AM_CONDITIONAL([HAVE_VIDEO], [test "x$enable_video" != "xno"])
 AM_CONDITIONAL([HAVE_V4L1],
@@ -157,15 +159,19 @@ AM_CONDITIONAL([HAVE_V4L1],
 AM_CONDITIONAL([HAVE_V4L2], [test "x$with_video" = "xv4l2"])
 
 dnl X
+AC_ARG_VAR([XSHM_LIBS], [linker flags for X shared memory extension])
+
+with_x="no"
 AC_PATH_XTRA
-AH_BOTTOM([#ifndef X_DISPLAY_MISSING
+AS_IF([test "x$win32" = "xno"],
+  [AH_BOTTOM([#ifndef X_DISPLAY_MISSING
 # define HAVE_X
 #endif
+   ])
+   AS_IF([test "x$no_x" != "xyes"], [with_x="yes"])
 ])
-AS_IF([test "x$no_x" != "xyes"], [with_x="yes"], [with_x="no"])
 AM_CONDITIONAL([HAVE_X], [test "x$with_x" = "xyes"])
 
-AC_ARG_VAR([XSHM_LIBS], [linker flags for X shared memory extension])
 AS_IF([test "x$XSHM_LIBS" = "x"], [XSHM_LIBS="-lXext"])
 AC_ARG_WITH([xshm],
   [AS_HELP_STRING([--without-xshm],
@@ -242,7 +248,6 @@ AS_IF([test "x$with_jpeg" != "xno"],
 set appropriately or configure --without-jpeg])],
      [with_jpeg="no"])
 ])
-
 AM_CONDITIONAL([HAVE_JPEG], [test "x$with_jpeg" = "xyes"])
 
 dnl ImageMagick

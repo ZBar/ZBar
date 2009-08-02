@@ -48,6 +48,12 @@ void zbar_window_destroy (zbar_window_t *w)
     /* detach */
     zbar_window_attach(w, NULL, 0);
     err_cleanup(&w->err);
+#ifdef HAVE_LIBPTHREAD
+    pthread_mutex_destroy(&w->imglock);
+#endif
+#ifdef _WIN32
+    DeleteCriticalSection(&w->imglock);
+#endif
     free(w);
 }
 
@@ -143,7 +149,7 @@ inline int zbar_window_redraw (zbar_window_t *w)
         }
 
         if(!rc)
-            rc = w->draw_image(w, w->image);
+            rc = w->draw_image(w, img);
         if(!rc)
             rc = window_draw_overlay(w);
     }

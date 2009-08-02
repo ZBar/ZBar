@@ -76,7 +76,8 @@ extern int _zbar_processor_wait(zbar_processor_t*, unsigned, int);
 
 extern int _zbar_processor_threads_init(zbar_processor_t*, int);
 extern int _zbar_processor_threads_cleanup(zbar_processor_t*);
-extern int _zbar_processor_threads_start(zbar_processor_t*);
+extern int _zbar_processor_threads_start(zbar_processor_t*,
+                                         const char*);
 extern int _zbar_processor_threads_stop(zbar_processor_t*);
 
 extern int _zbar_processor_open(zbar_processor_t*, char*, unsigned, unsigned);
