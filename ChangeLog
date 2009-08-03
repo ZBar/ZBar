@@ -1,4 +1,6 @@
 current:
+  * fix symbol leaks
+    - add symbol reference counting
   * add support for binary symbol data
   * fix zbarimg b&w format handling
   * fix scan (image) boundary QZ handling (bug #2807538)

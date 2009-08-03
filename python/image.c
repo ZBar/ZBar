@@ -40,6 +40,11 @@ symboliter_traverse (zbarSymbolIter *self,
 static int
 symboliter_clear (zbarSymbolIter *self)
 {
+    if(self->zsym) {
+        zbar_symbol_t *zsym = (zbar_symbol_t*)self->zsym;
+        self->zsym = NULL;
+        zbar_symbol_ref(zsym, -1);
+    }
     Py_CLEAR(self->img);
     return(0);
 }
@@ -63,10 +68,15 @@ symboliter_iternext (zbarSymbolIter *self)
 {
     if(!self->zsym)
         self->zsym = zbar_image_first_symbol(self->img->zimg);
-    else
+    else {
+        zbar_symbol_t *zsym = (zbar_symbol_t*)self->zsym;
+        zbar_symbol_ref(zsym, -1);
         self->zsym = zbar_symbol_next(self->zsym);
+    }
     if(!self->zsym)
         return(NULL);
+    zbar_symbol_t *zsym = (zbar_symbol_t*)self->zsym;
+    zbar_symbol_ref(zsym, 1);
     return(zbarSymbol_FromSymbol(self->img, self->zsym));
 }
 

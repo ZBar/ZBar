@@ -55,6 +55,12 @@ const char *zbar_get_addon_name (zbar_symbol_type_t sym)
     }
 }
 
+void zbar_symbol_ref (zbar_symbol_t *sym,
+                      int refs)
+{
+    _zbar_symbol_refcnt(sym, refs);
+}
+
 zbar_symbol_type_t zbar_symbol_get_type (const zbar_symbol_t *sym)
 {
     return(sym->type);

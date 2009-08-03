@@ -202,6 +202,19 @@ struct zbar_symbol_s;
 /** opaque decoded symbol object. */
 typedef struct zbar_symbol_s zbar_symbol_t;
 
+/** symbol reference count manipulation.
+ * increment the reference count when you store a new reference to the
+ * symbol.  decrement when the reference is no longer used.  do not
+ * refer to the symbol once the count is decremented and the
+ * containing image has been recycled or destroyed.
+ * @note the containing image holds a reference to the symbol, so you
+ * only need to use this if you keep a symbol after the image has been
+ * destroyed or reused.
+ * @since 0.9
+ */
+extern void zbar_symbol_ref(zbar_symbol_t *symbol,
+                            int refs);
+
 /** retrieve type of decoded symbol.
  * @returns the symbol type
  */

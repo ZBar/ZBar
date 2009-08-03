@@ -26,6 +26,8 @@ docs: $(dist_man_MANS) #dist_doc_DATA
 .PHONY: docs
 
 doc_path = --searchpath $(abs_builddir)/doc -m $(abs_srcdir)/doc/style.xsl
+# xmlto --searchpath broken again...
+doc_path += --skip-validation
 
 #pdf: doc/zbar-manual.pdf
 #doc/zbar-manual.pdf: $(DOCSOURCES)

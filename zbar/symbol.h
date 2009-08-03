@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <zbar.h>
+#include "refcnt.h"
 
 typedef struct point_s {
     int x, y;
@@ -40,6 +41,7 @@ struct zbar_symbol_s {
     unsigned npts;              /* number of points in location polygon */
     point_t *pts;               /* list of points in location polygon */
 
+    refcnt_t refcnt;            /* reference count */
     zbar_symbol_t *next;        /* linked list of results */
     unsigned long time;         /* relative symbol capture time */
     int cache_count;            /* cache state */
@@ -63,6 +65,13 @@ static inline void sym_destroy (zbar_symbol_t *sym)
     if(sym->data_alloc && sym->data)
         free(sym->data);
     free(sym);
+}
+
+static inline void _zbar_symbol_refcnt (zbar_symbol_t *sym,
+                                        int delta)
+{
+    if(!_zbar_refcnt(&sym->refcnt, delta) && delta <= 0)
+        sym_destroy(sym);
 }
 
 #endif

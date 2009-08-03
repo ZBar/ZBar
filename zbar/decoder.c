@@ -357,15 +357,17 @@ int zbar_decoder_set_config (zbar_decoder_t *dcode,
 
 
 static char *decoder_dump = NULL;
+static unsigned decoder_dumplen = 0;
 
 const char *_zbar_decoder_buf_dump (unsigned char *buf,
                                     unsigned int buflen)
 {
     int dumplen = (buflen * 3) + 12;
-    if(!decoder_dump || dumplen > strlen(decoder_dump)) {
+    if(!decoder_dump || dumplen > decoder_dumplen) {
         if(decoder_dump)
             free(decoder_dump);
         decoder_dump = malloc(dumplen);
+        decoder_dumplen = dumplen;
     }
     char *p = decoder_dump +
         snprintf(decoder_dump, 12, "buf[%04x]=",

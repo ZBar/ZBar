@@ -40,6 +40,11 @@ symbol_traverse (zbarSymbol *self,
 static int
 symbol_clear (zbarSymbol *self)
 {
+    if(self->zsym) {
+        zbar_symbol_t *zsym = (zbar_symbol_t*)self->zsym;
+        self->zsym = NULL;
+        zbar_symbol_ref(zsym, -1);
+    }
     Py_CLEAR(self->img);
     Py_CLEAR(self->data);
     Py_CLEAR(self->loc);
@@ -72,6 +77,7 @@ symbol_get_data (zbarSymbol *self,
                  void *closure)
 {
     if(!self->data) {
+        /* FIXME this could be a buffer now */
         self->data =
             PyString_FromStringAndSize(zbar_symbol_get_data(self->zsym),
                                        zbar_symbol_get_data_length(self->zsym));
@@ -134,6 +140,8 @@ zbarSymbol_FromSymbol (zbarImage *img,
     assert(img);
     assert(zsym);
     Py_INCREF(img);
+    zbar_symbol_t *zs = (zbar_symbol_t*)zsym;
+    zbar_symbol_ref(zs, 1);
     self->zsym = zsym;
     self->img = img;
     self->data = NULL;

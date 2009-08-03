@@ -94,18 +94,24 @@ static inline void recycle_syms (zbar_image_scanner_t *iscn,
     /* walk to root of clone tree */
     while(img) {
         img->nsyms = 0;
-        zbar_symbol_t *sym = img->syms;
-        if(sym) {
-            /* recycle image symbols */
-            iscn->nsyms++;
-            while(sym->next) {
-                sym = sym->next;
-                iscn->nsyms++;
+        /* recycle image symbols */
+        zbar_symbol_t **symp = &img->syms, *sym;
+        while((sym = *symp))
+            if(_zbar_refcnt(&sym->refcnt, -1)) {
+                *symp = sym->next;
+                sym->next = NULL;
             }
-            sym->next = iscn->syms;
+            else {
+                iscn->nsyms++;
+                symp = &sym->next;
+            }
+
+        if(symp != &img->syms) {
+            *symp = iscn->syms;
             iscn->syms = img->syms;
-            img->syms = NULL;
         }
+        img->syms = NULL;
+
         /* save root */
         iscn->img = img;
         img = img->next;
@@ -193,6 +199,7 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
         }
 
     sym = alloc_sym(iscn, type, data, datalen);
+    _zbar_symbol_refcnt(sym, 1);
 
     /* timestamp symbol */
 #if _POSIX_TIMERS > 0
@@ -217,6 +224,7 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
     if(iscn->enable_cache) {
         zbar_symbol_t *entry = cache_lookup(iscn, sym);
         if(!entry) {
+            /* FIXME reuse sym */
             entry = alloc_sym(iscn, sym->type, sym->data, sym->datalen);
             entry->time = sym->time - CACHE_HYSTERESIS;
             entry->cache_count = -CACHE_CONSISTENCY;
@@ -241,6 +249,7 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
     else
         sym->cache_count = 0;
 
+    /* FIXME option to only report count == 0 */
     if(iscn->handler)
         iscn->handler(iscn->img, iscn->userdata);
 }

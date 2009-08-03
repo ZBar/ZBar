@@ -34,6 +34,16 @@ zbar_image_t *zbar_image_create ()
     return(img);
 }
 
+void _zbar_image_free (zbar_image_t *img)
+{
+    zbar_symbol_t *sym, *next;
+    for(sym = img->syms; sym; sym = next) {
+        next = sym->next;
+        _zbar_symbol_refcnt(sym, -1);
+    }
+    free(img);
+}
+
 void zbar_image_destroy (zbar_image_t *img)
 {
     _zbar_image_refcnt(img, -1);
