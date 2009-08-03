@@ -1,4 +1,7 @@
 current:
+  * fix symbol leaks
+    - add symbol reference counting
+  * add support for binary symbol data
   * initial VFW video support
     - mostly working with uvc driver, broken for others
     - factor out common video buffer handling

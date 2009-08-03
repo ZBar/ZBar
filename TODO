@@ -1,5 +1,4 @@
 general:
-  * cleanup symbol leaks
   * finish error handling
   * handle video destroyed w/images outstanding
   * dbg_scan background image stretched (still...)
@@ -15,7 +14,6 @@ wrappers:
   * widget config APIs
   * drag-and-drop for widgets (configurable...)
   * Perl build support integration?
-  * Perl object lifetime problems? (eg Symbol)
   * GTK and Qt perl bindings
   * C++ global wrappers
 
@@ -30,7 +28,6 @@ symbologies:
   * finish addon decoding
 
 decoder:
-  * support for binary symbol data (PDF417, Code 128)
   * start/stop/abort and location detail APIs (PDF417, OMR)
   * more configuration options
     * disable for at least UPC-E (maybe UPC-A?)

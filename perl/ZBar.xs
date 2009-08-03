@@ -233,6 +233,7 @@ BOOT:
         CONSTANT(error, ERR_, XDISPLAY, "X11 display error");
         CONSTANT(error, ERR_, XPROTO, "X11 protocol error");
         CONSTANT(error, ERR_, CLOSED, "output window is closed");
+        CONSTANT(error, ERR_, WINAPI, "windows system error");
     }
 
 zbar_error_t
@@ -291,13 +292,24 @@ BOOT:
         CONSTANT(symbol_type, , CODE128, zbar_get_symbol_name(ZBAR_CODE128));
     }
 
+void
+DESTROY(symbol)
+        Barcode::ZBar::Symbol symbol
+    CODE:
+        zbar_symbol_ref(symbol, -1);
+
 zbar_symbol_type_t
 zbar_symbol_get_type(symbol)
 	Barcode::ZBar::Symbol symbol
 
-const char *
+SV *
 zbar_symbol_get_data(symbol)
 	Barcode::ZBar::Symbol symbol
+    CODE:
+	RETVAL = newSVpvn(zbar_symbol_get_data(symbol),
+                          zbar_symbol_get_data_length(symbol));
+    OUTPUT:
+        RETVAL
 
 int
 zbar_symbol_get_count(symbol)
@@ -379,9 +391,12 @@ get_symbols(image)
         const zbar_symbol_t *sym;
     PPCODE:
 	sym = zbar_image_first_symbol(image);
-	for(; sym; sym = zbar_symbol_next(sym))
+        for(; sym; sym = zbar_symbol_next(sym)) {
+            zbar_symbol_t *s = (zbar_symbol_t*)sym;
+            zbar_symbol_ref(s, 1);
             XPUSHs(sv_setref_pv(sv_newmortal(), "Barcode::ZBar::Symbol",
                    (void*)sym));
+        }
 
 void
 zbar_image_set_format(image, format)
@@ -444,7 +459,7 @@ DESTROY(processor)
         zbar_processor_destroy(processor);
 
 void
-zbar_processor_init(processor, video_device="/dev/video0", enable_display=1)
+zbar_processor_init(processor, video_device="", enable_display=1)
         Barcode::ZBar::Processor	processor
         const char *	video_device
 	bool	enable_display
@@ -645,9 +660,14 @@ zbar_color_t
 zbar_decoder_get_color(decoder)
 	Barcode::ZBar::Decoder	decoder
 
-const char *
+SV *
 zbar_decoder_get_data(decoder)
 	Barcode::ZBar::Decoder	decoder
+    CODE:
+	RETVAL = newSVpvn(zbar_decoder_get_data(decoder),
+                          zbar_decoder_get_data_length(decoder));
+    OUTPUT:
+        RETVAL
 
 zbar_symbol_type_t
 zbar_decoder_get_type(decoder)

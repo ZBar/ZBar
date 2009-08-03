@@ -417,6 +417,7 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
                                         dcode->code128.character));
         j += postprocess_c(dcode, cexp, i, j) * 2;
     }
+    dcode->buflen = j;
     dcode->buf[j] = '\0';
     dcode->code128.character = j;
     return(0);
@@ -480,10 +481,10 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
         return(0);
     }
 
-    zassert(dcode->buflen > dcode128->character, 0,
-            "buflen=%x idx=%x c=%02x %s\n",
-            dcode->buflen, dcode128->character, c,
-            _zbar_decoder_buf_dump(dcode->buf, dcode->buflen));
+    zassert(dcode->buf_alloc > dcode128->character, 0,
+            "alloc=%x idx=%x c=%02x %s\n",
+            dcode->buf_alloc, dcode128->character, c,
+            _zbar_decoder_buf_dump(dcode->buf, dcode->buf_alloc));
 
     dcode->buf[dcode128->character++] = c;
 
