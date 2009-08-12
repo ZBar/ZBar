@@ -63,16 +63,7 @@ zbar_video_t *zbar_video_create ()
     err_init(&vdo->err, ZBAR_MOD_VIDEO);
     vdo->fd = -1;
 
-#ifdef HAVE_LIBPTHREAD
-    if(pthread_mutex_init(&vdo->qlock, NULL)) {
-        free(vdo);
-        return(NULL);
-    }
-#endif
-#ifdef _WIN32
-    InitializeCriticalSection(&vdo->qlock);
-    vdo->notify = CreateEvent(NULL, 0, 0, NULL);
-#endif
+    _zbar_mutex_init(&vdo->qlock);
 
     /* pre-allocate images */
     vdo->num_images = ZBAR_VIDEO_IMAGES_MAX;
@@ -100,7 +91,7 @@ zbar_video_t *zbar_video_create ()
 
 void zbar_video_destroy (zbar_video_t *vdo)
 {
-    if(vdo->fd >= 0)
+    if(vdo->intf != VIDEO_INVALID)
         zbar_video_open(vdo, NULL);
     if(vdo->images) {
         int i;
@@ -121,13 +112,8 @@ void zbar_video_destroy (zbar_video_t *vdo)
     if(vdo->formats)
         free(vdo->formats);
     err_cleanup(&vdo->err);
-#ifdef HAVE_LIBPTHREAD
-    pthread_mutex_destroy(&vdo->qlock);
-#endif
-#ifdef _WIN32
-    DeleteCriticalSection(&vdo->qlock);
-    CloseHandle(vdo->notify);
-#endif
+    _zbar_mutex_destroy(&vdo->qlock);
+
 #ifdef HAVE_LIBJPEG
     if(vdo->jpeg_img) {
         zbar_image_destroy(vdo->jpeg_img);
@@ -144,7 +130,34 @@ void zbar_video_destroy (zbar_video_t *vdo)
 int zbar_video_open (zbar_video_t *vdo,
                      const char *dev)
 {
-    return(_zbar_video_open(vdo, dev));
+    zbar_video_enable(vdo, 0);
+    video_lock(vdo);
+    if(vdo->intf != VIDEO_INVALID) {
+        if(vdo->cleanup) {
+            vdo->cleanup(vdo);
+            vdo->cleanup = NULL;
+        }
+        zprintf(1, "closed camera (fd=%d)\n", vdo->fd);
+        vdo->intf = VIDEO_INVALID;
+    }
+    video_unlock(vdo);
+
+    if(!dev)
+        return(0);
+
+    char *ldev = NULL;
+    if((unsigned char)dev[0] < 0x10) {
+        /* default linux device, overloaded for other platforms */
+        int id = dev[0];
+        dev = ldev = strdup("/dev/video0");
+        ldev[10] = '0' + id;
+    }
+
+    int rc = _zbar_video_open(vdo, dev);
+
+    if(ldev)
+        free(ldev);
+    return(rc);
 }
 
 int zbar_video_get_fd (const zbar_video_t *vdo)
@@ -152,10 +165,9 @@ int zbar_video_get_fd (const zbar_video_t *vdo)
     if(vdo->intf == VIDEO_INVALID)
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
                            "video device not opened"));
-    if(vdo->intf == VIDEO_V4L1)
+    if(vdo->fd < 0)
         return(err_capture(vdo, SEV_WARNING, ZBAR_ERR_UNSUPPORTED, __func__,
-                           "v4l1 API does not support polling"));
-    assert(vdo->fd >= 0);
+                           "video driver does not support polling"));
     return(vdo->fd);
 }
 
@@ -240,13 +252,6 @@ static inline int video_init_images (zbar_video_t *vdo)
             img->data = vdo->buf + offset;
             zprintf(2, "    [%02d] @%08lx\n", i, offset);
         }
-#ifndef _WIN32
-        else {
-            assert(img->data);
-            assert(img->datalen);
-            assert(img->datalen >= vdo->datalen);
-        }
-#endif
     }
     return(0);
 }
@@ -266,7 +271,7 @@ int zbar_video_init (zbar_video_t *vdo,
         return(-1);
 #ifdef HAVE_LIBJPEG
     const zbar_format_def_t *vidfmt = _zbar_format_lookup(fmt);
-    if(vidfmt->group == ZBAR_FMT_JPEG) {
+    if(vidfmt && vidfmt->group == ZBAR_FMT_JPEG) {
         /* prepare for decoding */
         if(!vdo->jpeg)
             vdo->jpeg = _zbar_jpeg_decomp_create();

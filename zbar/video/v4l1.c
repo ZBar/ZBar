@@ -248,6 +248,12 @@ static int v4l1_cleanup (zbar_video_t *vdo)
         /* FIXME reset image */
     }
 #endif
+
+    /* close open device */
+    if(vdo->fd >= 0) {
+        close(vdo->fd);
+        vdo->fd = -1;
+    }
     return(0);
 }
 
@@ -408,29 +414,6 @@ static int _zbar_v4l1_probe (zbar_video_t *vdo)
 int _zbar_video_open (zbar_video_t *vdo,
                       const char *dev)
 {
-    /* close open device */
-    if(vdo->fd >= 0) {
-        (void)video_lock(vdo);
-        if(vdo->active) {
-            vdo->active = 0;
-            vdo->stop(vdo);
-        }
-        if(vdo->cleanup)
-            vdo->cleanup(vdo);
-        
-        close(vdo->fd);
-        zprintf(1, "closed camera fd=%d\n", vdo->fd);
-        vdo->fd = -1;
-        vdo->intf = VIDEO_INVALID;
-        (void)video_unlock(vdo);
-    }
-    if(!dev)
-        return(0);
-
-    if(!dev[0])
-        /* default linux device */
-        dev = "/dev/video0";
-
     vdo->fd = open(dev, O_RDWR);
     if(vdo->fd < 0)
         return(err_capture_str(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
@@ -446,6 +429,7 @@ int _zbar_video_open (zbar_video_t *vdo,
     zprintf(1, "WARNING: not compiled with v4l2 support, trying v4l1\n");
 #endif
         rc = _zbar_v4l1_probe(vdo);
+
     if(rc && vdo->fd >= 0) {
         close(vdo->fd);
         vdo->fd = -1;

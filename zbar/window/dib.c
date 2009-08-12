@@ -22,6 +22,8 @@
  *------------------------------------------------------------------------*/
 
 #include "window.h"
+#include "image.h"
+#include "win.h"
 
 static int dib_cleanup (zbar_window_t *w)
 {
@@ -35,25 +37,27 @@ static int dib_init (zbar_window_t *w,
     if(new_format)
         _zbar_window_bih_init(w, img);
 
-    w->dst_width = w->bih.biWidth = (img->width + 3) & ~3;
-    w->dst_height = w->bih.biHeight = img->height;
+    window_state_t *win = w->state;
+    w->dst_width = win->bih.biWidth = (img->width + 3) & ~3;
+    w->dst_height = win->bih.biHeight = img->height;
     return(0);
 }
 
 static int dib_draw (zbar_window_t *w,
                      zbar_image_t *img)
 {
-    HDC hdc = GetDC(w->hwnd);
+    HDC hdc = GetDC(w->display);
     if(!hdc)
         return(-1);
 
+    window_state_t *win = w->state;
     StretchDIBits(hdc, 0, w->height - 1, w->width, -w->height,
                   0, 0, w->src_width, w->src_height,
-                  (void*)img->data, (BITMAPINFO*)&w->bih,
+                  (void*)img->data, (BITMAPINFO*)&win->bih,
                   DIB_RGB_COLORS, SRCCOPY);
 
-    ValidateRect(w->hwnd, NULL);
-    ReleaseDC(w->hwnd, hdc);
+    ValidateRect(w->display, NULL);
+    ReleaseDC(w->display, hdc);
     return(0);
 }
 

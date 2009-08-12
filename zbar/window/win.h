@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -20,13 +20,24 @@
  *
  *  http://sourceforge.net/projects/zbar
  *------------------------------------------------------------------------*/
+#ifndef _WINDOW_WIN_H_
+#define _WINDOW_WIN_H_
 
-#include <zbar.h>
-#include "window.h"
-#include "error.h"
+#include <windows.h>
 
-int _zbar_draw_logo (zbar_window_t *w)
-{
-    _zbar_window_clear(w);
-    return(0);
-}
+struct window_state_s {
+    void* hdd;
+
+    BITMAPINFOHEADER bih;
+
+    /* pre-calculated logo geometries */
+    int logo_scale;
+    HRGN logo_zbars;
+    HPEN logo_zpen, logo_zbpen;
+    POINT logo_z[4];
+};
+
+extern int _zbar_window_bih_init(zbar_window_t *w,
+                                 zbar_image_t *img);
+
+#endif

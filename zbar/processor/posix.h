@@ -29,11 +29,7 @@
 # include <poll.h>
 #endif
 
-#ifdef HAVE_X
-# include <X11/Xlib.h>
-#endif
-
-#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_LIBPTHREAD
 # include <pthread.h>
 #endif
 
@@ -50,24 +46,16 @@ typedef struct poll_desc_s {
 
 struct processor_state_s {
 #ifdef HAVE_POLL_H
-    volatile poll_desc_t polling;       /* polling registration */
+    poll_desc_t polling;                /* polling registration */
     poll_desc_t thr_polling;            /* thread copy */
-    int kick_fds[2];                    /* poll kicker */
 #endif
+    int kick_fds[2];                    /* poll kicker */
 
-#ifdef HAVE_LIBPTHREAD
     int lock_level;                     /* API serialization lock */
     pthread_t lock_owner;               /* lock owner */
     pthread_mutex_t mutex;              /* lock mutex */
     pthread_cond_t cond;                /* lock notification condition */
     pthread_cond_t event;
-
-    pthread_t video_thread;             /* video input handler */
-    pthread_t input_thread;             /* window event handler */
-
-    unsigned video_started;             /* thread active flags */
-    unsigned input_started;
-#endif
 };
 
 
@@ -80,56 +68,79 @@ static inline int alloc_polls (volatile poll_desc_t *p)
     return(0);
 }
 
-static inline int add_poll (processor_state_t *state,
+static inline int add_poll (zbar_processor_t *proc,
                             int fd,
                             poll_handler_t *handler)
 {
-    volatile poll_desc_t *polling = &state->polling;
+    processor_state_t *state = proc->state;
+
+    _zbar_mutex_lock(&proc->mutex);
+
+    poll_desc_t *polling = &state->polling;
     unsigned i = polling->num++;
     zprintf(5, "[%d] fd=%d handler=%p\n", i, fd, handler);
-    if(alloc_polls(polling))
-        return(-1);
-    memset(&polling->fds[i], 0, sizeof(struct pollfd));
-    polling->fds[i].fd = fd;
-    polling->fds[i].events = POLLIN;
-    polling->handlers[i] = handler;
-#ifdef HAVE_LIBPTHREAD
-    if(state->input_started) {
+    if(!alloc_polls(polling)) {
+        memset(&polling->fds[i], 0, sizeof(struct pollfd));
+        polling->fds[i].fd = fd;
+        polling->fds[i].events = POLLIN;
+        polling->handlers[i] = handler;
+    }
+    else
+        i = -1;
+
+    _zbar_mutex_unlock(&proc->mutex);
+
+    if(proc->input_thread.started) {
         assert(state->kick_fds[1] >= 0);
         write(state->kick_fds[1], &i /* unused */, sizeof(unsigned));
         /* FIXME should sync */
     }
-#endif
+    else if(!proc->threaded) {
+        state->thr_polling.num = polling->num;
+        state->thr_polling.fds = polling->fds;
+        state->thr_polling.handlers = polling->handlers;
+    }
     return(i);
 }
 
-static inline int remove_poll (processor_state_t *state,
+static inline int remove_poll (zbar_processor_t *proc,
                                int fd)
 {
-    volatile poll_desc_t *polling = &state->polling;
+    processor_state_t *state = proc->state;
+
+    _zbar_mutex_lock(&proc->mutex);
+
+    poll_desc_t *polling = &state->polling;
     int i;
     for(i = polling->num - 1; i >= 0; i--)
         if(polling->fds[i].fd == fd)
             break;
     zprintf(5, "[%d] fd=%d n=%d\n", i, fd, polling->num);
-    if(i < 0)
-        return(1);
-    if(i + 1 < polling->num) {
-        int n = polling->num - i - 1;
-        memmove(&polling->fds[i], &polling->fds[i + 1],
-                n * sizeof(struct pollfd));
-        memmove(&polling->handlers[i], &polling->handlers[i + 1],
-                n * sizeof(poll_handler_t));
+
+    if(i >= 0) {
+        if(i + 1 < polling->num) {
+            int n = polling->num - i - 1;
+            memmove(&polling->fds[i], &polling->fds[i + 1],
+                    n * sizeof(struct pollfd));
+            memmove(&polling->handlers[i], &polling->handlers[i + 1],
+                    n * sizeof(poll_handler_t));
+        }
+        polling->num--;
+        i = alloc_polls(polling);
     }
-    polling->num--;
-    int rc = alloc_polls(polling);
-#ifdef HAVE_LIBPTHREAD
-    if(state->input_started) {
+
+    _zbar_mutex_unlock(&proc->mutex);
+
+    if(proc->input_thread.started) {
         write(state->kick_fds[1], &i /* unused */, sizeof(unsigned));
         /* FIXME should sync */
     }
-#endif
-    return(rc);
+    else if(!proc->threaded) {
+        state->thr_polling.num = polling->num;
+        state->thr_polling.fds = polling->fds;
+        state->thr_polling.handlers = polling->handlers;
+    }
+    return(i);
 }
 #endif
 

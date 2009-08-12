@@ -112,7 +112,7 @@ static zbar_image_t *v4l2_dq (zbar_video_t *vdo)
         }
     }
     else {
-        zbar_image_t *img = video_dq_image(vdo);
+        img = video_dq_image(vdo);
         if(!img)
             return(NULL);
 
@@ -185,6 +185,12 @@ static int v4l2_cleanup (zbar_video_t *vdo)
         err_capture(vdo, SEV_WARNING, ZBAR_ERR_SYSTEM, __func__,
                     "releasing video frame buffers (VIDIOC_REQBUFS)");
 
+
+    /* close open device */
+    if(vdo->fd >= 0) {
+        close(vdo->fd);
+        vdo->fd = -1;
+    }
     return(0);
 }
 

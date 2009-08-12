@@ -22,6 +22,7 @@
  *------------------------------------------------------------------------*/
 
 #include "video.h"
+#include "thread.h"
 #include <vfw.h>
 
 #include <assert.h>
@@ -36,10 +37,20 @@
         (bih)->biXPelsPerMeter, (bih)->biYPelsPerMeter,                 \
         (bih)->biClrImportant, (bih)->biClrUsed, (bih)->biSize
 
+struct video_state_s {
+    zbar_thread_t thread;       /* capture message pump */
+    HANDLE captured;
+    HWND hwnd;                  /* vfw interface */
+    HANDLE notify;              /* capture thread status change */
+    int bi_size;                /* size of bih */
+    BITMAPINFOHEADER *bih;      /* video format details */
+    zbar_image_t *image;        /* currently capturing frame */
+};
+
 static const uint32_t vfw_formats[] = {
     /* planar YUV formats */
     fourcc('I','4','2','0'),
-    /* FIXME YU12 is IYUV is windows */
+    /* FIXME YU12 is IYUV in windows */
     fourcc('Y','V','1','2'),
     /* FIXME IMC[1-4]? */
 
@@ -70,40 +81,43 @@ static const uint32_t vfw_formats[] = {
 
 #define VFW_NUM_FORMATS (sizeof(vfw_formats) / sizeof(uint32_t))
 
-/* this seems to be required so the message pump can run, even when
- * we're not capturing...anyway, what's one more thread in the huge
- * fabric that is vfw?  :|
- */
-#define ZBAR_VFW_THREADED 1
-
-#ifdef ZBAR_VFW_THREADED
-static DWORD WINAPI vfw_capture_thread (void *arg)
+static ZTHREAD vfw_capture_thread (void *arg)
 {
     zbar_video_t *vdo = arg;
+    video_state_t *state = vdo->state;
+    zbar_thread_t *thr = &state->thread;
 
-    vdo->hwnd = capCreateCaptureWindow(NULL, WS_POPUP, 0, 0, 1, 1, NULL, 0);
+    state->hwnd = capCreateCaptureWindow(NULL, WS_POPUP, 0, 0, 1, 1, NULL, 0);
+    if(!state->hwnd)
+        goto done;
 
-    /* FIXME error */
-    assert(vdo->hwnd);
-
-    SetEvent(vdo->notify);
-    zprintf(4, "spawned vfw capture thread\n");
+    _zbar_mutex_lock(&vdo->qlock);
+    _zbar_thread_init(thr);
+    zprintf(4, "spawned vfw capture thread (thr=%04lx)\n",
+            _zbar_thread_self());
 
     MSG msg;
-    int rc = -2;
-    while((rc = GetMessage(&msg, NULL, 0, 0)) > 0) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+    int rc = 0;
+    while(thr->started && rc >= 0 && rc <= 1) {
+        _zbar_mutex_unlock(&vdo->qlock);
+        rc = MsgWaitForMultipleObjects(1, &thr->notify, 0,
+                                       INFINITE, QS_ALLINPUT);
+        if(rc == 1) {
+            rc = PeekMessage(&msg, NULL, 0, 0, PM_NOYIELD | PM_REMOVE);
+            if(rc > 0) {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+        }
+        _zbar_mutex_lock(&vdo->qlock);
     }
 
-    if(vdo->hwnd) {
-        DestroyWindow(vdo->hwnd);
-        vdo->hwnd = NULL;
-    }
-    zprintf(4, "exiting vfw capture thread\n");
+ done:
+    thr->running = 0;
+    _zbar_event_trigger(&thr->activity);
+    _zbar_mutex_unlock(&vdo->qlock);
     return(rc);
 }
-#endif
 
 static LRESULT CALLBACK vfw_stream_cb (HWND hwnd,
                                        VIDEOHDR *hdr)
@@ -113,7 +127,7 @@ static LRESULT CALLBACK vfw_stream_cb (HWND hwnd,
     zbar_video_t *vdo = (void*)capGetUserData(hwnd);
 
     video_lock(vdo);
-    zbar_image_t *img = vdo->image;
+    zbar_image_t *img = vdo->state->image;
     if(!img) {
         video_lock(vdo);
         img = video_dq_image(vdo);
@@ -121,12 +135,11 @@ static LRESULT CALLBACK vfw_stream_cb (HWND hwnd,
     if(img) {
         img->data = hdr->lpData;
         img->datalen = hdr->dwBufferLength;
-        vdo->image = img;
-        SetEvent(vdo->notify);
+        vdo->state->image = img;
+        SetEvent(vdo->state->captured);
     }
     video_unlock(vdo);
 
-    zprintf(64, "img=%p\n", vdo->image);
     return(1);
 }
 
@@ -135,11 +148,8 @@ static LRESULT CALLBACK vfw_control_cb (HWND hwnd,
 {
     if(!hwnd)
         return(0);
-    zbar_video_t *vdo = (void*)capGetUserData(hwnd);
-    zprintf(64, "thr=%04lx vdo=%p state=%d\n",
-            GetCurrentThreadId(), vdo, state);
-
 #if 0
+    zbar_video_t *vdo = (void*)capGetUserData(hwnd);
     switch(state) {
     case CONTROLCALLBACK_PREROLL:
         break;
@@ -165,7 +175,6 @@ static LRESULT CALLBACK vfw_error_cb (HWND hwnd,
 static int vfw_nq (zbar_video_t *vdo,
                    zbar_image_t *img)
 {
-    zprintf(64,"thr=%04lx vdo=%p img=%p\n", GetCurrentThreadId(), vdo, img);
     img->data = NULL;
     img->datalen = 0;
     return(video_nq_image(vdo, img));
@@ -173,54 +182,50 @@ static int vfw_nq (zbar_video_t *vdo,
 
 static zbar_image_t *vfw_dq (zbar_video_t *vdo)
 {
-    zbar_image_t *img = vdo->image;
-    zprintf(64,"thr=%04lx vdo=%p img=%p\n", GetCurrentThreadId(), vdo, img);
+    zbar_image_t *img = vdo->state->image;
+    zbar_thread_t *thr = &vdo->state->thread;
+    HANDLE status[2] = { vdo->state->captured, thr->activity };
     if(!img) {
-        video_unlock(vdo);
-
-#ifdef ZBAR_VFW_THREADED
-        WaitForSingleObject(vdo->notify, INFINITE);
-#else
-        int rc = 1;
-        while(rc == 1) {
-            MSG msg;
-            rc = MsgWaitForMultipleObjects(1, &vdo->notify,
-                                           0, INFINITE, QS_ALLINPUT);
-            if(rc == 1) {
-                GetMessage(&msg, NULL, 0, 0);
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-            }
-        }
-#endif
-        video_lock(vdo);
-        img = vdo->image;
+        _zbar_mutex_unlock(&vdo->qlock);
+        int rc = WaitForMultipleObjects(2, status, 0, INFINITE);
+        _zbar_mutex_lock(&vdo->qlock);
+        img = (!rc) ? vdo->state->image : NULL;
         /*FIXME errors */
     }
+    else
+        ResetEvent(vdo->state->captured);
     if(img)
-        vdo->image = NULL;
-    video_unlock(vdo);
+        vdo->state->image = NULL;
 
-    zprintf(64,"img=%p\n", img);
+    video_unlock(vdo);
     return(img);
 }
 
 static int vfw_start (zbar_video_t *vdo)
 {
-    zprintf(64,"enter...\n");
-    if(!capCaptureSequenceNoFile(vdo->hwnd))
+    ResetEvent(vdo->state->captured);
+
+    if(!capCaptureSequenceNoFile(vdo->state->hwnd))
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
                            "starting video stream"));
-    zprintf(64,"...leave\n");
     return(0);
 }
 
 static int vfw_stop (zbar_video_t *vdo)
 {
-    zprintf(64,"\n");
-    if(!capCaptureAbort(vdo->hwnd))
+    video_state_t *state = vdo->state;
+    if(!capCaptureAbort(state->hwnd))
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
                            "stopping video stream"));
+
+    _zbar_mutex_lock(&vdo->qlock);
+    zbar_image_t *img = state->image;
+    if(img) {
+        state->image = NULL;
+        zbar_image_destroy(img);
+    }
+    SetEvent(state->captured);
+    _zbar_mutex_unlock(&vdo->qlock);
     return(0);
 }
 
@@ -232,8 +237,8 @@ static int vfw_set_format (zbar_video_t *vdo,
         return(err_capture_int(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
                                "unsupported vfw format: %x", fmt));
 
-    BITMAPINFOHEADER *bih = vdo->bih;
-    assert(vdo->bih);
+    BITMAPINFOHEADER *bih = vdo->state->bih;
+    assert(bih);
     bih->biWidth = vdo->width;
     bih->biHeight = vdo->height;
     switch(fmtdef->group) {
@@ -254,14 +259,14 @@ static int vfw_set_format (zbar_video_t *vdo,
     bih->biClrUsed = bih->biClrImportant = 0;
     bih->biCompression = fmt;
 
-    zprintf(4, "seting format: %.4s(%08x) " BIH_FMT "\n",
+    zprintf(8, "seting format: %.4s(%08x) " BIH_FMT "\n",
             (char*)&fmt, fmt, BIH_FIELDS(bih));
 
-    if(!capSetVideoFormat(vdo->hwnd, bih, vdo->bi_size))
+    if(!capSetVideoFormat(vdo->state->hwnd, bih, vdo->state->bi_size))
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
                            "setting format"));
 
-    if(!capGetVideoFormat(vdo->hwnd, bih, vdo->bi_size))
+    if(!capGetVideoFormat(vdo->state->hwnd, bih, vdo->state->bi_size))
         return(-1/*FIXME*/);
 
     if(bih->biCompression != fmt)
@@ -283,8 +288,9 @@ static int vfw_init (zbar_video_t *vdo,
     if(vfw_set_format(vdo, fmt))
         return(-1);
 
+    HWND hwnd = vdo->state->hwnd;
     CAPTUREPARMS cp;
-    if(!capCaptureGetSetup(vdo->hwnd, &cp, sizeof(cp)))
+    if(!capCaptureGetSetup(hwnd, &cp, sizeof(cp)))
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
                            "retrieving capture parameters"));
 
@@ -299,26 +305,26 @@ static int vfw_init (zbar_video_t *vdo,
     cp.fAbortRightMouse = 0;
     cp.fLimitEnabled = 0;
 
-    if(!capCaptureSetSetup(vdo->hwnd, &cp, sizeof(cp)))
+    if(!capCaptureSetSetup(hwnd, &cp, sizeof(cp)))
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
                            "setting capture parameters"));
 
-    if(!capCaptureGetSetup(vdo->hwnd, &cp, sizeof(cp)))
+    if(!capCaptureGetSetup(hwnd, &cp, sizeof(cp)))
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
                            "checking capture parameters"));
 
     /* ignore errors since we skipped checking fHasOverlay */
-    capOverlay(vdo->hwnd, 0);
+    capOverlay(hwnd, 0);
 
-    if(!capPreview(vdo->hwnd, 0) ||
-       !capPreviewScale(vdo->hwnd, 0))
+    if(!capPreview(hwnd, 0) ||
+       !capPreviewScale(hwnd, 0))
         err_capture(vdo, SEV_WARNING, ZBAR_ERR_WINAPI, __func__,
                     "disabling preview");
 
-    capSetCallbackOnCapControl(vdo->hwnd, vfw_control_cb);
+    capSetCallbackOnCapControl(hwnd, vfw_control_cb);
 
-    if(!capSetCallbackOnVideoStream(vdo->hwnd, vfw_stream_cb) ||
-       !capSetCallbackOnError(vdo->hwnd, vfw_error_cb))
+    if(!capSetCallbackOnVideoStream(hwnd, vfw_stream_cb) ||
+       !capSetCallbackOnError(hwnd, vfw_error_cb))
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_BUSY, __func__,
                            "setting capture callbacks"));
 
@@ -331,6 +337,23 @@ static int vfw_init (zbar_video_t *vdo,
     return(0);
 }
 
+static int vfw_cleanup (zbar_video_t *vdo)
+{
+    /* close open device */
+    video_state_t *state = vdo->state;
+    /* NB this has to go here so the thread can pump messages during cleanup */
+    capDriverDisconnect(state->hwnd);
+    DestroyWindow(state->hwnd);
+    state->hwnd = NULL;
+    _zbar_thread_stop(&state->thread, &vdo->qlock);
+
+    if(state->captured) {
+        CloseHandle(state->captured);
+        state->captured = NULL;
+    }
+    return(0);
+}
+
 static int vfw_probe_format (zbar_video_t *vdo,
                              uint32_t fmt)
 {
@@ -339,7 +362,7 @@ static int vfw_probe_format (zbar_video_t *vdo,
         return(0);
 
     zprintf(4, "    trying %.4s(%08x)...\n", (char*)&fmt, fmt);
-    BITMAPINFOHEADER *bih = vdo->bih;
+    BITMAPINFOHEADER *bih = vdo->state->bih;
     bih->biWidth = vdo->width;
     bih->biHeight = vdo->height;
     switch(fmtdef->group) {
@@ -359,12 +382,12 @@ static int vfw_probe_format (zbar_video_t *vdo,
     }
     bih->biCompression = fmt;
 
-    if(!capSetVideoFormat(vdo->hwnd, bih, vdo->bi_size)) {
+    if(!capSetVideoFormat(vdo->state->hwnd, bih, vdo->state->bi_size)) {
         zprintf(4, "\tno (set fails)\n");
         return(0);
     }
 
-    if(!capGetVideoFormat(vdo->hwnd, bih, vdo->bi_size))
+    if(!capGetVideoFormat(vdo->state->hwnd, bih, vdo->state->bi_size))
         return(0/*FIXME error...*/);
 
     zprintf(6, "\tactual: " BIH_FMT "\n", BIH_FIELDS(bih));
@@ -380,20 +403,21 @@ static int vfw_probe_format (zbar_video_t *vdo,
 
 static int vfw_probe (zbar_video_t *vdo)
 {
-    if(!capSetUserData(vdo->hwnd, (LONG)vdo))
+    video_state_t *state = vdo->state;
+    if(!capSetUserData(state->hwnd, (LONG)vdo))
         return(-1/*FIXME*/);
 
-    vdo->bi_size = capGetVideoFormatSize(vdo->hwnd);
-    if(!vdo->bi_size)
+    state->bi_size = capGetVideoFormatSize(state->hwnd);
+    if(!state->bi_size)
         return(-1/*FIXME*/);
 
-    BITMAPINFOHEADER *bih = vdo->bih = realloc(vdo->bih, vdo->bi_size);
+    BITMAPINFOHEADER *bih = state->bih = realloc(state->bih, state->bi_size);
     /* FIXME check OOM */
-    if(!capGetVideoFormat(vdo->hwnd, bih, vdo->bi_size))
+    if(!capGetVideoFormat(state->hwnd, bih, state->bi_size))
         return(-1/*FIXME*/);
 
     zprintf(3, "initial format: " BIH_FMT " (bisz=%x)\n",
-            BIH_FIELDS(bih), vdo->bi_size);
+            BIH_FIELDS(bih), state->bi_size);
 
     if(!vdo->width || !vdo->height) {
         vdo->width = bih->biWidth;
@@ -418,7 +442,7 @@ static int vfw_probe (zbar_video_t *vdo)
     vdo->init = vfw_init;
     vdo->start = vfw_start;
     vdo->stop = vfw_stop;
-    vdo->cleanup = vfw_stop;
+    vdo->cleanup = vfw_cleanup;
     vdo->nq = vfw_nq;
     vdo->dq = vfw_dq;
     return(0);
@@ -427,83 +451,59 @@ static int vfw_probe (zbar_video_t *vdo)
 int _zbar_video_open (zbar_video_t *vdo,
                       const char *dev)
 {
-    /* close open device */
-    if(vdo->hwnd) {
-        video_lock(vdo);
-        if(vdo->active) {
-            vdo->active = 0;
-            vdo->stop(vdo);
-        }
-        if(vdo->cleanup)
-            vdo->cleanup(vdo);
+    video_state_t *state = vdo->state;
+    if(!state)
+        state = vdo->state = calloc(1, sizeof(video_state_t));
 
-        SendMessage(vdo->hwnd, WM_QUIT, 0, 0);
-        /* FIXME wait for thread to terminate */
-        /*assert(!vdo->hwnd);*/
+    int reqid = -1;
+    if((!strncmp(dev, "/dev/video", 10) ||
+        !strncmp(dev, "\\dev\\video", 10)) &&
+       dev[10] >= '0' && dev[10] <= '9' && !dev[11])
+        reqid = dev[10] - '0';
+    else if(strlen(dev) == 1 &&
+            dev[0] >= '0' && dev[0] <= '9')
+        reqid = dev[0] - '0';
 
-        zprintf(1, "closed camera\n");
-        vdo->hwnd = NULL;
-        vdo->intf = VIDEO_INVALID;
-        vdo->fd = -1;
-        video_unlock(vdo);
-    }
-    if(!dev)
-        return(0);
-
-    int devid;
-    if(*(unsigned char*)dev < 0x10)
-        devid = *dev;
-    else if((!strncmp(dev, "/dev/video", 10) ||
-             !strncmp(dev, "\\dev\\video", 10)) &&
-            dev[10] >= '0' && dev[10] <= '9' && !dev[11])
-        devid = dev[10] - '0';
-    else
-        devid = -1;
-
-    zprintf(6, "searching for camera: %s (%d)\n", dev, devid);
+    zprintf(6, "searching for camera: %s (%d)\n", dev, reqid);
     char name[MAX_NAME], desc[MAX_NAME];
-    for(vdo->fd = 0; vdo->fd < MAX_DRIVERS; vdo->fd++) {
-        if(!capGetDriverDescription(vdo->fd, name, MAX_NAME, desc, MAX_NAME)) {
+    int devid;
+    for(devid = 0; devid < MAX_DRIVERS; devid++) {
+        if(!capGetDriverDescription(devid, name, MAX_NAME, desc, MAX_NAME)) {
             /* FIXME TBD error */
-            zprintf(6, "    [%d] not found...\n", vdo->fd);
+            zprintf(6, "    [%d] not found...\n", devid);
             continue;
         }
-        zprintf(6, "    [%d] %.100s - %.100s\n", vdo->fd, name, desc);
-        if((devid >= 0)
-           ? vdo->fd == devid
+        zprintf(6, "    [%d] %.100s - %.100s\n", devid, name, desc);
+        if((reqid >= 0)
+           ? devid == reqid
            : !strncmp(dev, name, MAX_NAME))
             break;
     }
-    if(vdo->fd >= MAX_DRIVERS)
+    if(devid >= MAX_DRIVERS)
         return(err_capture_str(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
                                "video device not found '%s'", dev));
 
-#ifdef ZBAR_VFW_THREADED
-    HANDLE hthr = CreateThread(NULL, 0, vfw_capture_thread, vdo, 0, NULL);
-    if(!hthr)
-        return(-1/*FIXME*/);
-    CloseHandle(hthr);
+    if(!state->captured)
+        state->captured = CreateEvent(NULL, 0, 0, NULL);
+    else
+        ResetEvent(state->captured);
 
-    if(WaitForSingleObject(vdo->notify, INFINITE))
-        return(-1/*FIXME*/);
-#else
-    vdo->hwnd = capCreateCaptureWindow(NULL, WS_POPUP, 0, 0, 1, 1, NULL, 0);
-#endif
+    if(_zbar_thread_start(&state->thread, vfw_capture_thread, vdo, NULL))
+        return(-1);
 
     /* FIXME error */
-    assert(vdo->hwnd);
+    assert(state->hwnd);
 
-    if(!capDriverConnect(vdo->hwnd, vdo->fd)) {
-        DestroyWindow(vdo->hwnd);
-        /* FIXME error: failed to connect to camera */
-        assert(0);
+    if(!capDriverConnect(state->hwnd, devid)) {
+        _zbar_thread_stop(&state->thread, NULL);
+        return(-1/*FIXME error: failed to connect to camera*/);
     }
 
-    zprintf(1, "opened camera: %.60s (thr=%04lx)\n",
-            name, GetCurrentThreadId());
+    zprintf(1, "opened camera: %.60s (%d) (thr=%04lx)\n",
+            name, devid, _zbar_thread_self());
 
     if(vfw_probe(vdo)) {
-        _zbar_video_open(vdo, NULL);
+        _zbar_thread_stop(&state->thread, NULL);
         return(-1);
     }
     return(0);

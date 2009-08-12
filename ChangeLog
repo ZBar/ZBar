@@ -1,5 +1,12 @@
 current:
-  * fix symbol leaks
+  * major restructuring to improve platform abstraction
+    - add lock, thread and timer abstractions
+    - migrate specific notification locks to platform independent layer
+    - fixes to vfw capture interface
+    - fix window format conversion issues
+    - fix some broken configure checks
+    - zbarcam working in windows!
+  * fix symbol leaks (bug #2820658)
     - add symbol reference counting
   * add support for binary symbol data
   * initial VFW video support

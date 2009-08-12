@@ -7,7 +7,9 @@ zbar_libzbar_la_LIBADD =
 zbar_libzbar_la_SOURCES = zbar/debug.h zbar/config.c \
     zbar/error.h zbar/error.c zbar/symbol.h zbar/symbol.c \
     zbar/image.h zbar/image.c zbar/convert.c \
-    zbar/processor.c zbar/processor.h zbar/refcnt.h zbar/refcnt.c \
+    zbar/processor.c zbar/processor.h zbar/processor/lock.c \
+    zbar/refcnt.h zbar/refcnt.c zbar/timer.h zbar/mutex.h \
+    zbar/event.h zbar/thread.h \
     zbar/window.h zbar/window.c zbar/video.h zbar/video.c \
     zbar/img_scanner.c zbar/scanner.c \
     zbar/decoder.h zbar/decoder.c
@@ -33,12 +35,11 @@ if HAVE_POLL
 zbar_libzbar_la_SOURCES += zbar/processor/posix.h zbar/processor/posix.c
 endif
 if WIN32
-zbar_libzbar_la_SOURCES += zbar/processor/win.h zbar/processor/win.c \
-    zbar/libzbar.rc
+zbar_libzbar_la_SOURCES += zbar/processor/win.c zbar/libzbar.rc
 zbar_libzbar_la_CPPFLAGS += -mthreads
 zbar_libzbar_la_LDFLAGS += -mthreads
 # FIXME broken
-zbar_libzbar_la_LIBADD += zbar/libzbar-rc.lo
+#zbar_libzbar_la_LIBADD += zbar/libzbar-rc.lo
 endif
 
 if HAVE_V4L1
@@ -73,9 +74,10 @@ zbar_libzbar_la_LIBADD += $(XV_LIBS)
 endif
 else
 if WIN32
-zbar_libzbar_la_SOURCES += zbar/window/win.c zbar/window/dib.c
+zbar_libzbar_la_SOURCES += zbar/window/win.h zbar/window/win.c \
+    zbar/window/dib.c
 # zbar/window/vfw.c -lvfw32
-zbar_libzbar_la_LIBADD += -lgdi32
+zbar_libzbar_la_LIBADD += -lgdi32 -lwinmm
 else
 zbar_libzbar_la_SOURCES += zbar/window/null.c
 endif

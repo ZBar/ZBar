@@ -22,9 +22,33 @@
  *------------------------------------------------------------------------*/
 
 #include "processor.h"
-#include <assert.h>
+#include "window.h"
 
-/* lock is already held */
+static inline int proc_enter (zbar_processor_t *proc)
+{
+    _zbar_mutex_lock(&proc->mutex);
+    return(_zbar_processor_lock(proc));
+}
+
+static inline int proc_leave (zbar_processor_t *proc)
+{
+    int rc = _zbar_processor_unlock(proc, 0);
+    _zbar_mutex_unlock(&proc->mutex);
+    return(rc);
+}
+
+static inline int proc_open (zbar_processor_t *proc)
+{
+    /* arbitrary default */
+    int width = 640, height = 480;
+    if(proc->video) {
+        width = zbar_video_get_width(proc->video);
+        height = zbar_video_get_height(proc->video);
+    }
+    return(_zbar_processor_open(proc, "zbar barcode reader", width, height));
+}
+
+/* API lock is already held */
 int _zbar_process_image (zbar_processor_t *proc,
                          zbar_image_t *img)
 {
@@ -34,6 +58,11 @@ int _zbar_process_image (zbar_processor_t *proc,
                 (char*)&format, format,
                 zbar_image_get_width(img), zbar_image_get_height(img),
                 zbar_image_get_data(img));
+
+        if(proc->dumping) {
+            zbar_image_write(proc->window->image, "zbar");
+            proc->dumping = 0;
+        }
 
         /* FIXME locking all other interfaces while processing is conservative
          * but easier for now and we don't expect this to take long...
@@ -59,7 +88,9 @@ int _zbar_process_image (zbar_processor_t *proc,
         }
 
         if(nsyms) {
+            _zbar_mutex_lock(&proc->mutex);
             _zbar_processor_notify(proc, EVENT_OUTPUT);
+            _zbar_mutex_unlock(&proc->mutex);
             if(proc->handler)
                 /* FIXME only call after filtering */
                 proc->handler(img, proc->userdata);
@@ -84,6 +115,113 @@ int _zbar_process_image (zbar_processor_t *proc,
     return(0);
 }
 
+int _zbar_processor_handle_input (zbar_processor_t *proc,
+                                  int input)
+{
+
+    switch(input) {
+    case 'q':
+        input = -1;
+    case -1:
+        _zbar_processor_set_visible(proc, 0);
+        err_capture(proc, SEV_WARNING, ZBAR_ERR_CLOSED, __func__,
+                    "user closed display window");
+        break;
+
+    case 'd':
+        /* FIXME localtime not threadsafe */
+        /* FIXME need ms resolution */
+        /*struct tm *t = localtime(time(NULL));*/
+        proc->dumping = 1;
+        return(0);
+    }
+
+    _zbar_mutex_lock(&proc->mutex);
+    proc->input = input;
+    _zbar_processor_notify(proc, EVENT_INPUT);
+    _zbar_mutex_unlock(&proc->mutex);
+    return(input);
+}
+
+#ifdef ZTHREAD
+
+static ZTHREAD proc_video_thread (void *arg)
+{
+    zbar_processor_t *proc = arg;
+    zbar_thread_t *thread = &proc->video_thread;
+
+    _zbar_mutex_lock(&proc->mutex);
+    _zbar_thread_init(thread);
+    zprintf(4, "spawned video thread\n");
+
+    while(thread->started) {
+        /* wait for video stream to be active */
+        while(thread->started && !proc->streaming)
+            _zbar_event_wait(&thread->notify, &proc->mutex, NULL);
+        if(!thread->started)
+            break;
+
+        /* blocking capture image from video */
+        _zbar_mutex_unlock(&proc->mutex);
+        zbar_image_t *img = zbar_video_next_image(proc->video);
+        _zbar_mutex_lock(&proc->mutex);
+
+        if(!img)
+            /* FIXME could abort streaming and keep running? */
+            break;
+
+        /* acquire API lock */
+        _zbar_processor_lock(proc);
+        _zbar_mutex_unlock(&proc->mutex);
+
+        if(thread->started && proc->streaming)
+            _zbar_process_image(proc, img);
+
+        zbar_image_destroy(img);
+
+        _zbar_mutex_lock(&proc->mutex);
+        /* release API lock */
+        _zbar_processor_unlock(proc, 0);
+    }
+
+    thread->running = 0;
+    _zbar_event_trigger(&thread->activity);
+    _zbar_mutex_unlock(&proc->mutex);
+    return(0);
+}
+
+static ZTHREAD proc_input_thread (void *arg)
+{
+    zbar_processor_t *proc = arg;
+    zbar_thread_t *thread = &proc->input_thread;
+    if(proc->window && proc_open(proc))
+        goto done;
+
+    _zbar_mutex_lock(&proc->mutex);
+    thread->running = 1;
+    _zbar_event_trigger(&thread->activity);
+    zprintf(4, "spawned input thread\n");
+
+    int rc = 0;
+    while(thread->started && rc >= 0) {
+        _zbar_mutex_unlock(&proc->mutex);
+        rc = _zbar_processor_input_wait(proc, &thread->notify, -1);
+        _zbar_mutex_lock(&proc->mutex);
+    }
+
+    _zbar_mutex_unlock(&proc->mutex);
+    _zbar_processor_close(proc);
+    _zbar_mutex_lock(&proc->mutex);
+
+ done:
+    thread->running = 0;
+    _zbar_event_trigger(&thread->activity);
+    _zbar_mutex_unlock(&proc->mutex);
+    return(0);
+}
+
+#endif
+
 zbar_processor_t *zbar_processor_create (int threaded)
 {
     zbar_processor_t *proc = calloc(1, sizeof(zbar_processor_t));
@@ -97,15 +235,13 @@ zbar_processor_t *zbar_processor_create (int threaded)
         return(NULL);
     }
 
-    _zbar_processor_threads_init(proc, threaded);
-
+    proc->threaded = !_zbar_mutex_init(&proc->mutex) && threaded;
+    _zbar_processor_init(proc);
     return(proc);
 }
 
 void zbar_processor_destroy (zbar_processor_t *proc)
 {
-    _zbar_processor_lock(proc);
-
     zbar_processor_init(proc, NULL, 0);
 
     if(proc->scanner) {
@@ -113,12 +249,21 @@ void zbar_processor_destroy (zbar_processor_t *proc)
         proc->scanner = NULL;
     }
 
-    _zbar_processor_unlock(proc);
+    _zbar_mutex_destroy(&proc->mutex);
+    _zbar_processor_cleanup(proc);
 
-    _zbar_processor_threads_cleanup(proc);
+    assert(!proc->wait_head);
+    assert(!proc->wait_tail);
+    assert(!proc->wait_next);
+
+    proc_waiter_t *w, *next;
+    for(w = proc->free_waiter; w; w = next) {
+        next = w->next;
+        _zbar_event_destroy(&w->notify);
+        free(w);
+    }
 
     err_cleanup(&proc->err);
-
     free(proc);
 }
 
@@ -126,12 +271,18 @@ int zbar_processor_init (zbar_processor_t *proc,
                          const char *dev,
                          int enable_display)
 {
-    if(_zbar_processor_lock(proc))
-        return(-1);
+    if(proc->video)
+        zbar_processor_set_active(proc, 0);
 
-    _zbar_processor_threads_stop(proc);
+    if(proc->window && !proc->input_thread.started)
+        _zbar_processor_close(proc);
 
-    _zbar_processor_close(proc);
+    _zbar_mutex_lock(&proc->mutex);
+    _zbar_thread_stop(&proc->input_thread, &proc->mutex);
+    _zbar_thread_stop(&proc->video_thread, &proc->mutex);
+
+    _zbar_processor_lock(proc);
+    _zbar_mutex_unlock(&proc->mutex);
 
     if(proc->window) {
         zbar_window_destroy(proc->window);
@@ -140,12 +291,8 @@ int zbar_processor_init (zbar_processor_t *proc,
 
     int rc = 0;
     if(proc->video) {
-        if(dev)
-            zbar_video_open(proc->video, NULL);
-        else {
-            zbar_video_destroy(proc->video);
-            proc->video = NULL;
-        }
+        zbar_video_destroy(proc->video);
+        proc->video = NULL;
     }
 
     if(!dev && !enable_display)
@@ -173,30 +320,41 @@ int zbar_processor_init (zbar_processor_t *proc,
                                      proc->req_width, proc->req_height);
         if(proc->req_intf)
             zbar_video_request_interface(proc->video, proc->req_intf);
-        if(proc->req_iomode &&
-           zbar_video_request_iomode(proc->video, proc->req_iomode)) {
+        if((proc->req_iomode &&
+            zbar_video_request_iomode(proc->video, proc->req_iomode)) ||
+           zbar_video_open(proc->video, dev)) {
             rc = err_copy(proc, proc->video);
             goto done;
         }
     }
 
-    rc = _zbar_processor_threads_start(proc, dev);
-    if(rc)
+    /* spawn blocking video thread */
+    int video_threaded = (proc->threaded && proc->video &&
+                          zbar_video_get_fd(proc->video) < 0);
+    if(video_threaded &&
+       _zbar_thread_start(&proc->video_thread, proc_video_thread, proc,
+                          &proc->mutex)) {
+        rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
+                         "spawning video thread");
         goto done;
-
-    if(proc->window) {
-        /* arbitrary default */
-        int width = 640, height = 480;
-        if(proc->video) {
-            width = zbar_video_get_width(proc->video);
-            height = zbar_video_get_height(proc->video);
-        }
-
-        if(_zbar_processor_open(proc, "zbar barcode reader", width, height)) {
-            rc = -1;
-            goto done;
-        }
     }
+
+    /* spawn input monitor thread */
+    int input_threaded = (proc->threaded &&
+                          (proc->window ||
+                           (proc->video && !video_threaded)));
+
+    if(input_threaded &&
+       _zbar_thread_start(&proc->input_thread, proc_input_thread, proc,
+                          &proc->mutex)) {
+        rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
+                         "spawning input thread");
+        goto done;
+    }
+
+    if(proc->window && !input_threaded &&
+       (rc = proc_open(proc)))
+        goto done;
 
     if(proc->video && proc->force_input) {
         if(zbar_video_init(proc->video, proc->force_input))
@@ -223,7 +381,8 @@ int zbar_processor_init (zbar_processor_t *proc,
     }
 
  done:
-    _zbar_processor_unlock(proc);
+    _zbar_mutex_lock(&proc->mutex);
+    proc_leave(proc);
     return(rc);
 }
 
@@ -232,35 +391,31 @@ zbar_processor_set_data_handler (zbar_processor_t *proc,
                                  zbar_image_data_handler_t *handler,
                                  const void *userdata)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(NULL);
+    zbar_image_data_handler_t *result = NULL;
+    proc_enter(proc);
 
-    zbar_image_data_handler_t *result = proc->handler;
+    result = proc->handler;
     proc->handler = handler;
     proc->userdata = userdata;
 
-    _zbar_processor_unlock(proc);
+    proc_leave(proc);
     return(result);
 }
 
 void zbar_processor_set_userdata (zbar_processor_t *proc,
                                   void *userdata)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return;
-
+    _zbar_mutex_lock(&proc->mutex);
     proc->userdata = userdata;
-
-    _zbar_processor_unlock(proc);
+    _zbar_mutex_unlock(&proc->mutex);
 }
 
 void *zbar_processor_get_userdata (const zbar_processor_t *proc)
 {
-    _zbar_processor_lock(proc);
-
+    zbar_processor_t *p = (zbar_processor_t*)proc;
+    _zbar_mutex_lock(&p->mutex);
     void *userdata = (void*)proc->userdata;
-
-    _zbar_processor_unlock(proc);
+    _zbar_mutex_unlock(&p->mutex);
     return(userdata);
 }
 
@@ -269,10 +424,9 @@ int zbar_processor_set_config (zbar_processor_t *proc,
                                zbar_config_t cfg,
                                int val)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(-1);
+    proc_enter(proc);
     int rc = zbar_image_scanner_set_config(proc->scanner, sym, cfg, val);
-    _zbar_processor_unlock(proc);
+    proc_leave(proc);
     return(rc);
 }
 
@@ -280,37 +434,28 @@ int zbar_processor_request_size (zbar_processor_t *proc,
                                  unsigned width,
                                  unsigned height)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(-1);
-
+    proc_enter(proc);
     proc->req_width = width;
     proc->req_height = height;
-
-    _zbar_processor_unlock(proc);
+    proc_leave(proc);
     return(0);
 }
 
 int zbar_processor_request_interface (zbar_processor_t *proc,
                                       int ver)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(-1);
-
+    proc_enter(proc);
     proc->req_intf = ver;
-
-    _zbar_processor_unlock(proc);
+    proc_leave(proc);
     return(0);
 }
 
 int zbar_processor_request_iomode (zbar_processor_t *proc,
                                    int iomode)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(-1);
-
+    proc_enter(proc);
     proc->req_iomode = iomode;
-
-    _zbar_processor_unlock(proc);
+    proc_leave(proc);
     return(0);
 }
 
@@ -318,32 +463,26 @@ int zbar_processor_force_format (zbar_processor_t *proc,
                                  unsigned long input,
                                  unsigned long output)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(-1);
-
+    proc_enter(proc);
     proc->force_input = input;
     proc->force_output = output;
-
-    _zbar_processor_unlock(proc);
+    proc_leave(proc);
     return(0);
 }
 
 int zbar_processor_is_visible (zbar_processor_t *proc)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(-1);
-
+    proc_enter(proc);
     int visible = proc->window && proc->visible;
-
-    _zbar_processor_unlock(proc);
+    proc_leave(proc);
     return(visible);
 }
 
 int zbar_processor_set_visible (zbar_processor_t *proc,
                                 int visible)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(-1);
+    proc_enter(proc);
+    _zbar_mutex_unlock(&proc->mutex);
 
     int rc = 0;
     if(proc->window) {
@@ -353,24 +492,31 @@ int zbar_processor_set_visible (zbar_processor_t *proc,
                                           zbar_video_get_height(proc->video));
         if(!rc)
             rc = _zbar_processor_set_visible(proc, visible);
+
+        if(!rc)
+            proc->visible = (visible != 0);
     }
     else if(visible)
         rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
                          "processor display window not initialized");
 
-    _zbar_processor_unlock(proc);
+    _zbar_mutex_lock(&proc->mutex);
+    proc_leave(proc);
     return(rc);
 }
 
 int zbar_processor_user_wait (zbar_processor_t *proc,
                               int timeout)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(-1);
+    proc_enter(proc);
+    _zbar_mutex_unlock(&proc->mutex);
 
     int rc = -1;
-    if(proc->visible || proc->active || timeout > 0)
-        rc = _zbar_processor_wait(proc, EVENT_INPUT, timeout);
+    if(proc->visible || proc->streaming || timeout >= 0) {
+        zbar_timer_t timer;
+        rc = _zbar_processor_wait(proc, EVENT_INPUT,
+                                  _zbar_timer_init(&timer, timeout));
+    }
     if(rc > 0)
         rc = proc->input;
 
@@ -378,47 +524,53 @@ int zbar_processor_user_wait (zbar_processor_t *proc,
         rc = err_capture(proc, SEV_WARNING, ZBAR_ERR_CLOSED, __func__,
                          "display window not available for input");
 
-    _zbar_processor_unlock(proc);
+    _zbar_mutex_lock(&proc->mutex);
+    proc_leave(proc);
     return(rc);
 }
 
 int zbar_processor_set_active (zbar_processor_t *proc,
                                int active)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(-1);
+    proc_enter(proc);
 
+    int rc;
     if(!proc->video) {
-        _zbar_processor_unlock(proc);
-        return(err_capture(proc, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
-                           "video input not initialized"));
+        rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
+                         "video input not initialized");
+        goto done;
     }
+    _zbar_mutex_unlock(&proc->mutex);
 
     zbar_image_scanner_enable_cache(proc->scanner, active);
-    int rc = zbar_video_enable(proc->video, active);
+
+    rc = zbar_video_enable(proc->video, active);
     if(!rc) {
-        _zbar_processor_enable(proc, active);
-        proc->active = active;
-        proc->events &= ~EVENT_INPUT;
+        proc->streaming = active;
+        rc = _zbar_processor_enable(proc);
     }
     else
         err_copy(proc, proc->video);
 
-    if(!proc->active && proc->window &&
-       (zbar_window_draw(proc->window, NULL) ||
-        _zbar_processor_invalidate(proc)) && !rc)
-        rc = err_copy(proc, proc->window);
+    if(!proc->streaming && proc->window) {
+        if(zbar_window_draw(proc->window, NULL) && !rc)
+            rc = err_copy(proc, proc->window);
+        _zbar_processor_invalidate(proc);
+    }
 
-    _zbar_processor_notify(proc, 0);
-    _zbar_processor_unlock(proc);
+    _zbar_mutex_lock(&proc->mutex);
+    _zbar_event_trigger(&proc->video_thread.notify);
+
+ done:
+    proc_leave(proc);
     return(rc);
 }
 
 int zbar_process_one (zbar_processor_t *proc,
                       int timeout)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(-1);
+    proc_enter(proc);
+    _zbar_mutex_unlock(&proc->mutex);
 
     int rc = 0;
     if(!proc->video) {
@@ -431,21 +583,24 @@ int zbar_process_one (zbar_processor_t *proc,
     if(rc)
         goto done;
 
-    rc = _zbar_processor_wait(proc, EVENT_OUTPUT, timeout);
+    zbar_timer_t timer;
+    rc = _zbar_processor_wait(proc, EVENT_OUTPUT,
+                              _zbar_timer_init(&timer, timeout));
 
     if(zbar_processor_set_active(proc, 0))
         rc = -1;
 
  done:
-    _zbar_processor_unlock(proc);
+    _zbar_mutex_lock(&proc->mutex);
+    proc_leave(proc);
     return(rc);
 }
 
 int zbar_process_image (zbar_processor_t *proc,
                         zbar_image_t *img)
 {
-    if(_zbar_processor_lock(proc) < 0)
-        return(-1);
+    proc_enter(proc);
+    _zbar_mutex_unlock(&proc->mutex);
 
     int rc = 0;
     if(img && proc->window)
@@ -455,10 +610,11 @@ int zbar_process_image (zbar_processor_t *proc,
     if(!rc) {
         zbar_image_scanner_enable_cache(proc->scanner, 0);
         rc = _zbar_process_image(proc, img);
-        if(proc->active)
+        if(proc->streaming)
             zbar_image_scanner_enable_cache(proc->scanner, 1);
     }
 
-    _zbar_processor_unlock(proc);
+    _zbar_mutex_lock(&proc->mutex);
+    proc_leave(proc);
     return(rc);
 }

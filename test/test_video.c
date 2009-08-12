@@ -48,20 +48,22 @@ zbar_video_t *video;
 
 int main (int argc, char *argv[])
 {
-    zbar_set_verbosity(32);
+    zbar_set_verbosity(31);
 
     const char *dev = "";
+    uint32_t vidfmt = 0;
     if(argc > 1) {
-        if(!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
-            printf("usage: %s [/dev/[v4l/]videoX]\n", argv[0]);
-            return(0);
-        }
-        else if(!strcmp(argv[1], "--version")) {
-            printf(PACKAGE_VERSION "\n");
-            return(0);
-        }
         dev = argv[1];
+
+        if(argc > 2) {
+            int n = strlen(argv[2]);
+            if(n > 4)
+                n = 4;
+            memcpy((char*)&vidfmt, argv[2], n);
+        }
     }
+    if(!vidfmt)
+        vidfmt = fourcc('B','G','R','3');
 
     video = zbar_video_create();
     if(!video) {
@@ -91,7 +93,6 @@ int main (int argc, char *argv[])
             dev, zbar_video_get_fd(video));
     fflush(stderr);
 
-    uint32_t vidfmt = fourcc('Y','U','Y','2');
     if(zbar_video_init(video, vidfmt)) {
         fprintf(stderr, "ERROR: failed to set format: %.4s(%08x)\n",
                 (char*)&vidfmt, vidfmt);
@@ -160,6 +161,9 @@ int main (int argc, char *argv[])
         fprintf(stderr, "ERROR: while stopping video stream\n");
         return(zbar_video_error_spew(video, 0));
     }
+
+    fprintf(stderr, "\ncleaning up...\n");
+    fflush(stderr);
 
     zbar_video_destroy(video);
 

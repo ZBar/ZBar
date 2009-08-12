@@ -24,6 +24,9 @@
 #include "window.h"
 #include <vfw.h>
 
+extern int _zbar_window_bih_init(zbar_window_t *w,
+                                 zbar_image_t *img);
+
 static int vfw_cleanup (zbar_window_t *w)
 {
     if(w->hdd) {

@@ -108,20 +108,21 @@ AC_SEARCH_LIBS([clock_gettime], [rt])
 
 dnl poll support
 
-have_poll="no"
-AC_CHECK_HEADERS([poll.h], [have_poll="yes"])
+AC_CHECK_HEADERS([poll.h], [have_poll="yes"], [have_poll="no"])
 AM_CONDITIONAL([HAVE_POLL], [test "x$have_poll" = "xyes"])
 
 dnl pthreads
 dnl FIXME this doesn't port well, integrate something like this:
 dnl     http://autoconf-archive.cryp.to/acx_pthread.html
 
-enable_pthread="no"
 AC_ARG_ENABLE([pthread],
   [AS_HELP_STRING([--disable-pthread],
     [omit support for threaded applications])],
   [],
-  [AS_IF([test "x$win32" = "xno"], [enable_pthread="yes"])])
+  [AS_IF([test "x$win32" = "xno"],
+   [enable_pthread="yes"],
+   [enable_pthread="no"
+])])
 
 AS_IF([test "x$enable_pthread" != "xno"],
   [AC_CHECK_HEADERS([pthread.h], [],
@@ -131,6 +132,7 @@ configure --disable-pthread to skip threaded support.])])
      [AC_MSG_FAILURE([unable to link against -lpthread, although you
 appear to have pthread.h? set LDFLAGS and/or LIBS to help the linker,
 or configure --disable-pthread to skip threaded support.])])
+   AC_DEFINE([__USE_UNIX98], [1], [used only for pthread debug attributes])
 ])
 
 dnl video
@@ -161,16 +163,14 @@ AM_CONDITIONAL([HAVE_V4L2], [test "x$with_video" = "xv4l2"])
 dnl X
 AC_ARG_VAR([XSHM_LIBS], [linker flags for X shared memory extension])
 
-with_x="no"
-AC_PATH_XTRA
-AS_IF([test "x$win32" = "xno"],
-  [AH_BOTTOM([#ifndef X_DISPLAY_MISSING
+AS_IF([test "x$win32" != "xno"],
+  [have_x="no"],
+  [AC_PATH_XTRA
+   AH_BOTTOM([#ifndef X_DISPLAY_MISSING
 # define HAVE_X
 #endif
-   ])
-   AS_IF([test "x$no_x" != "xyes"], [with_x="yes"])
-])
-AM_CONDITIONAL([HAVE_X], [test "x$with_x" = "xyes"])
+])])
+AM_CONDITIONAL([HAVE_X], [test "x$have_x" = "xyes"])
 
 AS_IF([test "x$XSHM_LIBS" = "x"], [XSHM_LIBS="-lXext"])
 AC_ARG_WITH([xshm],
@@ -421,7 +421,7 @@ dnl summary log
 echo ""
 echo "please verify that the detected configuration matches your expectations:"
 echo "------------------------------------------------------------------------"
-echo "X                 --with-x=$with_x"
+echo "X                 --with-x=$have_x"
 echo "pthreads          --enable-pthread=$enable_pthread"
 echo "v4l               --enable-video=$enable_video"
 AS_IF([test "x$enable_video" != "xyes"],
