@@ -116,7 +116,7 @@ static ZTHREAD vfw_capture_thread (void *arg)
     thr->running = 0;
     _zbar_event_trigger(&thr->activity);
     _zbar_mutex_unlock(&vdo->qlock);
-    return(rc);
+    return(0);
 }
 
 static LRESULT CALLBACK vfw_stream_cb (HWND hwnd,

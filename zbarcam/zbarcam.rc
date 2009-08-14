@@ -1,0 +1,30 @@
+#include <config.h>
+#include <winver.h>
+
+VS_VERSION_INFO VERSIONINFO
+    FILEVERSION     ZBAR_VERSION_MAJOR, ZBAR_VERSION_MINOR,  0, 0
+    PRODUCTVERSION  ZBAR_VERSION_MAJOR, ZBAR_VERSION_MINOR,  0, 0
+    FILEOS VOS__WINDOWS32
+    FILETYPE VFT_APP
+{
+    BLOCK "StringFileInfo" {
+        BLOCK "040904E4" {
+            VALUE "ProductName", "ZBar Bar Code Reader"
+            VALUE "Company Name", "ZBar Bar Code Reader"
+            VALUE "InternalName", "zbarcam"
+            VALUE "OriginalFilename", "zbarcam.exe"
+
+            VALUE "FileVersion", PACKAGE_VERSION
+            VALUE "ProductVersion", PACKAGE_VERSION
+
+            VALUE "FileDescription", "Scan bar codes from video devices"
+
+            VALUE "LegalCopyright", "Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>"
+        }
+    }
+    BLOCK "VarFileInfo" {
+        VALUE "Translation", 0x0409, 0x04e4
+    }
+}
+
+APP_ICON ICON "zbar.ico"

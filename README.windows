@@ -38,13 +38,18 @@ This version of the package includes *only command line programs*.
 (The graphical interface is scheduled for a future release)
 
 Invoke Start -> Programs -> ZBar Bar Code Reader -> Start ZBar Command Prompt
-to open a shell that has the zbarimg command available (in the PATH).
+to open a shell that has the zbarimg and zbarcam commands available
+(in the PATH).
 
-To decode an image file, type:
-    zbarimg "C:\path\to\barcode.png"
+To start the webcam reader using the default camera, type:
+    zbarcam
+
+To decode an image file, type eg:
+    zbarimg -d examples\barcode.png
 
 For basic command instructions, type:
     zbarimg --help
+    zbarcam --help
 
 Check the manual for more details.
 

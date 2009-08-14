@@ -39,7 +39,7 @@ zbar_libzbar_la_SOURCES += zbar/processor/win.c zbar/libzbar.rc
 zbar_libzbar_la_CPPFLAGS += -mthreads
 zbar_libzbar_la_LDFLAGS += -mthreads
 # FIXME broken
-#zbar_libzbar_la_LIBADD += zbar/libzbar-rc.lo
+zbar_libzbar_la_LIBADD += zbar/libzbar-rc.lo
 endif
 
 if HAVE_V4L1

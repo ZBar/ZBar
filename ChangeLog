@@ -1,4 +1,5 @@
 current:
+  * add zbarcam to windows installer
   * major restructuring to improve platform abstraction
     - add lock, thread and timer abstractions
     - migrate specific notification locks to platform independent layer
