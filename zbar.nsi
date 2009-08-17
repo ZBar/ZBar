@@ -54,10 +54,11 @@ UninstallIcon ${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico
 Name "ZBar"
 Caption "ZBar ${VERSION} Setup"
 
+Var MAGICKDIR
 
 # Check that ImageMagick is installed
-Function .onInit
-    SearchPath $0 "CORE_RL_wand_.dll"
+Function CheckMagick
+    SearchPath $MAGICKDIR "CORE_RL_wand_.dll"
     IfErrors 0 goinstall
         MessageBox MB_OKCANCEL|MB_ICONSTOP \
                    "ImageMagick was not found in your PATH!$\n\
@@ -73,7 +74,7 @@ Function .onInit
                    IDOK goinstall
 
         ExecShell "open" "http://www.imagemagick.org/"
-        Abort
+        Quit
 goinstall:
 FunctionEnd
 
@@ -101,6 +102,8 @@ FunctionEnd
     ZBar Bar Code Reader version ${VERSION}."
 
 !insertmacro MUI_PAGE_WELCOME
+
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW CheckMagick
 !insertmacro MUI_PAGE_LICENSE "share\doc\zbar\COPYING.LIB"
 
 !define MUI_COMPONENTSPAGE_SMALLDESC
@@ -179,7 +182,7 @@ SectionEnd
         CreateShortCut "zbarcam.lnk" "$\"$INSTDIR\bin\zbarcam.bat$\"" "" \
                        "$INSTDIR\bin\zbarcam.exe"
         ExpandEnvStrings $0 '%comspec%'
-        CreateShortCut "Start ZBar Command Prompt.lnk" \
+        CreateShortCut "ZBar Command Prompt.lnk" \
                        $0 "/k $\"$\"$INSTDIR\zbarvars.bat$\"$\"" $0
         CreateShortCut "Command Reference.lnk" \
                        "$\"$INSTDIR\doc\ref.html$\""
@@ -250,7 +253,10 @@ Section Uninstall
     DetailPrint "Uninstalling ZBar Bar Code Reader.."
 
     DetailPrint "Deleting Files..."
-    RMDir /r $INSTDIR\examples
+    Delete $INSTDIR\examples\barcode.png
+    Delete $INSTDIR\examples\scan_image.cpp
+    Delete $INSTDIR\examples\scan_image.vcproj
+    RMDir $INSTDIR\examples
     RMDir /r $INSTDIR\include
     RMDir /r $INSTDIR\doc
     RMDir /r $INSTDIR\lib

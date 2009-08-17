@@ -1,6 +1,7 @@
 #include <iostream>
 #include <Magick++.h>
 #include <zbar.h>
+#define STR(s) #s
 
 using namespace std;
 using namespace zbar;
@@ -8,6 +9,13 @@ using namespace zbar;
 int main (int argc, char **argv)
 {
     if(argc < 2) return(1);
+
+#ifdef MAGICK_HOME
+    // http://www.imagemagick.org/Magick++/
+    //    under Windows it is necessary to initialize the ImageMagick
+    //    library prior to using the Magick++ library
+    Magick::InitializeMagick(MAGICK_HOME);
+#endif
 
     // create a reader
     ImageScanner scanner;

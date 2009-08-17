@@ -219,11 +219,8 @@ static int vfw_stop (zbar_video_t *vdo)
                            "stopping video stream"));
 
     _zbar_mutex_lock(&vdo->qlock);
-    zbar_image_t *img = state->image;
-    if(img) {
+    if(state->image)
         state->image = NULL;
-        zbar_image_destroy(img);
-    }
     SetEvent(state->captured);
     _zbar_mutex_unlock(&vdo->qlock);
     return(0);
@@ -264,13 +261,15 @@ static int vfw_set_format (zbar_video_t *vdo,
 
     if(!capSetVideoFormat(vdo->state->hwnd, bih, vdo->state->bi_size))
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
-                           "setting format"));
+                           "setting video format"));
 
     if(!capGetVideoFormat(vdo->state->hwnd, bih, vdo->state->bi_size))
-        return(-1/*FIXME*/);
+        return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
+                           "getting video format"));
 
     if(bih->biCompression != fmt)
-        return(-1/*FIXME*/);
+        return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
+                           "video format set ignored"));
 
     vdo->format = fmt;
     vdo->width = bih->biWidth;
@@ -404,17 +403,15 @@ static int vfw_probe_format (zbar_video_t *vdo,
 static int vfw_probe (zbar_video_t *vdo)
 {
     video_state_t *state = vdo->state;
-    if(!capSetUserData(state->hwnd, (LONG)vdo))
-        return(-1/*FIXME*/);
-
     state->bi_size = capGetVideoFormatSize(state->hwnd);
-    if(!state->bi_size)
-        return(-1/*FIXME*/);
-
     BITMAPINFOHEADER *bih = state->bih = realloc(state->bih, state->bi_size);
     /* FIXME check OOM */
-    if(!capGetVideoFormat(state->hwnd, bih, state->bi_size))
-        return(-1/*FIXME*/);
+
+    if(!capSetUserData(state->hwnd, (LONG)vdo) ||
+       !state->bi_size || !bih ||
+       !capGetVideoFormat(state->hwnd, bih, state->bi_size))
+        return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
+                           "setting up video capture"));
 
     zprintf(3, "initial format: " BIH_FMT " (bisz=%x)\n",
             BIH_FIELDS(bih), state->bi_size);
@@ -496,7 +493,8 @@ int _zbar_video_open (zbar_video_t *vdo,
 
     if(!capDriverConnect(state->hwnd, devid)) {
         _zbar_thread_stop(&state->thread, NULL);
-        return(-1/*FIXME error: failed to connect to camera*/);
+        return(err_capture_str(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
+                               "failed to connect to camera '%s'", dev));
     }
 
     zprintf(1, "opened camera: %.60s (%d) (thr=%04lx)\n",

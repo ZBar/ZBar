@@ -267,8 +267,8 @@ zbar_image_scanner_t *zbar_image_scanner_create ()
     }
 
     /* apply default configuration */
-    CFG(iscn, ZBAR_CFG_X_DENSITY) = 16;
-    CFG(iscn, ZBAR_CFG_Y_DENSITY) = 16;
+    CFG(iscn, ZBAR_CFG_X_DENSITY) = 1;
+    CFG(iscn, ZBAR_CFG_Y_DENSITY) = 1;
     return(iscn);
 }
 

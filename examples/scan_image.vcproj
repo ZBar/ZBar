@@ -13,21 +13,21 @@
   <Configurations>
     <Configuration
       Name="Debug|Win32"
-      OutputDirectory="../bin"
       ConfigurationType="1">
       <Tool
         Name="VCCLCompilerTool"
         Optimization="0"
-        AdditionalIncludeDirectories="..\include"
-        PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
-        RuntimeLibrary="3"
+        AdditionalIncludeDirectories="..\include;&quot;C:\Program Files\ImageMagick-6.5.4-Q16\include&quot;"
+        PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;&quot;MAGICK_HOME=STR(C:\\Program Files\\ImageMagick-6.5.4-Q16)&quot;"
+        RuntimeLibrary="2"
         UsePrecompiledHeader="0"
         WarningLevel="4"
         WarnAsError="true"
+        DisableSpecificWarnings="4100;4189;4251"
         DebugInformationFormat="4"/>
       <Tool
         Name="VCLinkerTool"
-        AdditionalDependencies="..\lib\libzbar-0.lib kernel32.lib $(NoInherit)"
+        AdditionalDependencies="..\lib\libzbar-0.lib kernel32.lib &quot;C:\Program Files\ImageMagick-6.5.4-Q16\lib\CORE_RL_Magick++_.lib&quot; $(NoInherit)"
         ShowProgress="0"
         GenerateDebugInformation="true"
         SubSystem="1"

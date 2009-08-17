@@ -118,10 +118,7 @@ int _zbar_process_image (zbar_processor_t *proc,
 int _zbar_processor_handle_input (zbar_processor_t *proc,
                                   int input)
 {
-
     switch(input) {
-    case 'q':
-        input = -1;
     case -1:
         _zbar_processor_set_visible(proc, 0);
         err_capture(proc, SEV_WARNING, ZBAR_ERR_CLOSED, __func__,
@@ -166,7 +163,9 @@ static ZTHREAD proc_video_thread (void *arg)
         zbar_image_t *img = zbar_video_next_image(proc->video);
         _zbar_mutex_lock(&proc->mutex);
 
-        if(!img)
+        if(!img && !proc->streaming)
+            continue;
+        else if(!img)
             /* FIXME could abort streaming and keep running? */
             break;
 
@@ -546,7 +545,9 @@ int zbar_processor_set_active (zbar_processor_t *proc,
 
     rc = zbar_video_enable(proc->video, active);
     if(!rc) {
+        _zbar_mutex_lock(&proc->mutex);
         proc->streaming = active;
+        _zbar_mutex_unlock(&proc->mutex);
         rc = _zbar_processor_enable(proc);
     }
     else
@@ -559,7 +560,8 @@ int zbar_processor_set_active (zbar_processor_t *proc,
     }
 
     _zbar_mutex_lock(&proc->mutex);
-    _zbar_event_trigger(&proc->video_thread.notify);
+    if(proc->video_thread.started)
+        _zbar_event_trigger(&proc->video_thread.notify);
 
  done:
     proc_leave(proc);

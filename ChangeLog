@@ -1,4 +1,8 @@
 current:
+  * change default image scanner density to 1x1
+    - random cleanup, vfw hang, quit key
+    - fix scan_image example MSVC project
+    - windows installer tweaks
   * add zbarcam to windows installer
   * major restructuring to improve platform abstraction
     - add lock, thread and timer abstractions

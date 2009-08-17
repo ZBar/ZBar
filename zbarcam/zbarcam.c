@@ -246,7 +246,7 @@ int main (int argc, const char *argv[])
     /* let the callback handle data */
     int rc;
     while((rc = zbar_processor_user_wait(proc, -1)) >= 0) {
-        if(rc == 'q')
+        if(rc == 'q' || rc == 'Q')
             break;
         if(rc == ' ') {
             active = !active;
@@ -256,7 +256,7 @@ int main (int argc, const char *argv[])
     }
 
     /* report any errors that aren't "window closed" */
-    if(rc && rc != 'q' &&
+    if(rc && rc != 'q' && rc != 'Q' &&
        zbar_processor_get_error_code(proc) != ZBAR_ERR_CLOSED)
         return(zbar_processor_error_spew(proc, 0));
 
