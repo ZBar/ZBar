@@ -31,15 +31,14 @@ zbar_libzbar_la_SOURCES += zbar/decoder/pdf417.h zbar/decoder/pdf417.c \
     zbar/decoder/pdf417_hash.h
 endif
 
-if HAVE_POLL
-zbar_libzbar_la_SOURCES += zbar/processor/posix.h zbar/processor/posix.c
-endif
 if WIN32
 zbar_libzbar_la_SOURCES += zbar/processor/win.c zbar/libzbar.rc
 zbar_libzbar_la_CPPFLAGS += -mthreads
 zbar_libzbar_la_LDFLAGS += -mthreads
 # FIXME broken
 zbar_libzbar_la_LIBADD += zbar/libzbar-rc.lo
+else
+zbar_libzbar_la_SOURCES += zbar/processor/posix.h zbar/processor/posix.c
 endif
 
 if HAVE_V4L1
@@ -64,7 +63,7 @@ endif
 
 if HAVE_X
 zbar_libzbar_la_SOURCES +=  zbar/processor/x.c \
-    zbar/window/x.c zbar/window/ximage.c
+    zbar/window/x.h zbar/window/x.c zbar/window/ximage.c
 zbar_libzbar_la_CPPFLAGS += $(X_CFLAGS)
 zbar_libzbar_la_LDFLAGS += $(X_LIBS)
 zbar_libzbar_la_LIBADD += $(X_PRE_LIBS) -lX11 $(X_EXTRA_LIBS)
@@ -79,7 +78,7 @@ zbar_libzbar_la_SOURCES += zbar/window/win.h zbar/window/win.c \
 # zbar/window/vfw.c -lvfw32
 zbar_libzbar_la_LIBADD += -lgdi32 -lwinmm
 else
-zbar_libzbar_la_SOURCES += zbar/window/null.c
+zbar_libzbar_la_SOURCES += zbar/processor/null.c zbar/window/null.c
 endif
 endif
 

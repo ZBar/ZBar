@@ -35,13 +35,13 @@ static void _zbar_video_recycle_image (zbar_image_t *img)
     zbar_video_t *vdo = img->src;
     assert(vdo);
     assert(img->srcidx >= 0);
-    (void)video_lock(vdo);
+    video_lock(vdo);
     if(vdo->images[img->srcidx] != img)
         vdo->images[img->srcidx] = img;
     if(vdo->active)
         vdo->nq(vdo, img);
     else
-        (void)video_unlock(vdo);
+        video_unlock(vdo);
 }
 
 static void _zbar_video_recycle_shadow (zbar_image_t *img)
@@ -49,10 +49,10 @@ static void _zbar_video_recycle_shadow (zbar_image_t *img)
     zbar_video_t *vdo = img->src;
     assert(vdo);
     assert(img->srcidx == -1);
-    (void)video_lock(vdo);
+    video_lock(vdo);
     img->next = vdo->shadow_image;
     vdo->shadow_image = img;
-    (void)video_unlock(vdo);
+    video_unlock(vdo);
 }
 
 zbar_video_t *zbar_video_create ()
@@ -165,7 +165,7 @@ int zbar_video_get_fd (const zbar_video_t *vdo)
     if(vdo->intf == VIDEO_INVALID)
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
                            "video device not opened"));
-    if(vdo->fd < 0)
+    if(vdo->intf != VIDEO_V4L2)
         return(err_capture(vdo, SEV_WARNING, ZBAR_ERR_UNSUPPORTED, __func__,
                            "video driver does not support polling"));
     return(vdo->fd);
@@ -336,11 +336,10 @@ zbar_image_t *zbar_video_next_image (zbar_video_t *vdo)
     if(video_lock(vdo))
         return(NULL);
     if(!vdo->active) {
-        err_capture(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
-                    "video not enabled");
-        (void)video_unlock(vdo);
+        video_unlock(vdo);
         return(NULL);
     }
+
     unsigned frame = vdo->frame++;
     zbar_image_t *img = vdo->dq(vdo);
     if(img) {
@@ -350,10 +349,10 @@ zbar_image_t *zbar_video_next_image (zbar_video_t *vdo)
              * the driver's buffer to avoid deadlocking the resources
              */
             zbar_image_t *tmp = img;
-            (void)video_lock(vdo);
+            video_lock(vdo);
             img = vdo->shadow_image;
             vdo->shadow_image = (img) ? img->next : NULL;
-            (void)video_unlock(vdo);
+            video_unlock(vdo);
                 
             if(!img) {
                 img = zbar_image_create();

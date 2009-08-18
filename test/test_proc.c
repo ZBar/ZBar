@@ -60,7 +60,7 @@ int input_wait (int timeout)
 
 int main (int argc, char **argv)
 {
-    zbar_set_verbosity(31);
+    zbar_set_verbosity(127);
     char *video_dev = NULL;
     uint32_t fmt = 0;
     int i, j = 0;

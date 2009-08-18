@@ -76,26 +76,25 @@ static int v4l2_nq (zbar_video_t *vdo,
 static zbar_image_t *v4l2_dq (zbar_video_t *vdo)
 {
     zbar_image_t *img;
+    int fd = vdo->fd;
 
     if(vdo->iomode != VIDEO_READWRITE) {
+        video_iomode_t iomode = vdo->iomode;
         if(video_unlock(vdo))
             return(NULL);
 
         struct v4l2_buffer vbuf;
         memset(&vbuf, 0, sizeof(vbuf));
         vbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if(vdo->iomode == VIDEO_MMAP)
+        if(iomode == VIDEO_MMAP)
             vbuf.memory = V4L2_MEMORY_MMAP;
         else
             vbuf.memory = V4L2_MEMORY_USERPTR;
 
-        if(ioctl(vdo->fd, VIDIOC_DQBUF, &vbuf) < 0) {
-            err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
-                        "dequeuing video buffer (VIDIOC_DQBUF)");
+        if(ioctl(fd, VIDIOC_DQBUF, &vbuf) < 0)
             return(NULL);
-        }
 
-        if(vdo->iomode == VIDEO_MMAP) {
+        if(iomode == VIDEO_MMAP) {
             assert(vbuf.index >= 0);
             assert(vbuf.index < vdo->num_images);
             img = vdo->images[vbuf.index];
@@ -117,12 +116,9 @@ static zbar_image_t *v4l2_dq (zbar_video_t *vdo)
             return(NULL);
 
         /* FIXME should read entire image */
-        unsigned long datalen = read(vdo->fd, (void*)img->data, img->datalen);
-        if(datalen < 0) {
-            err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
-                        "reading video image");
+        unsigned long datalen = read(fd, (void*)img->data, img->datalen);
+        if(datalen < 0)
             return(NULL);
-        }
         else if(datalen != img->datalen)
             zprintf(0, "WARNING: read() size mismatch: 0x%lx != 0x%lx\n",
                     datalen, img->datalen);

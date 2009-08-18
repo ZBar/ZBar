@@ -192,13 +192,14 @@ static inline int proc_poll_inputs (zbar_processor_t *proc,
         /* FIXME detect and handle fatal errors (somehow) */
         return(rc);
     int i;
-    for(i = 0; i < p->num; i++)
+    for(i = p->num - 1; i >= 0; i--)
         if(p->fds[i].revents) {
             if(p->handlers[i])
                 p->handlers[i](proc, i);
             p->fds[i].revents = 0; /* debug */
             rc--;
         }
+    assert(!rc);
     return(1);
 }
 
@@ -281,8 +282,8 @@ int _zbar_processor_cleanup (zbar_processor_t *proc)
 
 int _zbar_processor_enable (zbar_processor_t *proc)
 {
-    int vid_fd = zbar_video_get_fd(proc->video);
-    if(vid_fd >= 0) {
+    int vid_fd;
+    if(proc->threaded && ((vid_fd = zbar_video_get_fd(proc->video)) >= 0)) {
         if(proc->streaming)
             add_poll(proc, vid_fd, proc_video_handler);
         else

@@ -56,6 +56,9 @@ static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
 
 static inline int _zbar_timer_check (zbar_timer_t *timer)
 {
+    if(!timer)
+        return(-1);
+
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
     int delay = ((timer->tv_sec - now.tv_sec) * 1000 +
@@ -109,6 +112,9 @@ static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
 
 static inline int _zbar_timer_check (zbar_timer_t *timer)
 {
+    if(!timer)
+        return(-1);
+
     struct timeval now;
     gettimeofday(&now, NULL);
     return((timer->tv_sec - now.tv_sec) * 1000 +

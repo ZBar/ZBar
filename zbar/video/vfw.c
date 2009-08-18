@@ -100,15 +100,16 @@ static ZTHREAD vfw_capture_thread (void *arg)
     int rc = 0;
     while(thr->started && rc >= 0 && rc <= 1) {
         _zbar_mutex_unlock(&vdo->qlock);
+
         rc = MsgWaitForMultipleObjects(1, &thr->notify, 0,
                                        INFINITE, QS_ALLINPUT);
-        if(rc == 1) {
-            rc = PeekMessage(&msg, NULL, 0, 0, PM_NOYIELD | PM_REMOVE);
-            if(rc > 0) {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-            }
-        }
+        if(rc == 1)
+            while(PeekMessage(&msg, NULL, 0, 0, PM_NOYIELD | PM_REMOVE))
+                if(rc > 0) {
+                    TranslateMessage(&msg);
+                    DispatchMessage(&msg);
+                }
+
         _zbar_mutex_lock(&vdo->qlock);
     }
 
@@ -126,10 +127,10 @@ static LRESULT CALLBACK vfw_stream_cb (HWND hwnd,
         return(0);
     zbar_video_t *vdo = (void*)capGetUserData(hwnd);
 
-    video_lock(vdo);
+    _zbar_mutex_lock(&vdo->qlock);
     zbar_image_t *img = vdo->state->image;
     if(!img) {
-        video_lock(vdo);
+        _zbar_mutex_lock(&vdo->qlock);
         img = video_dq_image(vdo);
     }
     if(img) {
@@ -138,25 +139,8 @@ static LRESULT CALLBACK vfw_stream_cb (HWND hwnd,
         vdo->state->image = img;
         SetEvent(vdo->state->captured);
     }
-    video_unlock(vdo);
+    _zbar_mutex_unlock(&vdo->qlock);
 
-    return(1);
-}
-
-static LRESULT CALLBACK vfw_control_cb (HWND hwnd,
-                                        int state)
-{
-    if(!hwnd)
-        return(0);
-#if 0
-    zbar_video_t *vdo = (void*)capGetUserData(hwnd);
-    switch(state) {
-    case CONTROLCALLBACK_PREROLL:
-        break;
-    case CONTROLCALLBACK_CAPTURING:
-        break;
-    }
-#endif
     return(1);
 }
 
@@ -167,8 +151,11 @@ static LRESULT CALLBACK vfw_error_cb (HWND hwnd,
     if(!hwnd)
         return(0);
     zbar_video_t *vdo = (void*)capGetUserData(hwnd);
-    zprintf(2, "thr=%04lx vdo=%p id=%d msg=%s\n",
-            GetCurrentThreadId(), vdo, errid, errmsg);
+    zprintf(2, "id=%d msg=%s\n", errid, errmsg);
+    _zbar_mutex_lock(&vdo->qlock);
+    vdo->state->image = NULL;
+    SetEvent(vdo->state->captured);
+    _zbar_mutex_unlock(&vdo->qlock);
     return(1);
 }
 
@@ -183,14 +170,15 @@ static int vfw_nq (zbar_video_t *vdo,
 static zbar_image_t *vfw_dq (zbar_video_t *vdo)
 {
     zbar_image_t *img = vdo->state->image;
-    zbar_thread_t *thr = &vdo->state->thread;
-    HANDLE status[2] = { vdo->state->captured, thr->activity };
     if(!img) {
         _zbar_mutex_unlock(&vdo->qlock);
-        int rc = WaitForMultipleObjects(2, status, 0, INFINITE);
+        int rc = WaitForSingleObject(vdo->state->captured, INFINITE);
         _zbar_mutex_lock(&vdo->qlock);
-        img = (!rc) ? vdo->state->image : NULL;
-        /*FIXME errors */
+        if(!rc)
+            img = vdo->state->image;
+        else
+            img = NULL;
+        /*FIXME handle errors? */
     }
     else
         ResetEvent(vdo->state->captured);
@@ -319,8 +307,6 @@ static int vfw_init (zbar_video_t *vdo,
        !capPreviewScale(hwnd, 0))
         err_capture(vdo, SEV_WARNING, ZBAR_ERR_WINAPI, __func__,
                     "disabling preview");
-
-    capSetCallbackOnCapControl(hwnd, vfw_control_cb);
 
     if(!capSetCallbackOnVideoStream(hwnd, vfw_stream_cb) ||
        !capSetCallbackOnError(hwnd, vfw_error_cb))

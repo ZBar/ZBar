@@ -377,7 +377,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             symbol_handler(iscn, x, y);
 
         while(y < h) {
-            zprintf(32, "img_x+: %03x,%03x @%p\n", x, y, p);
+            zprintf(128, "img_x+: %03x,%03x @%p\n", x, y, p);
             while(x < w) {
                 ASSERT_POS;
                 if(zbar_scan_y(iscn->scn, *p))
@@ -390,7 +390,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             if(y >= h)
                 break;
 
-            zprintf(32, "img_x-: %03x,%03x @%p\n", x, y, p);
+            zprintf(128, "img_x-: %03x,%03x @%p\n", x, y, p);
             while(x > 0) {
                 ASSERT_POS;
                 if(zbar_scan_y(iscn->scn, *p))
@@ -414,7 +414,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
         movedelta(border, 0);
 
         while(x < w) {
-            zprintf(32, "img_y+: %03x,%03x @%p\n", x, y, p);
+            zprintf(128, "img_y+: %03x,%03x @%p\n", x, y, p);
             while(y < h) {
                 ASSERT_POS;
                 if(zbar_scan_y(iscn->scn, *p))
@@ -427,7 +427,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             if(x >= w)
                 break;
 
-            zprintf(32, "img_y-: %03x,%03x @%p\n", x, y, p);
+            zprintf(128, "img_y-: %03x,%03x @%p\n", x, y, p);
             while(y >= 0) {
                 ASSERT_POS;
                 if(zbar_scan_y(iscn->scn, *p))

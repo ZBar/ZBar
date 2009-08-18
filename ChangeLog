@@ -1,4 +1,7 @@
 current:
+  * more testing, fixes and cleanup
+    - fix v4l1
+    - fix/add null processor interface
   * change default image scanner density to 1x1
     - random cleanup, vfw hang, quit key
     - fix scan_image example MSVC project

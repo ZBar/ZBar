@@ -411,7 +411,6 @@ Makefile
 zbar.pc
 zbar-gtk.pc
 zbar-qt.pc
-zbar.spec
 doc/doxygen.conf
 ])
 AC_OUTPUT

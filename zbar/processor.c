@@ -52,17 +52,18 @@ static inline int proc_open (zbar_processor_t *proc)
 int _zbar_process_image (zbar_processor_t *proc,
                          zbar_image_t *img)
 {
+    uint32_t force_fmt = proc->force_output;
     if(img) {
+        if(proc->dumping) {
+            zbar_image_write(proc->window->image, "zbar");
+            proc->dumping = 0;
+        }
+
         uint32_t format = zbar_image_get_format(img);
         zprintf(16, "processing: %.4s(%08" PRIx32 ") %dx%d @%p\n",
                 (char*)&format, format,
                 zbar_image_get_width(img), zbar_image_get_height(img),
                 zbar_image_get_data(img));
-
-        if(proc->dumping) {
-            zbar_image_write(proc->window->image, "zbar");
-            proc->dumping = 0;
-        }
 
         /* FIXME locking all other interfaces while processing is conservative
          * but easier for now and we don't expect this to take long...
@@ -88,16 +89,16 @@ int _zbar_process_image (zbar_processor_t *proc,
         }
 
         if(nsyms) {
+            /* FIXME only call after filtering */
             _zbar_mutex_lock(&proc->mutex);
             _zbar_processor_notify(proc, EVENT_OUTPUT);
             _zbar_mutex_unlock(&proc->mutex);
             if(proc->handler)
-                /* FIXME only call after filtering */
                 proc->handler(img, proc->userdata);
         }
 
-        if(proc->force_output) {
-            img = zbar_image_convert(img, proc->force_output);
+        if(force_fmt) {
+            img = zbar_image_convert(img, force_fmt);
             if(!img)
                 return(err_capture(proc, SEV_ERROR, ZBAR_ERR_UNSUPPORTED,
                                    __func__, "unknown image format"));
@@ -110,7 +111,7 @@ int _zbar_process_image (zbar_processor_t *proc,
         _zbar_processor_invalidate(proc)))
         return(err_copy(proc, proc->window));
 
-    if(proc->force_output && img)
+    if(force_fmt && img)
         zbar_image_destroy(img);
     return(0);
 }

@@ -21,7 +21,7 @@
  *  http://sourceforge.net/projects/zbar
  *------------------------------------------------------------------------*/
 
-#include "window.h"
+#include "processor.h"
 
 static inline int null_error (void *m,
                               const char *func)
@@ -30,36 +30,33 @@ static inline int null_error (void *m,
                        "not compiled with output window support"));
 }
 
-int _zbar_window_resize (zbar_window_t *w)
+int _zbar_processor_open (zbar_processor_t *proc,
+                          char *name,
+                          unsigned w,
+                          unsigned h)
 {
-    return(0);
+    return(null_error(proc, __func__));
 }
 
-int _zbar_window_attach (zbar_window_t *w,
-                         void *display,
-                         unsigned long win)
+int _zbar_processor_close (zbar_processor_t *proc)
 {
-    return(null_error(w, __func__));
+    return(null_error(proc, __func__));
 }
 
-int _zbar_window_flush (zbar_window_t *w)
+int _zbar_processor_set_visible (zbar_processor_t *proc,
+                                 int vis)
 {
-    return(null_error(w, __func__));
+    return(null_error(proc, __func__));
 }
 
-int _zbar_window_clear (zbar_window_t *w)
+int _zbar_processor_set_size (zbar_processor_t *proc,
+                              unsigned width,
+                              unsigned height)
 {
-    return(null_error(w, __func__));
+    return(null_error(proc, __func__));
 }
 
-int _zbar_window_draw_marker(zbar_window_t *w,
-                             uint32_t rgb,
-                             const point_t *p)
+int _zbar_processor_invalidate (zbar_processor_t *proc)
 {
-    return(null_error(w, __func__));
-}
-
-int _zbar_window_draw_logo (zbar_window_t *w)
-{
-    return(null_error(w, __func__));
+    return(null_error(proc, __func__));
 }

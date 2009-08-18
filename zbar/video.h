@@ -150,11 +150,6 @@ static inline zbar_image_t *video_dq_image (zbar_video_t *vdo)
     if(video_unlock(vdo))
         /* FIXME reclaim image */
         return(NULL);
-
-    if(!img)
-        /* FIXME block until available? */
-        err_capture(vdo, SEV_ERROR, ZBAR_ERR_BUSY, __func__,
-                    "all allocated video images busy");
     return(img);
 }
 

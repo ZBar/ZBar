@@ -170,7 +170,7 @@ static inline int proc_wait_unthreaded (zbar_processor_t *proc,
             zbar_image_destroy(img);
             _zbar_mutex_unlock(&proc->mutex);
         }
-        int reltime = (timeout) ? _zbar_timer_check(timeout) : -1;
+        int reltime = _zbar_timer_check(timeout);
         if(blocking && (reltime < 0 || reltime > MAX_INPUT_BLOCK))
             reltime = MAX_INPUT_BLOCK;
         rc = _zbar_processor_input_wait(proc, NULL, reltime);
@@ -214,4 +214,3 @@ int _zbar_processor_wait (zbar_processor_t *proc,
     _zbar_mutex_unlock(&proc->mutex);
     return(rc);
 }
-

@@ -77,6 +77,9 @@ static inline int window_hide_cursor (zbar_window_t *w)
 int _zbar_window_resize (zbar_window_t *w)
 {
     window_state_t *x = w->state;
+    if(!x)
+        return(0);
+
     int lbw;
     if(w->height * 8 / 10 <= w->width)
         lbw = w->height / 36;
@@ -179,7 +182,6 @@ int _zbar_window_expose (zbar_window_t *w,
                          int width,
                          int height)
 {
-    window_lock(w);
     window_state_t *xs = w->state;
     if(!xs->exposed)
         xs->exposed = XCreateRegion();
@@ -189,7 +191,6 @@ int _zbar_window_expose (zbar_window_t *w,
     r.width = width;
     r.height = height;
     XUnionRectWithRegion(&r, xs->exposed, xs->exposed);
-    window_unlock(w);
     return(0);
 }
 

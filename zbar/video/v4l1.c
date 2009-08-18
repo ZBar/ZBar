@@ -105,23 +105,20 @@ static int v4l1_nq (zbar_video_t *vdo,
 
 static zbar_image_t *v4l1_dq (zbar_video_t *vdo)
 {
+    video_iomode_t iomode = vdo->iomode;
+    int fd = vdo->fd;
     zbar_image_t *img = video_dq_image(vdo);
     if(!img)
         return(NULL);
 
-    if(vdo->iomode == VIDEO_MMAP) {
+    if(iomode == VIDEO_MMAP) {
         int frame = img->srcidx;
-        if(ioctl(vdo->fd, VIDIOCSYNC, &frame) < 0) {
-            err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
-                        "capturing video image (VIDIOCSYNC)");
+        if(ioctl(fd, VIDIOCSYNC, &frame) < 0)
             return(NULL);
-        }
     }
-    else if(read(vdo->fd, (void*)img->data, img->datalen) != img->datalen) {
-        err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
-                    "reading video image");
+    else if(read(fd, (void*)img->data, img->datalen) != img->datalen)
         return(NULL);
-    }
+
     return(img);
 }
 
