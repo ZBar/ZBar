@@ -166,8 +166,14 @@ int QZBar::heightForWidth (int width) const
 
 void QZBar::paintEvent (QPaintEvent *)
 {
-    if(thread)
-        thread->window.redraw();
+    try {
+        if(thread)
+            thread->window.redraw();
+    }
+    catch(Exception) {
+        // sometimes Qt attempts to paint the widget before it's parented(?)
+        // just ignore this (can't throw from event anyway)
+    }
 }
 
 void QZBar::resizeEvent (QResizeEvent *event)
