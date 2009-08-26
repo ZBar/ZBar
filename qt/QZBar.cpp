@@ -37,14 +37,18 @@ QZBar::QZBar (QWidget *parent)
 {
     setAttribute(Qt::WA_OpaquePaintEvent);
     setAttribute(Qt::WA_PaintOnScreen);
+    setAttribute(Qt::WA_NativeWindow);
+    setAttribute(Qt::WA_DontCreateNativeAncestors);
 
     QSizePolicy sizing(QSizePolicy::Preferred, QSizePolicy::Preferred);
     sizing.setHeightForWidth(true);
     setSizePolicy(sizing);
 
     thread = new QZBarThread;
-    if(testAttribute(Qt::WA_WState_Created))
+    if(testAttribute(Qt::WA_WState_Created)) {
         thread->window.attach(x11Info().display(), winId());
+        _attached = 1;
+    }
     connect(thread, SIGNAL(videoOpened(bool)),
             this, SIGNAL(videoOpened(bool)));
     connect(this, SIGNAL(videoOpened(bool)),
@@ -66,6 +70,11 @@ QZBar::~QZBar ()
         thread->wait();
         thread = NULL;
     }
+}
+
+QPaintEngine *QZBar::paintEngine () const
+{
+    return(NULL);
 }
 
 QString QZBar::videoDevice () const
@@ -164,7 +173,7 @@ int QZBar::heightForWidth (int width) const
     return(width * 3 / 4);
 }
 
-void QZBar::paintEvent (QPaintEvent *)
+void QZBar::paintEvent (QPaintEvent *event)
 {
     try {
         if(thread)
@@ -187,6 +196,14 @@ void QZBar::changeEvent(QEvent *event)
 {
     if(event->type() == QEvent::ParentChange)
         thread->window.attach(x11Info().display(), winId());
+}
+
+void QZBar::showEvent (QShowEvent *event)
+{
+    if(!_attached) {
+        thread->window.attach(x11Info().display(), winId());
+        _attached = 1;
+    }
 }
 
 void QZBar::sizeChange ()

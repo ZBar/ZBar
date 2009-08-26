@@ -1,4 +1,6 @@
 current:
+  * more Qt window creation hook fixes
+    - NB may still cause problems if video is opened before window is visible
   * finish fix for Qt init ordering (bug #2844846)
   * potential fix for display init ordering (bug #2844846)
     - new workaround for filtering bad EAN results in the image scanner

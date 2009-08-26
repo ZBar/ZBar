@@ -101,6 +101,7 @@ public:
 
     QSize sizeHint() const;
     int heightForWidth(int) const;
+    QPaintEngine *paintEngine() const;
 
     /// @}
 
@@ -143,8 +144,9 @@ Q_SIGNALS:
     /// @internal
 
 protected:
-    void paintEvent(QPaintEvent *);
-    void resizeEvent(QResizeEvent *);
+    void showEvent(QShowEvent*);
+    void paintEvent(QPaintEvent*);
+    void resizeEvent(QResizeEvent*);
     void changeEvent(QEvent*);
     void dragEnterEvent(QDragEnterEvent*);
     void dropEvent(QDropEvent*);
@@ -158,6 +160,7 @@ private:
     QZBarThread *thread;
     QString _videoDevice;
     bool _videoEnabled;
+    bool _attached;
 };
 
 };
