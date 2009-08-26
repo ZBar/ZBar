@@ -1,4 +1,6 @@
 current:
+  * potential fix for display init ordering (bug #2844846)
+    - new workaround for filtering bad EAN results in the image scanner
   * more testing, fixes and cleanup
     - fix v4l1
     - fix/add null processor interface

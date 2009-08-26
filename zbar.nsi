@@ -161,8 +161,14 @@ Section "ZBar Core Files (required)" SecCore
 
     FileOpen $0 zbarcam.bat w
     FileWrite $0 "@set PATH=%PATH%;$INSTDIR\bin$\n"
-    FileWrite $0 "@zbarcam.exe$\n"
-    FileWrite $0 "@pause$\n"
+    FileWrite $0 "@echo This is the zbarcam output window.$\n"
+    FileWrite $0 "@echo Hold a bar code in front of the camera (make sure it's in focus!)$\n"
+    FileWrite $0 "@echo and decoded results will appear below.$\n"
+    FileWrite $0 "@echo.$\n"
+    FileWrite $0 "@echo Initializing camera, please wait...$\n"
+    FileWrite $0 "@echo.$\n"
+    FileWrite $0 "@zbarcam.exe --prescale=640x480$\n"
+    FileWrite $0 "@if errorlevel 1 pause$\n"
     FileClose $0
 
     SetOutPath $INSTDIR\doc

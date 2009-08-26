@@ -303,9 +303,6 @@ int main (int argc, const char *argv[])
         zbar_processor_error_spew(processor, 0);
         return(1);
     }
-    /* FIXME tmp hack until EAN is more robust */
-    zbar_processor_set_config(processor, 0, ZBAR_CFG_X_DENSITY, 16);
-    zbar_processor_set_config(processor, 0, ZBAR_CFG_Y_DENSITY, 8);
 
     for(i = 1; i < argc; i++) {
         const char *arg = argv[i];

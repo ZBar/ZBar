@@ -78,10 +78,11 @@ int _zbar_process_image (zbar_processor_t *proc,
             while(sym) {
                 zbar_symbol_type_t type = zbar_symbol_get_type(sym);
                 int count = zbar_symbol_get_count(sym);
-                zprintf(8, "%s%s: %s (%s)\n",
+                zprintf(8, "%s%s: %s (%d pts) (%s)\n",
                         zbar_get_symbol_name(type),
                         zbar_get_addon_name(type),
                         zbar_symbol_get_data(sym),
+                        zbar_symbol_get_loc_size(sym),
                         (count < 0) ? "uncertain" :
                         (count > 0) ? "duplicate" : "new");
                 sym = zbar_symbol_next(sym);

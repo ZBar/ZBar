@@ -196,6 +196,9 @@ int _zbar_window_expose (zbar_window_t *w,
 
 int _zbar_window_flush (zbar_window_t *w)
 {
+    if(!w->display)
+        return(-1);
+
     window_state_t *x = w->state;
     XFlush(w->display);
     XSetClipMask(w->display, x->gc, None);
@@ -244,6 +247,9 @@ int _zbar_window_draw_marker(zbar_window_t *w,
 
 int _zbar_window_draw_logo (zbar_window_t *w)
 {
+    if(!w->display)
+        return(-1);
+
     window_state_t *x = w->state;
     if(x->exposed)
         XSetRegion(w->display, x->gc, x->exposed);

@@ -442,5 +442,26 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 
     /* release reference to converted image */
     zbar_image_destroy(img);
-    return(iscn->img->nsyms);
+    img = iscn->img;
+    iscn->img = NULL;
+
+    /* FIXME tmp hack to filter bad EAN results */
+    if(img->nsyms && !iscn->enable_cache &&
+       (density == 1 || CFG(iscn, ZBAR_CFG_Y_DENSITY) == 1)) {
+        zbar_symbol_t **symp = &img->syms, *sym;
+        while((sym = *symp)) {
+            if(sym->type < ZBAR_I25 && sym->type > ZBAR_PARTIAL &&
+               sym->npts < 2) {
+                /* recycle */
+                *symp = sym->next;
+                iscn->nsyms++;
+                sym->next = iscn->syms;
+                iscn->syms = sym;
+            }
+            else
+                symp = &sym->next;
+        }
+    }
+
+    return(img->nsyms);
 }
