@@ -65,9 +65,9 @@ QZBar::QZBar (QWidget *parent)
 QZBar::~QZBar ()
 {
     if(thread) {
-        thread->window.attach(NULL);
         thread->pushEvent(new QEvent((QEvent::Type)QZBarThread::Exit));
         thread->wait();
+        delete thread;
         thread = NULL;
     }
 }
@@ -88,8 +88,9 @@ void QZBar::setVideoDevice (const QString& videoDevice)
         return;
     if(_videoDevice != videoDevice) {
         _videoDevice = videoDevice;
-        _videoEnabled = !_videoDevice.isEmpty();
-        thread->pushEvent(new QZBarThread::VideoDeviceEvent(videoDevice));
+        _videoEnabled = _attached && !videoDevice.isEmpty();
+        if(_attached)
+            thread->pushEvent(new QZBarThread::VideoDeviceEvent(videoDevice));
     }
 }
 
@@ -188,22 +189,43 @@ void QZBar::paintEvent (QPaintEvent *event)
 void QZBar::resizeEvent (QResizeEvent *event)
 {
     QSize size = event->size();
-    if(thread)
-        thread->window.resize(size.rwidth(), size.rheight());
+    try {
+        if(thread)
+            thread->window.resize(size.rwidth(), size.rheight());
+    }
+    catch(Exception) { /* ignore */ }
 }
 
 void QZBar::changeEvent(QEvent *event)
 {
-    if(event->type() == QEvent::ParentChange)
+    try {
+        QMutexLocker locker(&thread->mutex);
+        if(event->type() == QEvent::ParentChange)
+            thread->window.attach(x11Info().display(), winId());
+    }
+    catch(Exception) { /* ignore (FIXME do something w/error) */ }
+}
+
+void QZBar::attach ()
+{
+    if(_attached)
+        return;
+
+    try {
         thread->window.attach(x11Info().display(), winId());
+        _attached = 1;
+
+        _videoEnabled = !_videoDevice.isEmpty();
+        if(_videoEnabled)
+            thread->pushEvent(new QZBarThread::VideoDeviceEvent(_videoDevice));
+    }
+    catch(Exception) { /* ignore (FIXME do something w/error) */ }
 }
 
 void QZBar::showEvent (QShowEvent *event)
 {
-    if(!_attached) {
-        thread->window.attach(x11Info().display(), winId());
-        _attached = 1;
-    }
+    if(thread && !_attached)
+        attach();
 }
 
 void QZBar::sizeChange ()

@@ -144,6 +144,7 @@ Q_SIGNALS:
     /// @internal
 
 protected:
+    void attach();
     void showEvent(QShowEvent*);
     void paintEvent(QPaintEvent*);
     void resizeEvent(QResizeEvent*);
