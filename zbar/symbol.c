@@ -81,6 +81,11 @@ int zbar_symbol_get_count (const zbar_symbol_t *sym)
     return(sym->cache_count);
 }
 
+int zbar_symbol_get_quality (const zbar_symbol_t *sym)
+{
+    return(sym->quality);
+}
+
 unsigned zbar_symbol_get_loc_size (const zbar_symbol_t *sym)
 {
     return(sym->npts);
@@ -111,7 +116,7 @@ const zbar_symbol_t *zbar_symbol_next (const zbar_symbol_t *sym)
 
 
 static const char *xmlfmt[] = {
-    "<symbol type='%s'",
+    "<symbol type='%s' quality='%d'",
     " count='%d'",
     "><data><![CDATA[",
     "]]></data></symbol>",
@@ -138,7 +143,7 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
         *len = maxlen;
     }
 
-    int n = snprintf(*buf, maxlen, xmlfmt[0], type);
+    int n = snprintf(*buf, maxlen, xmlfmt[0], type, sym->quality);
     assert(n > 0);
     assert(n <= maxlen);
 

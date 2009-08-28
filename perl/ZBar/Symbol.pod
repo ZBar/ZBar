@@ -58,6 +58,14 @@ The type of bar code "symbology" from which the data was decoded.
 The decoded data string.  Note that some symbologies can encode binary
 data.
 
+=item get_quality()
+
+Confidence metric.  An unscaled integer value that indicates something
+(intentionally unspecified) about the reliability of this result
+relative to another.  Larger values are better than smaller values,
+where "large" and "small" are application dependent.  Expect this
+definition to become more specific as the metric is enhanced.
+
 =item get_count()
 
 Current cache count of the symbol.  This integer value provides
@@ -110,6 +118,8 @@ Bar code type "symbology" constants:
 =item CODE39
 
 =item CODE128
+
+=item PDF417
 
 =back
 

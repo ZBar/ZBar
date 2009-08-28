@@ -111,6 +111,16 @@
       </varlistentry>
 
       <varlistentry>
+        <term><option>position</option></term>
+        <listitem>
+          <simpara>Enable collection of symbol position information.
+          Enabled by default.  Currently, the position information is
+          unusable, so you can save a few cycles by disabling
+          this.</simpara>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
         <term><option>min-length=<replaceable class="parameter">n</replaceable></option></term>
         <term><option>max-length=<replaceable class="parameter">n</replaceable></option></term>
         <listitem>
@@ -123,6 +133,17 @@
           <option>min-length</option> defaults to 6 for <option>i25</option>
           and 1 for <option>code39</option> (per Code 39 autodiscrimination
           recommendation); all others default to 0</simpara>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>x-density=<replaceable class="parameter">n</replaceable></option></term>
+        <term><option>y-density=<replaceable class="parameter">n</replaceable></option></term>
+        <listitem>
+          <simpara>Adjust the density of the scanner passes.  Lower values
+          scan more of the image at the cost of decreased performance.
+          Setting to 0 disables scanning along that axis.  Defaults are both
+          1.</simpara>
         </listitem>
       </varlistentry>
     </variablelist>

@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 19;
+use Test::More tests => 20;
 
 #########################
 
@@ -60,6 +60,10 @@ $proc->set_data_handler(sub {
     #########################
 
     is($sym->get_data(), '9876543210128', 'result data');
+
+    #########################
+
+    ok($sym->get_quality() > 0, 'quality');
 
     #########################
 

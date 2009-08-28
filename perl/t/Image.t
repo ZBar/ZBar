@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 16;
+use Test::More tests => 17;
 
 #########################
 
@@ -81,7 +81,7 @@ SKIP: {
 
     #########################
 
-    can_ok($sym, qw(get_type get_data get_count get_loc));
+    can_ok($sym, qw(get_type get_data get_quality get_count get_loc));
 
     #########################
 
@@ -90,6 +90,10 @@ SKIP: {
     #########################
 
     is($sym->get_data(), '9876543210128', 'result data');
+
+    #########################
+
+    ok($sym->get_quality() > 0, 'quality');
 
     #########################
 

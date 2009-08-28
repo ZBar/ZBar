@@ -243,6 +243,7 @@ class TestImageScan(ut.TestCase):
         self.assert_(sym.type is zbar.Symbol.EAN13)
         self.assert_(sym.type is sym.EAN13)
         self.assertEqual(str(sym.type), 'EAN13')
+        self.assert_(sym.quality > 0)
         self.assertEqual(sym.count, 0)
 
         data = sym.data
@@ -315,6 +316,7 @@ class TestProcessor(ut.TestCase):
                 self.assert_(isinstance(symbol, zbar.Symbol))
                 self.assert_(symbol.type is zbar.Symbol.EAN13)
                 self.assertEqual(symbol.data, '9876543210128')
+                self.assert_(symbol.quality > 0)
             closure[0] += 1
 
         explicit_closure = [ 0 ]

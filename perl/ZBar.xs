@@ -266,6 +266,7 @@ BOOT:
         CONSTANT(config, CFG_, ASCII, "ascii");
         CONSTANT(config, CFG_, MIN_LEN, "min-length");
         CONSTANT(config, CFG_, MAX_LEN, "max-length");
+        CONSTANT(config, CFG_, POSITION, "position");
         CONSTANT(config, CFG_, X_DENSITY, "x-density");
         CONSTANT(config, CFG_, Y_DENSITY, "y-density");
     }
@@ -313,6 +314,10 @@ zbar_symbol_get_data(symbol)
 
 int
 zbar_symbol_get_count(symbol)
+	Barcode::ZBar::Symbol symbol
+
+int
+zbar_symbol_get_quality(symbol)
 	Barcode::ZBar::Symbol symbol
 
 SV *

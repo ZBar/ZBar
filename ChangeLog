@@ -1,4 +1,6 @@
 current:
+  * add symbol quality metric and image scanner position config
+    - update python, perl and docs
   * compatibility fixes
     - work around ImageMagick API breakages
     - fix some OS X compile issues

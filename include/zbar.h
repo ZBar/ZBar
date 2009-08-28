@@ -127,10 +127,12 @@ typedef enum zbar_config_e {
     ZBAR_CFG_ADD_CHECK,         /**< enable check digit when optional */
     ZBAR_CFG_EMIT_CHECK,        /**< return check digit when present */
     ZBAR_CFG_ASCII,             /**< enable full ASCII character set */
-    ZBAR_CFG_NUM,               /**< number of boolean configs */
+    ZBAR_CFG_NUM,               /**< number of boolean decoder configs */
 
     ZBAR_CFG_MIN_LEN = 0x20,    /**< minimum data length for valid decode */
     ZBAR_CFG_MAX_LEN,           /**< maximum data length for valid decode */
+
+    ZBAR_CFG_POSITION = 0x80,   /**< enable scanner to collect position data */
 
     ZBAR_CFG_X_DENSITY = 0x100, /**< image scanner vertical scan density */
     ZBAR_CFG_Y_DENSITY,         /**< image scanner horizontal scan density */
@@ -229,6 +231,17 @@ extern const char *zbar_symbol_get_data(const zbar_symbol_t *symbol);
  * @returns the length of the decoded data
  */
 extern unsigned int zbar_symbol_get_data_length(const zbar_symbol_t *symbol);
+
+/** retrieve a symbol confidence metric.
+ * @returns an unscaled, relative quantity: larger values are better
+ * than smaller values, where "large" and "small" are application
+ * dependent.
+ * @note expect the exact definition of this quantity to change as the
+ * metric is refined.  currently, only the ordered relationship
+ * between two values is defined and will remain stable in the future
+ * @since 0.9
+ */
+extern int zbar_symbol_get_quality(const zbar_symbol_t *symbol);
 
 /** retrieve current cache count.  when the cache is enabled for the
  * image_scanner this provides inter-frame reliability and redundancy

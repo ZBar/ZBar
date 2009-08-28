@@ -66,10 +66,15 @@ symbol_get_type (zbarSymbol *self,
 }
 
 static PyObject*
-symbol_get_count (zbarSymbol *self,
-                  void *closure)
+symbol_get_long (zbarSymbol *self,
+                 void *closure)
 {
-    return(PyInt_FromLong(zbar_symbol_get_count(self->zsym)));
+    int val;
+    if(!closure)
+        val = zbar_symbol_get_quality(self->zsym);
+    else
+        val = zbar_symbol_get_count(self->zsym);
+    return(PyInt_FromLong(val));
 }
 
 static PyObject*
@@ -110,7 +115,8 @@ symbol_get_location (zbarSymbol *self,
 
 static PyGetSetDef symbol_getset[] = {
     { "type",     (getter)symbol_get_type, },
-    { "count",    (getter)symbol_get_count, },
+    { "quality",  (getter)symbol_get_long, NULL, NULL, (void*)0 },
+    { "count",    (getter)symbol_get_long, NULL, NULL, (void*)1 },
     { "data",     (getter)symbol_get_data, },
     { "location", (getter)symbol_get_location, },
     { NULL, },

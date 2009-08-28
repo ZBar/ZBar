@@ -66,6 +66,7 @@
 #define NUM_SCN_CFGS (ZBAR_CFG_Y_DENSITY - ZBAR_CFG_X_DENSITY + 1)
 
 #define CFG(iscn, cfg) ((iscn)->configs[(cfg) - ZBAR_CFG_X_DENSITY])
+#define TEST_CFG(iscn, cfg) (((iscn)->config >> ((cfg) - ZBAR_CFG_POSITION)) & 1)
 
 
 /* image scanner state */
@@ -85,7 +86,8 @@ struct zbar_image_scanner_s {
     zbar_symbol_t *cache;       /* inter-image result cache entries */
 
     /* configuration settings */
-    int configs[NUM_SCN_CFGS];
+    unsigned config;            /* config flags */
+    int configs[NUM_SCN_CFGS];  /* int valued configurations */
 };
 
 static inline void recycle_syms (zbar_image_scanner_t *iscn,
@@ -137,6 +139,7 @@ static inline zbar_symbol_t *alloc_sym (zbar_image_scanner_t *iscn,
 
     /* save new symbol data */
     sym->type = type;
+    sym->quality = 1;
     sym->datalen = datalen++;
     if(sym->data_alloc < datalen) {
         if(sym->data)
@@ -192,9 +195,11 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
         if(sym->type == type &&
            sym->datalen == datalen &&
            !memcmp(sym->data, data, datalen)) {
-            /* add new point to existing set */
-            /* FIXME should be polygon */
-            sym_add_point(sym, x, y);
+            sym->quality++;
+            if(TEST_CFG(iscn, ZBAR_CFG_POSITION))
+                /* add new point to existing set */
+                /* FIXME should be polygon */
+                sym_add_point(sym, x, y);
             return;
         }
 
@@ -214,7 +219,8 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
 
     /* initialize first point */
     sym->npts = 0;
-    sym_add_point(sym, x, y);
+    if(TEST_CFG(iscn, ZBAR_CFG_POSITION))
+        sym_add_point(sym, x, y);
 
     /* attach to current root image */
     sym->next = iscn->img->syms;
@@ -269,6 +275,7 @@ zbar_image_scanner_t *zbar_image_scanner_create ()
     /* apply default configuration */
     CFG(iscn, ZBAR_CFG_X_DENSITY) = 1;
     CFG(iscn, ZBAR_CFG_Y_DENSITY) = 1;
+    zbar_image_scanner_set_config(iscn, 0, ZBAR_CFG_POSITION, 1);
     return(iscn);
 }
 
@@ -304,14 +311,30 @@ int zbar_image_scanner_set_config (zbar_image_scanner_t *iscn,
                                    zbar_config_t cfg,
                                    int val)
 {
+    if(cfg < ZBAR_CFG_POSITION)
+        return(zbar_decoder_set_config(iscn->dcode, sym, cfg, val));
+
+    if(sym > ZBAR_PARTIAL)
+        return(1);
+
     if(cfg >= ZBAR_CFG_X_DENSITY && cfg <= ZBAR_CFG_Y_DENSITY) {
-        if(sym > ZBAR_PARTIAL)
-            return(1);
 
         CFG(iscn, cfg) = val;
         return(0);
     }
-    return(zbar_decoder_set_config(iscn->dcode, sym, cfg, val));
+
+    if(cfg > ZBAR_CFG_POSITION)
+        return(1);
+    cfg -= ZBAR_CFG_POSITION;
+
+    if(!val)
+        iscn->config &= ~(1 << cfg);
+    else if(val == 1)
+        iscn->config |= (1 << cfg);
+    else
+        return(1);
+
+    return(0);
 }
 
 void zbar_image_scanner_enable_cache(zbar_image_scanner_t *iscn,
@@ -451,10 +474,11 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
         zbar_symbol_t **symp = &img->syms, *sym;
         while((sym = *symp)) {
             if(sym->type < ZBAR_I25 && sym->type > ZBAR_PARTIAL &&
-               sym->npts < 2) {
+               sym->quality < 3) {
                 /* recycle */
                 *symp = sym->next;
                 iscn->nsyms++;
+                img->nsyms--;
                 sym->next = iscn->syms;
                 iscn->syms = sym;
             }

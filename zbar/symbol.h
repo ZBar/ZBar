@@ -45,6 +45,7 @@ struct zbar_symbol_s {
     zbar_symbol_t *next;        /* linked list of results */
     unsigned long time;         /* relative symbol capture time */
     int cache_count;            /* cache state */
+    int quality;                /* relative symbol reliability metric */
 };
 
 static inline void sym_add_point (zbar_symbol_t *sym,
