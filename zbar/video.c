@@ -26,7 +26,7 @@
 
 
 #ifdef HAVE_LIBJPEG
-extern struct jpeg_decompress_struct *_zbar_jpeg_decomp_create();
+extern struct jpeg_decompress_struct *_zbar_jpeg_decomp_create(void);
 extern void _zbar_jpeg_decomp_destroy(struct jpeg_decompress_struct *cinfo);
 #endif
 

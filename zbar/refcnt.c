@@ -28,7 +28,7 @@
 pthread_once_t initialized = PTHREAD_ONCE_INIT;
 pthread_mutex_t _zbar_reflock;
 
-static void initialize ()
+static void initialize (void)
 {
     pthread_mutex_init(&_zbar_reflock, NULL);
 }

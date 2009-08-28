@@ -172,7 +172,7 @@ static int intsort (const void *a,
 #endif
 
 /* verify that format list is in required sort order */
-static inline int verify_format_sort ()
+static inline int verify_format_sort (void)
 {
     int i;
     for(i = 0; i < num_format_defs; i++) {

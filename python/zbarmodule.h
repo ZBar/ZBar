@@ -57,7 +57,7 @@ typedef struct {
 
 extern PyTypeObject zbarEnum_Type;
 
-extern zbarEnum *zbarEnum_New();
+extern zbarEnum *zbarEnum_New(void);
 extern int zbarEnum_Add(zbarEnum *self,
                          int val,
                          const char *name);

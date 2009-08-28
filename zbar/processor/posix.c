@@ -71,7 +71,7 @@ int _zbar_event_wait (zbar_event_t *event,
             struct timespec tmp;
             tmp.tv_sec = timeout->tv_sec;
             tmp.tv_nsec = timeout->tv_usec * 1000;
-            timer = *tmp;
+            timer = &tmp;
 # endif
             rc = pthread_cond_timedwait(&event->cond, lock, timer);
         }

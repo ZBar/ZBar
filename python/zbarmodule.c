@@ -103,7 +103,7 @@ static PyMethodDef zbar_functions[] = {
 };
 
 PyMODINIT_FUNC
-initzbar ()
+initzbar (void)
 {
     /* initialize constant containers */
     config_enum = zbarEnum_New();

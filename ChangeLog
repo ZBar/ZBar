@@ -1,4 +1,7 @@
 current:
+  * compatibility fixes
+    - work around ImageMagick API breakages
+    - fix some OS X compile issues
   * Qt widget cleanup
     - handle video device set before window attached
     - prevent exceptions from escaping event handlers

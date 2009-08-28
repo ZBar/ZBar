@@ -98,7 +98,7 @@ static inline void _zbar_thread_init (zbar_thread_t *thr)
     _zbar_event_trigger(&thr->activity);
 }
 
-static inline zbar_thread_id_t _zbar_thread_self ()
+static inline zbar_thread_id_t _zbar_thread_self (void)
 {
     return(pthread_self());
 }

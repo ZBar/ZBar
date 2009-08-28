@@ -88,7 +88,7 @@ void term_source (j_decompress_ptr cinfo)
     /* nothing todo */
 }
 
-struct jpeg_decompress_struct * _zbar_jpeg_decomp_create ()
+struct jpeg_decompress_struct * _zbar_jpeg_decomp_create (void)
 {
     j_decompress_ptr cinfo = calloc(1, sizeof(struct jpeg_decompress_struct));
     if(!cinfo)

@@ -36,6 +36,15 @@
 #include <zbar.h>
 #include <wand/MagickWand.h>
 
+/* in 6.4.5.4 MagickGetImagePixels changed to MagickExportImagePixels.
+ * (still not sure this check is quite right...
+ *  how does MagickGetAuthenticImagePixels fit in?)
+ * ref http://bugs.gentoo.org/247292
+ */
+#if MagickLibVersion < 0x645
+# define MagickExportImagePixels MagickGetImagePixels
+#endif
+
 static const char *note_usage =
     "usage: zbarimg [options] <image>...\n"
     "\n"

@@ -93,7 +93,7 @@ typedef struct _ZBarGtkPrivateClass
 } ZBarGtkPrivateClass;
 
 
-static GType zbar_gtk_private_get_type() G_GNUC_CONST;
+static GType zbar_gtk_private_get_type(void) G_GNUC_CONST;
 
 G_END_DECLS
 

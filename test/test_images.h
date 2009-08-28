@@ -28,7 +28,7 @@
     ((uint32_t)(a) | ((uint32_t)(b) << 8) |     \
      ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
 
-int test_image_check_cleanup();
+int test_image_check_cleanup(void);
 int test_image_bars(zbar_image_t*);
 
 #endif

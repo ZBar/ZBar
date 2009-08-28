@@ -718,7 +718,7 @@ static void zbar_gtk_class_init (ZBarGtkClass *klass)
     g_object_class_install_property(object_class, PROP_VIDEO_OPENED, p);
 }
 
-GType zbar_gtk_get_type ()
+GType zbar_gtk_get_type (void)
 {
     static GType type = 0;
     if(!type) {
@@ -744,7 +744,7 @@ static void zbar_gtk_private_class_init (ZBarGtkPrivateClass *klass)
     object_class->finalize = zbar_gtk_private_finalize;
 }
 
-static GType zbar_gtk_private_get_type ()
+static GType zbar_gtk_private_get_type (void)
 {
     static GType type = 0;
     if(!type) {
@@ -761,7 +761,7 @@ static GType zbar_gtk_private_get_type ()
     return(type);
 }
 
-GtkWidget *zbar_gtk_new ()
+GtkWidget *zbar_gtk_new (void)
 {
     return(GTK_WIDGET(g_object_new(ZBAR_TYPE_GTK, NULL)));
 }

@@ -152,7 +152,7 @@ extern void zbar_set_verbosity(int verbosity);
 /** increase global library debug level.
  * eg, for -vvvv
  */
-extern void zbar_increase_verbosity();
+extern void zbar_increase_verbosity(void);
 
 /** retrieve string name for symbol encoding.
  * @param sym symbol type encoding
@@ -312,7 +312,7 @@ typedef void (zbar_image_data_handler_t)(zbar_image_t *image,
  * this image should be destroyed (using zbar_image_destroy()) as
  * soon as the application is finished with it
  */
-extern zbar_image_t *zbar_image_create();
+extern zbar_image_t *zbar_image_create(void);
 
 /** image destructor.  all images created by or returned to the
  * application should be destroyed using this function.  when an image
@@ -693,7 +693,7 @@ struct zbar_video_s;
 typedef struct zbar_video_s zbar_video_t;
 
 /** constructor. */
-extern zbar_video_t *zbar_video_create();
+extern zbar_video_t *zbar_video_create(void);
 
 /** destructor. */
 extern void zbar_video_destroy(zbar_video_t *video);
@@ -813,7 +813,7 @@ struct zbar_window_s;
 typedef struct zbar_window_s zbar_window_t;
 
 /** constructor. */
-extern zbar_window_t *zbar_window_create();
+extern zbar_window_t *zbar_window_create(void);
 
 /** destructor. */
 extern void zbar_window_destroy(zbar_window_t *window);
@@ -904,7 +904,7 @@ struct zbar_image_scanner_s;
 typedef struct zbar_image_scanner_s zbar_image_scanner_t;
 
 /** constructor. */
-extern zbar_image_scanner_t *zbar_image_scanner_create();
+extern zbar_image_scanner_t *zbar_image_scanner_create(void);
 
 /** destructor. */
 extern void zbar_image_scanner_destroy(zbar_image_scanner_t *scanner);
@@ -986,7 +986,7 @@ typedef struct zbar_decoder_s zbar_decoder_t;
 typedef void (zbar_decoder_handler_t)(zbar_decoder_t *decoder);
 
 /** constructor. */
-extern zbar_decoder_t *zbar_decoder_create();
+extern zbar_decoder_t *zbar_decoder_create(void);
 
 /** destructor. */
 extern void zbar_decoder_destroy(zbar_decoder_t *decoder);

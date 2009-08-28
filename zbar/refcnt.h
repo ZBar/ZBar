@@ -67,6 +67,6 @@ static inline int _zbar_refcnt (refcnt_t *cnt,
 
 #endif
 
-void _zbar_refcnt_init();
+void _zbar_refcnt_init(void);
 
 #endif
