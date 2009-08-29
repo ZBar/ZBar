@@ -23,6 +23,7 @@
 
 #include "processor.h"
 #include "window.h"
+#include "image.h"
 
 static inline int proc_enter (zbar_processor_t *proc)
 {
@@ -68,10 +69,15 @@ int _zbar_process_image (zbar_processor_t *proc,
         /* FIXME locking all other interfaces while processing is conservative
          * but easier for now and we don't expect this to take long...
          */
-        int nsyms = zbar_scan_image(proc->scanner, img);
+        zbar_image_t *tmp = zbar_image_convert(img, fourcc('Y','8','0','0'));
+        if(!img)
+            goto error;
+
+        int nsyms = zbar_scan_image(proc->scanner, tmp);
+        zbar_image_destroy(tmp);
+        tmp = NULL;
         if(nsyms < 0)
-            return(err_capture(proc, SEV_ERROR, ZBAR_ERR_UNSUPPORTED,
-                               __func__, "unknown image format"));
+            goto error;
 
         if(_zbar_verbosity >= 8) {
             const zbar_symbol_t *sym = zbar_image_first_symbol(img);
@@ -102,8 +108,7 @@ int _zbar_process_image (zbar_processor_t *proc,
         if(force_fmt) {
             img = zbar_image_convert(img, force_fmt);
             if(!img)
-                return(err_capture(proc, SEV_ERROR, ZBAR_ERR_UNSUPPORTED,
-                                   __func__, "unknown image format"));
+                goto error;
         }
     }
 
@@ -116,6 +121,10 @@ int _zbar_process_image (zbar_processor_t *proc,
     if(force_fmt && img)
         zbar_image_destroy(img);
     return(0);
+
+error:
+    return(err_capture(proc, SEV_ERROR, ZBAR_ERR_UNSUPPORTED,
+                       __func__, "unknown image format"));
 }
 
 int _zbar_processor_handle_input (zbar_processor_t *proc,

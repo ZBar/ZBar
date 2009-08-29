@@ -1,4 +1,6 @@
 current:
+  * move image conversion out of image scanner up to higher levels
+    (preparation for library split)
   * add symbol quality metric and image scanner position config
     - update python, perl and docs
   * compatibility fixes

@@ -972,9 +972,12 @@ zbar_image_scanner_parse_config (zbar_image_scanner_t *scanner,
 extern void zbar_image_scanner_enable_cache(zbar_image_scanner_t *scanner,
                                             int enable);
 
-/** scan for symbols in provided image.
+/** scan for symbols in provided image.  The image format must be
+ * "Y800" or "GRAY".
  * @returns >0 if symbols were successfully decoded from the image,
  * 0 if no symbols were found or -1 if an error occurs
+ * @see zbar_image_convert()
+ * @since 0.9 - changed to only accept grayscale images
  */
 extern int zbar_scan_image(zbar_image_scanner_t *scanner,
                            zbar_image_t *image);

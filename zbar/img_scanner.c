@@ -375,16 +375,16 @@ static inline void quiet_border (zbar_image_scanner_t *iscn,
 int zbar_scan_image (zbar_image_scanner_t *iscn,
                      zbar_image_t *img)
 {
-    recycle_syms(iscn, img);
-
     /* get grayscale image, convert if necessary */
-    img = zbar_image_convert(img, fourcc('Y','8','0','0'));
-    if(!img)
+    if(img->format != fourcc('Y','8','0','0') &&
+       img->format != fourcc('G','R','A','Y'))
         return(-1);
 
-    unsigned w = zbar_image_get_width(img);
-    unsigned h = zbar_image_get_height(img);
-    const uint8_t *data = zbar_image_get_data(img);
+    recycle_syms(iscn, img);
+
+    unsigned w = img->width;
+    unsigned h = img->height;
+    const uint8_t *data = img->data;
 
     int density = CFG(iscn, ZBAR_CFG_Y_DENSITY);
     if(density > 0) {
@@ -464,7 +464,6 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
     }
 
     /* release reference to converted image */
-    zbar_image_destroy(img);
     img = iscn->img;
     iscn->img = NULL;
 

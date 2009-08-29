@@ -36,9 +36,8 @@ decoder:
     * standard symbology identifiers (which standard?)
     * set consistency requirements
     * set scanner filter params
-  * fix min/max length check during decode
+  * fix max length check during decode
   * revisit noise and resolution independence
-  * support for a "confidence" metric
 
 image scanner:
   * extract and track symbol polygons

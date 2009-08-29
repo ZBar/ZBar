@@ -209,7 +209,12 @@ static inline int zbar_gtk_process_image (ZBarGtk *self,
     if(!image)
         return(-1);
 
-    int rc = zbar_scan_image(zbar->scanner, image);
+    zbar_image_t *tmp = zbar_image_convert(image, fourcc('Y','8','0','0'));
+    if(!tmp)
+        return(-1);
+
+    int rc = zbar_scan_image(zbar->scanner, tmp);
+    zbar_image_destroy(tmp);
     if(rc < 0)
         return(rc);
 
