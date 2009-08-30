@@ -1,4 +1,5 @@
 current:
+  * compatibility fixes
   * more testing, fixes and cleanup
     - fix v4l1
     - fix/add null processor interface

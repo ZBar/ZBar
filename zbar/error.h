@@ -89,12 +89,35 @@ extern int _zbar_verbosity;
 # define ZFLUSH
 #endif
 
-#define zprintf(level, format, ...) do {                                \
+#ifdef ZNO_MESSAGES
+
+# ifdef __GNUC__
+    /* older versions of gcc (< 2.95) require a named varargs parameter */
+#  define zprintf(args...)
+# else
+    /* unfortunately named vararg parameter is a gcc-specific extension */
+#  define zprintf(...)
+# endif
+
+#else
+
+# ifdef __GNUC__
+#  define zprintf(level, format, args...) do {                          \
+        if(_zbar_verbosity >= level) {                                  \
+            fprintf(stderr, "%s: " format, __func__ , args);            \
+            ZFLUSH                                                      \
+        }                                                               \
+    } while(0)
+# else
+#  define zprintf(level, format, ...) do {                              \
         if(_zbar_verbosity >= level) {                                  \
             fprintf(stderr, "%s: " format, __func__ , ##__VA_ARGS__);   \
             ZFLUSH                                                      \
         }                                                               \
     } while(0)
+# endif
+
+#endif
 
 static inline int err_copy (void *dst_c,
                             void *src_c)

@@ -38,9 +38,7 @@ void _zbar_refcnt_init ()
     pthread_once(&initialized, initialize);
 }
 
-#endif
-
-#ifdef _WIN32
+#else
 
 void _zbar_refcnt_init ()
 {

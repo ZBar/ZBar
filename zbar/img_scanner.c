@@ -354,14 +354,16 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 {
     recycle_syms(iscn, img);
 
-    /* get grayscale image, convert if necessary */
-    img = zbar_image_convert(img, fourcc('Y','8','0','0'));
-    if(!img)
+    /* get image format, must be Y800
+     * FIXME support RGB3/4 and BGR3/4 directly
+     */
+    uint32_t fmt = img->format;
+    if(fmt != fourcc('Y','8','0','0'))
         return(-1);
 
-    unsigned w = zbar_image_get_width(img);
-    unsigned h = zbar_image_get_height(img);
-    const uint8_t *data = zbar_image_get_data(img);
+    unsigned w = img->width;
+    unsigned h = img->height;
+    const uint8_t *data = img->data;
 
     int density = CFG(iscn, ZBAR_CFG_Y_DENSITY);
     if(density > 0) {
@@ -439,8 +441,5 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             movedelta(density, 1);
         }
     }
-
-    /* release reference to converted image */
-    zbar_image_destroy(img);
     return(iscn->img->nsyms);
 }
