@@ -377,7 +377,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 {
     /* get grayscale image, convert if necessary */
     if(img->format != fourcc('Y','8','0','0') &&
-       img->format != fourcc('G','R','A','Y'))
+       img->format != fourcc('G','R','E','Y'))
         return(-1);
 
     recycle_syms(iscn, img);
@@ -462,8 +462,6 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             movedelta(density, 1);
         }
     }
-
-    /* release reference to converted image */
     img = iscn->img;
     iscn->img = NULL;
 

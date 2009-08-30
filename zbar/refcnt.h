@@ -26,7 +26,27 @@
 #include <config.h>
 #include <assert.h>
 
-#ifdef HAVE_LIBPTHREAD
+#if defined(_WIN32)
+# include <windows.h>
+
+typedef volatile LONG refcnt_t;  /* FIXME where did volatile come from? */
+
+static inline int _zbar_refcnt (refcnt_t *cnt,
+                                int delta)
+{
+    int rc = -1;
+    if(delta > 0)
+        while(delta--)
+            rc = InterlockedIncrement(cnt);
+    else if(delta < 0)
+        while(delta++)
+            rc = InterlockedDecrement(cnt);
+    assert(rc >= 0);
+    return(rc);
+}
+
+
+#elif defined(HAVE_LIBPTHREAD)
 # include <pthread.h>
 
 typedef int refcnt_t;
@@ -43,29 +63,21 @@ static inline int _zbar_refcnt (refcnt_t *cnt,
     return(rc);
 }
 
-#endif
 
+#else
 
-#ifdef _WIN32
-# include <windows.h>
-
-typedef volatile LONG refcnt_t;
+typedef int refcnt_t;
 
 static inline int _zbar_refcnt (refcnt_t *cnt,
                                 int delta)
 {
-    int rc = -1;
-    if(delta > 0)
-        while(delta--)
-            rc = InterlockedIncrement(cnt);
-    else if(delta < 0)
-        while(delta++)
-            rc = InterlockedDecrement(cnt);
+    int rc = (*cnt += delta);
     assert(rc >= 0);
     return(rc);
 }
 
 #endif
+
 
 void _zbar_refcnt_init(void);
 
