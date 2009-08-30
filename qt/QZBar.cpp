@@ -33,7 +33,8 @@ QZBar::QZBar (QWidget *parent)
     : QWidget(parent),
       thread(NULL),
       _videoDevice(),
-      _videoEnabled(false)
+      _videoEnabled(false),
+      _attached(false)
 {
     setAttribute(Qt::WA_OpaquePaintEvent);
     setAttribute(Qt::WA_PaintOnScreen);
