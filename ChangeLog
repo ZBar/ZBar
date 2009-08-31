@@ -1,4 +1,5 @@
-current:
+version 0.9:
+  * release updates
   * fix uninitialized member in Qt widget (bug #2844846)
   * move image conversion out of image scanner up to higher levels
     (preparation for library split)
