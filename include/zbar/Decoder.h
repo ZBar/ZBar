@@ -142,6 +142,8 @@ class Decoder {
         return(get_data_string());
     }
 
+    /// retrieve length of decoded binary data.
+    /// see zbar_decoder_get_data_length()
     int get_data_length() const
     {
         return(zbar_decoder_get_data_length(_decoder));
