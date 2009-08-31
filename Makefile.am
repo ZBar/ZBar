@@ -84,5 +84,5 @@ dist-nsis: html-local
 	cp -r doc/html _nsis/share/doc/zbar/
 	$(WINEXEC) lib.exe /machine:x86 /def:_nsis/lib/libzbar-0.def /out:_nsis/lib/libzbar-0.lib
 	cd _nsis && \
-	  makensis -NOCD -V2 -DVERSION=$(VERSION) $(srcdir)/zbar.nsi
+	  makensis -NOCD -V2 -DVERSION=$(VERSION) $(abs_srcdir)/zbar.nsi
 endif
