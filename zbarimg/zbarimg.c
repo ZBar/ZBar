@@ -129,12 +129,6 @@ static int scan_image (const char *filename)
            image->modifyImage();
         */
 
-        if(!MagickSetFormat(images, "GRAY") && dump_error(images))
-            return(-1);
-
-        if(!MagickSetDepth(images, 8) && dump_error(images))
-            return(-1);
-
         zbar_image_t *zimage = zbar_image_create();
         assert(zimage);
         zbar_image_set_format(zimage, *(unsigned long*)"Y800");

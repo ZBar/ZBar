@@ -1,4 +1,5 @@
 version 0.9:
+  * hotfix trim extraneous MagickWand calls (bug #2848445)
   * release updates
   * fix uninitialized member in Qt widget (bug #2844846)
   * move image conversion out of image scanner up to higher levels
