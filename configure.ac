@@ -258,7 +258,25 @@ AC_ARG_WITH([imagemagick],
   [with_imagemagick="yes"])
 
 AS_IF([test "x$with_imagemagick" != "xno"],
-  [PKG_CHECK_MODULES([MAGICK], [MagickWand >= 6.2.6])
+  [PKG_CHECK_MODULES([MAGICK], [MagickWand >= 6.2.6], [],
+     [dnl Wand is deprecated in favor of MagickWand,
+      dnl but the latter doesn't exist in older verisons (bug #2848437)
+      saved_error=$MAGICK_PKG_ERRORS
+      PKG_CHECK_MODULES([MAGICK], [Wand >= 6.2.6], [],
+        [AC_MSG_FAILURE([dnl
+Unable to find ImageMagick >= 6.2.6:
+
+$saved_error
+
+* Ensure that you installed any "development" packages for ImageMagick.
+* Consider adjusting the PKG_CONFIG_PATH environment variable if you
+  installed software in a non-standard prefix.
+* You may set the environment variables MAGICK_CFLAGS and MAGICK_LIBS
+  to avoid the need to call pkg-config.
+  See the pkg-config man page for more details.
+* To avoid using ImageMagick altogether you may add the --without-imagemagick
+  flag to the configure command; the zbarimg program will not be built.
+])])])
    MAGICK_VERSION=`$PKG_CONFIG MagickWand --modversion`
    AC_MSG_NOTICE([using ImageMagick version $MAGICK_VERSION])
 

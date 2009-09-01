@@ -125,10 +125,6 @@ static int scan_image (const char *filename)
         if(!MagickSetIteratorIndex(images, seq) && dump_error(images))
             return(-1);
 
-        /* FIXME assuming this no longer applies...
-           image->modifyImage();
-        */
-
         zbar_image_t *zimage = zbar_image_create();
         assert(zimage);
         zbar_image_set_format(zimage, *(unsigned long*)"Y800");

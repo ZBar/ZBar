@@ -1,4 +1,5 @@
 version 0.9:
+  * hotfix configure check for Wand as well as MagickWand (bug #2848437)
   * hotfix trim extraneous MagickWand calls (bug #2848445)
   * release updates
   * fix uninitialized member in Qt widget (bug #2844846)
