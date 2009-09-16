@@ -23,9 +23,6 @@
 
 #include "window.h"
 #include "image.h"
-#include "refcnt.h"
-
-extern int _zbar_window_draw_logo(zbar_window_t *w);
 
 zbar_window_t *zbar_window_create ()
 {
@@ -34,12 +31,7 @@ zbar_window_t *zbar_window_create ()
         return(NULL);
     err_init(&w->err, ZBAR_MOD_WINDOW);
     w->overlay = 1;
-#ifdef HAVE_LIBPTHREAD
-    pthread_mutex_init(&w->imglock, NULL);
-#endif
-#ifdef _WIN32
-    InitializeCriticalSection(&w->imglock);
-#endif
+    _zbar_mutex_init(&w->imglock);
     return(w);
 }
 
@@ -48,6 +40,7 @@ void zbar_window_destroy (zbar_window_t *w)
     /* detach */
     zbar_window_attach(w, NULL, 0);
     err_cleanup(&w->err);
+    _zbar_mutex_destroy(&w->imglock);
     free(w);
 }
 
@@ -111,31 +104,35 @@ inline int zbar_window_redraw (zbar_window_t *w)
                 rc = err_capture_int(w, SEV_ERROR, ZBAR_ERR_UNSUPPORTED, __func__,
                                      "no conversion from %x to supported formats",
                                      img->format);
-            w->src_format = img->format;
-            w->src_width = img->width;
-            w->src_height = img->height;
         }
+        if(w->src_format != img->format)
+            w->src_format = img->format;
 
         /* FIXME preserve aspect ratio (config?) */
         if(!rc &&
            (format_change ||
-            (img->width != w->src_width  && img->width != w->dst_width) ||
+            (img->width != w->src_width && img->width != w->dst_width) ||
             (img->height != w->src_height && img->height != w->dst_height))) {
-            rc = w->init(w, img, format_change);
-            zprintf(24, "src=%.4s(%08x) %dx%d dst=%.4s(%08x) %dx%d\n",
+            zprintf(24, "init: src=%.4s(%08x) %dx%d dst=%.4s(%08x) %dx%d\n",
                     (char*)&w->src_format, w->src_format,
                     w->src_width, w->src_height,
                     (char*)&w->format, w->format,
                     w->dst_width, w->dst_height);
+            rc = w->init(w, img, format_change);
+        }
+        if(w->src_width != img->width || w->src_height != img->height) {
+            w->src_width = img->width;
+            w->src_height = img->height;
         }
 
         if(!rc &&
            (img->format != w->format ||
             img->width != w->dst_width ||
             img->height != w->dst_height)) {
-            w->src_width = img->width;
-            w->src_height = img->height;
             /* save *converted* image for redraw */
+            zprintf(48, "convert: %.4s(%08x) %dx%d => %.4s(%08x) %dx%d\n",
+                    (char*)&img->format, img->format, img->width, img->height,
+                    (char*)&w->format, w->format, w->dst_width, w->dst_height);
             w->image = zbar_image_convert_resize(img, w->format,
                                                  w->dst_width, w->dst_height);
             zbar_image_destroy(img);
@@ -143,12 +140,13 @@ inline int zbar_window_redraw (zbar_window_t *w)
         }
 
         if(!rc)
-            rc = w->draw_image(w, w->image);
+            rc = w->draw_image(w, img);
         if(!rc)
             rc = window_draw_overlay(w);
     }
     else
         rc = _zbar_window_draw_logo(w);
+    _zbar_window_flush(w);
     (void)window_unlock(w);
     return(rc);
 }

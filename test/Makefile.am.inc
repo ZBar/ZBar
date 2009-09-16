@@ -14,9 +14,11 @@ test_test_convert_LDADD = zbar/libzbar.la $(AM_LDADD)
 #test_test_window_CPPFLAGS = -I$(srcdir)/zbar $(AM_CPPFLAGS)
 #test_test_window_LDADD = zbar/libzbar.la $(AM_LDADD)
 
-#check_PROGRAMS += test/test_video
-#test_test_convert_SOURCES = test/test_video.c $(TEST_IMAGE_SOURCES)
-#test_test_convert_LDADD = zbar/libzbar.la $(AM_LDADD)
+if HAVE_VIDEO
+check_PROGRAMS += test/test_video
+test_test_video_SOURCES = test/test_video.c $(TEST_IMAGE_SOURCES)
+test_test_video_LDADD = zbar/libzbar.la $(AM_LDADD)
+endif
 
 check_PROGRAMS += test/test_proc
 test_test_proc_SOURCES = test/test_proc.c $(TEST_IMAGE_SOURCES)

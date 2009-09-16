@@ -594,6 +594,7 @@ static inline void postprocess (zbar_decoder_t *dcode,
     if(sym & ZBAR_ADDON)
         for(i = 13; ean->buf[i] >= 0; i++, j++)
             dcode->buf[j] = ean->buf[i] + '0';
+    dcode->buflen = j;
     dcode->buf[j] = '\0';
 }
 

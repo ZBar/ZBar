@@ -32,13 +32,11 @@
 #include <string.h>
 #include <assert.h>
 
-#ifdef HAVE_PTHREAD_H
-# include <pthread.h>
-#endif
-
 #include <zbar.h>
 
+#include "image.h"
 #include "error.h"
+#include "mutex.h"
 
 /* number of images to preallocate */
 #define ZBAR_VIDEO_IMAGES_MAX  4
@@ -47,6 +45,7 @@ typedef enum video_interface_e {
     VIDEO_INVALID = 0,          /* uninitialized */
     VIDEO_V4L1,                 /* v4l protocol version 1 */
     VIDEO_V4L2,                 /* v4l protocol version 2 */
+    VIDEO_VFW,                  /* video for windows */
 } video_interface_t;
 
 typedef enum video_iomode_e {
@@ -54,6 +53,8 @@ typedef enum video_iomode_e {
     VIDEO_MMAP,                 /* mmap interface */
     VIDEO_USERPTR,              /* userspace buffers */
 } video_iomode_t;
+
+typedef struct video_state_s video_state_t;
 
 struct zbar_video_s {
     errinfo_t err;              /* error reporting */
@@ -73,22 +74,21 @@ struct zbar_video_s {
     unsigned long buflen;       /* total size of image data buffer */
     void *buf;                  /* image data buffer */
 
+    unsigned frame;             /* frame count */
+
+    zbar_mutex_t qlock;         /* lock image queue */
     int num_images;             /* number of allocated images */
     zbar_image_t **images;      /* indexed list of images */
     zbar_image_t *nq_image;     /* last image enqueued */
     zbar_image_t *dq_image;     /* first image to dequeue (when ordered) */
     zbar_image_t *shadow_image; /* special case internal double buffering */
 
-#ifdef HAVE_LIBPTHREAD
-    pthread_mutex_t qlock;      /* lock image queue */
-#endif
+    video_state_t *state;       /* platform/interface specific state */
 
 #ifdef HAVE_LIBJPEG
     struct jpeg_decompress_struct *jpeg; /* JPEG decompressor */
     zbar_image_t *jpeg_img;    /* temporary image */
 #endif
-
-    unsigned frame;             /* frame count */
 
     /* interface dependent methods */
     int (*init)(zbar_video_t*, uint32_t);
@@ -100,15 +100,13 @@ struct zbar_video_s {
 };
 
 
-#ifdef HAVE_LIBPTHREAD
-
 /* video.next_image and video.recycle_image have to be thread safe
  * wrt/other apis
  */
 static inline int video_lock (zbar_video_t *vdo)
 {
     int rc = 0;
-    if((rc = pthread_mutex_lock(&vdo->qlock))) {
+    if((rc = _zbar_mutex_lock(&vdo->qlock))) {
         err_capture(vdo, SEV_FATAL, ZBAR_ERR_LOCKING, __func__,
                     "unable to acquire lock");
         vdo->err.errnum = rc;
@@ -120,7 +118,7 @@ static inline int video_lock (zbar_video_t *vdo)
 static inline int video_unlock (zbar_video_t *vdo)
 {
     int rc = 0;
-    if((rc = pthread_mutex_unlock(&vdo->qlock))) {
+    if((rc = _zbar_mutex_unlock(&vdo->qlock))) {
         err_capture(vdo, SEV_FATAL, ZBAR_ERR_LOCKING, __func__,
                     "unable to release lock");
         vdo->err.errnum = rc;
@@ -129,12 +127,34 @@ static inline int video_unlock (zbar_video_t *vdo)
     return(0);
 }
 
-#else
-# define video_lock(...) (0)
-# define video_unlock(...) (0)
-#endif
+static inline int video_nq_image (zbar_video_t *vdo,
+                                  zbar_image_t *img)
+{
+    /* maintains queued buffers in order */
+    img->next = NULL;
+    if(vdo->nq_image)
+        vdo->nq_image->next = img;
+    vdo->nq_image = img;
+    if(!vdo->dq_image)
+        vdo->dq_image = img;
+    return(video_unlock(vdo));
+}
 
+static inline zbar_image_t *video_dq_image (zbar_video_t *vdo)
+{
+    zbar_image_t *img = vdo->dq_image;
+    if(img) {
+        vdo->dq_image = img->next;
+        img->next = NULL;
+    }
+    if(video_unlock(vdo))
+        /* FIXME reclaim image */
+        return(NULL);
+    return(img);
+}
+
+
+/* PAL interface */
 extern int _zbar_video_open(zbar_video_t*, const char*);
-extern int _zbar_v4l2_probe(zbar_video_t*);
 
 #endif

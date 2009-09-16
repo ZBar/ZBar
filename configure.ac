@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.61])
-AC_INIT([zbar], [0.8], [spadix@users.sourceforge.net])
+AC_INIT([zbar], [0.9], [spadix@users.sourceforge.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AM_INIT_AUTOMAKE([1.10 -Wall -Werror foreign subdir-objects std-options dist-bzip2])
@@ -21,13 +21,13 @@ dnl   - If any interfaces have been added since the last public release,
 dnl     then increment age.
 dnl   - If any interfaces have been removed since the last public release,
 dnl     then set age to 0. 
-AC_SUBST([LIB_VERSION], [0:1:0])
-AC_SUBST([RELDATE], [2009-06-05])
+AC_SUBST([LIB_VERSION], [1:0:1])
+AC_SUBST([RELDATE], [2009-08-31])
 
 dnl widget libraries use their own versioning.
 dnl NB pygtk wrapper is *unversioned*
-AC_SUBST([ZGTK_LIB_VERSION], [0:0:0])
-AC_SUBST([ZQT_LIB_VERSION], [0:0:0])
+AC_SUBST([ZGTK_LIB_VERSION], [0:1:0])
+AC_SUBST([ZQT_LIB_VERSION], [0:1:0])
 
 AC_DEFINE_UNQUOTED([ZBAR_VERSION_MAJOR],
   [[`echo "$PACKAGE_VERSION" | sed -e 's/\..*$//'`]],
@@ -58,7 +58,6 @@ case $host_os in
     win32="no"
   ;;
 esac
-
 AM_CONDITIONAL([WIN32], [test "x$win32" = "xyes"])
 
 dnl programs
@@ -110,11 +109,8 @@ AC_SEARCH_LIBS([clock_gettime], [rt])
 AM_ICONV()
 
 dnl poll support
-dnl without poll() we exclude processor layer
-dnl FIXME superceded by WIN32 checks(?)
 
-have_poll="no"
-AC_CHECK_HEADERS([poll.h], [have_poll="yes"])
+AC_CHECK_HEADERS([poll.h], [have_poll="yes"], [have_poll="no"])
 AM_CONDITIONAL([HAVE_POLL], [test "x$have_poll" = "xyes"])
 
 dnl pthreads
@@ -125,7 +121,10 @@ AC_ARG_ENABLE([pthread],
   [AS_HELP_STRING([--disable-pthread],
     [omit support for threaded applications])],
   [],
-  [enable_pthread="yes"])
+  [AS_IF([test "x$win32" = "xno"],
+   [enable_pthread="yes"],
+   [enable_pthread="no"
+])])
 
 AS_IF([test "x$enable_pthread" != "xno"],
   [AC_CHECK_HEADERS([pthread.h], [],
@@ -135,6 +134,7 @@ configure --disable-pthread to skip threaded support.])])
      [AC_MSG_FAILURE([unable to link against -lpthread, although you
 appear to have pthread.h? set LDFLAGS and/or LIBS to help the linker,
 or configure --disable-pthread to skip threaded support.])])
+   AC_DEFINE([__USE_UNIX98], [1], [used only for pthread debug attributes])
 ])
 
 dnl video
@@ -146,12 +146,16 @@ AC_ARG_ENABLE([video],
 
 with_video="no"
 AS_IF([test "x$enable_video" != "xno"],
-  [AC_CHECK_HEADERS([linux/videodev.h], [with_video="v4l1"],
-     [AC_MSG_FAILURE([test for video support failed!
+  [AS_IF([test "x$win32" = "xno"],
+    [AC_CHECK_HEADERS([linux/videodev.h], [with_video="v4l1"],
+      [AC_MSG_FAILURE([test for video support failed!
 rebuild your kernel to include video4linux support or
 configure --disable-video to skip building video support.])])
-   AC_CHECK_HEADERS([linux/videodev2.h], [with_video="v4l2"],
-     [AC_MSG_WARN([v4l2 API not detected, upgrade your kernel!])])
+       AC_CHECK_HEADERS([linux/videodev2.h], [with_video="v4l2"],
+         [AC_MSG_WARN([v4l2 API not detected, upgrade your kernel!])])],
+    [AC_CHECK_HEADERS([vfw.h], [with_video="vfw"],
+      [AC_MSG_FAILURE([test for VfW video support failed!
+configure --disable-video to skip building vidoe support.])])])
 ])
 AM_CONDITIONAL([HAVE_VIDEO], [test "x$enable_video" != "xno"])
 AM_CONDITIONAL([HAVE_V4L1],
@@ -159,15 +163,17 @@ AM_CONDITIONAL([HAVE_V4L1],
 AM_CONDITIONAL([HAVE_V4L2], [test "x$with_video" = "xv4l2"])
 
 dnl X
-AC_PATH_XTRA
-AH_BOTTOM([#ifndef X_DISPLAY_MISSING
+AC_ARG_VAR([XSHM_LIBS], [linker flags for X shared memory extension])
+
+AS_IF([test "x$win32" != "xno"],
+  [have_x="no"],
+  [AC_PATH_XTRA
+   AH_BOTTOM([#ifndef X_DISPLAY_MISSING
 # define HAVE_X
 #endif
-])
-AS_IF([test "x$no_x" != "xyes"], [with_x="yes"], [with_x="no"])
-AM_CONDITIONAL([HAVE_X], [test "x$with_x" = "xyes"])
+])])
+AM_CONDITIONAL([HAVE_X], [test "x$have_x" = "xyes"])
 
-AC_ARG_VAR([XSHM_LIBS], [linker flags for X shared memory extension])
 AS_IF([test "x$XSHM_LIBS" = "x"], [XSHM_LIBS="-lXext"])
 AC_ARG_WITH([xshm],
   [AS_HELP_STRING([--without-xshm],
@@ -244,7 +250,6 @@ AS_IF([test "x$with_jpeg" != "xno"],
 set appropriately or configure --without-jpeg])],
      [with_jpeg="no"])
 ])
-
 AM_CONDITIONAL([HAVE_JPEG], [test "x$with_jpeg" = "xyes"])
 
 dnl ImageMagick
@@ -255,7 +260,25 @@ AC_ARG_WITH([imagemagick],
   [with_imagemagick="yes"])
 
 AS_IF([test "x$with_imagemagick" != "xno"],
-  [PKG_CHECK_MODULES([MAGICK], [MagickWand >= 6.2.6])
+  [PKG_CHECK_MODULES([MAGICK], [MagickWand >= 6.2.6], [],
+     [dnl Wand is deprecated in favor of MagickWand,
+      dnl but the latter doesn't exist in older verisons (bug #2848437)
+      saved_error=$MAGICK_PKG_ERRORS
+      PKG_CHECK_MODULES([MAGICK], [Wand >= 6.2.6], [],
+        [AC_MSG_FAILURE([dnl
+Unable to find ImageMagick >= 6.2.6:
+
+$saved_error
+
+* Ensure that you installed any "development" packages for ImageMagick.
+* Consider adjusting the PKG_CONFIG_PATH environment variable if you
+  installed software in a non-standard prefix.
+* You may set the environment variables MAGICK_CFLAGS and MAGICK_LIBS
+  to avoid the need to call pkg-config.
+  See the pkg-config man page for more details.
+* To avoid using ImageMagick altogether you may add the --without-imagemagick
+  flag to the configure command; the zbarimg program will not be built.
+])])])
    MAGICK_VERSION=`$PKG_CONFIG MagickWand --modversion`
    AC_MSG_NOTICE([using ImageMagick version $MAGICK_VERSION])
 
@@ -408,7 +431,6 @@ Makefile
 zbar.pc
 zbar-gtk.pc
 zbar-qt.pc
-zbar.spec
 doc/doxygen.conf
 ])
 AC_OUTPUT
@@ -418,7 +440,7 @@ dnl summary log
 echo ""
 echo "please verify that the detected configuration matches your expectations:"
 echo "------------------------------------------------------------------------"
-echo "X                 --with-x=$with_x"
+echo "X                 --with-x=$have_x"
 echo "pthreads          --enable-pthread=$enable_pthread"
 echo "v4l               --enable-video=$enable_video"
 AS_IF([test "x$enable_video" != "xyes"],

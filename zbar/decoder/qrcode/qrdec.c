@@ -4089,7 +4089,8 @@ int _zbar_qr_found_line (qr_reader *reader,
 /* FIXME API cleanup */
 zbar_symbol_t *_zbar_image_scanner_alloc_sym(zbar_image_scanner_t *iscn,
                                              zbar_symbol_type_t type,
-                                             const char *data);
+                                             const char *data,
+                                             int datalen);
 
 int _zbar_qr_decode (zbar_image_scanner_t *iscn,
                      qr_reader *reader,
@@ -4134,7 +4135,8 @@ int _zbar_qr_decode (zbar_image_scanner_t *iscn,
             int i, ntext = qr_code_data_list_extract_text(&qrlist, &text, 1);
             for(i = 0; i < ntext; i++) {
                 zbar_symbol_t *sym;
-                sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, text[i]);
+                sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, text[i],
+                                                    strlen(text[i]) /* FIXME binary data? */);
                 _zbar_image_attach_symbol(img, sym);
             }
             qr_text_list_free(text, ntext);

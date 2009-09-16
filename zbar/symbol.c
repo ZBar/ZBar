@@ -56,6 +56,12 @@ const char *zbar_get_addon_name (zbar_symbol_type_t sym)
     }
 }
 
+void zbar_symbol_ref (zbar_symbol_t *sym,
+                      int refs)
+{
+    _zbar_symbol_refcnt(sym, refs);
+}
+
 zbar_symbol_type_t zbar_symbol_get_type (const zbar_symbol_t *sym)
 {
     return(sym->type);
@@ -66,9 +72,19 @@ const char *zbar_symbol_get_data (const zbar_symbol_t *sym)
     return(sym->data);
 }
 
+unsigned int zbar_symbol_get_data_length (const zbar_symbol_t *sym)
+{
+    return(sym->datalen);
+}
+
 int zbar_symbol_get_count (const zbar_symbol_t *sym)
 {
     return(sym->cache_count);
+}
+
+int zbar_symbol_get_quality (const zbar_symbol_t *sym)
+{
+    return(sym->quality);
 }
 
 unsigned zbar_symbol_get_loc_size (const zbar_symbol_t *sym)
@@ -101,7 +117,7 @@ const zbar_symbol_t *zbar_symbol_next (const zbar_symbol_t *sym)
 
 
 static const char *xmlfmt[] = {
-    "<symbol type='%s'",
+    "<symbol type='%s' quality='%d'",
     " count='%d'",
     "><data><![CDATA[",
     "]]></data></symbol>",
@@ -110,17 +126,12 @@ static const char *xmlfmt[] = {
 /* FIXME suspect... */
 #define MAX_INT_DIGITS 10
 
-static inline void growbuf (unsigned **buf,
-                            unsigned *len,
-                            unsigned newlen)
-{
-}
-
 char *zbar_symbol_xml (const zbar_symbol_t *sym,
                        char **buf,
                        unsigned *len)
 {
     const char *type = zbar_get_symbol_name(sym->type);
+    /* FIXME binary data */
     unsigned datalen = strlen(sym->data);
     unsigned maxlen = (strlen(xmlfmt[0]) + strlen(xmlfmt[1]) +
                        strlen(xmlfmt[2]) + strlen(xmlfmt[3]) +
@@ -133,7 +144,7 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
         *len = maxlen;
     }
 
-    int n = snprintf(*buf, maxlen, xmlfmt[0], type);
+    int n = snprintf(*buf, maxlen, xmlfmt[0], type, sym->quality);
     assert(n > 0);
     assert(n <= maxlen);
 

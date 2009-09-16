@@ -138,7 +138,8 @@ public:
         _sym = sym;
         if(sym) {
             _type = zbar_symbol_get_type(sym);
-            _data = zbar_symbol_get_data(sym);
+            _data = std::string(zbar_symbol_get_data(sym),
+                                zbar_symbol_get_data_length(sym));
             _count = zbar_symbol_get_count(sym);
         }
         else {
@@ -184,10 +185,16 @@ public:
         return(zbar_get_addon_name(_type));
     }
 
-    /// retrieve ASCII data decoded from symbol.
+    /// retrieve data decoded from symbol.
     const std::string get_data () const
     {
         return(_data);
+    }
+
+    /// retrieve length of binary data
+    unsigned get_data_length () const
+    {
+        return(zbar_symbol_get_data_length(_sym));
     }
 
     /// retrieve inter-frame coherency count.

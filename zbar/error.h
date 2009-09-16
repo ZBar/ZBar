@@ -35,6 +35,10 @@
 
 #include <zbar.h>
 
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
 #if __STDC_VERSION__ < 199901L
 # if __GNUC__ >= 2
 #  define __func__ __FUNCTION__
@@ -79,10 +83,41 @@ extern int _zbar_verbosity;
 
 /* FIXME don't we need varargs hacks here? */
 
-#define zprintf(level, format, ...) do {                                \
-        if(_zbar_verbosity >= level)                                    \
-            fprintf(stderr, "%s: " format, __func__ , ##__VA_ARGS__);   \
+#ifdef _WIN32
+# define ZFLUSH fflush(stderr);
+#else
+# define ZFLUSH
+#endif
+
+#ifdef ZNO_MESSAGES
+
+# ifdef __GNUC__
+    /* older versions of gcc (< 2.95) require a named varargs parameter */
+#  define zprintf(args...)
+# else
+    /* unfortunately named vararg parameter is a gcc-specific extension */
+#  define zprintf(...)
+# endif
+
+#else
+
+# ifdef __GNUC__
+#  define zprintf(level, format, args...) do {                          \
+        if(_zbar_verbosity >= level) {                                  \
+            fprintf(stderr, "%s: " format, __func__ , ##args);          \
+            ZFLUSH                                                      \
+        }                                                               \
     } while(0)
+# else
+#  define zprintf(level, format, ...) do {                              \
+        if(_zbar_verbosity >= level) {                                  \
+            fprintf(stderr, "%s: " format, __func__ , ##__VA_ARGS__);   \
+            ZFLUSH                                                      \
+        }                                                               \
+    } while(0)
+# endif
+
+#endif
 
 static inline int err_copy (void *dst_c,
                             void *src_c)
@@ -113,6 +148,10 @@ static inline int err_capture (const void *container,
     assert(err->magic == ERRINFO_MAGIC);
     if(type == ZBAR_ERR_SYSTEM)
         err->errnum = errno;
+#ifdef _WIN32
+    else if(type == ZBAR_ERR_WINAPI)
+        err->errnum = GetLastError();
+#endif
     err->sev = sev;
     err->type = type;
     err->func = func;

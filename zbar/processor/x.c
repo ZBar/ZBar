@@ -24,9 +24,12 @@
 #include "window.h"
 #include "processor.h"
 #include "posix.h"
+
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <X11/keysym.h>
 
-static int x_handle_event (zbar_processor_t *proc)
+static inline int x_handle_event (zbar_processor_t *proc)
 {
     XEvent ev;
     XNextEvent(proc->display, &ev);
@@ -35,26 +38,15 @@ static int x_handle_event (zbar_processor_t *proc)
     case Expose: {
         /* FIXME ignore when running(?) */
         XExposeEvent *exp = (XExposeEvent*)&ev;
-        XRectangle r;
-        Region exposed = XCreateRegion();
         while(1) {
             assert(ev.type == Expose);
-            r.x = exp->x;
-            r.y = exp->y;
-            r.width = exp->width;
-            r.height = exp->height;
-            XUnionRectWithRegion(&r, exposed, exposed);
-
+            _zbar_window_expose(proc->window, exp->x, exp->y,
+                                exp->width, exp->height);
             if(!exp->count)
                 break;
             XNextEvent(proc->display, &ev);
         }
-
-        proc->window->exposed = exposed;
         zbar_window_redraw(proc->window);
-        proc->window->exposed = 0;
-
-        XDestroyRegion(exposed);
         break;
     }
 
@@ -73,28 +65,31 @@ static int x_handle_event (zbar_processor_t *proc)
            (ev.xclient.data.l[0] ==
             XInternAtom(proc->display, "WM_DELETE_WINDOW", 0))) {
             zprintf(3, "WM_DELETE_WINDOW\n");
-            _zbar_processor_set_visible(proc, 0);
-            return(err_capture(proc, SEV_WARNING, ZBAR_ERR_CLOSED, __func__,
-                               "user closed display window"));
+            return(_zbar_processor_handle_input(proc, -1));
         }
 
     case KeyPress: {
         KeySym key = XLookupKeysym(&ev.xkey, 0);
         if((key & 0xff00) == 0xff00)
             key &= 0x00ff;
+        zprintf(16, "KeyPress(%04lx)\n", key);
         /* FIXME this doesn't really work... */
-        return(key & 0xffff);
+        return(_zbar_processor_handle_input(proc, key & 0xffff));
     }
-    case ButtonPress:
+    case ButtonPress: {
+        zprintf(16, "ButtonPress(%d)\n", ev.xbutton.button);
+        int idx = 1;
         switch(ev.xbutton.button) {
-        case Button2: return(2);
-        case Button3: return(3);
-        case Button4: return(4);
-        case Button5: return(5);
+        case Button2: idx = 2; break;
+        case Button3: idx = 3; break;
+        case Button4: idx = 4; break;
+        case Button5: idx = 5; break;
         }
-        return(1);
+        return(_zbar_processor_handle_input(proc, idx));
+    }
 
     case DestroyNotify:
+        zprintf(16, "DestroyNotify\n");
         zbar_window_attach(proc->window, NULL, 0);
         proc->xwin = 0;
         return(0);
@@ -105,47 +100,27 @@ static int x_handle_event (zbar_processor_t *proc)
     return(0);
 }
 
-int _zbar_processor_handle_events (zbar_processor_t *proc,
-                                   int block)
+static int x_handle_events (zbar_processor_t *proc)
 {
     int rc = 0;
-    while(!rc && (block || XPending(proc->display))) {
-        proc->input = x_handle_event(proc);
-        rc = proc->input;
-    }
-
-    switch(rc) {
-    case 'q':
-        _zbar_processor_set_visible(proc, 0);
-        rc = err_capture(proc, SEV_WARNING, ZBAR_ERR_CLOSED, __func__,
-                         "user closed display window");
-        break;
-
-    case 'd': {
-        /* FIXME localtime not threadsafe */
-        /* FIXME need ms resolution */
-        /*struct tm *t = localtime(time(NULL));*/
-        zbar_image_write(proc->window->image, "zbar");
-        break;
-    }
-    }
-
-    if(rc)
-        _zbar_processor_notify(proc, EVENT_INPUT);
+    while(!rc && XPending(proc->display))
+        rc = x_handle_event(proc);
     return(rc);
 }
 
 static int x_connection_handler (zbar_processor_t *proc,
                                  int i)
 {
-    return(_zbar_processor_handle_events(proc, 0));
+    x_handle_events(proc);
+    return(0);
 }
 
 static int x_internal_handler (zbar_processor_t *proc,
                                int i)
 {
     XProcessInternalConnection(proc->display, proc->state->polling.fds[i].fd);
-    return(_zbar_processor_handle_events(proc, 0));
+    x_handle_events(proc);
+    return(0);
 }
 
 static void x_internal_watcher (Display *display,
@@ -156,9 +131,9 @@ static void x_internal_watcher (Display *display,
 {
     zbar_processor_t *proc = (void*)client_arg;
     if(opening)
-        add_poll(proc->state, fd, x_internal_handler);
+        add_poll(proc, fd, x_internal_handler);
     else
-        remove_poll(proc->state, fd);
+        remove_poll(proc, fd);
 }
 
 int _zbar_processor_open (zbar_processor_t *proc,
@@ -172,8 +147,7 @@ int _zbar_processor_open (zbar_processor_t *proc,
                                "unable to open X display",
                                XDisplayName(NULL)));
 
-    add_poll(proc->state, ConnectionNumber(proc->display),
-             x_connection_handler);
+    add_poll(proc, ConnectionNumber(proc->display), x_connection_handler);
     XAddConnectionWatch(proc->display, x_internal_watcher, (void*)proc);
 
     int screen = DefaultScreen(proc->display);
@@ -220,7 +194,7 @@ int _zbar_processor_close (zbar_processor_t *proc)
             XDestroyWindow(proc->display, proc->xwin);
             proc->xwin = 0;
         }
-        remove_poll(proc->state, ConnectionNumber(proc->display));
+        remove_poll(proc, ConnectionNumber(proc->display));
         XCloseDisplay(proc->display);
         proc->display = NULL;
     }
@@ -256,6 +230,5 @@ int _zbar_processor_set_visible (zbar_processor_t *proc,
     else
         XUnmapWindow(proc->display, proc->xwin);
     XFlush(proc->display);
-    proc->visible = visible != 0;
     return(0);
 }

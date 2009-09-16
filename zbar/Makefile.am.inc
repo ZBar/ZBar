@@ -7,7 +7,9 @@ zbar_libzbar_la_LIBADD = $(LTLIBICONV)
 zbar_libzbar_la_SOURCES = zbar/debug.h zbar/config.c \
     zbar/error.h zbar/error.c zbar/symbol.h zbar/symbol.c \
     zbar/image.h zbar/image.c zbar/convert.c \
-    zbar/processor.c zbar/processor.h zbar/refcnt.h zbar/refcnt.c \
+    zbar/processor.c zbar/processor.h zbar/processor/lock.c \
+    zbar/refcnt.h zbar/refcnt.c zbar/timer.h zbar/mutex.h \
+    zbar/event.h zbar/thread.h \
     zbar/window.h zbar/window.c zbar/video.h zbar/video.c \
     zbar/img_scanner.c zbar/scanner.c \
     zbar/decoder.h zbar/decoder.c
@@ -39,15 +41,14 @@ zbar_libzbar_la_SOURCES += zbar/decoder/qrcode.h \
     zbar/decoder/qrcode/util.h zbar/decoder/qrcode/util.c
 endif
 
-if HAVE_POLL
-zbar_libzbar_la_SOURCES += zbar/processor/posix.h zbar/processor/posix.c
-endif
 if WIN32
-zbar_libzbar_la_SOURCES += zbar/processor/win.h zbar/processor/win.c \
-    zbar/libzbar.rc
+zbar_libzbar_la_SOURCES += zbar/processor/win.c zbar/libzbar.rc
 zbar_libzbar_la_CPPFLAGS += -mthreads
 zbar_libzbar_la_LDFLAGS += -mthreads
+# FIXME broken
 zbar_libzbar_la_LIBADD += zbar/libzbar-rc.lo
+else
+zbar_libzbar_la_SOURCES += zbar/processor/posix.h zbar/processor/posix.c
 endif
 
 if HAVE_V4L1
@@ -55,7 +56,14 @@ zbar_libzbar_la_SOURCES += zbar/video/v4l1.c
 if HAVE_V4L2
 zbar_libzbar_la_SOURCES += zbar/video/v4l2.c
 endif
-else
+endif
+if WIN32
+if HAVE_VIDEO
+zbar_libzbar_la_SOURCES += zbar/video/vfw.c
+zbar_libzbar_la_LIBADD += -lvfw32
+endif
+endif
+if !HAVE_VIDEO
 zbar_libzbar_la_SOURCES += zbar/video/null.c
 endif
 
@@ -65,7 +73,7 @@ endif
 
 if HAVE_X
 zbar_libzbar_la_SOURCES +=  zbar/processor/x.c \
-    zbar/window/x.c zbar/window/ximage.c
+    zbar/window/x.h zbar/window/x.c zbar/window/ximage.c
 zbar_libzbar_la_CPPFLAGS += $(X_CFLAGS)
 zbar_libzbar_la_LDFLAGS += $(X_LIBS)
 zbar_libzbar_la_LIBADD += $(X_PRE_LIBS) -lX11 $(X_EXTRA_LIBS)
@@ -75,11 +83,12 @@ zbar_libzbar_la_LIBADD += $(XV_LIBS)
 endif
 else
 if WIN32
-zbar_libzbar_la_SOURCES += zbar/window/win.c zbar/window/dib.c
+zbar_libzbar_la_SOURCES += zbar/window/win.h zbar/window/win.c \
+    zbar/window/dib.c
 # zbar/window/vfw.c -lvfw32
-zbar_libzbar_la_LIBADD += -lgdi32
+zbar_libzbar_la_LIBADD += -lgdi32 -lwinmm
 else
-zbar_libzbar_la_SOURCES += zbar/window/null.c
+zbar_libzbar_la_SOURCES += zbar/processor/null.c zbar/window/null.c
 endif
 endif
 

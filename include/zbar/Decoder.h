@@ -127,18 +127,26 @@ class Decoder {
         return(zbar_decoder_get_data(_decoder));
     }
 
-    /// retrieve last decoded data in ASCII format as a std::string.
+    /// retrieve last decoded data as a std::string.
     /// see zbar_decoder_get_data()
     const std::string get_data_string() const
     {
-        return(zbar_decoder_get_data(_decoder));
+        return(std::string(zbar_decoder_get_data(_decoder),
+                           zbar_decoder_get_data_length(_decoder)));
     }
 
-    /// retrieve last decoded data in ASCII format as a std::string.
+    /// retrieve last decoded data as a std::string.
     /// see zbar_decoder_get_data()
     const std::string get_data() const
     {
-        return(zbar_decoder_get_data(_decoder));
+        return(get_data_string());
+    }
+
+    /// retrieve length of decoded binary data.
+    /// see zbar_decoder_get_data_length()
+    int get_data_length() const
+    {
+        return(zbar_decoder_get_data_length(_decoder));
     }
 
     /// setup callback to handle result data.

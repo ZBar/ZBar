@@ -101,14 +101,18 @@ typedef struct zbar_format_def_s {
 } zbar_format_def_t;
 
 
+extern int _zbar_best_format(uint32_t, uint32_t*, const uint32_t*);
+extern const zbar_format_def_t *_zbar_format_lookup(uint32_t);
+extern void _zbar_image_free(zbar_image_t *img);
+
 static inline void _zbar_image_refcnt (zbar_image_t *img,
                                        int delta)
 {
-    if(!_zbar_refcnt(&img->refcnt, delta)) {
+    if(!_zbar_refcnt(&img->refcnt, delta) && delta <= 0) {
         if(img->cleanup)
             img->cleanup(img);
         if(!img->src)
-            free(img);
+            _zbar_image_free(img);
     }
 }
 
@@ -122,9 +126,8 @@ static inline void _zbar_image_attach_symbol (zbar_image_t *img,
     sym->next = img->syms;
     img->syms = sym;
     img->nsyms++;
-}
 
-extern int _zbar_best_format(uint32_t, uint32_t*, const uint32_t*);
-extern const zbar_format_def_t *_zbar_format_lookup(uint32_t);
+    _zbar_symbol_refcnt(sym, 1);
+}
 
 #endif

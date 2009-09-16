@@ -45,12 +45,12 @@ endif
 include $(srcdir)/test/Makefile.am.inc
 include $(srcdir)/doc/Makefile.am.inc
 
-EXTRA_DIST += zbar.spec.in zbar.spec
+EXTRA_DIST += zbar.ico zbar.nsi
 
 EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py examples/paginate.pl \
     examples/barcode.png examples/processor.pl examples/processor.py \
     examples/scan_image.c examples/scan_image.cpp examples/scan_image.pl \
-    examples/scan_image.py
+    examples/scan_image.py examples/scan_image.vcproj
 
 EXTRA_DIST += perl/MANIFEST perl/README perl/Changes perl/COPYING.LIB \
     perl/Makefile.PL perl/typemap perl/ZBar.xs perl/ppport.h \
@@ -84,5 +84,5 @@ dist-nsis: html-local
 	cp -r doc/html _nsis/share/doc/zbar/
 	$(WINEXEC) lib.exe /machine:x86 /def:_nsis/lib/libzbar-0.def /out:_nsis/lib/libzbar-0.lib
 	cd _nsis && \
-	  makensis -NOCD -V2 -DVERSION=$(VERSION) $(srcdir)/zbar.nsi
+	  makensis -NOCD -V2 -DVERSION=$(VERSION) $(abs_srcdir)/zbar.nsi
 endif

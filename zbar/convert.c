@@ -43,7 +43,7 @@ typedef struct conversion_def_s {
 /* NULL terminated list of known formats, in order of preference
  * (NB Cr=V Cb=U)
  */
-static const uint32_t format_prefs[] = {
+const uint32_t _zbar_formats[] = {
 
     /* planar YUV formats */
     fourcc('4','2','2','P'), /* FIXME also YV16? */
@@ -106,8 +106,7 @@ static const uint32_t format_prefs[] = {
     0
 };
 
-static const int num_format_prefs =
-    sizeof(format_prefs) / sizeof(zbar_format_def_t);
+const int _zbar_num_formats = sizeof(_zbar_formats) / sizeof(uint32_t);
 
 /* format definitions */
 static const zbar_format_def_t format_defs[] = {
@@ -173,7 +172,7 @@ static int intsort (const void *a,
 #endif
 
 /* verify that format list is in required sort order */
-static inline int verify_format_sort ()
+static inline int verify_format_sort (void)
 {
     int i;
     for(i = 0; i < num_format_defs; i++) {
@@ -349,7 +348,8 @@ static void convert_copy (zbar_image_t *dst,
         dst->datalen = src->datalen;
         dst->cleanup = cleanup_ref;
         dst->next = (zbar_image_t*)src;
-        _zbar_image_refcnt((zbar_image_t*)src, 1);
+        zbar_image_t *s = (zbar_image_t*)src;
+        _zbar_image_refcnt(s, 1);
     }
     else
         /* NB only for GRAY/YUV_PLANAR formats */
@@ -1093,7 +1093,7 @@ int zbar_negotiate_format (zbar_video_t *vdo,
     unsigned min_cost = -1;
     uint32_t min_fmt = 0;
     const uint32_t *fmt;
-    for(fmt = format_prefs; *fmt; fmt++) {
+    for(fmt = _zbar_formats; *fmt; fmt++) {
         /* only consider formats supported by video device */
         if(!has_format(*fmt, srcs))
             continue;

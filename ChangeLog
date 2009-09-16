@@ -13,6 +13,52 @@ current:
     - change default scanner density to 1
     - add iconv to build infrastructure
   * initial hooks for QR Code, first pass at finder
+
+version 0.9:
+  * hotfix configure check for Wand as well as MagickWand (bug #2848437)
+  * hotfix trim extraneous MagickWand calls (bug #2848445)
+  * release updates
+  * fix uninitialized member in Qt widget (bug #2844846)
+  * move image conversion out of image scanner up to higher levels
+    (preparation for library split)
+  * add symbol quality metric and image scanner position config
+    - update python, perl and docs
+  * compatibility fixes
+    - work around ImageMagick API breakages
+    - fix some OS X compile issues
+  * Qt widget cleanup
+    - handle video device set before window attached
+    - prevent exceptions from escaping event handlers
+  * more Qt window creation hook fixes
+    - NB may still cause problems if video is opened before window is visible
+  * finish fix for Qt init ordering (bug #2844846)
+  * potential fix for display init ordering (bug #2844846)
+    - new workaround for filtering bad EAN results in the image scanner
+  * more testing, fixes and cleanup
+    - fix v4l1
+    - fix/add null processor interface
+  * change default image scanner density to 1x1
+    - random cleanup, vfw hang, quit key
+    - fix scan_image example MSVC project
+    - windows installer tweaks
+  * add zbarcam to windows installer
+  * major restructuring to improve platform abstraction
+    - add lock, thread and timer abstractions
+    - migrate specific notification locks to platform independent layer
+    - fixes to vfw capture interface
+    - fix window format conversion issues
+    - fix some broken configure checks
+    - zbarcam working in windows!
+  * fix symbol leaks (bug #2820658)
+    - add symbol reference counting
+  * add support for binary symbol data
+  * initial VFW video support
+    - mostly working with uvc driver, broken for others
+    - factor out common video buffer handling
+    - fix processor to destroy window *before* video (ref TODO)
+    - use /dev/video* VFW pseudo-devices
+    - windows configure skip non-windows checks
+    - prep for platform refactoring
   * fix zbarimg b&w format handling
   * fix scan (image) boundary QZ handling (bug #2807538)
     - add linear scanner manual flush API

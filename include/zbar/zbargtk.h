@@ -134,7 +134,7 @@ struct _ZBarGtkClass {
                         GdkPixbuf *image);
 };
 
-GType zbar_gtk_get_type() G_GNUC_CONST;
+GType zbar_gtk_get_type(void) G_GNUC_CONST;
 
 /** 
  * zbar_gtk_new:
@@ -143,7 +143,7 @@ GType zbar_gtk_get_type() G_GNUC_CONST;
  *
  * Returns: a new #ZBarGtk widget instance
  */
-GtkWidget *zbar_gtk_new();
+GtkWidget *zbar_gtk_new(void);
 
 /**
  * zbar_gtk_scan_image:

@@ -280,7 +280,7 @@ static void encode_row417 (int r,
     encode((dir) ? PDF417_START : PDF417_STOP, dir);
 }
 
-static void encode_pdf417 ()
+static void encode_pdf417 (unsigned char *data)
 {
     printf("------------------------------------------------------------\n"
            "encode PDF417: hello world\n");

@@ -33,18 +33,23 @@ QZBar::QZBar (QWidget *parent)
     : QWidget(parent),
       thread(NULL),
       _videoDevice(),
-      _videoEnabled(false)
+      _videoEnabled(false),
+      _attached(false)
 {
     setAttribute(Qt::WA_OpaquePaintEvent);
     setAttribute(Qt::WA_PaintOnScreen);
+    setAttribute(Qt::WA_NativeWindow);
+    setAttribute(Qt::WA_DontCreateNativeAncestors);
 
     QSizePolicy sizing(QSizePolicy::Preferred, QSizePolicy::Preferred);
     sizing.setHeightForWidth(true);
     setSizePolicy(sizing);
 
     thread = new QZBarThread;
-    if(testAttribute(Qt::WA_WState_Created))
+    if(testAttribute(Qt::WA_WState_Created)) {
         thread->window.attach(x11Info().display(), winId());
+        _attached = 1;
+    }
     connect(thread, SIGNAL(videoOpened(bool)),
             this, SIGNAL(videoOpened(bool)));
     connect(this, SIGNAL(videoOpened(bool)),
@@ -61,11 +66,16 @@ QZBar::QZBar (QWidget *parent)
 QZBar::~QZBar ()
 {
     if(thread) {
-        thread->window.attach(NULL);
         thread->pushEvent(new QEvent((QEvent::Type)QZBarThread::Exit));
         thread->wait();
+        delete thread;
         thread = NULL;
     }
+}
+
+QPaintEngine *QZBar::paintEngine () const
+{
+    return(NULL);
 }
 
 QString QZBar::videoDevice () const
@@ -79,8 +89,9 @@ void QZBar::setVideoDevice (const QString& videoDevice)
         return;
     if(_videoDevice != videoDevice) {
         _videoDevice = videoDevice;
-        _videoEnabled = !_videoDevice.isEmpty();
-        thread->pushEvent(new QZBarThread::VideoDeviceEvent(videoDevice));
+        _videoEnabled = _attached && !videoDevice.isEmpty();
+        if(_attached)
+            thread->pushEvent(new QZBarThread::VideoDeviceEvent(videoDevice));
     }
 }
 
@@ -164,23 +175,58 @@ int QZBar::heightForWidth (int width) const
     return(width * 3 / 4);
 }
 
-void QZBar::paintEvent (QPaintEvent *)
+void QZBar::paintEvent (QPaintEvent *event)
 {
-    if(thread)
-        thread->window.redraw();
+    try {
+        if(thread)
+            thread->window.redraw();
+    }
+    catch(Exception) {
+        // sometimes Qt attempts to paint the widget before it's parented(?)
+        // just ignore this (can't throw from event anyway)
+    }
 }
 
 void QZBar::resizeEvent (QResizeEvent *event)
 {
     QSize size = event->size();
-    if(thread)
-        thread->window.resize(size.rwidth(), size.rheight());
+    try {
+        if(thread)
+            thread->window.resize(size.rwidth(), size.rheight());
+    }
+    catch(Exception) { /* ignore */ }
 }
 
 void QZBar::changeEvent(QEvent *event)
 {
-    if(event->type() == QEvent::ParentChange)
+    try {
+        QMutexLocker locker(&thread->mutex);
+        if(event->type() == QEvent::ParentChange)
+            thread->window.attach(x11Info().display(), winId());
+    }
+    catch(Exception) { /* ignore (FIXME do something w/error) */ }
+}
+
+void QZBar::attach ()
+{
+    if(_attached)
+        return;
+
+    try {
         thread->window.attach(x11Info().display(), winId());
+        _attached = 1;
+
+        _videoEnabled = !_videoDevice.isEmpty();
+        if(_videoEnabled)
+            thread->pushEvent(new QZBarThread::VideoDeviceEvent(_videoDevice));
+    }
+    catch(Exception) { /* ignore (FIXME do something w/error) */ }
+}
+
+void QZBar::showEvent (QShowEvent *event)
+{
+    if(thread && !_attached)
+        attach();
 }
 
 void QZBar::sizeChange ()

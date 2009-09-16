@@ -22,12 +22,15 @@
  *------------------------------------------------------------------------*/
 
 #include "window.h"
+#include "x.h"
+#include "image.h"
 
 static int ximage_cleanup (zbar_window_t *w)
 {
-    if(w->img.x)
-        free(w->img.x);
-    w->img.x = NULL;
+    window_state_t *x = w->state;
+    if(x->img.x)
+        free(x->img.x);
+    x->img.x = NULL;
     return(0);
 }
 
@@ -35,11 +38,8 @@ static inline int ximage_init (zbar_window_t *w,
                                zbar_image_t *img,
                                int format_change)
 {
-    if(w->img.x) {
-        free(w->img.x);
-        w->img.x = NULL;
-    }
-    XImage *ximg = w->img.x = calloc(1, sizeof(XImage));
+    ximage_cleanup(w);
+    XImage *ximg = w->state->img.x = calloc(1, sizeof(XImage));
     ximg->width = img->width;
     ximg->height = img->height;
     ximg->format = ZPixmap;
@@ -86,12 +86,13 @@ static inline int ximage_init (zbar_window_t *w,
 static int ximage_draw (zbar_window_t *w,
                         zbar_image_t *img)
 {
-    XImage *ximg = w->img.x;
+    window_state_t *x = w->state;
+    XImage *ximg = x->img.x;
     assert(ximg);
     ximg->data = (void*)img->data;
 
     int screen = DefaultScreen(w->display);
-    XSetForeground(w->display, w->gc, WhitePixel(w->display, screen));
+    XSetForeground(w->display, x->gc, WhitePixel(w->display, screen));
 
     /* FIXME implement some basic scaling */
     unsigned height = img->height;
@@ -103,9 +104,9 @@ static int ximage_draw (zbar_window_t *w,
     else if(w->height != img->height) {
         dst_y = (w->height - img->height) >> 1;
         /* fill border */
-        XFillRectangle(w->display, w->xwin, w->gc,
+        XFillRectangle(w->display, w->xwin, x->gc,
                        0, 0, w->width, dst_y);
-        XFillRectangle(w->display, w->xwin, w->gc,
+        XFillRectangle(w->display, w->xwin, x->gc,
                        0, dst_y + img->height, w->width, dst_y);
     }
 
@@ -118,13 +119,13 @@ static int ximage_draw (zbar_window_t *w,
     else if(w->width != img->width) {
         dst_x = (w->width - img->width) >> 1;
         /* fill border */
-        XFillRectangle(w->display, w->xwin, w->gc,
+        XFillRectangle(w->display, w->xwin, x->gc,
                        0, dst_y, dst_x, img->height);
-        XFillRectangle(w->display, w->xwin, w->gc,
+        XFillRectangle(w->display, w->xwin, x->gc,
                        img->width + dst_x, dst_y, dst_x, img->height);
     }
 
-    XPutImage(w->display, w->xwin, w->gc, ximg,
+    XPutImage(w->display, w->xwin, x->gc, ximg,
               src_x, src_y, dst_x, dst_y, width, height);
     ximg->data = NULL;
     return(0);

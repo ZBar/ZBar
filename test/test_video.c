@@ -31,45 +31,54 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
 #include <assert.h>
 
 #include <zbar.h>
-#include "processor.h"          /* reuse some processor guts */
 #include "test_images.h"
 
-zbar_processor_t proc;
+#ifdef _WIN32
+struct timespec {
+    time_t tv_sec;
+    long tv_nsec;
+};
+#endif
+
+zbar_video_t *video;
 
 int main (int argc, char *argv[])
 {
-    zbar_set_verbosity(10);
+    zbar_set_verbosity(31);
 
-    const char *dev = "/dev/video0";
+    const char *dev = "";
+    uint32_t vidfmt = 0;
     if(argc > 1) {
-        if(!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
-            printf("usage: %s [/dev/[v4l/]videoX]\n", argv[0]);
-            return(0);
-        }
-        else if(!strcmp(argv[1], "--version")) {
-            printf(PACKAGE_VERSION "\n");
-            return(0);
-        }
         dev = argv[1];
-    }
 
-    memset(&proc, 0, sizeof(proc));
-    proc.video = zbar_video_create();
-    proc.window = zbar_window_create();
-    if(!proc.video || !proc.window) {
+        if(argc > 2) {
+            int n = strlen(argv[2]);
+            if(n > 4)
+                n = 4;
+            memcpy((char*)&vidfmt, argv[2], n);
+        }
+    }
+    if(!vidfmt)
+        vidfmt = fourcc('B','G','R','3');
+
+    video = zbar_video_create();
+    if(!video) {
         fprintf(stderr, "unable to allocate memory?!\n");
         return(1);
     }
 
-    if(zbar_video_open(proc.video, dev)) {
-        zbar_video_error_spew(proc.video, 0);
+    zbar_video_request_size(video, 640, 480);
+
+    if(zbar_video_open(video, dev)) {
+        zbar_video_error_spew(video, 0);
         fprintf(stderr,
                 "ERROR: unable to access your video device\n"
                 "this program requires video capture support using"
-                " v4l version 1 or 2\n"
+                " v4l version 1 or 2 or VfW\n"
                 "    - is your video device located at \"%s\"?\n"
                 "    - is your video driver installed? (check dmesg)\n"
                 "    - make sure you have the latest drivers\n"
@@ -80,94 +89,87 @@ int main (int argc, char *argv[])
                 dev);
         return(1);
     }
-    printf("opened video device: %s (fd=%d)\n",
-           dev, zbar_video_get_fd(proc.video));
+    fprintf(stderr, "opened video device: %s (fd=%d)\n",
+            dev, zbar_video_get_fd(video));
+    fflush(stderr);
 
-    if(_zbar_window_open(&proc, "zbar video test", 640, 480) ||
-       zbar_window_attach(proc.window, proc.display, proc.xwin) ||
-       _zbar_window_set_visible(&proc, 1))
-        fprintf(stderr, "WARNING: failed to open test window\n");
-    else if(zbar_negotiate_format(proc.video, proc.window))
-        fprintf(stderr, "WARNING: failed to negotiate compatible format\n");
-
-    zbar_image_t *img = zbar_image_create();
-    zbar_image_set_size(img, 640, 480);
-    zbar_image_set_format(img, fourcc('Y','V','1','2'));
-    test_image_bars(img);
-    if(proc.display && zbar_window_draw(proc.window, img)) {
-        fprintf(stderr, "ERROR: drawing image\n");
-        return(zbar_window_error_spew(proc.window, 0));
+    if(zbar_video_init(video, vidfmt)) {
+        fprintf(stderr, "ERROR: failed to set format: %.4s(%08x)\n",
+                (char*)&vidfmt, vidfmt);
+        return(zbar_video_error_spew(video, 0));
     }
 
-    if(zbar_video_enable(proc.video, 1)) {
+    if(zbar_video_enable(video, 1)) {
         fprintf(stderr, "ERROR: starting video stream\n");
-        return(zbar_video_error_spew(proc.video, 0));
+        return(zbar_video_error_spew(video, 0));
     }
+    fprintf(stderr, "started video stream...\n");
+    fflush(stderr);
 
-    zbar_image_t *image = zbar_video_next_image(proc.video);
+    zbar_image_t *image = zbar_video_next_image(video);
     if(!image) {
         fprintf(stderr, "ERROR: unable to capture image\n");
-        return(zbar_video_error_spew(proc.video, 0));
+        return(zbar_video_error_spew(video, 0));
     }
     uint32_t format = zbar_image_get_format(image);
     unsigned width = zbar_image_get_width(image);
     unsigned height = zbar_image_get_height(image);
     const uint8_t *data = zbar_image_get_data(image);
-    printf("captured image: %d x %d %.4s @%p\n",
-           width, height, (char*)&format, data);
+    fprintf(stderr, "captured image: %d x %d %.4s @%p\n",
+            width, height, (char*)&format, data);
+    fflush(stderr);
 
-    if(proc.display && zbar_window_draw(proc.window, image)) {
-        fprintf(stderr, "ERROR: drawing image\n");
-        return(zbar_window_error_spew(proc.window, 0));
-    }
     zbar_image_destroy(image);
 
-    printf("\nstreaming...click to continue\n");
+    fprintf(stderr, "\nstreaming 100 frames...\n");
+    fflush(stderr);
+
     struct timespec start, end;
+#if _POSIX_TIMERS > 0
     clock_gettime(CLOCK_REALTIME, &start);
-    int n = 0;
-    while(1) {
-        if(proc.display && _zbar_window_handle_events(&proc, 0))
-            break;
-        zbar_image_t *image = zbar_video_next_image(proc.video);
+#else
+    struct timeval ustime;
+    gettimeofday(&ustime, NULL);
+    start.tv_nsec = ustime.tv_usec * 1000;
+    start.tv_sec = ustime.tv_sec;
+#endif
+
+    int i;
+    for(i = 0; i < 100; i++) {
+        zbar_image_t *image = zbar_video_next_image(video);
         if(!image) {
             fprintf(stderr, "ERROR: unable to capture image\n");
-            return(zbar_video_error_spew(proc.video, 0));
-        }
-
-        if(proc.display && zbar_window_draw(proc.window, image)) {
-            fprintf(stderr, "ERROR: drawing image\n");
-            return(zbar_window_error_spew(proc.window, 0));
+            return(zbar_video_error_spew(video, 0));
         }
         zbar_image_destroy(image);
-        n++;
     }
+
+#if _POSIX_TIMERS > 0
     clock_gettime(CLOCK_REALTIME, &end);
+#else
+    gettimeofday(&ustime, NULL);
+    end.tv_nsec = ustime.tv_usec * 1000;
+    end.tv_sec = ustime.tv_sec;
+#endif
     double ms = (end.tv_sec - start.tv_sec +
                  (end.tv_nsec - start.tv_nsec) / 1000000000.);
-    double fps = n / ms;
-    printf("\nprocessed %d images in %gs @%gfps\n", n, ms, fps);
+    double fps = i / ms;
+    fprintf(stderr, "\nprocessed %d images in %gs @%gfps\n", i, ms, fps);
+    fflush(stderr);
 
-    if(zbar_video_enable(proc.video, 0)) {
+    if(zbar_video_enable(video, 0)) {
         fprintf(stderr, "ERROR: while stopping video stream\n");
-        return(zbar_video_error_spew(proc.video, 0));
+        return(zbar_video_error_spew(video, 0));
     }
 
-    printf("\nvideo support verified\n\n");
+    fprintf(stderr, "\ncleaning up...\n");
+    fflush(stderr);
 
-    if(proc.display && zbar_window_draw(proc.window, img)) {
-        fprintf(stderr, "error drawing image\n");
-        return(zbar_window_error_spew(proc.window, 0));
-    }
-    zbar_image_destroy(img);
-    printf("click to end...\n");
-    if(proc.display)
-        _zbar_window_handle_events(&proc, 1);
-
-    zbar_window_destroy(proc.window);
-    zbar_video_destroy(proc.video);
+    zbar_video_destroy(video);
 
     if(test_image_check_cleanup())
         return(32);
+
+    fprintf(stderr, "\nvideo support verified\n\n");
     return(0);
 }

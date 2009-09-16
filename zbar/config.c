@@ -130,6 +130,8 @@ int zbar_parse_config (const char *cfgstr,
         *cfg = ZBAR_CFG_ADD_CHECK;
     else if(!strncmp(cfgstr, "emit-check", len))
         *cfg = ZBAR_CFG_EMIT_CHECK;
+    else if(!strncmp(cfgstr, "position", len))
+        *cfg = ZBAR_CFG_POSITION;
     else 
         return(1);
 

@@ -1,12 +1,12 @@
 general:
-  * cleanup symbol leaks
   * finish error handling
   * handle video destroyed w/images outstanding
   * dbg_scan background image stretched (still...)
   * profile and weed out obvious oversights
-  * windows port
-    * fix processor layer and/or add more appropriate windows interface
   * example using SANE to scan symbol(s)
+
+windows port:
+  * libzbar-0.dll should be zbar-0.dll
 
 wrappers:
   * build API docs for zbargtk, zbarpygtk
@@ -14,7 +14,6 @@ wrappers:
   * widget config APIs
   * drag-and-drop for widgets (configurable...)
   * Perl build support integration?
-  * Perl object lifetime problems? (eg Symbol)
   * GTK and Qt perl bindings
   * C++ global wrappers
 
@@ -29,7 +28,6 @@ symbologies:
   * finish addon decoding
 
 decoder:
-  * support for binary symbol data (PDF417, Code 128)
   * start/stop/abort and location detail APIs (PDF417, OMR)
   * more configuration options
     * disable for at least UPC-E (maybe UPC-A?)
@@ -38,9 +36,8 @@ decoder:
     * standard symbology identifiers (which standard?)
     * set consistency requirements
     * set scanner filter params
-  * fix min/max length check during decode
+  * fix max length check during decode
   * revisit noise and resolution independence
-  * support for a "confidence" metric
 
 image scanner:
   * extract and track symbol polygons

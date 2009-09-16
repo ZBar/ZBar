@@ -20,65 +20,44 @@
  *
  *  http://sourceforge.net/projects/zbar
  *------------------------------------------------------------------------*/
-#ifndef _REFCNT_H_
-#define _REFCNT_H_
+#ifndef _ZBAR_EVENT_H_
+#define _ZBAR_EVENT_H_
 
 #include <config.h>
-#include <assert.h>
+#include "mutex.h"
+#include "timer.h"
+
+/* platform synchronization "event" abstraction
+ */
 
 #if defined(_WIN32)
+
 # include <windows.h>
 
-typedef volatile LONG refcnt_t;  /* FIXME where did volatile come from? */
-
-static inline int _zbar_refcnt (refcnt_t *cnt,
-                                int delta)
-{
-    int rc = -1;
-    if(delta > 0)
-        while(delta--)
-            rc = InterlockedIncrement(cnt);
-    else if(delta < 0)
-        while(delta++)
-            rc = InterlockedDecrement(cnt);
-    assert(rc >= 0);
-    return(rc);
-}
+typedef HANDLE zbar_event_t;
 
 
 #elif defined(HAVE_LIBPTHREAD)
+
 # include <pthread.h>
 
-typedef int refcnt_t;
-
-extern pthread_mutex_t _zbar_reflock;
-
-static inline int _zbar_refcnt (refcnt_t *cnt,
-                                int delta)
-{
-    pthread_mutex_lock(&_zbar_reflock);
-    int rc = (*cnt += delta);
-    pthread_mutex_unlock(&_zbar_reflock);
-    assert(rc >= 0);
-    return(rc);
-}
+typedef struct zbar_event_s {
+    int state;
+    pthread_cond_t cond;
+    int pollfd;
+} zbar_event_t;
 
 
 #else
 
-typedef int refcnt_t;
-
-static inline int _zbar_refcnt (refcnt_t *cnt,
-                                int delta)
-{
-    int rc = (*cnt += delta);
-    assert(rc >= 0);
-    return(rc);
-}
+typedef int zbar_event_t[0];
 
 #endif
 
 
-void _zbar_refcnt_init(void);
+extern int _zbar_event_init(zbar_event_t*);
+extern void _zbar_event_destroy(zbar_event_t*);
+extern void _zbar_event_trigger(zbar_event_t*);
+extern int _zbar_event_wait(zbar_event_t*, zbar_mutex_t*, zbar_timer_t*);
 
 #endif

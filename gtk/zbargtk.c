@@ -209,7 +209,12 @@ static inline int zbar_gtk_process_image (ZBarGtk *self,
     if(!image)
         return(-1);
 
-    int rc = zbar_scan_image(zbar->scanner, image);
+    zbar_image_t *tmp = zbar_image_convert(image, fourcc('Y','8','0','0'));
+    if(!tmp)
+        return(-1);
+
+    int rc = zbar_scan_image(zbar->scanner, tmp);
+    zbar_image_destroy(tmp);
     if(rc < 0)
         return(rc);
 
@@ -718,7 +723,7 @@ static void zbar_gtk_class_init (ZBarGtkClass *klass)
     g_object_class_install_property(object_class, PROP_VIDEO_OPENED, p);
 }
 
-GType zbar_gtk_get_type ()
+GType zbar_gtk_get_type (void)
 {
     static GType type = 0;
     if(!type) {
@@ -744,7 +749,7 @@ static void zbar_gtk_private_class_init (ZBarGtkPrivateClass *klass)
     object_class->finalize = zbar_gtk_private_finalize;
 }
 
-static GType zbar_gtk_private_get_type ()
+static GType zbar_gtk_private_get_type (void)
 {
     static GType type = 0;
     if(!type) {
@@ -761,7 +766,7 @@ static GType zbar_gtk_private_get_type ()
     return(type);
 }
 
-GtkWidget *zbar_gtk_new ()
+GtkWidget *zbar_gtk_new (void)
 {
     return(GTK_WIDGET(g_object_new(ZBAR_TYPE_GTK, NULL)));
 }

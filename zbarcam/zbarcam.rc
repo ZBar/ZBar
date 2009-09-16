@@ -1,27 +1,23 @@
 #include <config.h>
 #include <winver.h>
 
-#define STR(s) #s
-#define XSTR(s) STR(s)
-
 VS_VERSION_INFO VERSIONINFO
-    FILEVERSION LIB_VERSION_MAJOR, LIB_VERSION_MINOR,  LIB_VERSION_REVISION, 0
+    FILEVERSION     ZBAR_VERSION_MAJOR, ZBAR_VERSION_MINOR,  0, 0
     PRODUCTVERSION  ZBAR_VERSION_MAJOR, ZBAR_VERSION_MINOR,  0, 0
     FILEOS VOS__WINDOWS32
-    FILETYPE VFT_DLL
+    FILETYPE VFT_APP
 {
     BLOCK "StringFileInfo" {
         BLOCK "040904E4" {
             VALUE "ProductName", "ZBar Bar Code Reader"
             VALUE "Company Name", "ZBar Bar Code Reader"
-            VALUE "InternalName", "libzbar"
-            VALUE "OriginalFilename", "libzbar-" XSTR(LIB_VERSION_MAJOR) ".dll"
+            VALUE "InternalName", "zbarcam"
+            VALUE "OriginalFilename", "zbarcam.exe"
 
-            VALUE "FileVersion", XSTR(LIB_VERSION_MAJOR) "." \
-                XSTR(LIB_VERSION_MINOR) "." XSTR(LIB_VERSION_REVISION)
+            VALUE "FileVersion", PACKAGE_VERSION
             VALUE "ProductVersion", PACKAGE_VERSION
 
-            VALUE "FileDescription", "Bar code reader library"
+            VALUE "FileDescription", "Scan bar codes from video devices"
 
             VALUE "LegalCopyright", "Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>"
         }
@@ -30,3 +26,5 @@ VS_VERSION_INFO VERSIONINFO
         VALUE "Translation", 0x0409, 0x04e4
     }
 }
+
+APP_ICON ICON "zbar.ico"

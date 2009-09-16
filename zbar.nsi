@@ -40,8 +40,11 @@ InstallDirRegKey HKLM ${ZBAR_KEY} "InstallDir"
 
 !define SMPROG_ZBAR "$SMPROGRAMS\ZBar Bar Code Reader"
 
+Icon ${NSISDIR}\Contrib\Graphics\Icons\orange-install.ico
+UninstallIcon ${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico
+
 # do we need admin to install DLL and uninstall info?
-RequestExecutionLevel admin
+#RequestExecutionLevel admin
 
 
 !include "MUI2.nsh"
@@ -51,24 +54,27 @@ RequestExecutionLevel admin
 Name "ZBar"
 Caption "ZBar ${VERSION} Setup"
 
+Var MAGICKDIR
 
 # Check that ImageMagick is installed
-Function .onInit
-    SearchPath $0 "CORE_RL_wand_.dll"
+Function CheckMagick
+    SearchPath $MAGICKDIR "CORE_RL_wand_.dll"
     IfErrors 0 goinstall
         MessageBox MB_OKCANCEL|MB_ICONSTOP \
                    "ImageMagick was not found in your PATH!$\n\
                    $\n\
-                   The zbarimg program will not be able to scan image files \
-                   unless you install ImageMagick$\n\
+                   The zbarimg program will not be able to scan image files $\n\
+                   unless you install ImageMagick (http://www.imagemagick.org)$\n\
                    $\n\
                    See the README for more details$\n\
                    $\n\
                    Press OK to continue anyway...$\n\
                    Press Cancel to abort the installation..." \
-                   /SD IDCANCEL \
+                   /SD IDOK \
                    IDOK goinstall
-        Abort
+
+        ExecShell "open" "http://www.imagemagick.org/"
+        Quit
 goinstall:
 FunctionEnd
 
@@ -96,6 +102,8 @@ FunctionEnd
     ZBar Bar Code Reader version ${VERSION}."
 
 !insertmacro MUI_PAGE_WELCOME
+
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW CheckMagick
 !insertmacro MUI_PAGE_LICENSE "share\doc\zbar\LICENSE"
 
 !define MUI_COMPONENTSPAGE_SMALLDESC
@@ -139,13 +147,30 @@ Section "ZBar Core Files (required)" SecCore
     FileWrite $0 "@rem  Add the ZBar installation directory to the path$\n"
     FileWrite $0 "@rem  so programs may be run from the command prompt$\n"
     FileWrite $0 "@set PATH=%PATH%;$INSTDIR\bin$\n"
+    FileWrite $0 "@cd /D $INSTDIR$\n"
     FileWrite $0 "@echo For basic command instructions type:$\n"
+    FileWrite $0 "@echo     zbarcam --help$\n"
     FileWrite $0 "@echo     zbarimg --help$\n"
+    FileWrite $0 "@echo Try running:$\n"
+    FileWrite $0 "@echo     zbarimg -d examples\barcode.png$\n"
     FileClose $0
 
     SetOutPath $INSTDIR\bin
     File bin\libzbar-0.dll
     File bin\zbarimg.exe
+    File bin\zbarcam.exe
+
+    FileOpen $0 zbarcam.bat w
+    FileWrite $0 "@set PATH=%PATH%;$INSTDIR\bin$\n"
+    FileWrite $0 "@echo This is the zbarcam output window.$\n"
+    FileWrite $0 "@echo Hold a bar code in front of the camera (make sure it's in focus!)$\n"
+    FileWrite $0 "@echo and decoded results will appear below.$\n"
+    FileWrite $0 "@echo.$\n"
+    FileWrite $0 "@echo Initializing camera, please wait...$\n"
+    FileWrite $0 "@echo.$\n"
+    FileWrite $0 "@zbarcam.exe --prescale=640x480$\n"
+    FileWrite $0 "@if errorlevel 1 pause$\n"
+    FileClose $0
 
     SetOutPath $INSTDIR\doc
     File share\doc\zbar\html\*
@@ -155,17 +180,19 @@ Section "ZBar Core Files (required)" SecCore
 SectionEnd
 
 #SectionGroup "Start Menu and Desktop Shortcuts" SecShortcuts
-    Section "Start Menu Shortcut" SecShortcutsStartMenu
-        DetailPrint "Creating Start Menu Shortcut..."
+    Section "Start Menu Shortcuts" SecShortcutsStartMenu
+        DetailPrint "Creating Start Menu Shortcuts..."
         SectionIn 1 2
-        SetOutPath $INSTDIR
+        SetOutPath "${SMPROG_ZBAR}"
         #CreateShortCut "${SMPROG_ZBAR}\ZBar.lnk" "$INSTDIR\ZBar.exe"
         CreateDirectory "${SMPROG_ZBAR}"
+        CreateShortCut "zbarcam.lnk" "$\"$INSTDIR\bin\zbarcam.bat$\"" "" \
+                       "$INSTDIR\bin\zbarcam.exe"
         ExpandEnvStrings $0 '%comspec%'
-        CreateShortCut "${SMPROG_ZBAR}\Start ZBar Command Prompt.lnk" \
+        CreateShortCut "ZBar Command Prompt.lnk" \
                        $0 "/k $\"$\"$INSTDIR\zbarvars.bat$\"$\"" $0
-        CreateShortCut "${SMPROG_ZBAR}\Command Reference.lnk" \
-                       "$\"$INSTDIR\doc\zbarimg.html$\""
+        CreateShortCut "Command Reference.lnk" \
+                       "$\"$INSTDIR\doc\ref.html$\""
     SectionEnd
 
 #    Section "Desktop Shortcut" SecShortcutsDesktop
@@ -216,7 +243,7 @@ Section -post
     WriteRegStr HKLM ${UNINSTALL_KEY} "InstallLocation" "$\"$INSTDIR$\""
 
     WriteRegStr HKLM ${UNINSTALL_KEY} "DisplayName" "ZBar Bar Code Reader"
-    WriteRegStr HKLM ${UNINSTALL_KEY} "DisplayIcon" "$INSTDIR\zbarimg.exe,0"
+    WriteRegStr HKLM ${UNINSTALL_KEY} "DisplayIcon" "$INSTDIR\bin\zbarimg.exe,0"
     WriteRegStr HKLM ${UNINSTALL_KEY} "DisplayVersion" "${VERSION}"
 
     WriteRegStr HKLM ${UNINSTALL_KEY} "URLInfoAbout" "http://zbar.sf.net/"
@@ -233,7 +260,10 @@ Section Uninstall
     DetailPrint "Uninstalling ZBar Bar Code Reader.."
 
     DetailPrint "Deleting Files..."
-    RMDir /r $INSTDIR\examples
+    Delete $INSTDIR\examples\barcode.png
+    Delete $INSTDIR\examples\scan_image.cpp
+    Delete $INSTDIR\examples\scan_image.vcproj
+    RMDir $INSTDIR\examples
     RMDir /r $INSTDIR\include
     RMDir /r $INSTDIR\doc
     RMDir /r $INSTDIR\lib

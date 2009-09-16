@@ -29,28 +29,12 @@
 #endif
 #include <stdlib.h>
 
-#ifdef HAVE_X
-# include <X11/Xlib.h>
-# include <X11/Xutil.h>
-# ifdef HAVE_X11_EXTENSIONS_XSHM_H
-#  include <X11/extensions/XShm.h>
-# endif
-#ifdef HAVE_X11_EXTENSIONS_XVLIB_H
-#  include <X11/extensions/Xvlib.h>
-#endif
-#endif
-
-#ifdef HAVE_PTHREAD_H
-# include <pthread.h>
-#endif
-
-#ifdef _WIN32
-# include <windows.h>
-#endif
-
 #include <zbar.h>
-#include "image.h"
+#include "symbol.h"
 #include "error.h"
+#include "mutex.h"
+
+typedef struct window_state_s window_state_t;
 
 struct zbar_window_s {
     errinfo_t err;              /* error reporting */
@@ -72,64 +56,18 @@ struct zbar_window_s {
 
     uint32_t *formats;          /* supported formats (zero terminated) */
 
+    zbar_mutex_t imglock;       /* lock displayed image */
+
+    void *display;
+    unsigned long xwin;
+
+    window_state_t *state;      /* platform/interface specific state */
+
     /* interface dependent methods */
     int (*init)(zbar_window_t*, zbar_image_t*, int);
     int (*draw_image)(zbar_window_t*, zbar_image_t*);
     int (*cleanup)(zbar_window_t*);
-
-#ifdef HAVE_X
-    Display *display;           /* display connection */
-    Drawable xwin;              /* platform window handle */
-    GC gc;                      /* graphics context */
-    union {
-        XImage *x;
-#ifdef HAVE_X11_EXTENSIONS_XVLIB_H
-        XvImage *xv;
-#endif
-    } img;
-    XID img_port;               /* current format port */
-
-    XID *xv_ports;              /* best port for format */
-    int num_xv_adaptors;        /* number of adaptors */
-    XID *xv_adaptors;           /* port grabbed for each adaptor */
-
-# ifdef HAVE_X11_EXTENSIONS_XSHM_H
-    XShmSegmentInfo shm;        /* shared memory segment */
-# endif
-
-    unsigned long colors[8];    /* pre-allocated colors */
-
-    Region exposed;
-
-    /* pre-calculated logo geometries */
-    int logo_scale;
-    unsigned long logo_colors[2];
-    Region logo_zbars;
-    XPoint logo_z[4];
-    XRectangle logo_bars[5];
-#endif
-
-#ifdef HAVE_LIBPTHREAD
-    pthread_mutex_t imglock;    /* lock displayed image */
-#endif
-
-#ifdef _WIN32
-    HWND hwnd;
-    void* hdd;
-
-    BITMAPINFOHEADER bih;
-
-    /* pre-calculated logo geometries */
-    int logo_scale;
-    HRGN logo_zbars;
-    HPEN logo_zpen, logo_zbpen;
-    POINT logo_z[4];
-
-    CRITICAL_SECTION imglock;
-#endif
 };
-
-#ifdef HAVE_LIBPTHREAD
 
 /* window.draw has to be thread safe wrt/other apis
  * FIXME should be a semaphore
@@ -137,7 +75,7 @@ struct zbar_window_s {
 static inline int window_lock (zbar_window_t *w)
 {
     int rc = 0;
-    if((rc = pthread_mutex_lock(&w->imglock))) {
+    if((rc = _zbar_mutex_lock(&w->imglock))) {
         err_capture(w, SEV_FATAL, ZBAR_ERR_LOCKING, __func__,
                     "unable to acquire lock");
         w->err.errnum = rc;
@@ -149,7 +87,7 @@ static inline int window_lock (zbar_window_t *w)
 static inline int window_unlock (zbar_window_t *w)
 {
     int rc = 0;
-    if((rc = pthread_mutex_unlock(&w->imglock))) {
+    if((rc = _zbar_mutex_unlock(&w->imglock))) {
         err_capture(w, SEV_FATAL, ZBAR_ERR_LOCKING, __func__,
                     "unable to release lock");
         w->err.errnum = rc;
@@ -157,27 +95,6 @@ static inline int window_unlock (zbar_window_t *w)
     }
     return(0);
 }
-
-#else
-# ifdef _WIN32
-
-static inline int window_lock (zbar_window_t *w)
-{
-    EnterCriticalSection(&w->imglock);
-    return(0);
-}
-
-static inline int window_unlock (zbar_window_t *w)
-{
-    LeaveCriticalSection(&w->imglock);
-    return(0);
-}
-
-# else
-#  define window_lock(...) (0)
-#  define window_unlock(...) (0)
-# endif
-#endif
 
 static inline int _zbar_window_add_format (zbar_window_t *w,
                                            uint32_t fmt)
@@ -193,15 +110,17 @@ static inline int _zbar_window_add_format (zbar_window_t *w,
     return(i);
 }
 
+
+/* PAL interface */
 extern int _zbar_window_attach(zbar_window_t*,
                                void*,
                                unsigned long);
+extern int _zbar_window_expose(zbar_window_t *w, int, int, int, int);
 extern int _zbar_window_resize(zbar_window_t *w);
-
 extern int _zbar_window_clear(zbar_window_t*);
-
-extern int _zbar_window_draw_marker(zbar_window_t*, uint32_t,
-                                    const point_t*);
+extern int _zbar_window_flush(zbar_window_t*);
+extern int _zbar_window_draw_logo(zbar_window_t *w);
+extern int _zbar_window_draw_marker(zbar_window_t*, uint32_t, const point_t*);
 #if 0
 extern int _zbar_window_draw_line(zbar_window_t*, uint32_t,
                                   const point_t*, const point_t*);
@@ -209,10 +128,6 @@ extern int _zbar_window_draw_outline(zbar_window_t*, uint32_t,
                                      const symbol_t*);
 extern int _zbar_window_draw_text(zbar_window_t*, uint32_t,
                                   const point_t*, const char*);
-#endif
-
-#ifdef _WIN32
-extern int _zbar_window_bih_init(zbar_window_t*, zbar_image_t*);
 #endif
 
 #endif

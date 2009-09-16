@@ -128,10 +128,12 @@ typedef enum zbar_config_e {
     ZBAR_CFG_ADD_CHECK,         /**< enable check digit when optional */
     ZBAR_CFG_EMIT_CHECK,        /**< return check digit when present */
     ZBAR_CFG_ASCII,             /**< enable full ASCII character set */
-    ZBAR_CFG_NUM,               /**< number of boolean configs */
+    ZBAR_CFG_NUM,               /**< number of boolean decoder configs */
 
     ZBAR_CFG_MIN_LEN = 0x20,    /**< minimum data length for valid decode */
     ZBAR_CFG_MAX_LEN,           /**< maximum data length for valid decode */
+
+    ZBAR_CFG_POSITION = 0x80,   /**< enable scanner to collect position data */
 
     ZBAR_CFG_X_DENSITY = 0x100, /**< image scanner vertical scan density */
     ZBAR_CFG_Y_DENSITY,         /**< image scanner horizontal scan density */
@@ -153,7 +155,7 @@ extern void zbar_set_verbosity(int verbosity);
 /** increase global library debug level.
  * eg, for -vvvv
  */
-extern void zbar_increase_verbosity();
+extern void zbar_increase_verbosity(void);
 
 /** retrieve string name for symbol encoding.
  * @param sym symbol type encoding
@@ -203,15 +205,44 @@ struct zbar_symbol_s;
 /** opaque decoded symbol object. */
 typedef struct zbar_symbol_s zbar_symbol_t;
 
+/** symbol reference count manipulation.
+ * increment the reference count when you store a new reference to the
+ * symbol.  decrement when the reference is no longer used.  do not
+ * refer to the symbol once the count is decremented and the
+ * containing image has been recycled or destroyed.
+ * @note the containing image holds a reference to the symbol, so you
+ * only need to use this if you keep a symbol after the image has been
+ * destroyed or reused.
+ * @since 0.9
+ */
+extern void zbar_symbol_ref(zbar_symbol_t *symbol,
+                            int refs);
+
 /** retrieve type of decoded symbol.
  * @returns the symbol type
  */
 extern zbar_symbol_type_t zbar_symbol_get_type(const zbar_symbol_t *symbol);
 
-/** retrieve ASCII data decoded from symbol.
+/** retrieve data decoded from symbol.
  * @returns the data string
  */
 extern const char *zbar_symbol_get_data(const zbar_symbol_t *symbol);
+
+/** retrieve length of binary data.
+ * @returns the length of the decoded data
+ */
+extern unsigned int zbar_symbol_get_data_length(const zbar_symbol_t *symbol);
+
+/** retrieve a symbol confidence metric.
+ * @returns an unscaled, relative quantity: larger values are better
+ * than smaller values, where "large" and "small" are application
+ * dependent.
+ * @note expect the exact definition of this quantity to change as the
+ * metric is refined.  currently, only the ordered relationship
+ * between two values is defined and will remain stable in the future
+ * @since 0.9
+ */
+extern int zbar_symbol_get_quality(const zbar_symbol_t *symbol);
 
 /** retrieve current cache count.  when the cache is enabled for the
  * image_scanner this provides inter-frame reliability and redundancy
@@ -295,7 +326,7 @@ typedef void (zbar_image_data_handler_t)(zbar_image_t *image,
  * this image should be destroyed (using zbar_image_destroy()) as
  * soon as the application is finished with it
  */
-extern zbar_image_t *zbar_image_create();
+extern zbar_image_t *zbar_image_create(void);
 
 /** image destructor.  all images created by or returned to the
  * application should be destroyed using this function.  when an image
@@ -373,7 +404,7 @@ extern const void *zbar_image_get_data(const zbar_image_t *image);
 /** return the size of image data.
  * @since 0.6
  */
-unsigned long zbar_image_get_data_length(const zbar_image_t *img);
+extern unsigned long zbar_image_get_data_length(const zbar_image_t *img);
 
 /** image_scanner decode result iterator.
  * @returns the first decoded symbol result for an image
@@ -676,7 +707,7 @@ struct zbar_video_s;
 typedef struct zbar_video_s zbar_video_t;
 
 /** constructor. */
-extern zbar_video_t *zbar_video_create();
+extern zbar_video_t *zbar_video_create(void);
 
 /** destructor. */
 extern void zbar_video_destroy(zbar_video_t *video);
@@ -796,7 +827,7 @@ struct zbar_window_s;
 typedef struct zbar_window_s zbar_window_t;
 
 /** constructor. */
-extern zbar_window_t *zbar_window_create();
+extern zbar_window_t *zbar_window_create(void);
 
 /** destructor. */
 extern void zbar_window_destroy(zbar_window_t *window);
@@ -887,7 +918,7 @@ struct zbar_image_scanner_s;
 typedef struct zbar_image_scanner_s zbar_image_scanner_t;
 
 /** constructor. */
-extern zbar_image_scanner_t *zbar_image_scanner_create();
+extern zbar_image_scanner_t *zbar_image_scanner_create(void);
 
 /** destructor. */
 extern void zbar_image_scanner_destroy(zbar_image_scanner_t *scanner);
@@ -942,9 +973,12 @@ zbar_image_scanner_parse_config (zbar_image_scanner_t *scanner,
 extern void zbar_image_scanner_enable_cache(zbar_image_scanner_t *scanner,
                                             int enable);
 
-/** scan for symbols in provided image.
+/** scan for symbols in provided image.  The image format must be
+ * "Y800" or "GRAY".
  * @returns >0 if symbols were successfully decoded from the image,
  * 0 if no symbols were found or -1 if an error occurs
+ * @see zbar_image_convert()
+ * @since 0.9 - changed to only accept grayscale images
  */
 extern int zbar_scan_image(zbar_image_scanner_t *scanner,
                            zbar_image_t *image);
@@ -969,7 +1003,7 @@ typedef struct zbar_decoder_s zbar_decoder_t;
 typedef void (zbar_decoder_handler_t)(zbar_decoder_t *decoder);
 
 /** constructor. */
-extern zbar_decoder_t *zbar_decoder_create();
+extern zbar_decoder_t *zbar_decoder_create(void);
 
 /** destructor. */
 extern void zbar_decoder_destroy(zbar_decoder_t *decoder);
@@ -1027,13 +1061,20 @@ extern zbar_symbol_type_t zbar_decode_width(zbar_decoder_t *decoder,
  * zbar_decode_width(). */
 extern zbar_color_t zbar_decoder_get_color(const zbar_decoder_t *decoder);
 
-/** retrieve last decoded data in ASCII format.
+/** retrieve last decoded data.
  * @returns the data string or NULL if no new data available.
  * the returned data buffer is owned by library, contents are only
  * valid between non-0 return from zbar_decode_width and next library
  * call
  */
 extern const char *zbar_decoder_get_data(const zbar_decoder_t *decoder);
+
+/** retrieve length of binary data.
+ * @returns the length of the decoded data or 0 if no new data
+ * available.
+ */
+extern unsigned int
+zbar_decoder_get_data_length(const zbar_decoder_t *decoder);
 
 /** retrieve last decoded symbol type.
  * @returns the type or ::ZBAR_NONE if no new data available

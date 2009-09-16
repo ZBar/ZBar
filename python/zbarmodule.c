@@ -35,6 +35,7 @@ static char *exc_names[] = {
     "zbar.X11DisplayError",
     "zbar.X11ProtocolError",
     "zbar.WindowClosed",
+    "zbar.WinAPI",
 };
 
 int
@@ -102,7 +103,7 @@ static PyMethodDef zbar_functions[] = {
 };
 
 PyMODINIT_FUNC
-initzbar ()
+initzbar (void)
 {
     /* initialize constant containers */
     config_enum = zbarEnum_New();
@@ -173,12 +174,13 @@ initzbar ()
     zbarEnum_Add(config_enum, ZBAR_CFG_ASCII,      "ASCII");
     zbarEnum_Add(config_enum, ZBAR_CFG_MIN_LEN,    "MIN_LEN");
     zbarEnum_Add(config_enum, ZBAR_CFG_MAX_LEN,    "MAX_LEN");
+    zbarEnum_Add(config_enum, ZBAR_CFG_X_DENSITY,  "POSITION");
     zbarEnum_Add(config_enum, ZBAR_CFG_X_DENSITY,  "X_DENSITY");
     zbarEnum_Add(config_enum, ZBAR_CFG_Y_DENSITY,  "Y_DENSITY");
 
     PyObject *tp_dict = zbarSymbol_Type.tp_dict;
     symbol_NONE =
-        zbarEnumItem_New(tp_dict, symbol_enum, ZBAR_NONE,    "NONE");
+        zbarEnumItem_New(tp_dict, symbol_enum, ZBAR_NONE, "NONE");
     zbarEnumItem_New(tp_dict, symbol_enum, ZBAR_PARTIAL, "PARTIAL");
     zbarEnumItem_New(tp_dict, symbol_enum, ZBAR_EAN8,    "EAN8");
     zbarEnumItem_New(tp_dict, symbol_enum, ZBAR_UPCE,    "UPCE");

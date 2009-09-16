@@ -36,6 +36,15 @@
 #include <zbar.h>
 #include <wand/MagickWand.h>
 
+/* in 6.4.5.4 MagickGetImagePixels changed to MagickExportImagePixels.
+ * (still not sure this check is quite right...
+ *  how does MagickGetAuthenticImagePixels fit in?)
+ * ref http://bugs.gentoo.org/247292
+ */
+#if MagickLibVersion < 0x645
+# define MagickExportImagePixels MagickGetImagePixels
+#endif
+
 static const char *note_usage =
     "usage: zbarimg [options] <image>...\n"
     "\n"
@@ -114,16 +123,6 @@ static int scan_image (const char *filename)
     unsigned seq, n = MagickGetNumberImages(images);
     for(seq = 0; seq < n; seq++) {
         if(!MagickSetIteratorIndex(images, seq) && dump_error(images))
-            return(-1);
-
-        /* FIXME assuming this no longer applies...
-           image->modifyImage();
-        */
-
-        if(!MagickSetFormat(images, "GRAY") && dump_error(images))
-            return(-1);
-
-        if(!MagickSetDepth(images, 8) && dump_error(images))
             return(-1);
 
         zbar_image_t *zimage = zbar_image_create();

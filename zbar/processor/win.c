@@ -22,7 +22,7 @@
  *------------------------------------------------------------------------*/
 
 #include "processor.h"
-#include "win.h"
+#include <windows.h>
 #include <assert.h>
 
 #define WIN_STYLE (WS_CAPTION | \
@@ -32,140 +32,36 @@
                    WS_MAXIMIZEBOX)
 #define EXT_STYLE (WS_EX_APPWINDOW | WS_EX_OVERLAPPEDWINDOW)
 
-static inline int proc_lock (processor_state_t *state,
-                             DWORD self)
+
+int _zbar_event_init (zbar_event_t *event)
 {
-    if(!state->lock_level) {
-        state->lock_owner = self;
-        state->lock_level = 1;
-        return(0);
-    }
-
-    if(state->lock_owner == self) {
-        state->lock_level++;
-        return(0);
-    }
-
-    wait_entry_t *entry = proc_entry_alloc(state, self);
-    proc_entry_queue(&state->lock_queue, entry);
-
-    LeaveCriticalSection(&state->mutex);
-    int rc = WaitForSingleObject(entry->notify, INFINITE);
-    EnterCriticalSection(&state->mutex);
-
-    assert(state->lock_level == 1);
-    assert(state->lock_owner == self);
-
-    proc_entry_free(state, entry);
-    return(rc);
+    *event = CreateEvent(NULL, 0, 0, NULL);
+    return((*event) ? 0 : -1);
 }
 
-static inline int proc_unlock (processor_state_t *state,
-                               DWORD self,
-                               int all)
+void _zbar_event_destroy (zbar_event_t *event)
 {
-    assert(state->lock_level > 0);
-    assert(state->lock_owner == self);
-
-    if(all)
-        state->lock_level = 0;
-    else
-        state->lock_level--;
-
-    if(!state->lock_level) {
-        wait_entry_t *entry = proc_entry_dequeue(&state->lock_queue);
-        if(entry) {
-            state->lock_level = 1;
-            state->lock_owner = entry->requester;
-            SetEvent(entry->notify);
-        }
-    }
-    return(0);
-}
-
-static inline void proc_notify (zbar_processor_t *proc)
-{
-    processor_state_t *state = proc->state;
-    wait_entry_t **q = &state->wait_queue.head;
-    while(*q) {
-        wait_entry_t *entry = *q;
-        if(entry->requester & proc->events) {
-            *q = entry->next;
-            SetEvent(entry->notify);
-        }
-        q = &entry->next;
-        entry->next = NULL;
+    if(*event) {
+        CloseHandle(*event);
+        *event = NULL;
     }
 }
 
-inline int _zbar_processor_lock (const zbar_processor_t *proc)
+void _zbar_event_trigger (zbar_event_t *event)
 {
-    processor_state_t *state = proc->state;
-
-    EnterCriticalSection(&state->mutex);
-    int rc = proc_lock(state, GetCurrentThreadId());
-    LeaveCriticalSection(&state->mutex);
-
-    if(rc)
-        /* FIXME save system code */
-        rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_LOCKING, __func__,
-                         "unable to lock processor");
-    return(rc);
+    SetEvent(*event);
 }
 
-inline int _zbar_processor_unlock (const zbar_processor_t *proc)
+/* lock must be held */
+int _zbar_event_wait (zbar_event_t *event,
+                      zbar_mutex_t *lock,
+                      zbar_timer_t *timeout)
 {
-    processor_state_t *state = proc->state;
-
-    EnterCriticalSection(&state->mutex);
-    proc_unlock(state, GetCurrentThreadId(), 0);
-    LeaveCriticalSection(&state->mutex);
-
-    return(0);
-}
-
-inline int _zbar_processor_notify (zbar_processor_t *proc,
-                                   unsigned event)
-{
-    processor_state_t *state = proc->state;
-
-    EnterCriticalSection(&state->mutex);
-    proc->events |= event;
-
-    SetEvent(state->video_thread.activity);
-    proc_notify(proc);
-
-    LeaveCriticalSection(&state->mutex);
-    return(0);
-}
-
-inline int _zbar_processor_wait (zbar_processor_t *proc,
-                                 unsigned event,
-                                 int timeout)
-{
-    processor_state_t *state = proc->state;
-    DWORD self = GetCurrentThreadId();
-
-    proc->events &= ~event;
-
-    EnterCriticalSection(&state->mutex);
-
-    int save_level = state->lock_level;
-    wait_entry_t *entry = proc_entry_alloc(state, event);
-    proc_entry_queue(&state->wait_queue, entry);
-    proc_unlock(state, self, 1);
-
-    LeaveCriticalSection(&state->mutex);
-    int rc = WaitForSingleObject(entry->notify, timeout);
-    EnterCriticalSection(&state->mutex);
-
-    proc_entry_free(state, entry);
-    proc_lock(state, self);
-    state->lock_level = save_level;
-    if(!rc)
-        assert(proc->events & event);
-
-    LeaveCriticalSection(&state->mutex);
+    if(lock)
+        _zbar_mutex_unlock(lock);
+    int rc = WaitForSingleObject(*event, _zbar_timer_check(timeout));
+    if(lock)
+        _zbar_mutex_lock(lock);
 
     if(!rc)
         return(1); /* got event */
@@ -174,191 +70,64 @@ inline int _zbar_processor_wait (zbar_processor_t *proc,
     return(-1); /* error (FIXME save info) */
 }
 
-static inline int proc_thread_start (zbar_processor_t *proc,
-                                     thread_state_t *tstate,
-                                     LPTHREAD_START_ROUTINE thread)
+int _zbar_thread_start (zbar_thread_t *thr,
+                        zbar_thread_proc_t *proc,
+                        void *arg,
+                        zbar_mutex_t *lock)
 {
-    assert(!tstate->running);
-    tstate->running = 1;
-    HANDLE hthr = CreateThread(NULL, 0, thread, proc, 0, NULL);
-    if(!hthr) {
-        tstate->running = 0;
+    if(thr->started || thr->running)
         return(-1/*FIXME*/);
-    }
+    thr->started = 1;
+    _zbar_event_init(&thr->notify);
+    _zbar_event_init(&thr->activity);
+
+    HANDLE hthr = CreateThread(NULL, 0, proc, arg, 0, NULL);
+    int rc = (!hthr ||
+              _zbar_event_wait(&thr->activity, NULL, NULL) < 0 ||
+              !thr->running);
     CloseHandle(hthr);
-
-    HANDLE status[2] = { tstate->started, tstate->stopped };
-    int rc = WaitForMultipleObjects(2, status, 0, INFINITE);
     if(rc) {
-        tstate->running = 0;
+        thr->started = 0;
+        _zbar_event_destroy(&thr->notify);
+        _zbar_event_destroy(&thr->activity);
         return(-1/*FIXME*/);
     }
-
     return(0);
 }
 
-static inline int proc_thread_stop (processor_state_t *state,
-                                    thread_state_t *tstate)
+int _zbar_thread_stop (zbar_thread_t *thr,
+                       zbar_mutex_t *lock)
 {
-    if(tstate->running) {
-        tstate->running = 0;
-        SetEvent(tstate->activity);
-        LeaveCriticalSection(&state->mutex);
-        WaitForSingleObject(tstate->stopped, INFINITE);
-        EnterCriticalSection(&state->mutex);
+    if(thr->started) {
+        thr->started = 0;
+        _zbar_event_trigger(&thr->notify);
+        while(thr->running)
+            /* FIXME time out and abandon? */
+            _zbar_event_wait(&thr->activity, lock, NULL);
+        _zbar_event_destroy(&thr->notify);
+        _zbar_event_destroy(&thr->activity);
     }
     return(0);
 }
 
-int _zbar_processor_threads_init (zbar_processor_t *proc,
-                                  int threaded)
-{
-    processor_state_t *state = proc->state =
-        calloc(1, sizeof(processor_state_t));
 
-    InitializeCriticalSection(&state->mutex);
-
-    state->video_thread.activity = CreateEvent(NULL, 0, 0, NULL);
-    state->video_thread.started = CreateEvent(NULL, 0, 0, NULL);
-    state->video_thread.stopped = CreateEvent(NULL, 0, 0, NULL);
-
-    state->input_thread.activity = CreateEvent(NULL, 0, 0, NULL);
-    state->input_thread.started = CreateEvent(NULL, 0, 0, NULL);
-    state->input_thread.stopped = CreateEvent(NULL, 0, 0, NULL);
-    return(0);
-}
-
-int _zbar_processor_threads_cleanup (zbar_processor_t *proc)
-{
-    processor_state_t *state = proc->state;
-
-    CloseHandle(state->video_thread.activity);
-    CloseHandle(state->video_thread.started);
-    CloseHandle(state->video_thread.stopped);
-
-    CloseHandle(state->input_thread.activity);
-    CloseHandle(state->input_thread.started);
-    CloseHandle(state->input_thread.stopped);
-
-    DeleteCriticalSection(&state->mutex);
-
-    free(state);
-    proc->state = NULL;
-    return(0);
-}
-
-
-static DWORD WINAPI proc_video_thread (void *arg)
-{
-    zbar_processor_t *proc = arg;
-    processor_state_t *state = proc->state;
-    thread_state_t *tstate = &state->video_thread;
-    DWORD self = GetCurrentThreadId();
-    int rc = 0;
-
-    EnterCriticalSection(&state->mutex);
-    SetEvent(tstate->started);
-
-    wait_entry_t *entry = proc_entry_alloc(state, self);
-    HANDLE activity[2] = { tstate->activity, entry->notify };
-
-    while(tstate->running) {
-        while(!proc->active && tstate->running) {
-            LeaveCriticalSection(&state->mutex);
-            rc = WaitForSingleObject(tstate->activity, INFINITE);
-            EnterCriticalSection(&state->mutex);
-        }
-        if(!tstate->running)
-            break;
-
-        /* unlocked blocking image input */
-        LeaveCriticalSection(&state->mutex);
-        zbar_image_t *img = zbar_video_next_image(proc->video);
-        EnterCriticalSection(&state->mutex);
-
-        if(!img)
-            break;
-
-        if(!state->lock_level) {
-            state->lock_owner = self;
-            state->lock_level = 1;
-        }
-        else {
-            proc_entry_queue(&state->lock_queue, entry);
-            rc = 0;
-            while(!rc && tstate->running) {
-                LeaveCriticalSection(&state->mutex);
-                rc = WaitForMultipleObjects(2, activity, 0, INFINITE);
-                EnterCriticalSection(&state->mutex);
-            }
-            if(rc || !tstate->running)
-                break;
-        }
-
-        assert(state->lock_level == 1);
-        assert(state->lock_owner == self);
-        LeaveCriticalSection(&state->mutex);
-
-        if(proc->active)
-            _zbar_process_image(proc, img);
-
-        zbar_image_destroy(img);
-
-        EnterCriticalSection(&state->mutex);
-
-        wait_entry_t *next = proc_entry_dequeue(&state->lock_queue);
-        if(next) {
-            state->lock_owner = next->requester;
-            SetEvent(next->notify);
-        }
-    }
-
-    proc_entry_free(state, entry);
-
-    LeaveCriticalSection(&state->mutex);
-
-    SetEvent(tstate->stopped);
-    return(0);
-}
-
-int _zbar_processor_threads_start (zbar_processor_t *proc)
-{
-    return(proc_thread_start(proc, &proc->state->video_thread,
-                             proc_video_thread));
-}
-
-int _zbar_processor_threads_stop (zbar_processor_t *proc)
-{
-    processor_state_t *state = proc->state;
-    EnterCriticalSection(&state->mutex);
-    int rc = proc_thread_stop(proc->state, &proc->state->video_thread);
-    LeaveCriticalSection(&state->mutex);
-    return(rc);
-}
-
-
-static LRESULT CALLBACK proc_handle_event (HWND hwnd,
-                                           UINT message,
-                                           WPARAM wparam,
-                                           LPARAM lparam)
+static LRESULT CALLBACK win_handle_event (HWND hwnd,
+                                          UINT message,
+                                          WPARAM wparam,
+                                          LPARAM lparam)
 {
     zbar_processor_t *proc =
         (zbar_processor_t*)GetWindowLongPtr(hwnd, GWL_USERDATA);
-    processor_state_t *state = NULL;
     /* initialized during window creation */
-    if(proc)
-        state = proc->state;
-    else if(message == WM_NCCREATE) {
+    if(message == WM_NCCREATE) {
         proc = ((LPCREATESTRUCT)lparam)->lpCreateParams;
         assert(proc);
-        state = proc->state;
-        assert(state);
         SetWindowLongPtr(hwnd, GWL_USERDATA, (LONG_PTR)proc);
-        proc->display = state->hwnd = hwnd;
+        proc->display = hwnd;
 
         zbar_window_attach(proc->window, proc->display, proc->xwin);
     }
-    else
+    else if(!proc)
         return(DefWindowProc(hwnd, message, wparam, lparam));
 
     switch(message) {
@@ -388,34 +157,34 @@ static LRESULT CALLBACK proc_handle_event (HWND hwnd,
     }
 
     case WM_CHAR: {
-        state->input = wparam;
+        _zbar_processor_handle_input(proc, wparam);
         return(0);
     }
 
     case WM_LBUTTONDOWN: {
-        state->input = 1;
+        _zbar_processor_handle_input(proc, 1);
         return(0);
     }
 
     case WM_MBUTTONDOWN: {
-        state->input = 2;
+        _zbar_processor_handle_input(proc, 2);
         return(0);
     }
 
     case WM_RBUTTONDOWN: {
-        state->input = 3;
+        _zbar_processor_handle_input(proc, 3);
         return(0);
     }
 
     case WM_CLOSE: {
         zprintf(3, "WM_CLOSE\n");
-        _zbar_processor_set_visible(proc, 0);
+        _zbar_processor_handle_input(proc, -1);
         return(1);
     }
 
     case WM_DESTROY: {
         zprintf(3, "WM_DESTROY\n");
-        state->hwnd = proc->display = NULL;
+        proc->display = NULL;
         zbar_window_attach(proc->window, NULL, 0);
         return(0);
     }
@@ -423,35 +192,59 @@ static LRESULT CALLBACK proc_handle_event (HWND hwnd,
     return(DefWindowProc(hwnd, message, wparam, lparam));
 }
 
-static inline int proc_handle_events (zbar_processor_t *proc)
+static inline int win_handle_events (zbar_processor_t *proc)
 {
-    processor_state_t *state = proc->state;
+    int rc = 0;
     while(1) {
         MSG msg;
-        int rc = PeekMessage(&msg, state->hwnd, 0, 0, PM_NOYIELD | PM_REMOVE);
+        rc = PeekMessage(&msg, proc->display, 0, 0, PM_NOYIELD | PM_REMOVE);
         if(!rc)
             return(0);
-        if(rc < 0) {
-            proc->err.errnum = GetLastError();
+        if(rc < 0)
             return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
                                "failed to obtain event"));
-        }
 
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-
-        if(state->input) {
-            EnterCriticalSection(&state->mutex);
-            proc->input = state->input;
-            proc->events |= EVENT_INPUT;
-            proc_notify(proc);
-            LeaveCriticalSection(&state->mutex);
-            state->input = 0;
-        }
     }
 }
 
-static inline ATOM proc_register_class (HINSTANCE hmod)
+int _zbar_processor_init (zbar_processor_t *proc)
+{
+    return(0);
+}
+
+int _zbar_processor_cleanup (zbar_processor_t *proc)
+{
+    return(0);
+}
+
+int _zbar_processor_input_wait (zbar_processor_t *proc,
+                                zbar_event_t *event,
+                                int timeout)
+{
+    int n = (event) ? 1 : 0;
+    int rc = MsgWaitForMultipleObjects(n, event, 0, timeout, QS_ALLINPUT);
+
+    if(rc == n) {
+        if(win_handle_events(proc) < 0)
+            return(-1);
+        return(1);
+    }
+    if(!rc)
+        return(1);
+    if(rc == WAIT_TIMEOUT)
+        return(0);
+    return(-1);
+}
+
+int _zbar_processor_enable (zbar_processor_t *proc)
+{
+    return(0);
+}
+
+
+static inline ATOM win_register_class (HINSTANCE hmod)
 {
     BYTE and_mask[1] = { 0xff };
     BYTE xor_mask[1] = { 0x00 };
@@ -459,7 +252,7 @@ static inline ATOM proc_register_class (HINSTANCE hmod)
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), 0, };
     wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     wc.hInstance = hmod;
-    wc.lpfnWndProc = proc_handle_event;
+    wc.lpfnWndProc = win_handle_event;
     wc.lpszClassName = "_ZBar Class";
     wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wc.hCursor = CreateCursor(hmod, 0, 0, 1, 1, and_mask, xor_mask);
@@ -467,120 +260,52 @@ static inline ATOM proc_register_class (HINSTANCE hmod)
     return(RegisterClassEx(&wc));
 }
 
-static inline int proc_open (zbar_processor_t *proc,
-                             unsigned width,
-                             unsigned height)
-{
-    processor_state_t *state = proc->state;
-    HMODULE hmod = NULL;
-    if(!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                          GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                          (void*)_zbar_processor_open, (HINSTANCE*)&hmod)) {
-        proc->err.errnum = GetLastError();
-        return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
-                           "failed to obtain module handle"));
-    }
-
-    ATOM wca = proc_register_class(hmod);
-    if(!wca) {
-        proc->err.errnum = GetLastError();
-        return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
-                           "failed to register window class"));
-    }
-
-    RECT r = { 0, 0, width, height };
-    AdjustWindowRectEx(&r, WIN_STYLE, 0, EXT_STYLE);
-    state->hwnd = CreateWindowEx(EXT_STYLE, (LPCTSTR)(long)wca,
-                                 "ZBar", WIN_STYLE,
-                                 CW_USEDEFAULT, CW_USEDEFAULT,
-                                 r.right - r.left, r.bottom - r.top,
-                                 NULL, NULL, hmod, proc);
-
-    if(!state->hwnd) {
-        proc->err.errnum = GetLastError();
-        return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
-                           "failed to open window"));
-    }
-    return(0);
-}
-
-static DWORD WINAPI proc_input_thread (void *arg)
-{
-    zbar_processor_t *proc = arg;
-    processor_state_t *state = proc->state;
-    thread_state_t *tstate = &state->input_thread;
-    state->input = 0;
-
-    int rc = proc_open(proc, state->width, state->height);
-    if(rc) {
-        SetEvent(tstate->stopped);
-        return(-1);
-    }
-
-    EnterCriticalSection(&state->mutex);
-    SetEvent(tstate->started);
-
-    while(!rc && tstate->running) {
-        LeaveCriticalSection(&state->mutex);
-
-        rc = MsgWaitForMultipleObjects(1, &tstate->activity, 0,
-                                       INFINITE, QS_ALLINPUT);
-        if(rc == 1)
-            rc = proc_handle_events(proc);
-
-        EnterCriticalSection(&state->mutex);
-    }
-    LeaveCriticalSection(&state->mutex);
-
-    if(state->hwnd) {
-        DestroyWindow(state->hwnd);
-        state->hwnd = proc->display = NULL;
-    }
-
-    SetEvent(tstate->stopped);
-    return(0);
-}
-
-
 int _zbar_processor_open (zbar_processor_t *proc,
                           char *title,
                           unsigned width,
                           unsigned height)
 {
-    processor_state_t *state = proc->state;
-    state->width = width;
-    state->height = height;
-    return(proc_thread_start(proc, &state->input_thread,
-                             proc_input_thread));
+    HMODULE hmod = NULL;
+    if(!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                          GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                          (void*)_zbar_processor_open, (HINSTANCE*)&hmod))
+        return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
+                           "failed to obtain module handle"));
+
+    ATOM wca = win_register_class(hmod);
+    if(!wca)
+        return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
+                           "failed to register window class"));
+
+    RECT r = { 0, 0, width, height };
+    AdjustWindowRectEx(&r, WIN_STYLE, 0, EXT_STYLE);
+    proc->display = CreateWindowEx(EXT_STYLE, (LPCTSTR)(long)wca,
+                                   "ZBar", WIN_STYLE,
+                                   CW_USEDEFAULT, CW_USEDEFAULT,
+                                   r.right - r.left, r.bottom - r.top,
+                                   NULL, NULL, hmod, proc);
+
+    if(!proc->display)
+        return(err_capture(proc, SEV_ERROR, ZBAR_ERR_WINAPI, __func__,
+                           "failed to open window"));
+    return(0);
 }
 
 int _zbar_processor_close (zbar_processor_t *proc)
 {
-    processor_state_t *state = proc->state;
-    EnterCriticalSection(&state->mutex);
-    int rc = proc_thread_stop(proc->state, &proc->state->input_thread);
-    LeaveCriticalSection(&state->mutex);
-    return(rc);
+    if(proc->display) {
+        DestroyWindow(proc->display);
+        proc->display = NULL;
+    }
+    return(0);
 }
 
 int _zbar_processor_set_visible (zbar_processor_t *proc,
                                  int visible)
 {
-    processor_state_t *state = proc->state;
-    ShowWindow(state->hwnd, (visible) ? SW_SHOWNORMAL : SW_HIDE);
+    ShowWindow(proc->display, (visible) ? SW_SHOWNORMAL : SW_HIDE);
     if(visible)
-        InvalidateRect(state->hwnd, NULL, 0);
-    else {
-        EnterCriticalSection(&state->mutex);
-        if(!(proc->events & EVENT_INPUT)) {
-            proc->input = err_capture(proc, SEV_WARNING, ZBAR_ERR_CLOSED,
-                                      __func__, "user closed display window");
-            proc->events |= EVENT_INPUT;
-        }
-        proc_notify(proc);
-        LeaveCriticalSection(&state->mutex);
-    }
-    proc->visible = (visible != 0);
+        InvalidateRect(proc->display, NULL, 0);
     /* no error conditions */
     return(0);
 }
@@ -590,12 +315,9 @@ int _zbar_processor_set_size (zbar_processor_t *proc,
                               unsigned height)
 {
     RECT r = { 0, 0, width, height };
-    processor_state_t *state = proc->state;
-    int rc = AdjustWindowRectEx(&r, GetWindowLong(state->hwnd, GWL_STYLE),
-                                0, GetWindowLong(state->hwnd, GWL_EXSTYLE));
-    zprintf(5, "%dx%d %ld,%ld-%ld,%ld (%d)\n", width, height,
-            r.left, r.top, r.right, r.bottom, rc);
-    if(!SetWindowPos(state->hwnd, NULL,
+    AdjustWindowRectEx(&r, GetWindowLong(proc->display, GWL_STYLE),
+                       0, GetWindowLong(proc->display, GWL_EXSTYLE));
+    if(!SetWindowPos(proc->display, NULL,
                      0, 0, r.right - r.left, r.bottom - r.top,
                      SWP_NOACTIVATE | SWP_NOMOVE |
                      SWP_NOZORDER | SWP_NOREPOSITION))
@@ -606,15 +328,8 @@ int _zbar_processor_set_size (zbar_processor_t *proc,
 
 int _zbar_processor_invalidate (zbar_processor_t *proc)
 {
-    processor_state_t *state = proc->state;
-    if(!InvalidateRect(state->hwnd, NULL, 0))
+    if(!InvalidateRect(proc->display, NULL, 0))
         return(-1/*FIXME*/);
 
-    return(0);
-}
-
-int _zbar_processor_enable (zbar_processor_t *proc,
-                            int active)
-{
     return(0);
 }

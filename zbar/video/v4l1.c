@@ -46,6 +46,8 @@
 #include "video.h"
 #include "image.h"
 
+extern int _zbar_v4l2_probe(zbar_video_t*);
+
 typedef struct v4l1_format_s {
     uint32_t format;
     uint8_t bpp;
@@ -83,14 +85,7 @@ static const v4l1_format_t v4l1_formats[17] = {
 static int v4l1_nq (zbar_video_t *vdo,
                     zbar_image_t *img)
 {
-    /* v4l1 maintains queued buffers in order */
-    img->next = NULL;
-    if(vdo->nq_image)
-        vdo->nq_image->next = img;
-    vdo->nq_image = img;
-    if(!vdo->dq_image)
-        vdo->dq_image = img;
-    if(video_unlock(vdo))
+    if(video_nq_image(vdo, img))
         return(-1);
 
     if(vdo->iomode != VIDEO_MMAP)
@@ -110,35 +105,20 @@ static int v4l1_nq (zbar_video_t *vdo,
 
 static zbar_image_t *v4l1_dq (zbar_video_t *vdo)
 {
-    zbar_image_t *img = NULL;
-    img = vdo->dq_image;
-    if(img) {
-        vdo->dq_image = img->next;
-        img->next = NULL;
-    }
-    if(video_unlock(vdo))
+    video_iomode_t iomode = vdo->iomode;
+    int fd = vdo->fd;
+    zbar_image_t *img = video_dq_image(vdo);
+    if(!img)
         return(NULL);
 
-    if(!img) {
-        /* FIXME block until available? */
-        err_capture(vdo, SEV_ERROR, ZBAR_ERR_BUSY, __func__,
-                    "all allocated video images busy");
-        return(NULL);
-    }
-
-    if(vdo->iomode == VIDEO_MMAP) {
+    if(iomode == VIDEO_MMAP) {
         int frame = img->srcidx;
-        if(ioctl(vdo->fd, VIDIOCSYNC, &frame) < 0) {
-            err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
-                        "capturing video image (VIDIOCSYNC)");
+        if(ioctl(fd, VIDIOCSYNC, &frame) < 0)
             return(NULL);
-        }
     }
-    else if(read(vdo->fd, (void*)img->data, img->datalen) != img->datalen) {
-        err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
-                    "reading video image");
+    else if(read(fd, (void*)img->data, img->datalen) != img->datalen)
         return(NULL);
-    }
+
     return(img);
 }
 
@@ -187,22 +167,12 @@ static int v4l1_mmap_buffers (zbar_video_t *vdo)
 
 static int v4l1_start (zbar_video_t *vdo)
 {
-    /* enqueue all buffers */
-    int i;
-    for(i = 0; i < vdo->num_images; i++)
-        if(vdo->nq(vdo, vdo->images[i]) ||
-           ((i + 1 < vdo->num_images) && video_lock(vdo)))
-            return(-1);
     return(0);
 }
 
 static int v4l1_stop (zbar_video_t *vdo)
 {
-    int i;
-    for(i = 0; i < vdo->num_images; i++)
-        vdo->images[i]->next = NULL;
-    vdo->nq_image = vdo->dq_image = NULL;
-    return(video_unlock(vdo));
+    return(0);
 }
 
 static inline int v4l1_set_format (zbar_video_t *vdo,
@@ -221,7 +191,7 @@ static inline int v4l1_set_format (zbar_video_t *vdo,
             break;
     if(!fmt || ifmt >= VIDEO_PALETTE_YUV410P)
         return(err_capture_int(vdo, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
-                               "invalid v4l1 format: %08x", fmt));
+                               "invalid v4l1 format: %x", fmt));
 
     vpic.palette = ifmt;
     vpic.depth = v4l1_formats[ifmt].bpp;
@@ -275,6 +245,12 @@ static int v4l1_cleanup (zbar_video_t *vdo)
         /* FIXME reset image */
     }
 #endif
+
+    /* close open device */
+    if(vdo->fd >= 0) {
+        close(vdo->fd);
+        vdo->fd = -1;
+    }
     return(0);
 }
 
@@ -435,29 +411,6 @@ static int _zbar_v4l1_probe (zbar_video_t *vdo)
 int _zbar_video_open (zbar_video_t *vdo,
                       const char *dev)
 {
-    /* close open device */
-    if(vdo->fd >= 0) {
-        (void)video_lock(vdo);
-        if(vdo->active) {
-            vdo->active = 0;
-            vdo->stop(vdo);
-        }
-        if(vdo->cleanup)
-            vdo->cleanup(vdo);
-        
-        close(vdo->fd);
-        zprintf(1, "closed camera fd=%d\n", vdo->fd);
-        vdo->fd = -1;
-        vdo->intf = VIDEO_INVALID;
-        (void)video_unlock(vdo);
-    }
-    if(!dev)
-        return(0);
-
-    if(!dev[0])
-        /* default linux device */
-        dev = "/dev/video0";
-
     vdo->fd = open(dev, O_RDWR);
     if(vdo->fd < 0)
         return(err_capture_str(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
@@ -473,6 +426,7 @@ int _zbar_video_open (zbar_video_t *vdo,
     zprintf(1, "WARNING: not compiled with v4l2 support, trying v4l1\n");
 #endif
         rc = _zbar_v4l1_probe(vdo);
+
     if(rc && vdo->fd >= 0) {
         close(vdo->fd);
         vdo->fd = -1;

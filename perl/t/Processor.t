@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 19;
+use Test::More tests => 20;
 
 #########################
 
@@ -63,8 +63,12 @@ $proc->set_data_handler(sub {
 
     #########################
 
+    ok($sym->get_quality() > 0, 'quality');
+
+    #########################
+
     my @loc = $sym->get_loc();
-    is(scalar(@loc), 4, 'location size');
+    ok(scalar(@loc) >= 4, 'location size');
 
     # structure checked by Image.t
 

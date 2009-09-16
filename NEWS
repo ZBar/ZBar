@@ -1,5 +1,13 @@
 ZBar Barcode Reader
 
+version 0.9 (2009-08-31):
+  Introducing ZBar for Windows!  So far we only have straight ports of
+  the command line applications, but work on a cross-platform GUI has
+  already begun.  This release also has a few scanner/decoder
+  enhancements and fixes several bugs.  Many internal changes are
+  represented, so please open a support request if you experience any
+  problems.
+
 version 0.8 (2009-06-05):
   This is a bugfix release just to clean up a few issues found in the
   last release.  Existing users are encouraged to upgrade to pick up
