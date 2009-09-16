@@ -89,6 +89,7 @@ struct zbar_image_scanner_s {
     /* user result callback */
     zbar_image_data_handler_t *handler;
 
+    unsigned long time;         /* scan start time */
     zbar_image_t *img;          /* currently scanning image *root* */
     int dx, dy;                 /* current scan direction */
     int nsyms;                  /* total cached symbols */
@@ -154,6 +155,9 @@ _zbar_image_scanner_alloc_sym (zbar_image_scanner_t *iscn,
     sym->type = type;
     sym->quality = 1;
     sym->datalen = datalen++;
+    sym->npts = 0;
+    sym->cache_count = 0;
+    sym->time = iscn->time;
     if(sym->data_alloc < datalen) {
         if(sym->data)
             free(sym->data);
@@ -187,6 +191,39 @@ static inline zbar_symbol_t *cache_lookup (zbar_image_scanner_t *iscn,
             entry = &(*entry)->next;
     }
     return(*entry);
+}
+
+inline void _zbar_image_scanner_cache_sym (zbar_image_scanner_t *iscn,
+                                           zbar_symbol_t *sym)
+{
+    if(iscn->enable_cache) {
+        zbar_symbol_t *entry = cache_lookup(iscn, sym);
+        if(!entry) {
+            /* FIXME reuse sym */
+            entry = _zbar_image_scanner_alloc_sym(iscn, sym->type,
+                                                  sym->data, sym->datalen);
+            entry->time = sym->time - CACHE_HYSTERESIS;
+            entry->cache_count = -CACHE_CONSISTENCY;
+            /* add to cache */
+            entry->next = iscn->cache;
+            iscn->cache = entry;
+        }
+
+        /* consistency check and hysteresis */
+        uint32_t age = sym->time - entry->time;
+        entry->time = sym->time;
+        int near_thresh = (age < CACHE_PROXIMITY);
+        int far_thresh = (age >= CACHE_HYSTERESIS);
+        int dup = (entry->cache_count >= 0);
+        if((!dup && !near_thresh) || far_thresh)
+            entry->cache_count = -CACHE_CONSISTENCY;
+        else if(dup || near_thresh)
+            entry->cache_count++;
+
+        sym->cache_count = entry->cache_count;
+    }
+    else
+        sym->cache_count = 0;
 }
 
 #ifdef ENABLE_QRCODE
@@ -294,7 +331,7 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
     const char *data = zbar_decoder_get_data(iscn->dcode);
     unsigned datalen = zbar_decoder_get_data_length(iscn->dcode);
 
-    /* FIXME deprecate - instead check (x, y) inside existing polygon */
+    /* FIXME need better search */
     zbar_symbol_t *sym;
     for(sym = iscn->img->syms; sym; sym = sym->next)
         if(sym->type == type &&
@@ -310,57 +347,14 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
 
     sym = _zbar_image_scanner_alloc_sym(iscn, type, data, datalen);
 
-    /* attach to current root image */
-    _zbar_image_attach_symbol(iscn->img, sym);
-
-    /* timestamp symbol */
-#if _POSIX_TIMERS > 0
-    struct timespec abstime;
-    clock_gettime(CLOCK_REALTIME, &abstime);
-    sym->time = (abstime.tv_sec * 1000) + ((abstime.tv_nsec / 500000) + 1) / 2;
-#else
-    struct timeval abstime;
-    gettimeofday(&abstime, NULL);
-    sym->time = (abstime.tv_sec * 1000) + ((abstime.tv_usec / 500) + 1) / 2;
-#endif
-
     /* initialize first point */
-    sym->npts = 0;
     if(TEST_CFG(iscn, ZBAR_CFG_POSITION))
         sym_add_point(sym, x, y);
 
-    if(iscn->enable_cache) {
-        zbar_symbol_t *entry = cache_lookup(iscn, sym);
-        if(!entry) {
-            /* FIXME reuse sym */
-            entry = _zbar_image_scanner_alloc_sym(iscn, sym->type,
-                                                  sym->data, sym->datalen);
-            entry->time = sym->time - CACHE_HYSTERESIS;
-            entry->cache_count = -CACHE_CONSISTENCY;
-            /* add to cache */
-            entry->next = iscn->cache;
-            iscn->cache = entry;
-        }
+    /* attach to current root image */
+    _zbar_image_attach_symbol(iscn->img, sym);
 
-        /* consistency check and hysteresis */
-        uint32_t age = sym->time - entry->time;
-        entry->time = sym->time;
-        int near_thresh = (age < CACHE_PROXIMITY);
-        int far_thresh = (age >= CACHE_HYSTERESIS);
-        int dup = (entry->cache_count >= 0);
-        if((!dup && !near_thresh) || far_thresh)
-            entry->cache_count = -CACHE_CONSISTENCY;
-        else if(dup || near_thresh)
-            entry->cache_count++;
-
-        sym->cache_count = entry->cache_count;
-    }
-    else
-        sym->cache_count = 0;
-
-    /* FIXME option to only report count == 0 */
-    if(iscn->handler)
-        iscn->handler(iscn->img, iscn->userdata);
+    _zbar_image_scanner_cache_sym(iscn, sym);
 }
 
 zbar_image_scanner_t *zbar_image_scanner_create ()
@@ -507,6 +501,19 @@ const char svg_head[] =
 int zbar_scan_image (zbar_image_scanner_t *iscn,
                      zbar_image_t *img)
 {
+    /* timestamp image
+     * FIXME prefer video timestamp
+     */
+#if _POSIX_TIMERS > 0
+    struct timespec abstime;
+    clock_gettime(CLOCK_REALTIME, &abstime);
+    iscn->time = (abstime.tv_sec * 1000) + ((abstime.tv_nsec / 500000) + 1) / 2;
+#else
+    struct timeval abstime;
+    gettimeofday(&abstime, NULL);
+    iscn->time = (abstime.tv_sec * 1000) + ((abstime.tv_usec / 500) + 1) / 2;
+#endif
+
 #ifdef ENABLE_QRCODE
     qr_reader_reset(iscn->qr);
 #endif
@@ -634,6 +641,10 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
                 symp = &sym->next;
         }
     }
+
+    /* FIXME option to only report count == 0 */
+    if(img->nsyms && iscn->handler)
+        iscn->handler(iscn->img, iscn->userdata);
 
     return(img->nsyms);
 }
