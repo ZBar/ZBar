@@ -56,7 +56,7 @@ typedef pthread_t zbar_thread_id_t;
 # undef ZTHREAD
 
 typedef void zbar_thread_proc_t;
-typedef int zbar_thread_id_t[0];
+typedef int zbar_thread_id_t;
 
 #endif
 
@@ -112,12 +112,16 @@ static inline int _zbar_thread_is_self (zbar_thread_id_t tid)
 #else
 
 # define _zbar_thread_start(...) -1
+# define _zbar_thread_stop(...) 0
+# define _zbar_thread_self(...) 0
 # define _zbar_thread_is_self(...) 1
 
 #endif
 
+#ifdef HAVE_THREADS
 extern int _zbar_thread_start(zbar_thread_t*, zbar_thread_proc_t*,
                               void*, zbar_mutex_t*);
 extern int _zbar_thread_stop(zbar_thread_t*, zbar_mutex_t*);
+#endif
 
 #endif

@@ -29,10 +29,6 @@
 # include <poll.h>
 #endif
 
-#ifdef HAVE_LIBPTHREAD
-# include <pthread.h>
-#endif
-
 #ifdef HAVE_POLL_H
 typedef int (poll_handler_t)(zbar_processor_t*, int);
 
@@ -50,12 +46,6 @@ struct processor_state_s {
     poll_desc_t thr_polling;            /* thread copy */
 #endif
     int kick_fds[2];                    /* poll kicker */
-
-    int lock_level;                     /* API serialization lock */
-    pthread_t lock_owner;               /* lock owner */
-    pthread_mutex_t mutex;              /* lock mutex */
-    pthread_cond_t cond;                /* lock notification condition */
-    pthread_cond_t event;
 };
 
 

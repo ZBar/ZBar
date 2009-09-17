@@ -31,7 +31,7 @@ zbar_window_t *zbar_window_create ()
         return(NULL);
     err_init(&w->err, ZBAR_MOD_WINDOW);
     w->overlay = 1;
-    _zbar_mutex_init(&w->imglock);
+    (void)_zbar_mutex_init(&w->imglock);
     return(w);
 }
 

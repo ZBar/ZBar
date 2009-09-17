@@ -37,20 +37,19 @@
 typedef HANDLE zbar_event_t;
 
 
-#elif defined(HAVE_LIBPTHREAD)
+#else
 
-# include <pthread.h>
+# ifdef HAVE_LIBPTHREAD
+#  include <pthread.h>
+# endif
 
 typedef struct zbar_event_s {
     int state;
+# ifdef HAVE_LIBPTHREAD
     pthread_cond_t cond;
+# endif
     int pollfd;
 } zbar_event_t;
-
-
-#else
-
-typedef int zbar_event_t[0];
 
 #endif
 

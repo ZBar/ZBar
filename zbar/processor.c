@@ -423,10 +423,9 @@ void zbar_processor_set_userdata (zbar_processor_t *proc,
 
 void *zbar_processor_get_userdata (const zbar_processor_t *proc)
 {
-    zbar_processor_t *p = (zbar_processor_t*)proc;
-    _zbar_mutex_lock(&p->mutex);
+    _zbar_mutex_lock(&((zbar_processor_t*)proc)->mutex);
     void *userdata = (void*)proc->userdata;
-    _zbar_mutex_unlock(&p->mutex);
+    _zbar_mutex_unlock(&((zbar_processor_t*)proc)->mutex);
     return(userdata);
 }
 

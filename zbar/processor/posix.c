@@ -27,11 +27,25 @@
 #include <assert.h>
 #include <errno.h>
 
+
+static inline int proc_sleep (int timeout)
+{
+    assert(timeout > 0);
+    struct timespec sleepns, remns;
+    sleepns.tv_sec = timeout / 1000;
+    sleepns.tv_nsec = (timeout % 1000) * 1000000;
+    while(nanosleep(&sleepns, &remns) && errno == EINTR)
+        sleepns = remns;
+    return(1);
+}
+
 int _zbar_event_init (zbar_event_t *event)
 {
     event->state = 0;
     event->pollfd = -1;
+#ifdef HAVE_LIBPTHREAD
     pthread_cond_init(&event->cond, NULL);
+#endif
     return(0);
 }
 
@@ -39,20 +53,26 @@ void _zbar_event_destroy (zbar_event_t *event)
 {
     event->state = -1;
     event->pollfd = -1;
+#ifdef HAVE_LIBPTHREAD
     pthread_cond_destroy(&event->cond);
+#endif
 }
 
 /* lock must be held */
 void _zbar_event_trigger (zbar_event_t *event)
 {
     event->state = 1;
+#ifdef HAVE_LIBPTHREAD
     pthread_cond_broadcast(&event->cond);
+#endif
     if(event->pollfd >= 0) {
         unsigned i = 0; /* unused */
         write(event->pollfd, &i, sizeof(unsigned));
         event->pollfd = -1;
     }
 }
+
+#ifdef HAVE_LIBPTHREAD
 
 /* lock must be held */
 int _zbar_event_wait (zbar_event_t *event,
@@ -130,6 +150,33 @@ int _zbar_thread_stop (zbar_thread_t *thr,
     return(0);
 }
 
+#else
+
+int _zbar_event_wait (zbar_event_t *event,
+                      zbar_mutex_t *lock,
+                      zbar_timer_t *timeout)
+{
+    int rc = !event->state;
+    if(rc) {
+        if(!timeout)
+            /* FIXME was that error or hang? */
+            return(-1);
+
+        int sleep = _zbar_timer_check(timeout);
+        if(sleep)
+            proc_sleep(sleep);
+    }
+
+    rc = !event->state;
+
+    /* consume/reset event */
+    event->state = 0;
+
+    return(rc);
+}
+
+#endif
+
 /* used by poll interface.  lock is already held */
 static int proc_video_handler (zbar_processor_t *proc,
                                int i)
@@ -203,17 +250,6 @@ static inline int proc_poll_inputs (zbar_processor_t *proc,
     return(1);
 }
 
-static inline int proc_sleep (int timeout)
-{
-    assert(timeout > 0);
-    struct timespec sleepns, remns;
-    sleepns.tv_sec = timeout / 1000;
-    sleepns.tv_nsec = (timeout % 1000) * 1000000;
-    while(nanosleep(&sleepns, &remns) && errno == EINTR)
-        sleepns = remns;
-    return(1);
-}
-
 int _zbar_processor_input_wait (zbar_processor_t *proc,
                                 zbar_event_t *event,
                                 int timeout)
@@ -282,8 +318,8 @@ int _zbar_processor_cleanup (zbar_processor_t *proc)
 
 int _zbar_processor_enable (zbar_processor_t *proc)
 {
-    int vid_fd;
-    if(proc->threaded && ((vid_fd = zbar_video_get_fd(proc->video)) >= 0)) {
+    int vid_fd = zbar_video_get_fd(proc->video);
+    if(vid_fd >= 0) {
         if(proc->streaming)
             add_poll(proc, vid_fd, proc_video_handler);
         else

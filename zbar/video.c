@@ -63,7 +63,7 @@ zbar_video_t *zbar_video_create ()
     err_init(&vdo->err, ZBAR_MOD_VIDEO);
     vdo->fd = -1;
 
-    _zbar_mutex_init(&vdo->qlock);
+    (void)_zbar_mutex_init(&vdo->qlock);
 
     /* pre-allocate images */
     vdo->num_images = ZBAR_VIDEO_IMAGES_MAX;

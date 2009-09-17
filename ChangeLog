@@ -1,3 +1,6 @@
+current:
+  * fix broken builds with --disable-pthread
+
 version 0.9:
   * hotfix configure check for Wand as well as MagickWand (bug #2848437)
   * hotfix trim extraneous MagickWand calls (bug #2848445)
