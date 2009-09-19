@@ -65,6 +65,16 @@ int zbar_window_attach (zbar_window_t *w,
     return(_zbar_window_attach(w, display, drawable));
 }
 
+static void window_outline_symbol (zbar_window_t *w,
+                                   uint32_t color,
+                                   const zbar_symbol_t *sym)
+{
+    const zbar_symbol_t *s;
+    for(s = sym->syms; s; s = s->next)
+        window_outline_symbol(w, 1, s);
+    _zbar_window_draw_polygon(w, color, sym->pts, sym->npts);
+}
+
 static inline int window_draw_overlay (zbar_window_t *w)
 {
     /* FIXME TBD
@@ -76,10 +86,14 @@ static inline int window_draw_overlay (zbar_window_t *w)
         /* FIXME outline each symbol */
         const zbar_symbol_t *sym = zbar_image_first_symbol(w->image);
         for(; sym; sym = sym->next) {
-            int i;
-            for(i = 0; i < sym->npts; i++) {
-                uint32_t color = ((sym->cache_count < 0) ? 4 : 2);
-                _zbar_window_draw_marker(w, color, &sym->pts[i]);
+            uint32_t color = ((sym->cache_count < 0) ? 4 : 2);
+            if(sym->type == ZBAR_QRCODE)
+                window_outline_symbol(w, color, sym);
+            else {
+                /* FIXME linear bbox broken */
+                int i;
+                for(i = 0; i < sym->npts; i++)
+                    _zbar_window_draw_marker(w, color, &sym->pts[i]);
             }
         }
     }

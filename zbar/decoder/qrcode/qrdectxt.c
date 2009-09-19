@@ -9,6 +9,8 @@
 #include <iconv.h>
 #include "decoder/qrcode.h"
 #include "util.h"
+#include "image.h"
+#include "error.h"
 
 static int text_is_ascii(const unsigned char *_text,int _len){
   int i;
@@ -36,8 +38,22 @@ static void enc_list_mtf(iconv_t _enc_list[3],iconv_t _enc){
   }
 }
 
+/* FIXME API cleanup */
+zbar_symbol_t *_zbar_image_scanner_alloc_sym(zbar_image_scanner_t *iscn,
+                                             zbar_symbol_type_t type,
+                                             const char *data,
+                                             int datalen);
+
+void _zbar_image_scanner_cache_sym(zbar_image_scanner_t *iscn,
+                                   zbar_symbol_t *sym);
+
+void _zbar_image_scanner_recycle_syms(zbar_image_scanner_t*,
+                                      zbar_symbol_t**);
+
 int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
- char ***_text,int _allow_partial_sa){
+                                   zbar_image_scanner_t *iscn,
+                                   zbar_image_t *img)
+{
   iconv_t              sjis_cd;
   iconv_t              utf8_cd;
   iconv_t              latin1_cd;
@@ -88,16 +104,13 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
           mark[j]=1;
         }
       }
-      if(!_allow_partial_sa){
-        for(j=0;j<qrdata[i].sa_size;j++)if(sa[j]<0)break;
-        if(j<qrdata[i].sa_size)continue;
-      }
       /*TODO: If the S-A group is complete, check the parity.*/
     }
     else{
       sa[0]=i;
       sa_size=1;
     }
+
     sa_ctext=0;
     fnc1=0;
     /*Step 1: Detect FNC1 markers and estimate the required buffer size.*/
@@ -125,6 +138,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
         }
       }
     }
+
     /*Step 2: Convert the entries.*/
     sa_text=(char *)malloc((sa_ctext+1)*sizeof(*sa_text));
     sa_ntext=0;
@@ -134,25 +148,33 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
     enc_list[2]=utf8_cd;
     eci_cd=(iconv_t)-1;
     err=0;
-    /*Skip any initial missing segments.*/
-    for(j=0;sa[j]<0;j++);
-    for(;j<sa_size&&!err;j++){
+    zbar_symbol_t *syms = NULL, **sym = &syms;
+    for(j = 0; j < sa_size && !err; j++, sym = &(*sym)->next) {
+      *sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, NULL, sa_ntext);
       if(sa[j]<0){
+        /* generic placeholder for unfinished results */
+        (*sym)->type = ZBAR_PARTIAL;
+
         /*Skip all contiguous missing segments.*/
         for(j++;j<sa_size&&sa[j]<0;j++);
         /*If there aren't any more, stop.*/
         if(j>=sa_size)break;
-        /*Otherwise save off the current string and allocate the next one.*/
+
+        /* mark break in data */
         sa_text[sa_ntext++]='\0';
-        if(sa_ctext+1>sa_ntext){
-          sa_text=(char *)realloc(sa_text,sa_ntext*sizeof(*sa_text));
-        }
-        text[ntext++]=sa_text;
-        sa_ctext-=sa_ntext;
-        sa_ntext=0;
-        sa_text=(char *)malloc((sa_ctext+1)*sizeof(*sa_text));
+
+        /* advance to next symbol */
+        *sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, NULL, sa_ntext);
+        sym = &(*sym)->next;
       }
+
       qrdataj=qrdata+sa[j];
+      /* expose bounding box */
+      sym_add_point(*sym, qrdataj->bbox[0][0], qrdataj->bbox[0][1]);
+      sym_add_point(*sym, qrdataj->bbox[2][0], qrdataj->bbox[2][1]);
+      sym_add_point(*sym, qrdataj->bbox[3][0], qrdataj->bbox[3][1]);
+      sym_add_point(*sym, qrdataj->bbox[1][0], qrdataj->bbox[1][1]);
+
       for(k=0;k<qrdataj->nentries&&!err;k++){
         size_t              inleft;
         size_t              outleft;
@@ -321,25 +343,59 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
       if(sa_ctext+1>sa_ntext){
         sa_text=(char *)realloc(sa_text,sa_ntext*sizeof(*sa_text));
       }
-      text[ntext++]=sa_text;
+
+      zbar_symbol_t *sa_sym;
+      if(sa_size > 1) {
+          /* create "virtual" container symbol for composite result */
+          sa_sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, NULL, 0);
+          sa_sym->syms = syms;
+      }
+      else
+          sa_sym = syms;
+      sa_sym->data = sa_text;
+      sa_sym->data_alloc = sa_ntext;
+      sa_sym->datalen = sa_ntext - 1;
+
+      /* cheap out w/axis aligned bbox for now */
+      int xmin = img->width, xmax = -2;
+      int ymin = img->height, ymax = -2;
+
+      /* fixup data references */
+      for(syms = sa_sym->syms; syms; syms = syms->next) {
+          if(syms->type == ZBAR_PARTIAL)
+              sa_sym->type = ZBAR_PARTIAL;
+          else
+              for(j = 0; j < syms->npts; j++) {
+                  int u = syms->pts[j].x;
+                  if(xmin >= u) xmin = u - 1;
+                  if(xmax <= u) xmax = u + 1;
+                  u = syms->pts[j].y;
+                  if(ymin >= u) ymin = u - 1;
+                  if(ymax <= u) ymax = u + 1;
+              }
+          syms->data = sa_text + syms->datalen;
+          int next = (syms->next) ? syms->next->datalen : sa_ntext;
+          assert(next > syms->datalen);
+          syms->datalen = next - syms->datalen - 1;
+      }
+      if(sa_sym->syms && xmax >= -1) {
+          sym_add_point(sa_sym, xmin, ymin);
+          sym_add_point(sa_sym, xmin, ymax);
+          sym_add_point(sa_sym, xmax, ymax);
+          sym_add_point(sa_sym, xmax, ymin);
+      }
+
+      _zbar_image_attach_symbol(img, sa_sym);
+      _zbar_image_scanner_cache_sym(iscn, sa_sym);
     }
-    else free(sa_text);
+    else {
+        _zbar_image_scanner_recycle_syms(iscn, &syms);
+        free(sa_text);
+    }
   }
   if(utf8_cd!=(iconv_t)-1)iconv_close(utf8_cd);
   if(sjis_cd!=(iconv_t)-1)iconv_close(sjis_cd);
   if(latin1_cd!=(iconv_t)-1)iconv_close(latin1_cd);
   free(mark);
-  if(ntext<=0){
-    free(text);
-    text=NULL;
-  }
-  else if(ntext<nqrdata)text=(char **)realloc(text,ntext*sizeof(*text));
-  *_text=text;
   return ntext;
-}
-
-void qr_text_list_free(char **_text,int _ntext){
-  int i;
-  for(i=0;i<_ntext;i++)free(_text[i]);
-  free(_text);
 }

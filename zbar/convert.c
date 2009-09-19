@@ -347,9 +347,11 @@ static void convert_copy (zbar_image_t *dst,
         dst->data = src->data;
         dst->datalen = src->datalen;
         dst->cleanup = cleanup_ref;
-        dst->next = (zbar_image_t*)src;
+#if 0
         zbar_image_t *s = (zbar_image_t*)src;
+        dst->next = s;
         _zbar_image_refcnt(s, 1);
+#endif
     }
     else
         /* NB only for GRAY/YUV_PLANAR formats */
@@ -967,6 +969,9 @@ zbar_image_t *zbar_image_convert_resize (const zbar_image_t *src,
     dst->format = fmt;
     dst->width = width;
     dst->height = height;
+    zbar_image_t *s = (zbar_image_t*)src;
+    dst->next = s;
+    _zbar_image_refcnt(s, 1);
     if(src->format == fmt &&
        src->width == width &&
        src->height == height) {

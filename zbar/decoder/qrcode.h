@@ -201,35 +201,23 @@ void qr_code_data_list_init(qr_code_data_list *_qrlist);
 /*Free a list of decoded QR code data returned by qr_reader_locate().*/
 void qr_code_data_list_clear(qr_code_data_list *_qrlist);
 
-/*Extract text from a list of QR codes.
-  All text is returned in UTF-8.
-  If _allow_partial_sa is non-zero, then any structured-append group that does
-   not have all of its members is decoded as separate strings for each
-   contiguous group of codes which are present; otherwise the whole group is
-   ignored.
+/*Extract symbol data from a list of QR codes and attach to the image.
+  All text is converted to UTF-8.
+  Any structured-append group that does not have all of its members is decoded
+   as ZBAR_PARTIAL with ZBAR_PARTIAL components for the discontinuities.
   Note that isolated members of a structured-append group may be decoded with
    the wrong character set, since the correct setting cannot be propagated
    between codes.
-  Return: The number of strings which were successfully extracted from the
+  Return: The number of symbols which were successfully extracted from the
    codes; this will be at most the number of codes.*/
 int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
- char ***_text,int _allow_partial_sa);
-
+                                   zbar_image_scanner_t *iscn,
+                                   zbar_image_t *img);
 
 
 qr_reader *qr_reader_alloc(void);
 void qr_reader_free(qr_reader *_reader);
 void qr_reader_reset(qr_reader *reader);
-
-/*Locate all the QR codes in the given binary image.*/
-int qr_reader_locate(qr_reader *_reader,qr_code_data_list *_qrlist,
- const unsigned char *_img,int _width,int _height);
-/*Extract text from all QR codes in the given binary image.
-  All text is returned in UTF-8.*/
-int qr_reader_extract_text(qr_reader *_reader,const unsigned char *_img,
- int _width,int _height,char ***_text,int _allow_partial_sa);
-
-void qr_text_list_free(char **_text,int _ntext);
 
 /*TODO: Parse DoCoMo standard barcode data formats.
   See http://www.nttdocomo.co.jp/english/service/imode/make/content/barcode/function/application/

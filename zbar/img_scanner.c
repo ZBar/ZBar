@@ -103,29 +103,48 @@ struct zbar_image_scanner_s {
     int configs[NUM_SCN_CFGS];  /* int valued configurations */
 };
 
-static inline void recycle_syms (zbar_image_scanner_t *iscn,
-                                 zbar_image_t *img)
+void _zbar_image_scanner_recycle_syms (zbar_image_scanner_t *iscn,
+                                       zbar_symbol_t **symlist)
+{
+    zbar_symbol_t **symp = symlist;
+    zbar_symbol_t *sym;
+    while((sym = *symp))
+        if(_zbar_refcnt(&sym->refcnt, -1)) {
+            /* unlink referenced symbol */
+            *symp = sym->next;
+            sym->next = NULL;
+        }
+        else {
+            /* recycle unreferenced symbol */
+            if(sym->syms) {
+                /* FIXME retain parent ref for refd children */
+                zbar_symbol_t *s;
+                for(s = sym->syms; s; s = s->next) {
+                    s->data = NULL;
+                    s->datalen = s->data_alloc = 0;
+                }
+                /* recurse */
+                _zbar_image_scanner_recycle_syms(iscn, &sym->syms);
+            }
+            iscn->nsyms++;
+            symp = &sym->next;
+        }
+
+    if(symp != symlist) {
+        *symp = iscn->syms;
+        iscn->syms = *symlist;
+    }
+    *symlist = NULL;
+}
+
+static inline void recycle_image_syms (zbar_image_scanner_t *iscn,
+                                       zbar_image_t *img)
 {
     /* walk to root of clone tree */
     while(img) {
         img->nsyms = 0;
         /* recycle image symbols */
-        zbar_symbol_t **symp = &img->syms, *sym;
-        while((sym = *symp))
-            if(_zbar_refcnt(&sym->refcnt, -1)) {
-                *symp = sym->next;
-                sym->next = NULL;
-            }
-            else {
-                iscn->nsyms++;
-                symp = &sym->next;
-            }
-
-        if(symp != &img->syms) {
-            *symp = iscn->syms;
-            iscn->syms = img->syms;
-        }
-        img->syms = NULL;
+        _zbar_image_scanner_recycle_syms(iscn, &img->syms);
 
         /* save root */
         iscn->img = img;
@@ -143,6 +162,7 @@ _zbar_image_scanner_alloc_sym (zbar_image_scanner_t *iscn,
     zbar_symbol_t *sym = iscn->syms;
     if(sym) {
         iscn->syms = sym->next;
+        sym->next = NULL;
         assert(iscn->nsyms);
         iscn->nsyms--;
     }
@@ -154,18 +174,27 @@ _zbar_image_scanner_alloc_sym (zbar_image_scanner_t *iscn,
     /* save new symbol data */
     sym->type = type;
     sym->quality = 1;
-    sym->datalen = datalen++;
     sym->npts = 0;
     sym->cache_count = 0;
     sym->time = iscn->time;
-    if(sym->data_alloc < datalen) {
+    assert(!sym->syms);
+    if(data) {
+        sym->datalen = datalen++;
+        if(sym->data_alloc < datalen) {
+            if(sym->data)
+                free(sym->data);
+            sym->data_alloc = datalen;
+            sym->data = malloc(datalen);
+        }
+        memcpy(sym->data, data, datalen);
+    }
+    else {
         if(sym->data)
             free(sym->data);
-        sym->data_alloc = datalen;
-        sym->data = malloc(datalen);
+        sym->data = NULL;
+        sym->datalen = datalen;
+        sym->data_alloc = 0;
     }
-    memcpy(sym->data, data, datalen);
-
     return(sym);
 }
 
@@ -523,7 +552,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
        img->format != fourcc('G','R','E','Y'))
         return(-1);
 
-    recycle_syms(iscn, img);
+    recycle_image_syms(iscn, img);
 
     unsigned w = img->width;
     unsigned h = img->height;
@@ -615,13 +644,13 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
     }
     iscn->dy = 0;
 
+    img = iscn->img;
+    iscn->img = NULL;
+
 #ifdef ENABLE_QRCODE
     _zbar_qr_decode(iscn, iscn->qr, img);
 #endif
     dprintf(1, "</svg>\n");
-
-    img = iscn->img;
-    iscn->img = NULL;
 
     /* FIXME tmp hack to filter bad EAN results */
     if(img->nsyms && !iscn->enable_cache &&
@@ -644,7 +673,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 
     /* FIXME option to only report count == 0 */
     if(img->nsyms && iscn->handler)
-        iscn->handler(iscn->img, iscn->userdata);
+        iscn->handler(img, iscn->userdata);
 
     return(img->nsyms);
 }

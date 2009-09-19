@@ -284,6 +284,13 @@ extern int zbar_symbol_get_loc_y(const zbar_symbol_t *symbol,
  */
 extern const zbar_symbol_t *zbar_symbol_next(const zbar_symbol_t *symbol);
 
+/** iterate components of a composite result.
+ * @returns the first physical component symbol of a composite result
+ * @returns NULL if the symbol is already a physical symbol
+ */
+extern const zbar_symbol_t*
+zbar_symbol_first_component(const zbar_symbol_t *symbol);
+
 /** print XML symbol element representation to user result buffer.
  * @see http://zbar.sourceforge.net/2008/barcode.xsd for the schema.
  * @param symbol is the symbol to print

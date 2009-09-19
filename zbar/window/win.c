@@ -28,10 +28,20 @@
 int _zbar_window_vfw_init(zbar_window_t *w);
 int _zbar_window_dib_init(zbar_window_t *w);
 
+int _zbar_window_draw_polygon (zbar_window_t *w,
+                               uint32_t rgb,
+                               const point_t *pts,
+                               int npts)
+{
+    /* FIXME TBD */
+    return(-1);
+}
+
 int _zbar_window_draw_marker(zbar_window_t *w,
                              uint32_t rgb,
                              const point_t *p)
 {
+    /* FIXME TBD */
     return(-1);
 }
 

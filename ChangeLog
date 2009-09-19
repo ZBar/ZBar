@@ -1,4 +1,9 @@
 current:
+  * cleanup QR result integration
+    - add hierarchy to symbol results
+    - extract symbols during text decode, preserving position and structure
+    - outline QR symbols in window overlay
+    - tmp fix converted image result propagation
   * factor image scanner cache and apply to QR
     - fix image scanner handler called once per-image (vs every decode)
   * QZ and clustering fixes to QR integration

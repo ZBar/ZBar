@@ -42,7 +42,8 @@ struct zbar_symbol_s {
     point_t *pts;               /* list of points in location polygon */
 
     refcnt_t refcnt;            /* reference count */
-    zbar_symbol_t *next;        /* linked list of results */
+    zbar_symbol_t *next;        /* linked list of results (or siblings) */
+    zbar_symbol_t *syms;        /* first component of composite result */
     unsigned long time;         /* relative symbol capture time */
     int cache_count;            /* cache state */
     int quality;                /* relative symbol reliability metric */

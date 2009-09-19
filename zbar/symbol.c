@@ -115,6 +115,11 @@ const zbar_symbol_t *zbar_symbol_next (const zbar_symbol_t *sym)
     return((sym) ? sym->next : NULL);
 }
 
+const zbar_symbol_t *zbar_symbol_first_component (const zbar_symbol_t *sym)
+{
+    return((sym) ? sym->syms : NULL);
+}
+
 
 static const char *xmlfmt[] = {
     "<symbol type='%s' quality='%d'",
