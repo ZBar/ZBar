@@ -95,6 +95,7 @@ typedef enum zbar_symbol_type_e {
     ZBAR_I25         =     25,  /**< Interleaved 2 of 5. @since 0.4 */
     ZBAR_CODE39      =     39,  /**< Code 39. @since 0.4 */
     ZBAR_PDF417      =     57,  /**< PDF417. @since 0.6 */
+    ZBAR_QRCODE      =     64,  /**< QR Code. @since 0.9 */
     ZBAR_CODE128     =    128,  /**< Code 128 */
     ZBAR_SYMBOL      = 0x00ff,  /**< mask for base symbol type */
     ZBAR_ADDON2      = 0x0200,  /**< 2-digit add-on flag */
@@ -282,6 +283,13 @@ extern int zbar_symbol_get_loc_y(const zbar_symbol_t *symbol,
  * @returns NULL when no more results are available
  */
 extern const zbar_symbol_t *zbar_symbol_next(const zbar_symbol_t *symbol);
+
+/** iterate components of a composite result.
+ * @returns the first physical component symbol of a composite result
+ * @returns NULL if the symbol is already a physical symbol
+ */
+extern const zbar_symbol_t*
+zbar_symbol_first_component(const zbar_symbol_t *symbol);
 
 /** print XML symbol element representation to user result buffer.
  * @see http://zbar.sourceforge.net/2008/barcode.xsd for the schema.
@@ -1167,6 +1175,13 @@ static inline zbar_symbol_type_t zbar_scan_rgb24 (zbar_scanner_t *scanner,
 
 /** retrieve last scanned width. */
 extern unsigned zbar_scanner_get_width(const zbar_scanner_t *scanner);
+
+/** retrieve sample position of last edge.
+ * @since 0.9
+ */
+extern unsigned zbar_scanner_get_edge(const zbar_scanner_t *scn,
+                                      unsigned offset,
+                                      int prec);
 
 /** retrieve last scanned color. */
 extern zbar_color_t zbar_scanner_get_color(const zbar_scanner_t *scanner);

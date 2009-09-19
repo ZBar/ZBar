@@ -42,6 +42,7 @@ const char *zbar_get_symbol_name (zbar_symbol_type_t sym)
     case ZBAR_CODE39: return("CODE-39");
     case ZBAR_CODE128: return("CODE-128");
     case ZBAR_PDF417: return("PDF417");
+    case ZBAR_QRCODE: return("QR-Code");
     default: return("UNKNOWN");
     }
 }
@@ -112,6 +113,11 @@ int zbar_symbol_get_loc_y (const zbar_symbol_t *sym,
 const zbar_symbol_t *zbar_symbol_next (const zbar_symbol_t *sym)
 {
     return((sym) ? sym->next : NULL);
+}
+
+const zbar_symbol_t *zbar_symbol_first_component (const zbar_symbol_t *sym)
+{
+    return((sym) ? sym->syms : NULL);
 }
 
 

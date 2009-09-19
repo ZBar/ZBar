@@ -102,6 +102,20 @@ unsigned zbar_scanner_get_width (const zbar_scanner_t *scn)
     return(scn->width);
 }
 
+unsigned zbar_scanner_get_edge (const zbar_scanner_t *scn,
+                                unsigned offset,
+                                int prec)
+{
+    unsigned edge = scn->last_edge - offset - (1 << ZBAR_FIXED) - ROUND;
+    prec = ZBAR_FIXED - prec;
+    if(prec > 0)
+        return(edge >> prec);
+    else if(!prec)
+        return(edge);
+    else
+        return(edge << -prec);
+}
+
 zbar_color_t zbar_scanner_get_color (const zbar_scanner_t *scn)
 {
     return((scn->y1_sign <= 0) ? ZBAR_SPACE : ZBAR_BAR);
@@ -158,7 +172,7 @@ inline zbar_symbol_type_t zbar_scanner_flush (zbar_scanner_t *scn)
     if(!scn->y1_sign)
         return(ZBAR_NONE);
 
-    unsigned x = ((scn->x + 1) << ZBAR_FIXED) + ROUND;
+    unsigned x = (scn->x << ZBAR_FIXED) + ROUND;
 
     if(scn->cur_edge != x || scn->y1_sign > 0) {
         dprintf(1, "flush0:");
