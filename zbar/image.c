@@ -36,10 +36,9 @@ zbar_image_t *zbar_image_create ()
 
 void _zbar_image_free (zbar_image_t *img)
 {
-    zbar_symbol_t *sym, *next;
-    for(sym = img->syms; sym; sym = next) {
-        next = sym->next;
-        _zbar_symbol_refcnt(sym, -1);
+    if(img->syms) {
+        zbar_symbol_set_ref(img->syms, -1);
+        img->syms = NULL;
     }
     free(img);
 }
@@ -173,12 +172,24 @@ zbar_image_t *zbar_image_copy (const zbar_image_t *src)
     return(dst);
 }
 
+const zbar_symbol_set_t *zbar_image_get_symbols (const zbar_image_t *img)
+{
+    return(img->syms);
+}
+
+void zbar_image_set_symbols (zbar_image_t *img,
+                             const zbar_symbol_set_t *syms)
+{
+    if(img->syms)
+        zbar_symbol_set_ref(img->syms, -1);
+    img->syms = (zbar_symbol_set_t*)syms;
+    if(syms)
+        zbar_symbol_set_ref(img->syms, 1);
+}
+
 const zbar_symbol_t *zbar_image_first_symbol (const zbar_image_t *img)
 {
-    /* symbols stored on root image */
-    while(img->next)
-        img = img->next;
-    return(img->syms);
+    return((img->syms) ? img->syms->head : NULL);
 }
 
 typedef struct zimg_hdr_s {

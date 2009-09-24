@@ -11,6 +11,7 @@
 #include "util.h"
 #include "image.h"
 #include "error.h"
+#include "img_scanner.h"
 
 static int text_is_ascii(const unsigned char *_text,int _len){
   int i;
@@ -37,18 +38,6 @@ static void enc_list_mtf(iconv_t _enc_list[3],iconv_t _enc){
     break;
   }
 }
-
-/* FIXME API cleanup */
-zbar_symbol_t *_zbar_image_scanner_alloc_sym(zbar_image_scanner_t *iscn,
-                                             zbar_symbol_type_t type,
-                                             const char *data,
-                                             int datalen);
-
-void _zbar_image_scanner_cache_sym(zbar_image_scanner_t *iscn,
-                                   zbar_symbol_t *sym);
-
-void _zbar_image_scanner_recycle_syms(zbar_image_scanner_t*,
-                                      zbar_symbol_t**);
 
 int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
                                    zbar_image_scanner_t *iscn,
@@ -150,7 +139,8 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
     err=0;
     zbar_symbol_t *syms = NULL, **sym = &syms;
     for(j = 0; j < sa_size && !err; j++, sym = &(*sym)->next) {
-      *sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, NULL, sa_ntext);
+      *sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, 0);
+      (*sym)->datalen = sa_ntext;
       if(sa[j]<0){
         /* generic placeholder for unfinished results */
         (*sym)->type = ZBAR_PARTIAL;
@@ -164,7 +154,8 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
         sa_text[sa_ntext++]='\0';
 
         /* advance to next symbol */
-        *sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, NULL, sa_ntext);
+        *sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, 0);
+        (*sym)->datalen = sa_ntext;
         sym = &(*sym)->next;
       }
 
@@ -345,51 +336,52 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
       }
 
       zbar_symbol_t *sa_sym;
-      if(sa_size > 1) {
-          /* create "virtual" container symbol for composite result */
-          sa_sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, NULL, 0);
-          sa_sym->syms = syms;
-      }
-      else
+      if(sa_size == 1)
           sa_sym = syms;
+      else {
+          /* create "virtual" container symbol for composite result */
+          sa_sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, 0);
+          sa_sym->syms = _zbar_symbol_set_create();
+          sa_sym->syms->head = syms;
+
+          /* cheap out w/axis aligned bbox for now */
+          int xmin = img->width, xmax = -2;
+          int ymin = img->height, ymax = -2;
+
+          /* fixup data references */
+          for(; syms; syms = syms->next) {
+              if(syms->type == ZBAR_PARTIAL)
+                  sa_sym->type = ZBAR_PARTIAL;
+              else
+                  for(j = 0; j < syms->npts; j++) {
+                      int u = syms->pts[j].x;
+                      if(xmin >= u) xmin = u - 1;
+                      if(xmax <= u) xmax = u + 1;
+                      u = syms->pts[j].y;
+                      if(ymin >= u) ymin = u - 1;
+                      if(ymax <= u) ymax = u + 1;
+                  }
+              syms->data = sa_text + syms->datalen;
+              int next = (syms->next) ? syms->next->datalen : sa_ntext;
+              assert(next > syms->datalen);
+              syms->datalen = next - syms->datalen - 1;
+          }
+          if(xmax >= -1) {
+              sym_add_point(sa_sym, xmin, ymin);
+              sym_add_point(sa_sym, xmin, ymax);
+              sym_add_point(sa_sym, xmax, ymax);
+              sym_add_point(sa_sym, xmax, ymin);
+          }
+      }
       sa_sym->data = sa_text;
       sa_sym->data_alloc = sa_ntext;
       sa_sym->datalen = sa_ntext - 1;
 
-      /* cheap out w/axis aligned bbox for now */
-      int xmin = img->width, xmax = -2;
-      int ymin = img->height, ymax = -2;
-
-      /* fixup data references */
-      for(syms = sa_sym->syms; syms; syms = syms->next) {
-          if(syms->type == ZBAR_PARTIAL)
-              sa_sym->type = ZBAR_PARTIAL;
-          else
-              for(j = 0; j < syms->npts; j++) {
-                  int u = syms->pts[j].x;
-                  if(xmin >= u) xmin = u - 1;
-                  if(xmax <= u) xmax = u + 1;
-                  u = syms->pts[j].y;
-                  if(ymin >= u) ymin = u - 1;
-                  if(ymax <= u) ymax = u + 1;
-              }
-          syms->data = sa_text + syms->datalen;
-          int next = (syms->next) ? syms->next->datalen : sa_ntext;
-          assert(next > syms->datalen);
-          syms->datalen = next - syms->datalen - 1;
-      }
-      if(sa_sym->syms && xmax >= -1) {
-          sym_add_point(sa_sym, xmin, ymin);
-          sym_add_point(sa_sym, xmin, ymax);
-          sym_add_point(sa_sym, xmax, ymax);
-          sym_add_point(sa_sym, xmax, ymin);
-      }
-
-      _zbar_image_attach_symbol(img, sa_sym);
+      _zbar_symbol_set_add(img->syms, sa_sym);
       _zbar_image_scanner_cache_sym(iscn, sa_sym);
     }
     else {
-        _zbar_image_scanner_recycle_syms(iscn, &syms);
+        _zbar_image_scanner_recycle_syms(iscn, syms);
         free(sa_text);
     }
   }

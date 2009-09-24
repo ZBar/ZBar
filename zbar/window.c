@@ -69,9 +69,11 @@ static void window_outline_symbol (zbar_window_t *w,
                                    uint32_t color,
                                    const zbar_symbol_t *sym)
 {
-    const zbar_symbol_t *s;
-    for(s = sym->syms; s; s = s->next)
-        window_outline_symbol(w, 1, s);
+    if(sym->syms) {
+        const zbar_symbol_t *s;
+        for(s = sym->syms->head; s; s = s->next)
+            window_outline_symbol(w, 1, s);
+    }
     _zbar_window_draw_polygon(w, color, sym->pts, sym->npts);
 }
 
@@ -82,9 +84,9 @@ static inline int window_draw_overlay (zbar_window_t *w)
      */
     if(!w->overlay)
         return(0);
-    if(w->overlay >= 1 && w->image) {
+    if(w->overlay >= 1 && w->image && w->image->syms) {
         /* FIXME outline each symbol */
-        const zbar_symbol_t *sym = zbar_image_first_symbol(w->image);
+        const zbar_symbol_t *sym = w->image->syms->head;
         for(; sym; sym = sym->next) {
             uint32_t color = ((sym->cache_count < 0) ? 4 : 2);
             if(sym->type == ZBAR_QRCODE)
@@ -149,6 +151,9 @@ inline int zbar_window_redraw (zbar_window_t *w)
                     (char*)&w->format, w->format, w->dst_width, w->dst_height);
             w->image = zbar_image_convert_resize(img, w->format,
                                                  w->dst_width, w->dst_height);
+            w->image->syms = img->syms;
+            if(img->syms)
+                zbar_symbol_set_ref(img->syms, 1);
             zbar_image_destroy(img);
             img = w->image;
         }

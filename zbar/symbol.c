@@ -56,6 +56,20 @@ const char *zbar_get_addon_name (zbar_symbol_type_t sym)
     }
 }
 
+
+void _zbar_symbol_free (zbar_symbol_t *sym)
+{
+    if(sym->syms) {
+        zbar_symbol_set_ref(sym->syms, -1);
+        sym->syms = NULL;
+    }
+    if(sym->pts)
+        free(sym->pts);
+    if(sym->data_alloc && sym->data)
+        free(sym->data);
+    free(sym);
+}
+
 void zbar_symbol_ref (zbar_symbol_t *sym,
                       int refs)
 {
@@ -115,9 +129,15 @@ const zbar_symbol_t *zbar_symbol_next (const zbar_symbol_t *sym)
     return((sym) ? sym->next : NULL);
 }
 
+const zbar_symbol_set_t*
+zbar_symbol_get_components (const zbar_symbol_t *sym)
+{
+    return(sym->syms);
+}
+
 const zbar_symbol_t *zbar_symbol_first_component (const zbar_symbol_t *sym)
 {
-    return((sym) ? sym->syms : NULL);
+    return((sym && sym->syms) ? sym->syms->head : NULL);
 }
 
 
@@ -178,4 +198,42 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
 
     *len = n;
     return(*buf);
+}
+
+
+zbar_symbol_set_t *_zbar_symbol_set_create ()
+{
+    zbar_symbol_set_t *syms = calloc(1, sizeof(*syms));
+    _zbar_refcnt(&syms->refcnt, 1);
+    return(syms);
+}
+
+inline void _zbar_symbol_set_free (zbar_symbol_set_t *syms)
+{
+    zbar_symbol_t *sym, *next;
+    for(sym = syms->head; sym; sym = next) {
+        next = sym->next;
+        sym->next = NULL;
+        _zbar_symbol_refcnt(sym, -1);
+    }
+    syms->head = NULL;
+    free(syms);
+}
+
+void zbar_symbol_set_ref (zbar_symbol_set_t *syms,
+                          int delta)
+{
+    if(!_zbar_refcnt(&syms->refcnt, delta) && delta <= 0)
+        _zbar_symbol_set_free(syms);
+}
+
+int zbar_symbol_set_get_size (const zbar_symbol_set_t *syms)
+{
+    return(syms->nsyms);
+}
+
+const zbar_symbol_t*
+zbar_symbol_set_first_symbol (const zbar_symbol_set_t *syms)
+{
+    return(syms->head);
 }

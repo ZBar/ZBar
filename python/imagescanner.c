@@ -111,6 +111,21 @@ imagescanner_enable_cache (zbarImageScanner *self,
 }
 
 static PyObject*
+imagescanner_recycle (zbarImageScanner *self,
+                      PyObject *args,
+                      PyObject *kwds)
+{
+    zbarImage *img = NULL;
+    static char *kwlist[] = { "image", NULL };
+    if(!PyArg_ParseTupleAndKeywords(args, kwds, "O!", kwlist,
+                                    &zbarImage_Type, &img))
+        return(NULL);
+
+    zbar_image_scanner_recycle_image(self->zscn, img->zimg);
+    Py_RETURN_NONE;
+}
+
+static PyObject*
 imagescanner_scan (zbarImageScanner *self,
                    PyObject *args,
                    PyObject *kwds)
@@ -138,6 +153,8 @@ static PyMethodDef imagescanner_methods[] = {
     { "parse_config", (PyCFunction)imagescanner_parse_config,
       METH_VARARGS | METH_KEYWORDS, },
     { "enable_cache",  (PyCFunction)imagescanner_enable_cache,
+      METH_VARARGS | METH_KEYWORDS, },
+    { "recycle",       (PyCFunction)imagescanner_recycle,
       METH_VARARGS | METH_KEYWORDS, },
     { "scan",          (PyCFunction)imagescanner_scan,
       METH_VARARGS | METH_KEYWORDS, },

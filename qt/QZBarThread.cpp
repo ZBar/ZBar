@@ -60,8 +60,10 @@ void QZBarThread::image_callback (Image &image)
 void QZBarThread::processImage (Image &image)
 {
     {
+        scanner.recycle_image(image);
         Image tmp = image.convert(*(long*)"Y800");
         scanner.scan(tmp);
+        image.set_symbols(tmp.get_symbols());
     }
     window.draw(image);
     if(this->image && this->image != &image) {

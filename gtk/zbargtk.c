@@ -213,7 +213,9 @@ static inline int zbar_gtk_process_image (ZBarGtk *self,
     if(!tmp)
         return(-1);
 
+    zbar_image_scanner_recycle_image(zbar->scanner, image);
     int rc = zbar_scan_image(zbar->scanner, tmp);
+    zbar_image_set_symbols(image, zbar_image_get_symbols(tmp));
     zbar_image_destroy(tmp);
     if(rc < 0)
         return(rc);

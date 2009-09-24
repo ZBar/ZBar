@@ -75,25 +75,37 @@ extern int zbarImage_validate(zbarImage *image);
 
 typedef struct {
     PyObject_HEAD
+    const zbar_symbol_set_t *zsyms;
+} zbarSymbolSet;
+
+extern PyTypeObject zbarSymbolSet_Type;
+
+extern zbarSymbolSet*
+zbarSymbolSet_FromSymbolSet(const zbar_symbol_set_t *zsyms);
+
+#define zbarSymbolSet_Check(obj) PyObject_TypeCheck(obj, &zbarSymbolSet_Type)
+
+typedef struct {
+    PyObject_HEAD
     const zbar_symbol_t *zsym;
-    zbarImage *img;
     PyObject *data;
     PyObject *loc;
 } zbarSymbol;
 
 extern PyTypeObject zbarSymbol_Type;
 
-extern zbarSymbol *zbarSymbol_FromSymbol(zbarImage *img,
-                                           const zbar_symbol_t *zsym);
+extern zbarSymbol *zbarSymbol_FromSymbol(const zbar_symbol_t *zsym);
 extern zbarEnumItem *zbarSymbol_LookupEnum(zbar_symbol_type_t type);
 
 typedef struct {
     PyObject_HEAD
     const zbar_symbol_t *zsym;
-    zbarImage *img;
+    zbarSymbolSet *syms;
 } zbarSymbolIter;
 
 extern PyTypeObject zbarSymbolIter_Type;
+
+extern zbarSymbolIter *zbarSymbolIter_FromSymbolSet(zbarSymbolSet *syms);
 
 typedef struct {
     PyObject_HEAD

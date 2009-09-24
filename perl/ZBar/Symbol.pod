@@ -72,6 +72,11 @@ Current cache count of the symbol.  This integer value provides
 inter-scan reliability and redundancy information if enabled at the
 Barcode::ZBar::ImageScanner.
 
+=item get_components()
+
+Components of a composite result.  This yields an array of physical
+component symbols that were combined to form a composite result.
+
 =over 2
 
 =item *
@@ -118,6 +123,8 @@ Bar code type "symbology" constants:
 =item CODE39
 
 =item CODE128
+
+=item QRCODE
 
 =item PDF417
 

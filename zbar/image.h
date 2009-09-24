@@ -75,8 +75,7 @@ struct zbar_image_s {
     zbar_image_t *next;         /* internal image lists */
 
     unsigned seq;               /* page/frame sequence number */
-    int nsyms;                  /* number of valid symbols */
-    zbar_symbol_t *syms;        /* first of decoded symbol results */
+    zbar_symbol_set_t *syms;    /* decoded result set */
 };
 
 /* description of an image format */
@@ -116,18 +115,12 @@ static inline void _zbar_image_refcnt (zbar_image_t *img,
     }
 }
 
-static inline void _zbar_image_attach_symbol (zbar_image_t *img,
-                                              zbar_symbol_t *sym)
+static inline void _zbar_image_swap_symbols (zbar_image_t *a,
+                                             zbar_image_t *b)
 {
-    /* symbols stored on root image */
-    while(img->next)
-        img = img->next;
-
-    sym->next = img->syms;
-    img->syms = sym;
-    img->nsyms++;
-
-    _zbar_symbol_refcnt(sym, 1);
+    zbar_symbol_set_t *tmp = a->syms;
+    a->syms = b->syms;
+    b->syms = tmp;
 }
 
 #endif

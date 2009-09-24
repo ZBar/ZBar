@@ -91,6 +91,11 @@ public:
         zbar_image_scanner_enable_cache(_scanner, enable);
     }
 
+    void recycle_image (Image &image)
+    {
+        zbar_image_scanner_recycle_image(_scanner, image);
+    }
+
     /// scan for symbols in provided image.
     /// see zbar_scan_image()
     int scan (Image& image)

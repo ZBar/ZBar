@@ -1,4 +1,10 @@
 current:
+  * extract explicit result container, separate from image
+    - remove (broken/tmp) converted image result sharing
+    - add explicit symbol recycle API, update processor/widgets to use
+    - cleanup and update C++ API
+    - update Python/Perl APIs
+    - fix broken and add new Python/Perl tests
   * cleanup QR result integration
     - add hierarchy to symbol results
     - extract symbols during text decode, preserving position and structure

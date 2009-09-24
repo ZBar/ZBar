@@ -37,14 +37,6 @@ typedef struct qr_pack_buf      qr_pack_buf;
 #define QR_INT_BITS    ((int)sizeof(int)*CHAR_BIT)
 #define QR_INT_LOGBITS (QR_ILOG(QR_INT_BITS))
 
-#ifdef SPADIX /* moved to qrcode.h */
-/*The number of bits of subpel precision to store image coordinates in.
-  This helps when estimating positions in low-resolution images, which may have
-   a module pitch only a pixel or two wide, making rounding errors matter a
-   great deal.*/
-#define QR_FINDER_SUBPREC (2)
-#endif
-
 /*A 14 bit resolution for a homography ensures that the ideal module size for a
    version 40 code differs from that of a version 39 code by at least 2.*/
 #define QR_HOM_BITS (14)
@@ -110,45 +102,6 @@ void qr_reader_reset (qr_reader *reader)
 }
 
 
-#ifdef SPADIX /* moved to qrcode.h */
-typedef struct qr_finder_line    qr_finder_line;
-
-/*A line crossing a finder pattern.
-  Whether the line is horizontal or vertical is determined by context.
-  The offsts to various parts of the finder pattern are as follows:
-    |*****|     |*****|*****|*****|     |*****|
-    |*****|     |*****|*****|*****|     |*****|
-       ^        ^                 ^        ^
-       |        |                 |        |
-       |        |                 |       pos[v]+len+eoffs
-       |        |                pos[v]+len
-       |       pos[v]
-      pos[v]-boffs
-  Here v is 0 for horizontal and 1 for vertical lines.*/
-struct qr_finder_line{
-  /*The location of the upper/left endpoint of the line.
-    The left/upper edge of the center section is used, since other lines must
-     cross in this region.*/
-  qr_point pos;
-  /*The length of the center section.
-    This extends to the right/bottom of the center section, since other lines
-     must cross in this region.*/
-  int      len;
-  /*The offset to the midpoint of the upper/left section (part of the outside
-     ring), or 0 if we couldn't identify the edge of the beginning section.
-    We use the midpoint instead of the edge because it can be located more
-     reliably.*/
-  int      boffs;
-  /*The offset to the midpoint of the end section (part of the outside ring),
-     or 0 if we couldn't identify the edge of the end section.
-    We use the midpoint instead of the edge because it can be located more
-     reliably.*/
-  int      eoffs;
-};
-
-#endif
-
-
 /*A cluster of lines crossing a finder pattern (all in the same direction).*/
 struct qr_finder_cluster{
   /*Pointers to the lines crossing the pattern.*/
@@ -188,70 +141,6 @@ struct qr_finder_center{
   /*The number of edge points from the crossing lines.*/
   int                nedge_pts;
 };
-
-#ifdef SPADIX
-/*Check to see if a set of lengths for a (dark:light:dark:light:dark) pattern
-   roughly has the ratios 1:1:3:1:1.
-  If it does, the location of the line segments are stored in _line.
-  _len_buf: The circular buffer containing lengths of each segment.
-  _bp:      The index of the last segment in the list.
-  _x:       The coordinate of the last pixel on the same axis as the segments.
-  _y:       The coordinate of all the pixels on the perpendicular axis.
-  _v:       0 for horizontal lines, or 1 for vertical lines.
-  Return: 1 if the line passes, and 0 otherwise.*/
-static int qr_finder_check_pattern(qr_finder_line *_line,int _len_buf[5],
- int _bp,int _x,int _y,int _v){
-  static const int MODEL_RATIO[5]={2,2,6,2,2};
-  int len_buf[5];
-  int base_len;
-  int dev;
-  int i;
-  int x0;
-  int x1;
-  int x2;
-  int x3;
-  base_len=0;
-  for(i=0;i<5;i++){
-    base_len+=_len_buf[i];
-    if(_len_buf[i]<1)return 0;
-  }
-  /*Allowed deviation is 1/2 of the expected module size, rounded up to deal
-     with small resolutions better.*/
-  dev=(base_len+13)/14;
-  /*TODO: People do not do a very good job of keeping the dead zone around the
-     code clear of clutter, and so the ability to recognize finder patterns
-     when one of the outside edges is obscured could help our recognition.
-    However, it would produce significantly more false alarms.*/
-  for(i=0;i<5;i++){
-    int len;
-    int model_len;
-    int j;
-    j=_bp+i+1;
-    if(j>=5)j-=5;
-    len=_len_buf[j];
-    model_len=base_len*MODEL_RATIO[i];
-    /*Round the threshold down for the min test, and up for the max test,
-       again to deal with small resolutions better.*/
-    if(len+dev<model_len/14||len-dev>(model_len+13)/14)return 0;
-    len_buf[i]=len;
-  }
-  /*We place the endpoints of the line at the midpoints of the two
-     outer bins.
-    This is more reliable than using the full extent of the bins,
-     since blurring may cause regions of a given color to shrink or
-     grow, but will not change the midpoint.*/
-  x0=((_x+1-base_len<<1)+len_buf[0]<<QR_FINDER_SUBPREC)>>1;
-  x2=_x+1-len_buf[4]-len_buf[3]<<QR_FINDER_SUBPREC;
-  x1=_x+1-len_buf[4]-len_buf[3]-len_buf[2]<<QR_FINDER_SUBPREC;
-  x3=((_x+1<<1)-len_buf[4]<<QR_FINDER_SUBPREC)>>1;
-  _line->pos[_v]=x1;
-  _line->pos[1-_v]=((_y<<1|1)<<QR_FINDER_SUBPREC)>>1;
-  _line->len=x2-x1;
-  _line->boffs=x1-x0;
-  _line->eoffs=x3-x2;
-  return 1;
-}
-#endif
 
 static int qr_finder_vline_cmp(const void *_a,const void *_b){
   const qr_finder_line *a;
@@ -508,79 +397,10 @@ static int qr_finder_find_crossings(qr_finder_center *_centers,
 static int qr_finder_centers_locate(qr_finder_center **_centers,
  qr_finder_edge_pt **_edge_pts, qr_reader *reader,
  int _width,int _height){
-#ifdef SPADIX
-  typedef int vect5i[5];
-  qr_finder_line     *hlines;
-  int                 nhlines;
-  int                 chlines;
-  qr_finder_line     *vlines;
-  int                 nvlines;
-  int                 cvlines;
-  vect5i             *ylen_bufs;
-  int                *ybps;
-  int                 x;
-  int                 y;
-  if(_width<1||_height<1)return 0;
-  /*Detect line segments which cross a finder pattern.
-    TODO: We should also check diagonal lines, though this will make subsequent
-     steps more complicated.*/
-  nhlines=nvlines=0;
-  chlines=cvlines=31;
-  hlines=(qr_finder_line *)malloc(chlines*sizeof(*hlines));
-  vlines=(qr_finder_line *)malloc(cvlines*sizeof(*vlines));
-  ylen_bufs=(vect5i *)calloc(_width,sizeof(*ylen_bufs));
-  ybps=(int *)calloc(_width,sizeof(*ybps));
-  for(x=0;x<_width;x++)ylen_bufs[x][0]=1;
-  for(y=0;y<_height;y++){
-    vect5i   xlen_buf;
-    int      xbp;
-    unsigned xnext;
-    memset(xlen_buf,0,sizeof(xlen_buf));
-    xlen_buf[0]=1;
-    xbp=0;
-    xnext=_img[y*_width]!=0;
-    for(x=0;x<_width;x++){
-      unsigned ynext;
-      unsigned cur;
-      cur=xnext;
-      xnext=x+1<_width?_img[y*_width+x+1]!=0:!cur;
-      if(cur!=xnext){
-        if(!xnext&&
-         qr_finder_check_pattern(hlines+nhlines,xlen_buf,xbp,x,y,0)>0){
-          nhlines++;
-          if(nhlines>=chlines){
-            chlines=chlines<<1|1;
-            hlines=(qr_finder_line *)realloc(hlines,chlines*sizeof(*hlines));
-          }
-        }
-        if(++xbp>=5)xbp-=5;
-        xlen_buf[xbp]=1;
-      }
-      else xlen_buf[xbp]++;
-      ynext=y+1<_height?_img[(y+1)*_width+x]!=0:!cur;
-      if(cur!=ynext){
-        if(!ynext&&
-         qr_finder_check_pattern(vlines+nvlines,ylen_bufs[x],ybps[x],y,x,1)>0){
-          nvlines++;
-          if(nvlines>=cvlines){
-            cvlines=cvlines<<1|1;
-            vlines=(qr_finder_line *)realloc(vlines,cvlines*sizeof(*vlines));
-          }
-        }
-        if(++ybps[x]>=5)ybps[x]-=5;
-        ylen_bufs[x][ybps[x]]=1;
-      }
-      else ylen_bufs[x][ybps[x]]++;
-    }
-  }
-  free(ybps);
-  free(ylen_bufs);
-#else
   qr_finder_line     *hlines = reader->finder_lines[0].lines;
   int                 nhlines = reader->finder_lines[0].num_lines;
   qr_finder_line     *vlines = reader->finder_lines[1].lines;
   int                 nvlines = reader->finder_lines[1].num_lines;
-#endif
 
   qr_finder_line    **hneighbors;
   qr_finder_cluster  *hclusters;
@@ -627,10 +447,6 @@ static int qr_finder_centers_locate(qr_finder_center **_centers,
   free(vneighbors);
   free(hclusters);
   free(hneighbors);
-#ifdef SPADIX
-  free(vlines);
-  free(hlines);
-#endif
   return ncenters;
 }
 

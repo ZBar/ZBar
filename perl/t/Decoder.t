@@ -58,6 +58,9 @@ is($decoder->get_color(), Barcode::ZBar::SPACE, 'reset color');
 
 #########################
 
+$decoder->set_config(Barcode::ZBar::Symbol::QRCODE,
+                     Barcode::ZBar::Config::ENABLE, 0);
+
 my $encoded =
   '9 111 212241113121211311141132 11111 311213121312121332111132 111 9';
 
