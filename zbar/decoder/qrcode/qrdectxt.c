@@ -153,11 +153,11 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
 
         /* mark break in data */
         sa_text[sa_ntext++]='\0';
+        (*sym)->datalen = sa_ntext;
 
         /* advance to next symbol */
-        *sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, 0);
-        (*sym)->datalen = sa_ntext;
         sym = &(*sym)->next;
+        *sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, 0);
       }
 
       qrdataj=qrdata+sa[j];
@@ -351,6 +351,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
 
           /* fixup data references */
           for(; syms; syms = syms->next) {
+              _zbar_symbol_refcnt(syms, 1);
               if(syms->type == ZBAR_PARTIAL)
                   sa_sym->type = ZBAR_PARTIAL;
               else

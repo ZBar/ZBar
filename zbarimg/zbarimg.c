@@ -149,13 +149,14 @@ static int scan_image (const char *filename)
         // output result data
         const zbar_symbol_t *sym = zbar_image_first_symbol(zimage);
         for(; sym; sym = zbar_symbol_next(sym)) {
-            if(!xmllvl) {
-                zbar_symbol_type_t typ = zbar_symbol_get_type(sym);
+            zbar_symbol_type_t typ = zbar_symbol_get_type(sym);
+            if(typ == ZBAR_PARTIAL)
+                continue;
+            else if(!xmllvl)
                 printf("%s%s:%s\n",
                        zbar_get_symbol_name(typ),
                        zbar_get_addon_name(typ),
                        zbar_symbol_get_data(sym));
-            }
             else if(xmllvl < 0)
                 printf("%s\n", zbar_symbol_get_data(sym));
             else {

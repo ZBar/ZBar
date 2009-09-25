@@ -96,12 +96,15 @@ static void data_handler (zbar_image_t *img, const void *userdata)
     for(; sym; sym = zbar_symbol_next(sym)) {
         if(zbar_symbol_get_count(sym))
             continue;
-        if(!format) {
-            zbar_symbol_type_t type = zbar_symbol_get_type(sym);
+
+        zbar_symbol_type_t type = zbar_symbol_get_type(sym);
+        if(type == ZBAR_PARTIAL)
+            continue;
+
+        if(!format)
             printf("%s%s:%s\n",
                    zbar_get_symbol_name(type), zbar_get_addon_name(type),
                    zbar_symbol_get_data(sym));
-        }
         else if(format == RAW)
             printf("%s\n", zbar_symbol_get_data(sym));
         else if(format == XML) {

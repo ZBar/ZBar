@@ -145,6 +145,7 @@ void _zbar_image_scanner_recycle_syms (zbar_image_scanner_t *iscn,
                 if(_zbar_refcnt(&sym->syms->refcnt, -1))
                     assert(0);
                 _zbar_image_scanner_recycle_syms(iscn, sym->syms->head);
+                sym->syms->head = NULL;
                 _zbar_symbol_set_free(sym->syms);
                 sym->syms = NULL;
             }
