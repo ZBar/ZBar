@@ -8,6 +8,7 @@
 #include <string.h>
 #include <time.h>
 #include "decoder/qrcode.h"
+#include "qrdec.h"
 #include "bch15_5.h"
 #include "rs.h"
 #include "isaac.h"
@@ -15,12 +16,13 @@
 #include "binarize.h"
 #include "image.h"
 #include "error.h"
+#include "svg.h"
 
 typedef int qr_line[3];
 
 typedef struct qr_finder_cluster qr_finder_cluster;
-typedef struct qr_finder_edge_pt qr_finder_edge_pt;
-typedef struct qr_finder_center  qr_finder_center;
+typedef struct qr_finder_edge_pt  qr_finder_edge_pt;
+typedef struct qr_finder_center   qr_finder_center;
 
 typedef struct qr_aff qr_aff;
 typedef struct qr_hom qr_hom;
@@ -58,47 +60,49 @@ typedef struct qr_finder_lines {
 } qr_finder_lines;
 
 
-struct qr_reader{
-  /*The GF(256) representation used in Reed-Solomon decoding.*/
-  rs_gf256  gf;
-  /*The random number generator used by RANSAC.*/
-  isaac_ctx isaac;
-  /* current finder state, horizontal and vertical lines */
-  qr_finder_lines finder_lines[2];
+struct qr_reader {
+    /*The GF(256) representation used in Reed-Solomon decoding.*/
+    rs_gf256  gf;
+    /*The random number generator used by RANSAC.*/
+    isaac_ctx isaac;
+    /* current finder state, horizontal and vertical lines */
+    qr_finder_lines finder_lines[2];
 };
 
 
 /*Initializes a client reader handle.*/
-static void qr_reader_init(qr_reader *_reader){
-  /*time_t now;
-  now=time(NULL);
-  isaac_init(&_reader->isaac,&now,sizeof(now));*/
-  isaac_init(&_reader->isaac,NULL,0);
-  rs_gf256_init(&_reader->gf,QR_PPOLY);
+static void qr_reader_init (qr_reader *reader)
+{
+    /*time_t now;
+      now=time(NULL);
+      isaac_init(&_reader->isaac,&now,sizeof(now));*/
+    isaac_init(&reader->isaac, NULL, 0);
+    rs_gf256_init(&reader->gf, QR_PPOLY);
 }
 
 /*Allocates a client reader handle.*/
-qr_reader *qr_reader_alloc(void){
-  qr_reader *reader;
-  reader=(qr_reader *)calloc(1, sizeof(*reader));
-  qr_reader_init(reader);
-  return reader;
+qr_reader *_zbar_qr_create (void)
+{
+    qr_reader *reader = (qr_reader*)calloc(1, sizeof(*reader));
+    qr_reader_init(reader);
+    return(reader);
 }
 
 /*Frees a client reader handle.*/
-void qr_reader_free(qr_reader *_reader){
-  if(_reader->finder_lines[0].lines)
-    free(_reader->finder_lines[0].lines);
-  if(_reader->finder_lines[1].lines)
-    free(_reader->finder_lines[1].lines);
-  free(_reader);
+void _zbar_qr_destroy (qr_reader *reader)
+{
+    if(reader->finder_lines[0].lines)
+        free(reader->finder_lines[0].lines);
+    if(reader->finder_lines[1].lines)
+        free(reader->finder_lines[1].lines);
+    free(reader);
 }
 
 /* reset finder state between scans */
-void qr_reader_reset (qr_reader *reader)
+void _zbar_qr_reset (qr_reader *reader)
 {
-  reader->finder_lines[0].num_lines = 0;
-  reader->finder_lines[1].num_lines = 0;
+    reader->finder_lines[0].num_lines = 0;
+    reader->finder_lines[1].num_lines = 0;
 }
 
 
@@ -141,6 +145,7 @@ struct qr_finder_center{
   /*The number of edge points from the crossing lines.*/
   int                nedge_pts;
 };
+
 
 static int qr_finder_vline_cmp(const void *_a,const void *_b){
   const qr_finder_line *a;
@@ -2565,6 +2570,17 @@ static const unsigned char QR_ALIGNMENT_SPACING[34]={
   24,26,26,26,28,28
 };
 
+static inline void qr_svg_points(const char *cls,
+                                 qr_point *p,
+                                 int n)
+{
+    svg_path_start(cls, 1, 0, 0);
+    int i;
+    for(i = 0; i < n; i++, p++)
+        svg_path_moveto(SVG_ABS, p[0][0], p[0][1]);
+    svg_path_end();
+}
+
 /*Initialize the sampling grid for each region of the code.
   _version:  The (decoded) version number.
   _ul_pos:   The location of the UL finder pattern.
@@ -2705,6 +2721,7 @@ static void qr_sampling_grid_init(qr_sampling_grid *_grid,int _version,
         }
       }
     }
+    qr_svg_points("align", p, nalign * nalign);
     free(q);
     free(p);
   }
@@ -2937,6 +2954,7 @@ static void qr_sampling_grid_sample(const qr_sampling_grid *_grid,
   qr_data_mask_fill(_data_bits,_dim,_fmt_info&7);
   stride=_dim+QR_INT_BITS-1>>QR_INT_LOGBITS;
   u0=0;
+  svg_path_start("sampling-grid", 1, 0, 0);
   /*We read data cell-by-cell to avoid having to constantly change which
      projection we're using as we read each bit.
     This (and the position-dependent data mask) is the reason we buffer the
@@ -2979,6 +2997,7 @@ static void qr_sampling_grid_sample(const qr_sampling_grid *_grid,
             qr_hom_cell_fproject(p,cell,x,y,w);
             _data_bits[u*stride+(v>>QR_INT_LOGBITS)]^=
              qr_img_get_bit(_img,_width,_height,p[0],p[1])<<(v&QR_INT_BITS-1);
+            svg_path_moveto(SVG_ABS, p[0], p[1]);
           }
           x+=cell->fwd[0][1];
           y+=cell->fwd[1][1];
@@ -2992,6 +3011,7 @@ static void qr_sampling_grid_sample(const qr_sampling_grid *_grid,
     }
     u0=u1;
   }
+  svg_path_end();
 }
 
 /*Arranges the sample bits read by qr_sampling_grid_sample() into bytes and
@@ -3850,11 +3870,11 @@ void qr_reader_match_centers(qr_reader *_reader,qr_code_data_list *_qrlist,
 }
 
 int _zbar_qr_found_line (qr_reader *reader,
-                         int direction,
+                         int dir,
                          const qr_finder_line *line)
 {
     /* minimally intrusive brute force version */
-    qr_finder_lines *lines = &reader->finder_lines[direction];
+    qr_finder_lines *lines = &reader->finder_lines[dir];
 
     if(lines->num_lines >= lines->max_lines) {
         lines->max_lines *= 2;
@@ -3863,16 +3883,38 @@ int _zbar_qr_found_line (qr_reader *reader,
     }
 
     memcpy(lines->lines + lines->num_lines++, line, sizeof(*line));
-    return(1);
+
+    return(0);
 }
 
-int _zbar_qr_decode (zbar_image_scanner_t *iscn,
-                     qr_reader *reader,
+static inline void qr_svg_centers (const qr_finder_center *centers,
+                                   int ncenters)
+{
+    int i, j;
+    svg_path_start("centers", 1, 0, 0);
+    for(i = 0; i < ncenters; i++)
+        svg_path_moveto(SVG_ABS, centers[i].pos[0], centers[i].pos[1]);
+    svg_path_end();
+
+    svg_path_start("edge-pts", 1, 0, 0);
+    for(i = 0; i < ncenters; i++) {
+        const qr_finder_center *cen = centers + i;
+        for(j = 0; j < cen->nedge_pts; j++)
+            svg_path_moveto(SVG_ABS,
+                            cen->edge_pts[j].pos[0], cen->edge_pts[j].pos[1]);
+    }
+    svg_path_end();
+}
+
+int _zbar_qr_decode (qr_reader *reader,
+                     zbar_image_scanner_t *iscn,
                      zbar_image_t *img)
 {
     int nqrdata = 0;
     qr_finder_edge_pt *edge_pts = NULL;
     qr_finder_center *centers = NULL;
+
+    svg_group_start("finder", 1. / (1 << QR_FINDER_SUBPREC), 0, 0);
 
     int ncenters = qr_finder_centers_locate(&centers, &edge_pts, reader, 0, 0);
 
@@ -3880,20 +3922,7 @@ int _zbar_qr_decode (zbar_image_scanner_t *iscn,
             reader->finder_lines[0].num_lines,
             reader->finder_lines[1].num_lines,
             ncenters);
-    if(_zbar_verbosity >= 18) {
-        int i, j;
-        for(i = 0; i < ncenters; i++) {
-            qr_finder_center *cen = centers + i;
-            fprintf(stderr, "\t[%d] %d,%d:", i, cen->pos[0], cen->pos[1]);
-            for(j = 0; j < cen->nedge_pts; j++) {
-                qr_finder_edge_pt *edge = cen->edge_pts + j;
-                fprintf(stderr, " %d,%dx%d@%d",
-                        edge->pos[0], edge->pos[1],
-                        edge->extent, edge->edge);
-            }
-            fprintf(stderr, "\n");
-        }
-    }
+    qr_svg_centers(centers, ncenters);
 
     if(ncenters >= 3) {
         void *bin = qr_binarize(img->data, img->width, img->height);
@@ -3910,6 +3939,7 @@ int _zbar_qr_decode (zbar_image_scanner_t *iscn,
         qr_code_data_list_clear(&qrlist);
         free(bin);
     }
+    svg_group_end();
 
     if(centers)
         free(centers);

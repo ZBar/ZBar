@@ -240,3 +240,63 @@ int zbar_image_write (const zbar_image_t *img,
     }
     return(fclose(f));
 }
+
+#ifdef DEBUG_SVG
+# include <png.h>
+
+int zbar_image_write_png (const zbar_image_t *img,
+                          const char *filename)
+{
+    int rc = -1;
+    FILE *file = NULL;
+    png_struct *png = NULL;
+    png_info *info = NULL;
+    const uint8_t **rows = NULL;
+
+    rows = malloc(img->height * sizeof(*rows));
+    if(!rows)
+        goto done;
+
+    rows[0] = img->data;
+    int y;
+    for(y = 1; y < img->height; y++)
+        rows[y] = rows[y - 1] + img->width;
+
+    file = fopen(filename, "w");
+    if(!file)
+        goto done;
+
+    png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if(!png)
+        goto done;
+
+    info = png_create_info_struct(png);
+    if(!info)
+        goto done;
+
+    if(setjmp(png_jmpbuf(png)))
+        goto done;
+
+    png_init_io(png, file);
+    png_set_compression_level(png, 9);
+    png_set_IHDR(png, info, img->width, img->height, 8, PNG_COLOR_TYPE_GRAY,
+                 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
+                 PNG_FILTER_TYPE_DEFAULT);
+
+    png_set_rows(png, info, (void*)rows);
+    png_write_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
+
+    png_write_end(png,info);
+    rc = 0;
+
+done:
+    if(png)
+        png_destroy_write_struct(&png, &info);
+    if(rows)
+        free(rows);
+    if(file)
+        fclose(file);
+    return(rc);
+}
+
+#endif

@@ -1,4 +1,6 @@
 current:
+  * cleanup SVG debug dump (partial)
+    - some QR integration API cleanup
   * extract explicit result container, separate from image
     - remove (broken/tmp) converted image result sharing
     - add explicit symbol recycle API, update processor/widgets to use

@@ -39,11 +39,7 @@
 # include "decoder/qrcode.h"
 #endif
 #include "img_scanner.h"
-
-#ifdef DEBUG_IMG_SCANNER
-# define DEBUG_LEVEL (DEBUG_IMG_SCANNER)
-#endif
-#include "debug.h"
+#include "svg.h"
 
 #if 1
 # define ASSERT_POS \
@@ -376,37 +372,6 @@ static void qr_handler (zbar_image_scanner_t *iscn,
         line->eoffs = tmp;
     }
 
-    zprintf(127, "qrf: u=%d.%03d boff=%d.%03d pos=%d.%03d,%d.%03d"
-            " len=%d.%03d eoff=%d.%03d\n",
-            PRINT_FIXED(u, QR_FINDER_SUBPREC),
-            PRINT_FIXED(line->boffs, QR_FINDER_SUBPREC),
-            PRINT_FIXED(line->pos[0], QR_FINDER_SUBPREC),
-            PRINT_FIXED(line->pos[1], QR_FINDER_SUBPREC),
-            PRINT_FIXED(line->len, QR_FINDER_SUBPREC),
-            PRINT_FIXED(line->eoffs, QR_FINDER_SUBPREC));
-
-    dprintf(1, "<path class='fl' d='M%d.%03d,%d.%03d%c%d.%03d'/>\n"
-            "<path class='fe' d='M%d.%03d,%d.%03d%c%d.%03d"
-            " M%d.%03d,%d.%03d%c%d.%03d'/>\n",
-            PRINT_FIXED(line->pos[0], QR_FINDER_SUBPREC),
-            PRINT_FIXED(line->pos[1], QR_FINDER_SUBPREC),
-            (iscn->dx) ? 'h' : 'v',
-            PRINT_FIXED(line->len, QR_FINDER_SUBPREC),
-
-            PRINT_FIXED(line->pos[0] - ((iscn->dx) ? line->boffs : 1),
-                        QR_FINDER_SUBPREC),
-            PRINT_FIXED(line->pos[1] - ((iscn->dx) ? 1 : line->boffs),
-                        QR_FINDER_SUBPREC),
-            (iscn->dx) ? 'v' : 'h',
-            PRINT_FIXED(2, QR_FINDER_SUBPREC),
-
-            PRINT_FIXED(line->pos[0] + ((iscn->dx) ? line->len + line->eoffs : -1),
-                        QR_FINDER_SUBPREC),
-            PRINT_FIXED(line->pos[1] + ((iscn->dx) ? -1 : line->len + line->eoffs),
-                        QR_FINDER_SUBPREC),
-            (iscn->dx) ? 'v' : 'h',
-            PRINT_FIXED(2, QR_FINDER_SUBPREC));
-
     _zbar_qr_found_line(iscn->qr, !iscn->dx, line);
 }
 #endif
@@ -473,7 +438,7 @@ zbar_image_scanner_t *zbar_image_scanner_create ()
     }
 
 #ifdef ENABLE_QRCODE
-    iscn->qr = qr_reader_alloc();
+    iscn->qr = _zbar_qr_create();
 #endif
 
     /* apply default configuration */
@@ -525,7 +490,7 @@ void zbar_image_scanner_destroy (zbar_image_scanner_t *iscn)
     }
 #ifdef ENABLE_QRCODE
     if(iscn->qr) {
-        qr_reader_free(iscn->qr);
+        _zbar_qr_destroy(iscn->qr);
         iscn->qr = NULL;
     }
 #endif
@@ -598,25 +563,6 @@ static inline void quiet_border (zbar_image_scanner_t *iscn,
         symbol_handler(iscn, x, y);
 }
 
-#ifdef DEBUG_IMG_SCANNER
-const char svg_head[] =
-    "<?xml version='1.0'?>\n"
-    "<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN'"
-    " 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'>\n"
-    "<svg version='1.1' id='top' width='6in' height='6in'"
-    " preserveAspectRatio='xMidYMid' overflow='visible'"
-    " viewBox='0,0 %d,%d' xmlns:xlink='http://www.w3.org/1999/xlink'"
-    " xmlns='http://www.w3.org/2000/svg'>\n"
-    "<defs><style type='text/css'><![CDATA["
-    "  * { stroke-linejoin: round; stroke-linecap: round; stroke-width: .1;"
-    " image-rendering: optimizeSpeed }\n"
-    "  path { fill: none; stroke-width: .25; stroke-opacity: .666 }\n"
-    "  path.fl { stroke: red }\n"
-    "  path.fe { stroke: yellow }\n"
-    "]]></style></defs>\n"
-    "<image width='%d' height='%d' xlink:href='FIXME'/>\n";
-#endif
-
 #define movedelta(dx, dy) do {                  \
         x += (dx);                              \
         y += (dy);                              \
@@ -640,7 +586,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 #endif
 
 #ifdef ENABLE_QRCODE
-    qr_reader_reset(iscn->qr);
+    _zbar_qr_reset(iscn->qr);
 #endif
 
     /* get grayscale image, convert if necessary */
@@ -665,7 +611,9 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
     unsigned h = img->height;
     const uint8_t *data = img->data;
 
-    dprintf(1, svg_head, w, h, w, h);
+    zbar_image_write_png(img, "debug.png");
+    svg_open("debug.svg", 0, 0, w, h);
+    svg_image("debug.png", w, h);
 
     int density = CFG(iscn, ZBAR_CFG_Y_DENSITY);
     if(density > 0) {
@@ -753,9 +701,8 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
     iscn->img = NULL;
 
 #ifdef ENABLE_QRCODE
-    _zbar_qr_decode(iscn, iscn->qr, img);
+    _zbar_qr_decode(iscn->qr, iscn, img);
 #endif
-    dprintf(1, "</svg>\n");
 
     /* FIXME tmp hack to filter bad EAN results */
     if(syms->nsyms && !iscn->enable_cache &&
@@ -779,5 +726,11 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
     if(syms->nsyms && iscn->handler)
         iscn->handler(img, iscn->userdata);
 
+    svg_close();
     return(syms->nsyms);
 }
+
+#ifdef DEBUG_SVG
+/* FIXME lame...*/
+# include "svg.c"
+#endif

@@ -14,6 +14,8 @@ zbar_libzbar_la_SOURCES = zbar/debug.h zbar/config.c \
     zbar/img_scanner.h zbar/img_scanner.c zbar/scanner.c \
     zbar/decoder.h zbar/decoder.c
 
+EXTRA_zbar_libzbar_la_SOURCES = zbar/svg.h zbar/svg.c
+
 if ENABLE_EAN
 zbar_libzbar_la_SOURCES += zbar/decoder/ean.h zbar/decoder/ean.c
 endif
