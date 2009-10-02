@@ -1,4 +1,5 @@
 current:
+  * tweak linear code position info
   * trim deep qrcode hierarchy
   * fix zero length symbol data
   * fix QR structured append result handling

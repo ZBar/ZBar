@@ -101,7 +101,7 @@ struct zbar_image_scanner_s {
 
     unsigned long time;         /* scan start time */
     zbar_image_t *img;          /* currently scanning image *root* */
-    int dx, dy;                 /* current scan direction */
+    int dx, dy, du, umin;       /* current scan direction */
     zbar_symbol_set_t *syms;    /* previous decode results */
     /* recycled symbols in 4^n size buckets */
     recycle_bucket_t recycle[RECYCLE_BUCKETS];
@@ -349,25 +349,14 @@ static void qr_handler (zbar_image_scanner_t *iscn,
                                         QR_FINDER_SUBPREC) - line->len;
     line->len -= u;
 
-    if(iscn->dx) {
-        assert(!iscn->dy);
-        line->pos[1] = QR_FIXED(y, 1);
-        if(iscn->dx > 0)
-            line->pos[0] = u;
-        else {
-            line->pos[0] = QR_FIXED(iscn->img->width, 0) - u - line->len;
-        }
-    }
-    else {
-        assert(iscn->dy);
+    line->pos[!iscn->dx] = QR_FIXED(iscn->umin, 0) + iscn->du * u;
+    if(!iscn->dx)
         line->pos[0] = QR_FIXED(x, 1);
-        if(iscn->dy > 0)
-            line->pos[1] = u;
-        else {
-            line->pos[1] = QR_FIXED(iscn->img->height, 0) - u - line->len;
-        }
-    }
-    if(iscn->dx < 0 || iscn->dy < 0) {
+    else
+        line->pos[1] = QR_FIXED(y, 1);
+
+    if(iscn->du < 0) {
+        line->pos[!iscn->dx] -= line->len;
         int tmp = line->boffs;
         line->boffs = line->eoffs;
         line->eoffs = tmp;
@@ -398,6 +387,16 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
 
     const char *data = zbar_decoder_get_data(iscn->dcode);
     unsigned datalen = zbar_decoder_get_data_length(iscn->dcode);
+
+    if(TEST_CFG(iscn, ZBAR_CFG_POSITION)) {
+        /* tmp position fixup */
+        int w = zbar_scanner_get_width(iscn->scn);
+        int u = iscn->umin + iscn->du * zbar_scanner_get_edge(iscn->scn, w, 0);
+        if(iscn->dx)
+            x = u;
+        else
+            y = u;
+    }
 
     /* FIXME need better symbol matching */
     zbar_symbol_t *sym;
@@ -632,7 +631,8 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 
         while(y < h) {
             zprintf(128, "img_x+: %04d,%04d @%p\n", x, y, p);
-            iscn->dx = 1;
+            iscn->dx = iscn->du = 1;
+            iscn->umin = 0;
             while(x < w) {
                 if(zbar_scan_y(iscn->scn, *p))
                     symbol_handler(iscn, x, y);
@@ -646,7 +646,8 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
                 break;
 
             zprintf(128, "img_x-: %04d,%04d @%p\n", x, y, p);
-            iscn->dx = -1;
+            iscn->dx = iscn->du = -1;
+            iscn->umin = w;
             while(x >= 0) {
                 if(zbar_scan_y(iscn->scn, *p))
                     symbol_handler(iscn, x, y);
@@ -672,7 +673,8 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 
         while(x < w) {
             zprintf(128, "img_y+: %04d,%04d @%p\n", x, y, p);
-            iscn->dy = 1;
+            iscn->dy = iscn->du = 1;
+            iscn->umin = 0;
             while(y < h) {
                 if(zbar_scan_y(iscn->scn, *p))
                     symbol_handler(iscn, x, y);
@@ -686,7 +688,8 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
                 break;
 
             zprintf(128, "img_y-: %04d,%04d @%p\n", x, y, p);
-            iscn->dy = -1;
+            iscn->dy = iscn->du = -1;
+            iscn->umin = h;
             while(y >= 0) {
                 if(zbar_scan_y(iscn->scn, *p))
                     symbol_handler(iscn, x, y);
