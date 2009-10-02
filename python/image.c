@@ -23,92 +23,6 @@
 
 #include "zbarmodule.h"
 
-static char symboliter_doc[] = PyDoc_STR(
-    "symbol iterator.\n"
-    "\n"
-    "iterates over decode results attached to an image.");
-
-static int
-symboliter_traverse (zbarSymbolIter *self,
-                     visitproc visit,
-                     void *arg)
-{
-    Py_VISIT(self->img);
-    return(0);
-}
-
-static int
-symboliter_clear (zbarSymbolIter *self)
-{
-    if(self->zsym) {
-        zbar_symbol_t *zsym = (zbar_symbol_t*)self->zsym;
-        self->zsym = NULL;
-        zbar_symbol_ref(zsym, -1);
-    }
-    Py_CLEAR(self->img);
-    return(0);
-}
-
-static void
-symboliter_dealloc (zbarSymbolIter *self)
-{
-    symboliter_clear(self);
-    ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
-}
-
-static zbarSymbolIter*
-symboliter_iter (zbarSymbolIter *self)
-{
-    Py_INCREF(self);
-    return(self);
-}
-
-static zbarSymbol*
-symboliter_iternext (zbarSymbolIter *self)
-{
-    if(!self->zsym)
-        self->zsym = zbar_image_first_symbol(self->img->zimg);
-    else {
-        zbar_symbol_t *zsym = (zbar_symbol_t*)self->zsym;
-        zbar_symbol_ref(zsym, -1);
-        self->zsym = zbar_symbol_next(self->zsym);
-    }
-    if(!self->zsym)
-        return(NULL);
-    zbar_symbol_t *zsym = (zbar_symbol_t*)self->zsym;
-    zbar_symbol_ref(zsym, 1);
-    return(zbarSymbol_FromSymbol(self->img, self->zsym));
-}
-
-PyTypeObject zbarSymbolIter_Type = {
-    PyObject_HEAD_INIT(NULL)
-    .tp_name        = "zbar.SymbolIter",
-    .tp_doc         = symboliter_doc,
-    .tp_basicsize   = sizeof(zbarSymbolIter),
-    .tp_flags       = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-                      Py_TPFLAGS_HAVE_GC,
-    .tp_traverse    = (traverseproc)symboliter_traverse,
-    .tp_clear       = (inquiry)symboliter_clear,
-    .tp_dealloc     = (destructor)symboliter_dealloc,
-    .tp_iter        = (getiterfunc)symboliter_iter,
-    .tp_iternext    = (iternextfunc)symboliter_iternext,
-};
-
-static zbarSymbolIter*
-zbarSymbolIter_New (zbarImage *img)
-{
-    zbarSymbolIter *self;
-    self = PyObject_GC_New(zbarSymbolIter, &zbarSymbolIter_Type);
-    if(!self)
-        return(NULL);
-
-    Py_INCREF(img);
-    self->img = img;
-    self->zsym = NULL;
-    return(self);
-}
-
-
 static char image_doc[] = PyDoc_STR(
     "image object.\n"
     "\n"
@@ -167,10 +81,42 @@ image_dealloc (zbarImage *self)
     ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
+static zbarSymbolSet*
+image_get_symbols (zbarImage *self,
+                   void *closure)
+{
+    const zbar_symbol_set_t *zsyms = zbar_image_get_symbols(self->zimg);
+    return(zbarSymbolSet_FromSymbolSet(zsyms));
+}
+
+static int
+image_set_symbols (zbarImage *self,
+                   PyObject *value,
+                   void *closure)
+{
+    const zbar_symbol_set_t *zsyms;
+    if(!value || value == Py_None)
+        zsyms = NULL;
+    else if(zbarSymbolSet_Check(value))
+        zsyms = ((zbarSymbolSet*)value)->zsyms;
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "must set image symbols to a zbar.SymbolSet, not '%.50s'",
+                     value->ob_type->tp_name);
+        return(-1);
+    }
+
+    zbar_image_set_symbols(self->zimg, zsyms);
+    return(0);
+}
+
 static zbarSymbolIter*
 image_iter (zbarImage *self)
 {
-    return(zbarSymbolIter_New(self));
+    zbarSymbolSet *syms = image_get_symbols(self, NULL);
+    if(!syms)
+        return(NULL);
+    return(zbarSymbolIter_FromSymbolSet(syms));
 }
 
 static PyObject*
@@ -366,6 +312,7 @@ static PyGetSetDef image_getset[] = {
     { "sequence", (getter)image_get_int,    (setter)image_set_int,
       NULL, (void*)2 },
     { "data",     (getter)image_get_data,   (setter)image_set_data, },
+    { "symbols",  (getter)image_get_symbols,(setter)image_set_symbols, },
     { NULL, },
 };
 

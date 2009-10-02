@@ -22,6 +22,7 @@
  *------------------------------------------------------------------------*/
 
 #include "window.h"
+#include "image.h"
 #include "x.h"
 
 static inline unsigned long window_alloc_color (zbar_window_t *w,
@@ -220,9 +221,34 @@ int _zbar_window_clear (zbar_window_t *w)
     return(0);
 }
 
-int _zbar_window_draw_marker(zbar_window_t *w,
-                             uint32_t rgb,
-                             const point_t *p)
+int _zbar_window_draw_polygon (zbar_window_t *w,
+                               uint32_t rgb,
+                               const point_t *pts,
+                               int npts)
+{
+    window_state_t *xs = w->state;
+    XSetForeground(w->display, xs->gc, xs->colors[rgb]);
+
+    XPoint xpts[npts + 1];
+    int i;
+    for(i = 0; i < npts; i++) {
+        xpts[i].x = pts[i].x;
+        if(w->width != w->image->width)
+            xpts[i].x = xpts[i].x * w->width / w->image->width;
+        xpts[i].y = pts[i].y;
+        if(w->height != w->image->height)
+            xpts[i].y = xpts[i].y * w->height / w->image->height;
+    }
+    xpts[npts] = xpts[0];
+
+    XDrawLines(w->display, w->xwin, xs->gc, xpts, npts + 1, CoordModeOrigin);
+
+    return(0);
+}
+
+int _zbar_window_draw_marker (zbar_window_t *w,
+                              uint32_t rgb,
+                              const point_t *p)
 {
     window_state_t *xs = w->state;
     XSetForeground(w->display, xs->gc, xs->colors[rgb]);
@@ -238,6 +264,11 @@ int _zbar_window_draw_marker(zbar_window_t *w,
         y = 3;
     else if(y > w->height - 4)
         y = w->height - 4;
+
+    if(w->width != w->image->width)
+        x = x * w->width / w->image->width;
+    if(w->height != w->image->height)
+        y = y * w->height / w->image->height;
 
     XDrawRectangle(w->display, w->xwin, xs->gc, x - 2, y - 2, 4, 4);
     XDrawLine(w->display, w->xwin, xs->gc, x, y - 3, x, y + 3);

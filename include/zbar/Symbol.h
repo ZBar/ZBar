@@ -33,8 +33,64 @@
 #include <stdlib.h>
 #include <string>
 #include <ostream>
+#include <assert.h>
 
 namespace zbar {
+
+class SymbolIterator;
+
+/// container for decoded result symbols associated with an image
+/// or a composite symbol.
+
+class SymbolSet {
+public:
+    /// constructor.
+    SymbolSet (const zbar_symbol_set_t *syms = NULL)
+        : _syms(syms)
+    {
+        ref();
+    }
+
+    /// copy constructor.
+    SymbolSet (const SymbolSet& syms)
+        : _syms(syms._syms)
+    {
+        ref();
+    }
+
+    /// destructor.
+    ~SymbolSet ()
+    {
+        ref(-1);
+    }
+
+    /// manipulate reference count.
+    void ref (int delta = 1) const
+    {
+        if(_syms)
+            zbar_symbol_set_ref((zbar_symbol_set_t*)_syms, delta);
+    }
+
+    /// cast to C symbol set.
+    operator const zbar_symbol_set_t* () const
+    {
+        return(_syms);
+    }
+
+    int get_size ()
+    {
+        return((_syms) ? zbar_symbol_set_get_size(_syms) : 0);
+    }
+
+    /// create a new SymbolIterator over decoded results.
+    SymbolIterator symbol_begin() const;
+
+    /// return a SymbolIterator suitable for ending iteration.
+    const SymbolIterator symbol_end() const;
+
+private:
+    const zbar_symbol_set_t *_syms;
+};
 
 /// decoded barcode symbol result object.  stores type, data, and
 /// image location of decoded symbol
@@ -49,6 +105,10 @@ public:
         int y;  ///< y-coordinate.
 
         Point () { }
+
+        Point(int x, int y)
+            : x(x), y(y)
+        { }
 
         /// copy constructor.
         Point (const Point& pt)
@@ -69,6 +129,7 @@ public:
             : _sym(sym),
               _index(index)
         {
+            sym->ref(1);
             if(!sym ||
                (unsigned)_index >= zbar_symbol_get_loc_size(*_sym))
                 _index = -1;
@@ -78,24 +139,31 @@ public:
         PointIterator (const PointIterator& iter)
             : _sym(iter._sym),
               _index(iter._index)
-        { }
+        {
+            _sym->ref();
+        }
+
+        /// destructor.
+        ~PointIterator ()
+        {
+            _sym->ref(-1);
+        }
 
         /// advance iterator to next Point.
         PointIterator& operator++ ()
         {
-            if(_index >= 0) {
-                _pt.x = zbar_symbol_get_loc_x(*_sym, ++_index);
-                _pt.y = zbar_symbol_get_loc_y(*_sym, _index);
-                if(_pt.x < 0 || _pt.y < 0)
-                    _index = -1;
-            }
+            unsigned int i = ++_index;
+            if(i >= zbar_symbol_get_loc_size(*_sym))
+                _index = -1;
             return(*this);
         }
 
         /// retrieve currently referenced Point.
-        const Point& operator* () const
+        const Point operator* () const
         {
-            return(_pt);
+            assert(_index >= 0);
+            return(Point(zbar_symbol_get_loc_x(*_sym, _index),
+                         zbar_symbol_get_loc_y(*_sym, _index)));
         }
 
         /// test if two iterators refer to the same Point in the same
@@ -116,7 +184,6 @@ public:
     private:
         const Symbol *_sym;
         int _index;
-        Point _pt;
     };
 
     /// constructor.
@@ -125,28 +192,31 @@ public:
           _xmllen(0)
     {
         init(sym);
+        ref();
     }
 
+    /// copy constructor.
+    Symbol (const Symbol& sym)
+        : _sym(sym._sym),
+          _type(sym._type),
+          _data(sym._data),
+          _xmlbuf(NULL),
+          _xmllen(0)
+    {
+        ref();
+    }
+
+    /// destructor.
     ~Symbol () {
         if(_xmlbuf)
             free(_xmlbuf);
+        ref(-1);
     }
 
-    /// initialize Symbol from C symbol object.
-    void init (const zbar_symbol_t *sym)
+    void ref (int delta = 1) const
     {
-        _sym = sym;
-        if(sym) {
-            _type = zbar_symbol_get_type(sym);
-            _data = std::string(zbar_symbol_get_data(sym),
-                                zbar_symbol_get_data_length(sym));
-            _count = zbar_symbol_get_count(sym);
-        }
-        else {
-            _type = ZBAR_NONE;
-            _data = "";
-            _count = -1;
-        }
+        if(_sym)
+            zbar_symbol_ref((zbar_symbol_t*)_sym, delta);
     }
 
     /// cast to C symbol.
@@ -194,7 +264,7 @@ public:
     /// retrieve length of binary data
     unsigned get_data_length () const
     {
-        return(zbar_symbol_get_data_length(_sym));
+        return((_sym) ? zbar_symbol_get_data_length(_sym) : 0);
     }
 
     /// retrieve inter-frame coherency count.
@@ -202,7 +272,12 @@ public:
     /// @since 1.5
     int get_count () const
     {
-        return(_count);
+        return((_sym) ? zbar_symbol_get_count(_sym) : -1);
+    }
+
+    SymbolSet get_components () const
+    {
+        return(SymbolSet((_sym) ? zbar_symbol_get_components(_sym) : NULL));
     }
 
     /// create a new PointIterator at the start of the location
@@ -213,44 +288,152 @@ public:
     }
 
     /// return a PointIterator suitable for ending iteration.
-    const PointIterator& point_end() const
+    const PointIterator point_end() const
     {
-        return(_point_iter_end);
+        return(PointIterator());
     }
 
     /// see zbar_symbol_get_loc_size().
     int get_location_size () const
     {
-        return(zbar_symbol_get_loc_size(_sym));
+        return((_sym) ? zbar_symbol_get_loc_size(_sym) : 0);
     }
 
     /// see zbar_symbol_get_loc_x().
     int get_location_x (unsigned index) const
     {
-        return(zbar_symbol_get_loc_x(_sym, index));
+        return((_sym) ? zbar_symbol_get_loc_x(_sym, index) : -1);
     }
 
     /// see zbar_symbol_get_loc_y().
     int get_location_y (unsigned index) const
     {
-        return(zbar_symbol_get_loc_y(_sym, index));
+        return((_sym) ? zbar_symbol_get_loc_y(_sym, index) : -1);
     }
 
     /// see zbar_symbol_xml().
     const std::string xml () const
     {
+        if(!_sym)
+            return("");
         return(zbar_symbol_xml(_sym, (char**)&_xmlbuf, (unsigned*)&_xmllen));
+    }
+
+protected:
+
+    friend class SymbolIterator;
+
+    /// (re)initialize Symbol from C symbol object.
+    void init (const zbar_symbol_t *sym = NULL)
+    {
+        _sym = sym;
+        if(sym) {
+            _type = zbar_symbol_get_type(sym);
+            _data = std::string(zbar_symbol_get_data(sym),
+                                zbar_symbol_get_data_length(sym));
+        }
+        else {
+            _type = ZBAR_NONE;
+            _data = "";
+        }
     }
 
 private:
     const zbar_symbol_t *_sym;
     zbar_symbol_type_t _type;
     std::string _data;
-    int _count;
-    PointIterator _point_iter_end;
     char *_xmlbuf;
     unsigned _xmllen;
 };
+
+/// iteration over Symbol result objects in a scanned Image or SymbolSet.
+class SymbolIterator
+    : public std::iterator<std::input_iterator_tag, Symbol> {
+
+public:
+    /// default constructor.
+    SymbolIterator ()
+    { }
+
+    /// constructor.
+    SymbolIterator (const SymbolSet &syms)
+        : _syms(syms)
+    {
+        const zbar_symbol_set_t *zsyms = _syms;
+        if(zsyms)
+            _sym.init(zbar_symbol_set_first_symbol(zsyms));
+    }
+
+    /// copy constructor.
+    SymbolIterator (const SymbolIterator& iter)
+        : _syms(iter._syms)
+    {
+        const zbar_symbol_set_t *zsyms = _syms;
+        if(zsyms)
+            _sym.init(zbar_symbol_set_first_symbol(zsyms));
+    }
+
+    ~SymbolIterator ()
+    {
+        _sym.init();
+    }
+
+    /// advance iterator to next Symbol.
+    SymbolIterator& operator++ ()
+    {
+        const zbar_symbol_t *zsym = _sym;
+        if(zsym)
+            _sym.init(zbar_symbol_next(zsym));
+        else {
+            const zbar_symbol_set_t *zsyms = _syms;
+            if(zsyms)
+                _sym.init(zbar_symbol_set_first_symbol(zsyms));
+        }
+        return(*this);
+    }
+
+    /// retrieve currently referenced Symbol.
+    const Symbol operator* () const
+    {
+        return(_sym);
+    }
+
+    /// access currently referenced Symbol.
+    const Symbol* operator-> () const
+    {
+        return(&_sym);
+    }
+
+    /// test if two iterators refer to the same Symbol
+    bool operator== (const SymbolIterator& iter) const
+    {
+        // it is enough to test the symbols, as they belong
+        // to only one set (also simplifies invalid case)
+        return(_sym == iter._sym);
+    }
+
+    /// test if two iterators refer to the same Symbol
+    bool operator!= (const SymbolIterator& iter) const
+    {
+        return(!(*this == iter));
+    }
+
+    const SymbolIterator end () const {
+        return(SymbolIterator());
+    }
+
+private:
+    const SymbolSet _syms;
+    Symbol _sym;
+};
+
+inline SymbolIterator SymbolSet::symbol_begin () const {
+    return(SymbolIterator(*this));
+}
+
+inline const SymbolIterator SymbolSet::symbol_end () const {
+    return(SymbolIterator());
+}
 
 /// @relates Symbol
 /// stream the string representation of a Symbol.

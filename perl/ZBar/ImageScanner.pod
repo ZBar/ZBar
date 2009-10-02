@@ -63,6 +63,11 @@ Enable the inter-image result consistency cache.
 Apply a decoder configuration setting.  See the documentation for
 C<zbarcam>/C<zbarimg> for available configuration options.
 
+=item recycle_image([I<image>])
+
+Remove previously decoded results from a Barcode::ZBar::Image and
+recycle the associated memory.
+
 =back
 
 =head1 SEE ALSO

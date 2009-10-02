@@ -1,4 +1,35 @@
 current:
+  * fix zero length symbol data
+  * fix QR structured append result handling
+  * cleanup SVG debug dump (partial)
+    - some QR integration API cleanup
+  * extract explicit result container, separate from image
+    - remove (broken/tmp) converted image result sharing
+    - add explicit symbol recycle API, update processor/widgets to use
+    - cleanup and update C++ API
+    - update Python/Perl APIs
+    - fix broken and add new Python/Perl tests
+  * cleanup QR result integration
+    - add hierarchy to symbol results
+    - extract symbols during text decode, preserving position and structure
+    - outline QR symbols in window overlay
+    - tmp fix converted image result propagation
+  * factor image scanner cache and apply to QR
+    - fix image scanner handler called once per-image (vs every decode)
+  * QZ and clustering fixes to QR integration
+    - remove qr_finder QZ checks
+    - decrease center clustering threshold from 1/3 to 1/5 of length
+    - add img_scanner svg debug output
+    - manually add config.rpath to workaround broken autofoo
+  * finish initial integration of QR Code reader from maemo-barcode project
+  * zbar-side updates for QR Code integration
+    - add linear scanner position interface
+    - add QR finder position feedback
+    - integrate QR Code reader with img_scanner
+    - refactor some symbol/image interaction
+    - change default scanner density to 1
+    - add iconv to build infrastructure
+  * initial hooks for QR Code, first pass at finder
   * fix broken builds with --disable-pthread
 
 version 0.9:

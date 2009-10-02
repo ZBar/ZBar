@@ -70,10 +70,13 @@ int _zbar_process_image (zbar_processor_t *proc,
          * but easier for now and we don't expect this to take long...
          */
         zbar_image_t *tmp = zbar_image_convert(img, fourcc('Y','8','0','0'));
-        if(!img)
+        if(!tmp)
             goto error;
 
+        zbar_image_scanner_recycle_image(proc->scanner, img);
         int nsyms = zbar_scan_image(proc->scanner, tmp);
+        _zbar_image_swap_symbols(img, tmp);
+
         zbar_image_destroy(tmp);
         tmp = NULL;
         if(nsyms < 0)
@@ -106,9 +109,12 @@ int _zbar_process_image (zbar_processor_t *proc,
         }
 
         if(force_fmt) {
+            zbar_symbol_set_t *syms = img->syms;
             img = zbar_image_convert(img, force_fmt);
             if(!img)
                 goto error;
+            img->syms = syms;
+            zbar_symbol_set_ref(syms, 1);
         }
     }
 

@@ -141,9 +141,10 @@ ldconfig
 %{_bindir}/zbarcam
 %{_libdir}/libzbar.so.*
 %{_datadir}/man/man1/*
-%doc %{_docdir}/%{name}-%{version}/COPYING.LIB
+%doc %{_docdir}/%{name}-%{version}/COPYING
 %doc %{_docdir}/%{name}-%{version}/HACKING
 %doc %{_docdir}/%{name}-%{version}/INSTALL
+%doc %{_docdir}/%{name}-%{version}/LICENSE
 %doc %{_docdir}/%{name}-%{version}/NEWS
 %doc %{_docdir}/%{name}-%{version}/README
 %doc %{_docdir}/%{name}-%{version}/TODO

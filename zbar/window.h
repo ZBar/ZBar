@@ -112,20 +112,17 @@ static inline int _zbar_window_add_format (zbar_window_t *w,
 
 
 /* PAL interface */
-extern int _zbar_window_attach(zbar_window_t*,
-                               void*,
-                               unsigned long);
-extern int _zbar_window_expose(zbar_window_t *w, int, int, int, int);
-extern int _zbar_window_resize(zbar_window_t *w);
+extern int _zbar_window_attach(zbar_window_t*, void*, unsigned long);
+extern int _zbar_window_expose(zbar_window_t*, int, int, int, int);
+extern int _zbar_window_resize(zbar_window_t*);
 extern int _zbar_window_clear(zbar_window_t*);
 extern int _zbar_window_flush(zbar_window_t*);
-extern int _zbar_window_draw_logo(zbar_window_t *w);
+extern int _zbar_window_draw_logo(zbar_window_t*);
 extern int _zbar_window_draw_marker(zbar_window_t*, uint32_t, const point_t*);
+extern int _zbar_window_draw_polygon(zbar_window_t*, uint32_t, const point_t*, int);
 #if 0
 extern int _zbar_window_draw_line(zbar_window_t*, uint32_t,
                                   const point_t*, const point_t*);
-extern int _zbar_window_draw_outline(zbar_window_t*, uint32_t,
-                                     const symbol_t*);
 extern int _zbar_window_draw_text(zbar_window_t*, uint32_t,
                                   const point_t*, const char*);
 #endif

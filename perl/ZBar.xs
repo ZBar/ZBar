@@ -56,12 +56,12 @@ static AV *LOOKUP_zbar_config_t = NULL;
 
 #define CONSTANT(typ, prefix, sym, name)                \
     do {                                                \
-        SV *c = newSViv(ZBAR_ ## prefix ## sym);       \
+        SV *c = newSViv(ZBAR_ ## prefix ## sym);        \
         sv_setpv(c, name);                              \
         SvIOK_on(c);                                    \
         newCONSTSUB(stash, #sym, c);                    \
-        av_store(LOOKUP_zbar_ ## typ ## _t,            \
-                 ZBAR_ ## prefix ## sym,               \
+        av_store(LOOKUP_zbar_ ## typ ## _t,             \
+                 ZBAR_ ## prefix ## sym,                \
                  SvREFCNT_inc(c));                      \
     } while(0)
 
@@ -81,6 +81,17 @@ static inline void check_error (int rc, void *obj)
         croak(NULL);
     }
 }
+
+#define PUSH_SYMS(x)                                                    \
+    do {                                                                \
+        const zbar_symbol_t *sym = (const zbar_symbol_t*)(x);           \
+        for(; sym; sym = zbar_symbol_next(sym)) {                       \
+            zbar_symbol_t *s = (zbar_symbol_t*)sym;                     \
+            zbar_symbol_ref(s, 1);                                      \
+            XPUSHs(sv_setref_pv(sv_newmortal(), "Barcode::ZBar::Symbol", \
+                                (void*)sym));                           \
+        }                                                               \
+    } while(0);
 
 static void image_cleanup_handler (zbar_image_t *image)
 {
@@ -290,6 +301,7 @@ BOOT:
         CONSTANT(symbol_type, , I25, zbar_get_symbol_name(ZBAR_I25));
         CONSTANT(symbol_type, , CODE39, zbar_get_symbol_name(ZBAR_CODE39));
         CONSTANT(symbol_type, , PDF417, zbar_get_symbol_name(ZBAR_PDF417));
+        CONSTANT(symbol_type, , QRCODE, zbar_get_symbol_name(ZBAR_QRCODE));
         CONSTANT(symbol_type, , CODE128, zbar_get_symbol_name(ZBAR_CODE128));
     }
 
@@ -334,6 +346,12 @@ zbar_symbol_get_loc(symbol)
             av_push(pt, newSVuv(zbar_symbol_get_loc_x(symbol, i)));
             av_push(pt, newSVuv(zbar_symbol_get_loc_y(symbol, i)));
         }
+
+SV *
+get_components(symbol)
+        Barcode::ZBar::Symbol	symbol
+    PPCODE:
+        PUSH_SYMS(zbar_symbol_first_component(symbol));
 
 
 MODULE = Barcode::ZBar	PACKAGE = Barcode::ZBar::Image	PREFIX = zbar_image_
@@ -392,16 +410,8 @@ zbar_image_get_data(image)
 SV *
 get_symbols(image)
         Barcode::ZBar::Image	image
-    PREINIT:
-        const zbar_symbol_t *sym;
     PPCODE:
-	sym = zbar_image_first_symbol(image);
-        for(; sym; sym = zbar_symbol_next(sym)) {
-            zbar_symbol_t *s = (zbar_symbol_t*)sym;
-            zbar_symbol_ref(s, 1);
-            XPUSHs(sv_setref_pv(sv_newmortal(), "Barcode::ZBar::Symbol",
-                   (void*)sym));
-        }
+        PUSH_SYMS(zbar_image_first_symbol(image));
 
 void
 zbar_image_set_format(image, format)
@@ -604,6 +614,11 @@ void
 zbar_image_scanner_enable_cache(scanner, enable)
         Barcode::ZBar::ImageScanner	scanner
 	int	enable
+
+void
+zbar_image_scanner_recycle_image(scanner, image)
+        Barcode::ZBar::ImageScanner	scanner
+        Barcode::ZBar::Image	image
 
 int
 scan_image(scanner, image)
