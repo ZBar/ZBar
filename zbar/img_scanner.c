@@ -221,7 +221,7 @@ _zbar_image_scanner_alloc_sym (zbar_image_scanner_t *iscn,
     /* recycle old or alloc new symbol */
     int i;
     for(i = 0; i < RECYCLE_BUCKETS - 1; i++)
-        if(datalen + 1 <= 1 << (i * 2))
+        if(datalen <= 1 << (i * 2))
             break;
 
     zbar_symbol_t *sym = NULL;
@@ -250,8 +250,8 @@ _zbar_image_scanner_alloc_sym (zbar_image_scanner_t *iscn,
     sym->time = iscn->time;
     assert(!sym->syms);
 
-    if(datalen) {
-        sym->datalen = datalen++;
+    if(datalen > 0) {
+        sym->datalen = datalen - 1;
         if(sym->data_alloc < datalen) {
             if(sym->data)
                 free(sym->data);
@@ -299,8 +299,8 @@ inline void _zbar_image_scanner_cache_sym (zbar_image_scanner_t *iscn,
         if(!entry) {
             /* FIXME reuse sym */
             entry = _zbar_image_scanner_alloc_sym(iscn, sym->type,
-                                                  sym->datalen);
-            memcpy(entry->data, sym->data, sym->datalen + 1);
+                                                  sym->datalen + 1);
+            memcpy(entry->data, sym->data, sym->datalen);
             entry->time = sym->time - CACHE_HYSTERESIS;
             entry->cache_count = -CACHE_CONSISTENCY;
             /* add to cache */
@@ -413,7 +413,7 @@ static void symbol_handler (zbar_image_scanner_t *iscn,
             return;
         }
 
-    sym = _zbar_image_scanner_alloc_sym(iscn, type, datalen);
+    sym = _zbar_image_scanner_alloc_sym(iscn, type, datalen + 1);
     /* FIXME grab decoder buffer */
     memcpy(sym->data, data, datalen + 1);
 

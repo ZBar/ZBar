@@ -55,8 +55,8 @@ typedef struct qr_pack_buf      qr_pack_buf;
 
 /* collection of finder lines */
 typedef struct qr_finder_lines {
-    int num_lines, max_lines;
     qr_finder_line *lines;
+    int nlines, clines;
 } qr_finder_lines;
 
 
@@ -91,6 +91,9 @@ qr_reader *_zbar_qr_create (void)
 /*Frees a client reader handle.*/
 void _zbar_qr_destroy (qr_reader *reader)
 {
+    zprintf(1, "max finder lines = %dx%d\n",
+            reader->finder_lines[0].clines,
+            reader->finder_lines[1].clines);
     if(reader->finder_lines[0].lines)
         free(reader->finder_lines[0].lines);
     if(reader->finder_lines[1].lines)
@@ -101,8 +104,8 @@ void _zbar_qr_destroy (qr_reader *reader)
 /* reset finder state between scans */
 void _zbar_qr_reset (qr_reader *reader)
 {
-    reader->finder_lines[0].num_lines = 0;
-    reader->finder_lines[1].num_lines = 0;
+    reader->finder_lines[0].nlines = 0;
+    reader->finder_lines[1].nlines = 0;
 }
 
 
@@ -403,9 +406,9 @@ static int qr_finder_centers_locate(qr_finder_center **_centers,
  qr_finder_edge_pt **_edge_pts, qr_reader *reader,
  int _width,int _height){
   qr_finder_line     *hlines = reader->finder_lines[0].lines;
-  int                 nhlines = reader->finder_lines[0].num_lines;
+  int                 nhlines = reader->finder_lines[0].nlines;
   qr_finder_line     *vlines = reader->finder_lines[1].lines;
-  int                 nvlines = reader->finder_lines[1].num_lines;
+  int                 nvlines = reader->finder_lines[1].nlines;
 
   qr_finder_line    **hneighbors;
   qr_finder_cluster  *hclusters;
@@ -3876,13 +3879,13 @@ int _zbar_qr_found_line (qr_reader *reader,
     /* minimally intrusive brute force version */
     qr_finder_lines *lines = &reader->finder_lines[dir];
 
-    if(lines->num_lines >= lines->max_lines) {
-        lines->max_lines *= 2;
+    if(lines->nlines >= lines->clines) {
+        lines->clines *= 2;
         lines->lines = realloc(lines->lines,
-                               ++lines->max_lines * sizeof(*lines->lines));
+                               ++lines->clines * sizeof(*lines->lines));
     }
 
-    memcpy(lines->lines + lines->num_lines++, line, sizeof(*line));
+    memcpy(lines->lines + lines->nlines++, line, sizeof(*line));
 
     return(0);
 }
@@ -3914,13 +3917,17 @@ int _zbar_qr_decode (qr_reader *reader,
     qr_finder_edge_pt *edge_pts = NULL;
     qr_finder_center *centers = NULL;
 
+    if(reader->finder_lines[0].nlines < 9 ||
+       reader->finder_lines[1].nlines < 9)
+        return(0);
+
     svg_group_start("finder", 1. / (1 << QR_FINDER_SUBPREC), 0, 0);
 
     int ncenters = qr_finder_centers_locate(&centers, &edge_pts, reader, 0, 0);
 
     zprintf(14, "%dx%d finders, %d centers:\n",
-            reader->finder_lines[0].num_lines,
-            reader->finder_lines[1].num_lines,
+            reader->finder_lines[0].nlines,
+            reader->finder_lines[1].nlines,
             ncenters);
     qr_svg_centers(centers, ncenters);
 

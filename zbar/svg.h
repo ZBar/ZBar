@@ -33,10 +33,10 @@ void svg_close(void);
 void svg_commentf(const char *format, ...);
 void svg_image(const char *name, double width, double height);
 
-void svg_group_start(const char *class, double scale, double x, double y);
+void svg_group_start(const char *cls, double scale, double x, double y);
 void svg_group_end(void);
 
-void svg_path_start(const char *class, double scale, double x, double y);
+void svg_path_start(const char *cls, double scale, double x, double y);
 void svg_path_end(void);
 void svg_path_close(void);
 void svg_path_moveto(svg_absrel_t abs, double x, double y);
