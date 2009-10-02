@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iconv.h>
-#include "decoder/qrcode.h"
+#include "qrcode.h"
 #include "qrdec.h"
 #include "util.h"
 #include "image.h"

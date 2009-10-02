@@ -7,7 +7,7 @@
 #include <limits.h>
 #include <string.h>
 #include <time.h>
-#include "decoder/qrcode.h"
+#include "qrcode.h"
 #include "qrdec.h"
 #include "bch15_5.h"
 #include "rs.h"

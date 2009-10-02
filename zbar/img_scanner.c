@@ -36,7 +36,7 @@
 #include "error.h"
 #include "image.h"
 #ifdef ENABLE_QRCODE
-# include "decoder/qrcode.h"
+# include "qrcode.h"
 #endif
 #include "img_scanner.h"
 #include "svg.h"
