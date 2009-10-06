@@ -84,6 +84,7 @@ int main (int argc, char **argv)
 
     /* clean up */
     zbar_image_destroy(image);
+    zbar_image_scanner_destroy(scanner);
 
     return(0);
 }

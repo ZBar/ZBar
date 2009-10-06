@@ -77,9 +77,9 @@ dnl symbologies
 
 AC_ARG_ENABLE([codes],
   [AS_HELP_STRING([--enable-codes=SYMS],
-    [select symbologies to compile [default=ean,i25,code39,code128]])],
+    [select symbologies to compile [default=ean,i25,code39,code128,qrcode]])],
   [],
-  [enable_codes="ean,code39,code128,i25"]) dnl pdf417
+  [enable_codes="ean,code39,code128,i25,qrcode"]) dnl pdf417
 
 AC_DEFUN([ZBAR_CHK_CODE], [
   AC_MSG_CHECKING([whether to build $2])
@@ -101,10 +101,12 @@ ZBAR_CHK_CODE([code128], [Code 128 symbology])
 ZBAR_CHK_CODE([code39], [Code 39 symbology])
 ZBAR_CHK_CODE([pdf417], [PDF417 symbology])
 ZBAR_CHK_CODE([i25], [Interleaved 2 of 5 symbology])
+ZBAR_CHK_CODE([qrcode], [QR Code])
 
 dnl libraries
 
 AC_SEARCH_LIBS([clock_gettime], [rt])
+AM_ICONV()
 
 dnl poll support
 
@@ -386,7 +388,7 @@ dnl header files
 
 dnl FIXME switches for shm, mmap
 AC_HEADER_ASSERT
-AC_CHECK_HEADERS([fcntl.h inttypes.h stdlib.h string.h unistd.h \
+AC_CHECK_HEADERS([fcntl.h features.h inttypes.h stdlib.h string.h unistd.h \
   sys/ioctl.h sys/time.h sys/times.h sys/ipc.h sys/shm.h sys/mman.h])
 
 dnl types

@@ -72,64 +72,23 @@ public:
         }
     };
 
-    /// iteration over Symbol result objects in a scanned Image.
-    class SymbolIterator
-        : public std::iterator<std::input_iterator_tag, Symbol> {
-
+    class SymbolIterator : public zbar::SymbolIterator {
     public:
-        /// constructor.
-        SymbolIterator (const Image *img = NULL)
-        {
-            if(img) {
-                const zbar_symbol_t *zsym = zbar_image_first_symbol(*img);
-                _sym.init(zsym);
-            }
-        }
-
-        /// constructor.
-        SymbolIterator (const SymbolIterator& iter)
-            : _sym(iter._sym)
+        /// default constructor.
+        SymbolIterator ()
+            : zbar::SymbolIterator()
         { }
 
-        /// advance iterator to next Symbol.
-        SymbolIterator& operator++ ()
-        {
-            const zbar_symbol_t *zsym = _sym;
-            if(zsym) {
-                zsym = zbar_symbol_next(zsym);
-                _sym.init(zsym);
-            }
-            return(*this);
-        }
+        /// constructor.
+        SymbolIterator (const SymbolSet &syms)
+            : zbar::SymbolIterator(syms)
+        { }
 
-        /// retrieve currently referenced Symbol.
-        const Symbol& operator* () const
-        {
-            return(_sym);
-        }
-
-        /// access currently referenced Symbol.
-        const Symbol* operator-> () const
-        {
-            return(&_sym);
-        }
-
-        /// test if two iterators refer to the same Symbol
-        bool operator== (const SymbolIterator& iter) const
-        {
-            return(_sym == iter._sym);
-        }
-
-        /// test if two iterators refer to the same Symbol
-        bool operator!= (const SymbolIterator& iter) const
-        {
-            return(!(*this == iter));
-        }
-
-    private:
-        Symbol _sym;
+        /// copy constructor.
+        SymbolIterator (const SymbolIterator& iter)
+            : zbar::SymbolIterator(iter)
+        { }
     };
-
 
     /// constructor.
     /// create a new Image with the specified parameters
@@ -279,14 +238,22 @@ public:
         throw FormatError();
     }
 
+    const SymbolSet get_symbols () const {
+        return(SymbolSet(zbar_image_get_symbols(_img)));
+    }
+
+    void set_symbols (const SymbolSet &syms) {
+        zbar_image_set_symbols(_img, syms);
+    }
+
     /// create a new SymbolIterator over decoded results.
-    SymbolIterator symbol_begin() const {
-        return(SymbolIterator(this));
+    SymbolIterator symbol_begin () const {
+        return(SymbolIterator(get_symbols()));
     }
 
     /// return a SymbolIterator suitable for ending iteration.
-    SymbolIterator symbol_end() const {
-        return(SymbolIterator(_sym_iter_end));
+    SymbolIterator symbol_end () const {
+        return(SymbolIterator());
     }
 
 protected:
@@ -316,10 +283,8 @@ protected:
 
 private:
     zbar_image_t *_img;
-    SymbolIterator _sym_iter_end;
 };
 
 }
 
 #endif
-

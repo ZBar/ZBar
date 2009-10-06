@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, os
+import sys, os, re
 import unittest as ut
 import zbar
 
@@ -24,6 +24,8 @@ VIDEO_DEVICE = None
 if 'VIDEO_DEVICE' in os.environ:
     VIDEO_DEVICE = os.environ['VIDEO_DEVICE']
 
+is_identifier = re.compile(r'^[A-Z][A-Z_0-9]*$')
+
 class TestZBarFunctions(ut.TestCase):
     def test_version(self):
         ver = zbar.version()
@@ -38,15 +40,49 @@ class TestZBarFunctions(ut.TestCase):
 
     def test_exceptions(self):
         self.assert_(isinstance(zbar.Exception, type))
-        self.assert_(issubclass(zbar.InternalError, zbar.Exception))
-        self.assert_(issubclass(zbar.UnsupportedError, zbar.Exception))
-        self.assert_(issubclass(zbar.InvalidRequestError, zbar.Exception))
-        self.assert_(issubclass(zbar.SystemError, zbar.Exception))
-        self.assert_(issubclass(zbar.LockingError, zbar.Exception))
-        self.assert_(issubclass(zbar.BusyError, zbar.Exception))
-        self.assert_(issubclass(zbar.X11DisplayError, zbar.Exception))
-        self.assert_(issubclass(zbar.X11ProtocolError, zbar.Exception))
-        self.assert_(issubclass(zbar.WindowClosed, zbar.Exception))
+        for err in (zbar.InternalError,
+                    zbar.UnsupportedError,
+                    zbar.InvalidRequestError,
+                    zbar.SystemError,
+                    zbar.LockingError,
+                    zbar.BusyError,
+                    zbar.X11DisplayError,
+                    zbar.X11ProtocolError,
+                    zbar.WindowClosed,
+                    zbar.WinAPIError):
+            self.assert_(issubclass(err, zbar.Exception))
+
+    def test_configs(self):
+        for cfg in (zbar.Config.ENABLE,
+                    zbar.Config.ADD_CHECK,
+                    zbar.Config.EMIT_CHECK,
+                    zbar.Config.ASCII,
+                    zbar.Config.MIN_LEN,
+                    zbar.Config.MAX_LEN,
+                    zbar.Config.POSITION,
+                    zbar.Config.X_DENSITY,
+                    zbar.Config.Y_DENSITY):
+            self.assert_(isinstance(cfg, zbar.EnumItem))
+            self.assert_(int(cfg) >= 0)
+            self.assert_(is_identifier.match(str(cfg)))
+
+    def test_symbologies(self):
+        for sym in (zbar.Symbol.NONE,
+                    zbar.Symbol.PARTIAL,
+                    zbar.Symbol.EAN8,
+                    zbar.Symbol.UPCE,
+                    zbar.Symbol.ISBN10,
+                    zbar.Symbol.UPCA,
+                    zbar.Symbol.EAN13,
+                    zbar.Symbol.ISBN13,
+                    zbar.Symbol.I25,
+                    zbar.Symbol.CODE39,
+                    zbar.Symbol.PDF417,
+                    zbar.Symbol.QRCODE,
+                    zbar.Symbol.CODE128):
+            self.assert_(isinstance(sym, zbar.EnumItem))
+            self.assert_(int(sym) >= 0)
+            self.assert_(is_identifier.match(str(sym)))
 
 class TestScanner(ut.TestCase):
     def setUp(self):
@@ -125,6 +161,7 @@ class TestDecoder(ut.TestCase):
 
         explicit_closure = [ 0 ]
         self.dcode.set_handler(handler, explicit_closure)
+        self.dcode.set_config(zbar.Symbol.QRCODE, zbar.Config.ENABLE, 0)
 
         for (i, width) in enumerate(encoded_widths):
             if width == ' ': continue
@@ -232,33 +269,56 @@ class TestImageScan(ut.TestCase):
         n = self.scn.scan(self.image)
         self.assertEqual(n, 1)
 
+        syms = self.image.symbols
+        self.assert_(isinstance(syms, zbar.SymbolSet))
+        self.assertEqual(len(syms), 1)
+
         i = iter(self.image)
+        j = iter(syms)
         self.assert_(isinstance(i, zbar.SymbolIter))
-        sym = i.next()
+        self.assert_(isinstance(j, zbar.SymbolIter))
+        symi = i.next()
+        symj = j.next()
         self.assertRaises(StopIteration, i.next)
+        self.assertRaises(StopIteration, j.next)
 
         # this is the only way to obtain a Symbol,
         # so test Symbol here
-        self.assert_(isinstance(sym, zbar.Symbol))
-        self.assert_(sym.type is zbar.Symbol.EAN13)
-        self.assert_(sym.type is sym.EAN13)
-        self.assertEqual(str(sym.type), 'EAN13')
-        self.assert_(sym.quality > 0)
-        self.assertEqual(sym.count, 0)
+        for sym in (symi, symj):
+            self.assert_(isinstance(sym, zbar.Symbol))
+            self.assert_(sym.type is zbar.Symbol.EAN13)
+            self.assert_(sym.type is sym.EAN13)
+            self.assertEqual(str(sym.type), 'EAN13')
+            self.assert_(sym.quality > 0)
+            self.assertEqual(sym.count, 0)
 
-        data = sym.data
-        self.assertEqual(data, '9876543210128')
+            # FIXME put a nice QR S-A in here
+            comps = sym.components
+            self.assert_(isinstance(comps, zbar.SymbolSet))
+            self.assertEqual(len(comps), 0)
+            self.assert_(not comps)
+            self.assert_(tuple(comps) is ())
 
-        loc = sym.location
-        self.assert_(len(loc) >= 4) # FIXME
-        self.assert_(isinstance(loc, tuple))
-        for pt in loc:
-            self.assert_(isinstance(pt, tuple))
-            self.assertEqual(len(pt), 2)
-            # FIXME test values (API currently in flux)
+            data = sym.data
+            self.assertEqual(data, '9876543210128')
 
-        self.assert_(data is sym.data)
-        self.assert_(loc is sym.location)
+            loc = sym.location
+            self.assert_(len(loc) >= 4) # FIXME
+            self.assert_(isinstance(loc, tuple))
+            for pt in loc:
+                self.assert_(isinstance(pt, tuple))
+                self.assertEqual(len(pt), 2)
+                # FIXME test values (API currently in flux)
+
+            self.assert_(data is sym.data)
+            self.assert_(loc is sym.location)
+
+        def set_symbols(syms):
+            self.image.symbols = syms
+        self.assertRaises(TypeError, set_symbols, ())
+
+        self.scn.recycle(self.image)
+        self.assertEqual(len(self.image.symbols), 0)
 
     def test_scan_again(self):
         self.test_scan()
@@ -324,6 +384,9 @@ class TestProcessor(ut.TestCase):
 
         rc = self.proc.process_image(self.image)
         self.assertEqual(rc, 0)
+        self.assertEqual(len(self.image.symbols), 1)
+        del(self.image.symbols)
+        self.assertEqual(len(self.image.symbols), 0)
 
         self.assertEqual(self.proc.user_wait(.9), 0)
 

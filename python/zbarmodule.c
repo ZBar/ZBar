@@ -35,7 +35,7 @@ static char *exc_names[] = {
     "zbar.X11DisplayError",
     "zbar.X11ProtocolError",
     "zbar.WindowClosed",
-    "zbar.WinAPI",
+    "zbar.WinAPIError",
 };
 
 int
@@ -120,6 +120,7 @@ initzbar (void)
        PyType_Ready(&zbarEnum_Type) < 0 ||
        PyType_Ready(&zbarImage_Type) < 0 ||
        PyType_Ready(&zbarSymbol_Type) < 0 ||
+       PyType_Ready(&zbarSymbolSet_Type) < 0 ||
        PyType_Ready(&zbarSymbolIter_Type) < 0 ||
        PyType_Ready(&zbarProcessor_Type) < 0 ||
        PyType_Ready(&zbarImageScanner_Type) < 0 ||
@@ -151,6 +152,7 @@ initzbar (void)
     PyModule_AddObject(mod, "Image", (PyObject*)&zbarImage_Type);
     PyModule_AddObject(mod, "Config", (PyObject*)config_enum);
     PyModule_AddObject(mod, "Symbol", (PyObject*)&zbarSymbol_Type);
+    PyModule_AddObject(mod, "SymbolSet", (PyObject*)&zbarSymbolSet_Type);
     PyModule_AddObject(mod, "SymbolIter", (PyObject*)&zbarSymbolIter_Type);
     PyModule_AddObject(mod, "Processor", (PyObject*)&zbarProcessor_Type);
     PyModule_AddObject(mod, "ImageScanner", (PyObject*)&zbarImageScanner_Type);
@@ -191,5 +193,6 @@ initzbar (void)
     zbarEnumItem_New(tp_dict, symbol_enum, ZBAR_I25,     "I25");
     zbarEnumItem_New(tp_dict, symbol_enum, ZBAR_CODE39,  "CODE39");
     zbarEnumItem_New(tp_dict, symbol_enum, ZBAR_PDF417,  "PDF417");
+    zbarEnumItem_New(tp_dict, symbol_enum, ZBAR_QRCODE,  "QRCODE");
     zbarEnumItem_New(tp_dict, symbol_enum, ZBAR_CODE128, "CODE128");
 }

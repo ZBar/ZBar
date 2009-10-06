@@ -24,16 +24,10 @@
 #include "window.h"
 #include "image.h"
 #include "win.h"
+#include <ctype.h>
 
 int _zbar_window_vfw_init(zbar_window_t *w);
 int _zbar_window_dib_init(zbar_window_t *w);
-
-int _zbar_window_draw_marker(zbar_window_t *w,
-                             uint32_t rgb,
-                             const point_t *p)
-{
-    return(-1);
-}
 
 int _zbar_window_resize (zbar_window_t *w)
 {
@@ -132,9 +126,27 @@ int _zbar_window_attach (zbar_window_t *w,
         1000L * GetDeviceCaps(hdc, HORZRES) / GetDeviceCaps(hdc, HORZSIZE);
     win->bih.biYPelsPerMeter =
         1000L * GetDeviceCaps(hdc, VERTRES) / GetDeviceCaps(hdc, VERTSIZE);
+
+    int height = -MulDiv(11, GetDeviceCaps(hdc, LOGPIXELSY), 96);
+    HFONT font = CreateFontW(height, 0, 0, 0, 0, 0, 0, 0,
+                             ANSI_CHARSET, 0, 0, 0,
+                             FF_MODERN | FIXED_PITCH, NULL);
+
+    SelectObject(hdc, font);
+    DeleteObject(font);
+
+    TEXTMETRIC tm;
+    GetTextMetrics(hdc, &tm);
+    win->font_height = tm.tmHeight;
+
     ReleaseDC(w->display, hdc);
 
     return(_zbar_window_dib_init(w));
+}
+
+int _zbar_window_flush (zbar_window_t *w)
+{
+    return(0);
 }
 
 int _zbar_window_clear (zbar_window_t *w)
@@ -151,8 +163,114 @@ int _zbar_window_clear (zbar_window_t *w)
     return(0);
 }
 
-int _zbar_window_flush (zbar_window_t *w)
+static inline void win_set_rgb (HDC hdc,
+                                uint32_t rgb)
 {
+    SelectObject(hdc, GetStockObject(DC_PEN));
+    SetDCPenColor(hdc, RGB((rgb & 4) * 0x33,
+                           (rgb & 2) * 0x66,
+                           (rgb & 1) * 0xcc));
+}
+
+int _zbar_window_draw_polygon (zbar_window_t *w,
+                               uint32_t rgb,
+                               const point_t *pts,
+                               int npts)
+{
+    HDC hdc = GetDC(w->display);
+    if(!hdc || !SaveDC(hdc))
+        return(-1/*FIXME*/);
+    win_set_rgb(hdc, rgb);
+
+    POINT gdipts[npts + 1];
+    int i;
+    for(i = 0; i < npts; i++) {
+        gdipts[i].x = pts[i].x;
+        if(w->width != w->image->width)
+            gdipts[i].x = gdipts[i].x * w->width / w->image->width;
+        gdipts[i].y = pts[i].y;
+        if(w->height != w->image->height)
+            gdipts[i].y = gdipts[i].y * w->height / w->image->height;
+    }
+    gdipts[npts] = gdipts[0];
+
+    Polyline(hdc, gdipts, npts + 1);
+
+    RestoreDC(hdc, -1);
+    ReleaseDC(w->display, hdc);
+    return(0);
+}
+
+int _zbar_window_draw_marker(zbar_window_t *w,
+                             uint32_t rgb,
+                             const point_t *p)
+{
+    HDC hdc = GetDC(w->display);
+    if(!hdc || !SaveDC(hdc))
+        return(-1/*FIXME*/);
+    win_set_rgb(hdc, rgb);
+
+    int x = p->x;
+    if(w->width != w->image->width)
+        x = x * w->width / w->image->width;
+    int y = p->y;
+    if(w->height != w->image->height)
+        y = y * w->height / w->image->height;
+
+    static const DWORD npolys[3] = { 5, 2, 2 };
+    POINT polys[9] = {
+        { x - 2, y - 2 },
+        { x - 2, y + 2 },
+        { x + 2, y + 2 },
+        { x + 2, y - 2 },
+        { x - 2, y - 2 },
+
+        { x - 3, y },
+        { x + 4, y },
+
+        { x, y - 3 },
+        { x, y + 4 },
+    };
+    PolyPolyline(hdc, polys, npolys, 3);
+
+    RestoreDC(hdc, -1);
+    ReleaseDC(w->display, hdc);
+    return(0);
+}
+
+int _zbar_window_draw_text (zbar_window_t *w,
+                            uint32_t rgb,
+                            const point_t *p,
+                            const char *text)
+{
+    HDC hdc = GetDC(w->display);
+    if(!hdc || !SaveDC(hdc))
+        return(-1/*FIXME*/);
+    SetTextColor(hdc, RGB((rgb & 4) * 0x33,
+                          (rgb & 2) * 0x66,
+                          (rgb & 1) * 0xcc));
+    SetBkMode(hdc, TRANSPARENT);
+
+    int n = 0;
+    while(n < 32 && text[n] && isprint(text[n]))
+        n++;
+
+    int x = p->x;
+    if(x >= 0)
+        SetTextAlign(hdc, TA_BASELINE | TA_CENTER);
+    else {
+        SetTextAlign(hdc, TA_BASELINE | TA_RIGHT);
+        x += w->width;
+    }
+
+    int y = p->y;
+    if(y < 0)
+        y = w->height + y * w->state->font_height * 5 / 4;
+
+    TextOut(hdc, x, y, text, n);
+
+    RestoreDC(hdc, -1);
+    ReleaseDC(w->display, hdc);
     return(0);
 }
 

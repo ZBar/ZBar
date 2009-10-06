@@ -75,8 +75,7 @@ struct zbar_image_s {
     zbar_image_t *next;         /* internal image lists */
 
     unsigned seq;               /* page/frame sequence number */
-    int nsyms;                  /* number of valid symbols */
-    zbar_symbol_t *syms;        /* first of decoded symbol results */
+    zbar_symbol_set_t *syms;    /* decoded result set */
 };
 
 /* description of an image format */
@@ -103,7 +102,13 @@ typedef struct zbar_format_def_s {
 
 extern int _zbar_best_format(uint32_t, uint32_t*, const uint32_t*);
 extern const zbar_format_def_t *_zbar_format_lookup(uint32_t);
-extern void _zbar_image_free(zbar_image_t *img);
+extern void _zbar_image_free(zbar_image_t*);
+
+#ifdef DEBUG_SVG
+extern int zbar_image_write_png(const zbar_image_t*, const char*);
+#else
+# define zbar_image_write_png(...)
+#endif
 
 static inline void _zbar_image_refcnt (zbar_image_t *img,
                                        int delta)
@@ -114,6 +119,14 @@ static inline void _zbar_image_refcnt (zbar_image_t *img,
         if(!img->src)
             _zbar_image_free(img);
     }
+}
+
+static inline void _zbar_image_swap_symbols (zbar_image_t *a,
+                                             zbar_image_t *b)
+{
+    zbar_symbol_set_t *tmp = a->syms;
+    a->syms = b->syms;
+    b->syms = tmp;
 }
 
 #endif
