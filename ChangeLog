@@ -1,4 +1,5 @@
 current:
+  * add configure check for features.h
   * overlay enhancements
     - add fps to overlay
     - add overlay control to processor

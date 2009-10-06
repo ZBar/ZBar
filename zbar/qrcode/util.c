@@ -78,7 +78,7 @@ unsigned qr_ihypot(int _x,int _y){
   return x+((1U<<shift)>>1)>>shift;
 }
 
-#if defined(__GNUC__) && !defined(_WIN32)
+#if defined(__GNUC__) && defined(HAVE_FEATURES_H)
 # include <features.h>
 # if __GNUC_PREREQ(3,4)
 #  include <limits.h>

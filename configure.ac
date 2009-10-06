@@ -388,7 +388,7 @@ dnl header files
 
 dnl FIXME switches for shm, mmap
 AC_HEADER_ASSERT
-AC_CHECK_HEADERS([fcntl.h inttypes.h stdlib.h string.h unistd.h \
+AC_CHECK_HEADERS([fcntl.h features.h inttypes.h stdlib.h string.h unistd.h \
   sys/ioctl.h sys/time.h sys/times.h sys/ipc.h sys/shm.h sys/mman.h])
 
 dnl types
