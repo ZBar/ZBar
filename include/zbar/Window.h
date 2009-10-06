@@ -84,6 +84,9 @@ public:
         zbar_window_set_overlay(_window, level);
     }
 
+    /// retrieve current content level of reader overlay.
+    /// see zbar_window_get_overlay()
+
     /// draw a new image into the output window.
     /// see zbar_window_draw()
     void draw (Image& image)

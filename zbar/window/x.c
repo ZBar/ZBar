@@ -24,6 +24,11 @@
 #include "window.h"
 #include "image.h"
 #include "x.h"
+#include <ctype.h>
+
+#ifndef ZBAR_OVERLAY_FONT
+# define ZBAR_OVERLAY_FONT "-*-fixed-medium-r-*-*-*-120-75-75-*-*-ISO8859-1"
+#endif
 
 static inline unsigned long window_alloc_color (zbar_window_t *w,
                                                 Colormap cmap,
@@ -131,6 +136,10 @@ int _zbar_window_attach (zbar_window_t *w,
         if(x->gc)
             XFreeGC(w->display, x->gc);
         assert(!x->exposed);
+        if(x->font) {
+            XFreeFont(w->display, x->font);
+            x->font = NULL;
+        }
         if(x->logo_zbars) {
             XDestroyRegion(x->logo_zbars);
             x->logo_zbars = NULL;
@@ -166,6 +175,11 @@ int _zbar_window_attach (zbar_window_t *w,
 
     window_alloc_colors(w);
     window_hide_cursor(w);
+
+    /* load overlay font */
+    x->font = XLoadQueryFont(w->display, ZBAR_OVERLAY_FONT);
+    if(x->font)
+        XSetFont(w->display, x->gc, x->font->fid);
 
     /* FIXME add interface preference override */
 #ifdef HAVE_X11_EXTENSIONS_XVLIB_H
@@ -273,6 +287,39 @@ int _zbar_window_draw_marker (zbar_window_t *w,
     XDrawRectangle(w->display, w->xwin, xs->gc, x - 2, y - 2, 4, 4);
     XDrawLine(w->display, w->xwin, xs->gc, x, y - 3, x, y + 3);
     XDrawLine(w->display, w->xwin, xs->gc, x - 3, y, x + 3, y);
+    return(0);
+}
+
+int _zbar_window_draw_text (zbar_window_t *w,
+                            uint32_t rgb,
+                            const point_t *p,
+                            const char *text)
+{
+    window_state_t *xs = w->state;
+    if(!xs->font)
+        return(-1);
+
+    XSetForeground(w->display, xs->gc, xs->colors[rgb]);
+
+    int n = 0;
+    while(n < 32 && text[n] && isprint(text[n]))
+        n++;
+
+    int width = XTextWidth(xs->font, text, n);
+    int x = p->x;
+    if(x >= 0)
+        x -= width / 2;
+    else
+        x += w->width - width;
+
+    int y = p->y;
+    int dy = xs->font->ascent + xs->font->descent;
+    if(y >= 0)
+        y -= dy / 2;
+    else
+        y = w->height + y * dy * 5 / 4;
+
+    XDrawString(w->display, w->xwin, xs->gc, x, y, text, n);
     return(0);
 }
 

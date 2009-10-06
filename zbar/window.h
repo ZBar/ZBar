@@ -60,6 +60,8 @@ struct zbar_window_s {
 
     void *display;
     unsigned long xwin;
+    unsigned long time;         /* last image display in milliseconds */
+    unsigned long time_avg;     /* average of inter-frame times */
 
     window_state_t *state;      /* platform/interface specific state */
 
@@ -120,11 +122,7 @@ extern int _zbar_window_flush(zbar_window_t*);
 extern int _zbar_window_draw_logo(zbar_window_t*);
 extern int _zbar_window_draw_marker(zbar_window_t*, uint32_t, const point_t*);
 extern int _zbar_window_draw_polygon(zbar_window_t*, uint32_t, const point_t*, int);
-#if 0
-extern int _zbar_window_draw_line(zbar_window_t*, uint32_t,
-                                  const point_t*, const point_t*);
 extern int _zbar_window_draw_text(zbar_window_t*, uint32_t,
                                   const point_t*, const char*);
-#endif
 
 #endif

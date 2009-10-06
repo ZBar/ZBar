@@ -931,6 +931,12 @@ extern int zbar_window_attach(zbar_window_t *window,
 extern void zbar_window_set_overlay(zbar_window_t *window,
                                     int level);
 
+/** retrieve current content level of reader overlay.
+ * @see zbar_window_set_overlay()
+ * @since 0.10
+ */
+extern int zbar_window_get_overlay(const zbar_window_t *window);
+
 /** draw a new image into the output window. */
 extern int zbar_window_draw(zbar_window_t *window,
                             zbar_image_t *image);

@@ -23,6 +23,8 @@
 
 #include "window.h"
 #include "image.h"
+#include <time.h>       /* clock_gettime */
+#include <sys/time.h>   /* gettimeofday */
 
 zbar_window_t *zbar_window_create ()
 {
@@ -99,8 +101,27 @@ static inline int window_draw_overlay (zbar_window_t *w)
             }
         }
     }
+
     if(w->overlay >= 2) {
         /* calculate/display frame rate */
+        unsigned long time;
+#if _POSIX_TIMERS > 0
+        struct timespec abstime;
+        clock_gettime(CLOCK_REALTIME, &abstime);
+        time = (abstime.tv_sec * 1000) + ((abstime.tv_nsec / 500000) + 1) / 2;
+#else
+        struct timeval abstime;
+        gettimeofday(&abstime, NULL);
+        time = (abstime.tv_sec * 1000) + ((abstime.tv_usec / 500) + 1) / 2;
+#endif
+        point_t p = { -8, -1 };
+        char text[32];
+        if(w->time) {
+            int avg = w->time_avg = (w->time_avg + time - w->time) / 2;
+            sprintf(text, "%d.%01d fps", 1000 / avg, (10000 / avg) % 10);
+            _zbar_window_draw_text(w, 3, &p, text);
+        }
+        w->time = time;
     }
     return(0);
 }
@@ -197,6 +218,16 @@ void zbar_window_set_overlay (zbar_window_t *w,
     if(w->overlay != lvl)
         w->overlay = lvl;
     (void)window_unlock(w);
+}
+
+int zbar_window_get_overlay (const zbar_window_t *w)
+{
+    zbar_window_t *ncw = (zbar_window_t*)w;
+    if(window_lock(ncw))
+        return(-1);
+    int lvl = w->overlay;
+    (void)window_unlock(ncw);
+    return(lvl);
 }
 
 int zbar_window_resize (zbar_window_t *w,

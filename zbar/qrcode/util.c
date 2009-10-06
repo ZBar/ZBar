@@ -78,7 +78,7 @@ unsigned qr_ihypot(int _x,int _y){
   return x+((1U<<shift)>>1)>>shift;
 }
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(_WIN32)
 # include <features.h>
 # if __GNUC_PREREQ(3,4)
 #  include <limits.h>
@@ -114,7 +114,7 @@ int qr_ilog(unsigned _v){
   _v>>=m;
   ret|=m;
   ret|=!!(_v&0x2);
-  return ret;
+  return ret + !!_v;
 #endif
 }
 

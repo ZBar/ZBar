@@ -1,4 +1,8 @@
 current:
+  * overlay enhancements
+    - add fps to overlay
+    - add overlay control to processor
+    - add windows overlay drawing
   * tweak linear code position info
   * trim deep qrcode hierarchy
   * fix zero length symbol data

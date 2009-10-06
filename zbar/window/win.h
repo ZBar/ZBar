@@ -35,6 +35,8 @@ struct window_state_s {
     HRGN logo_zbars;
     HPEN logo_zpen, logo_zbpen;
     POINT logo_z[4];
+
+    int font_height;
 };
 
 extern int _zbar_window_bih_init(zbar_window_t *w,

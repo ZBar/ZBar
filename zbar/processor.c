@@ -144,11 +144,23 @@ int _zbar_processor_handle_input (zbar_processor_t *proc,
         break;
 
     case 'd':
-        /* FIXME localtime not threadsafe */
-        /* FIXME need ms resolution */
-        /*struct tm *t = localtime(time(NULL));*/
         proc->dumping = 1;
         return(0);
+
+    case '+':
+    case '=':
+        if(proc->window) {
+            int ovl = zbar_window_get_overlay(proc->window);
+            zbar_window_set_overlay(proc->window, ovl + 1);
+        }
+        break;
+
+    case '-':
+        if(proc->window) {
+            int ovl = zbar_window_get_overlay(proc->window);
+            zbar_window_set_overlay(proc->window, ovl - 1);
+        }
+        break;
     }
 
     _zbar_mutex_lock(&proc->mutex);

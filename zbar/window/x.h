@@ -41,6 +41,7 @@ struct window_state_s {
 
     GC gc;                      /* graphics context */
     Region exposed;             /* region to redraw */
+    XFontStruct *font;          /* overlay font */
 
     /* pre-calculated logo geometries */
     int logo_scale;

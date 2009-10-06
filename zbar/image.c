@@ -262,7 +262,7 @@ int zbar_image_write_png (const zbar_image_t *img,
     for(y = 1; y < img->height; y++)
         rows[y] = rows[y - 1] + img->width;
 
-    file = fopen(filename, "w");
+    file = fopen(filename, "wb");
     if(!file)
         goto done;
 
