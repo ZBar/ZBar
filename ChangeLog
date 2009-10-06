@@ -1,4 +1,5 @@
 current:
+  * always use separate video thread when threads enabled (even v4l2)
   * fix broken builds with --disable-pthread
 
 version 0.9:

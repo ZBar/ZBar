@@ -340,8 +340,7 @@ int zbar_processor_init (zbar_processor_t *proc,
     }
 
     /* spawn blocking video thread */
-    int video_threaded = (proc->threaded && proc->video &&
-                          zbar_video_get_fd(proc->video) < 0);
+    int video_threaded = proc->threaded && proc->video;
     if(video_threaded &&
        _zbar_thread_start(&proc->video_thread, proc_video_thread, proc,
                           &proc->mutex)) {
@@ -351,10 +350,7 @@ int zbar_processor_init (zbar_processor_t *proc,
     }
 
     /* spawn input monitor thread */
-    int input_threaded = (proc->threaded &&
-                          (proc->window ||
-                           (proc->video && !video_threaded)));
-
+    int input_threaded = proc->threaded && proc->window;
     if(input_threaded &&
        _zbar_thread_start(&proc->input_thread, proc_input_thread, proc,
                           &proc->mutex)) {

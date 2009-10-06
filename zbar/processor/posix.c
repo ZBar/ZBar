@@ -318,13 +318,17 @@ int _zbar_processor_cleanup (zbar_processor_t *proc)
 
 int _zbar_processor_enable (zbar_processor_t *proc)
 {
+    if(proc->threaded)
+        return(0);
+
     int vid_fd = zbar_video_get_fd(proc->video);
-    if(vid_fd >= 0) {
-        if(proc->streaming)
-            add_poll(proc, vid_fd, proc_video_handler);
-        else
-            remove_poll(proc, vid_fd);
-        /* FIXME failure recovery? */
-    }
+    if(vid_fd < 0)
+        return(0);
+
+    if(proc->streaming)
+        add_poll(proc, vid_fd, proc_video_handler);
+    else
+        remove_poll(proc, vid_fd);
+    /* FIXME failure recovery? */
     return(0);
 }
