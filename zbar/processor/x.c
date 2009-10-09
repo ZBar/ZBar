@@ -70,6 +70,8 @@ static inline int x_handle_event (zbar_processor_t *proc)
 
     case KeyPress: {
         KeySym key = XLookupKeysym(&ev.xkey, 0);
+        if(IsModifierKey(key))
+            break;
         if((key & 0xff00) == 0xff00)
             key &= 0x00ff;
         zprintf(16, "KeyPress(%04lx)\n", key);
@@ -103,7 +105,7 @@ static inline int x_handle_event (zbar_processor_t *proc)
 static int x_handle_events (zbar_processor_t *proc)
 {
     int rc = 0;
-    while(!rc && XPending(proc->display))
+    while(rc >= 0 && XPending(proc->display))
         rc = x_handle_event(proc);
     return(rc);
 }
@@ -111,7 +113,15 @@ static int x_handle_events (zbar_processor_t *proc)
 static int x_connection_handler (zbar_processor_t *proc,
                                  int i)
 {
+    _zbar_mutex_lock(&proc->mutex);
+    _zbar_processor_lock(proc);
+    _zbar_mutex_unlock(&proc->mutex);
+
     x_handle_events(proc);
+
+    _zbar_mutex_lock(&proc->mutex);
+    _zbar_processor_unlock(proc, 0);
+    _zbar_mutex_unlock(&proc->mutex);
     return(0);
 }
 
@@ -119,7 +129,7 @@ static int x_internal_handler (zbar_processor_t *proc,
                                int i)
 {
     XProcessInternalConnection(proc->display, proc->state->polling.fds[i].fd);
-    x_handle_events(proc);
+    x_connection_handler(proc, i);
     return(0);
 }
 
@@ -149,6 +159,8 @@ int _zbar_processor_open (zbar_processor_t *proc,
 
     add_poll(proc, ConnectionNumber(proc->display), x_connection_handler);
     XAddConnectionWatch(proc->display, x_internal_watcher, (void*)proc);
+    /* must also flush X event queue before polling */
+    proc->state->pre_poll_handler = x_connection_handler;
 
     int screen = DefaultScreen(proc->display);
     XSetWindowAttributes attr;
@@ -194,6 +206,7 @@ int _zbar_processor_close (zbar_processor_t *proc)
             XDestroyWindow(proc->display, proc->xwin);
             proc->xwin = 0;
         }
+        proc->state->pre_poll_handler = NULL;
         remove_poll(proc, ConnectionNumber(proc->display));
         XCloseDisplay(proc->display);
         proc->display = NULL;
@@ -205,8 +218,7 @@ int _zbar_processor_invalidate (zbar_processor_t *proc)
 {
     if(!proc->display || !proc->xwin)
         return(0);
-    XClearArea(proc->display, proc->xwin, 0, 0,
-               proc->window->width, proc->window->height, 1);
+    XClearArea(proc->display, proc->xwin, 0, 0, 0, 0, 1);
     XFlush(proc->display);
     return(0);
 }
@@ -215,10 +227,33 @@ int _zbar_processor_set_size (zbar_processor_t *proc,
                               unsigned width,
                               unsigned height)
 {
-    if(proc->display || !proc->xwin) {
-        XResizeWindow(proc->display, proc->xwin, width, height);
-        XFlush(proc->display);
+    if(!proc->display || !proc->xwin)
+        return(0);
+
+    /* refuse to resize greater than (default) screen size */
+    XWindowAttributes attr;
+    XGetWindowAttributes(proc->display, proc->xwin, &attr);
+
+    int maxw = WidthOfScreen(attr.screen);
+    int maxh = HeightOfScreen(attr.screen);
+    int w, h;
+    if(width > maxw) {
+        h = (maxw * height + width - 1) / width;
+        w = maxw;
     }
+    else {
+        w = width;
+        h = height;
+    }
+    if(h > maxh) {
+        w = (maxh * width + height - 1) / height;
+        h = maxh;
+    }
+    assert(w <= maxw);
+    assert(h <= maxh);
+
+    XResizeWindow(proc->display, proc->xwin, w, h);
+    XFlush(proc->display);
     return(0);
 }
 

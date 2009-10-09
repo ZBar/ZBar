@@ -74,6 +74,9 @@ static inline int ximage_init (zbar_window_t *w,
     w->dst_width = img->width;
     w->dst_height = img->height;
 
+    /* FIXME implement some basic scaling */
+    w->scale_num = w->scale_den = 1;
+
     zprintf(3, "new XImage %.4s(%08" PRIx32 ") %dx%d"
             " from %.4s(%08" PRIx32 ") %dx%d\n",
             (char*)&w->format, w->format, ximg->width, ximg->height,
@@ -91,42 +94,24 @@ static int ximage_draw (zbar_window_t *w,
     assert(ximg);
     ximg->data = (void*)img->data;
 
-    int screen = DefaultScreen(w->display);
-    XSetForeground(w->display, x->gc, WhitePixel(w->display, screen));
-
-    /* FIXME implement some basic scaling */
-    unsigned height = img->height;
-    unsigned src_y = 0, dst_y = 0;
-    if(w->height < img->height) {
-        height = w->height;
-        src_y = (img->height - w->height) >> 1;
+    point_t src = { 0, 0 };
+    point_t dst = w->scaled_offset;
+    if(dst.x < 0) {
+        src.x = -dst.x;
+        dst.x = 0;
     }
-    else if(w->height != img->height) {
-        dst_y = (w->height - img->height) >> 1;
-        /* fill border */
-        XFillRectangle(w->display, w->xwin, x->gc,
-                       0, 0, w->width, dst_y);
-        XFillRectangle(w->display, w->xwin, x->gc,
-                       0, dst_y + img->height, w->width, dst_y);
+    if(dst.y < 0) {
+        src.y = -dst.y;
+        dst.y = 0;
     }
-
-    unsigned width = img->width;
-    unsigned src_x = 0, dst_x = 0;
-    if(w->width < img->width) {
-        width = w->width;
-        src_x = (img->width - w->width) >> 1;
-    }
-    else if(w->width != img->width) {
-        dst_x = (w->width - img->width) >> 1;
-        /* fill border */
-        XFillRectangle(w->display, w->xwin, x->gc,
-                       0, dst_y, dst_x, img->height);
-        XFillRectangle(w->display, w->xwin, x->gc,
-                       img->width + dst_x, dst_y, dst_x, img->height);
-    }
+    point_t size = w->scaled_size;
+    if(size.x > w->width)
+        size.x = w->width;
+    if(size.y > w->height)
+        size.y = w->height;
 
     XPutImage(w->display, w->xwin, x->gc, ximg,
-              src_x, src_y, dst_x, dst_y, width, height);
+              src.x, src.y, dst.x, dst.y, size.x, size.y);
     ximg->data = NULL;
     return(0);
 }

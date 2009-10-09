@@ -1,4 +1,12 @@
 current:
+  * bug hunt and stability improvements
+    - fix broken processor locks
+    - fix X connection polling, revert previous separate thread workaround
+    - refuse to resize windows larger than screen size
+    - fix window output scaling - preserve image aspect ratio, adjust overlay
+    - fix window redraw
+    - fix crash on Xv image creation failure (still need XImage fallback)
+    - clean up zbarimg exit cases (last image window close, missing decodes)
   * always use separate video thread when threads enabled (even v4l2)
   * add configure check for features.h
   * overlay enhancements

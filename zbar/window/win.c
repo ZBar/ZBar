@@ -144,8 +144,21 @@ int _zbar_window_attach (zbar_window_t *w,
     return(_zbar_window_dib_init(w));
 }
 
-int _zbar_window_flush (zbar_window_t *w)
+int _zbar_window_begin (zbar_window_t *w)
 {
+    HDC hdc = w->state->hdc = GetDC(w->display);
+    if(!hdc || !SaveDC(hdc))
+        return(-1/*FIXME*/);
+    return(0);
+}
+
+int _zbar_window_end (zbar_window_t *w)
+{
+    HDC hdc = w->state->hdc;
+    w->state->hdc = NULL;
+    RestoreDC(hdc, -1);
+    ReleaseDC(w->display, hdc);
+    ValidateRect(w->display, NULL);
     return(0);
 }
 
@@ -177,9 +190,7 @@ int _zbar_window_draw_polygon (zbar_window_t *w,
                                const point_t *pts,
                                int npts)
 {
-    HDC hdc = GetDC(w->display);
-    if(!hdc || !SaveDC(hdc))
-        return(-1/*FIXME*/);
+    HDC hdc = w->state->hdc;
     win_set_rgb(hdc, rgb);
 
     POINT gdipts[npts + 1];
@@ -195,57 +206,41 @@ int _zbar_window_draw_polygon (zbar_window_t *w,
     gdipts[npts] = gdipts[0];
 
     Polyline(hdc, gdipts, npts + 1);
-
-    RestoreDC(hdc, -1);
-    ReleaseDC(w->display, hdc);
     return(0);
 }
 
-int _zbar_window_draw_marker(zbar_window_t *w,
-                             uint32_t rgb,
-                             const point_t *p)
+int _zbar_window_draw_marker (zbar_window_t *w,
+                              uint32_t rgb,
+                              point_t p)
 {
-    HDC hdc = GetDC(w->display);
-    if(!hdc || !SaveDC(hdc))
-        return(-1/*FIXME*/);
+    HDC hdc = w->state->hdc;
     win_set_rgb(hdc, rgb);
-
-    int x = p->x;
-    if(w->width != w->image->width)
-        x = x * w->width / w->image->width;
-    int y = p->y;
-    if(w->height != w->image->height)
-        y = y * w->height / w->image->height;
 
     static const DWORD npolys[3] = { 5, 2, 2 };
     POINT polys[9] = {
-        { x - 2, y - 2 },
-        { x - 2, y + 2 },
-        { x + 2, y + 2 },
-        { x + 2, y - 2 },
-        { x - 2, y - 2 },
+        { p.x - 2, p.y - 2 },
+        { p.x - 2, p.y + 2 },
+        { p.x + 2, p.y + 2 },
+        { p.x + 2, p.y - 2 },
+        { p.x - 2, p.y - 2 },
 
-        { x - 3, y },
-        { x + 4, y },
+        { p.x - 3, p.y },
+        { p.x + 4, p.y },
 
-        { x, y - 3 },
-        { x, y + 4 },
+        { p.x, p.y - 3 },
+        { p.x, p.y + 4 },
     };
-    PolyPolyline(hdc, polys, npolys, 3);
 
-    RestoreDC(hdc, -1);
-    ReleaseDC(w->display, hdc);
+    PolyPolyline(hdc, polys, npolys, 3);
     return(0);
 }
 
 int _zbar_window_draw_text (zbar_window_t *w,
                             uint32_t rgb,
-                            const point_t *p,
+                            point_t p,
                             const char *text)
 {
-    HDC hdc = GetDC(w->display);
-    if(!hdc || !SaveDC(hdc))
-        return(-1/*FIXME*/);
+    HDC hdc = w->state->hdc;
     SetTextColor(hdc, RGB((rgb & 4) * 0x33,
                           (rgb & 2) * 0x66,
                           (rgb & 1) * 0xcc));
@@ -255,33 +250,39 @@ int _zbar_window_draw_text (zbar_window_t *w,
     while(n < 32 && text[n] && isprint(text[n]))
         n++;
 
-    int x = p->x;
-    if(x >= 0)
+    if(p.x >= 0)
         SetTextAlign(hdc, TA_BASELINE | TA_CENTER);
     else {
         SetTextAlign(hdc, TA_BASELINE | TA_RIGHT);
-        x += w->width;
+        p.x += w->width;
     }
 
-    int y = p->y;
-    if(y < 0)
-        y = w->height + y * w->state->font_height * 5 / 4;
+    if(p.y < 0)
+        p.y = w->height + p.y * w->state->font_height * 5 / 4;
 
-    TextOut(hdc, x, y, text, n);
+    TextOut(hdc, p.x, p.y, text, n);
+    return(0);
+}
 
-    RestoreDC(hdc, -1);
-    ReleaseDC(w->display, hdc);
+int _zbar_window_fill_rect (zbar_window_t *w,
+                            uint32_t rgb,
+                            point_t org,
+                            point_t size)
+{
+    HDC hdc = w->state->hdc;
+    SetDCBrushColor(hdc, RGB((rgb & 4) * 0x33,
+                             (rgb & 2) * 0x66,
+                             (rgb & 1) * 0xcc));
+
+    RECT r = { org.x, org.y, org.x + size.x, org.y + size.y };
+
+    FillRect(hdc, &r, GetStockObject(DC_BRUSH));
     return(0);
 }
 
 int _zbar_window_draw_logo (zbar_window_t *w)
 {
-    if(!w->display)
-        return(-1);
-
-    HDC hdc = GetDC(w->display);
-    if(!hdc || !SaveDC(hdc))
-        return(-1/*FIXME*/);
+    HDC hdc = w->state->hdc;
 
     window_state_t *win = w->state;
 
@@ -299,10 +300,6 @@ int _zbar_window_draw_logo (zbar_window_t *w)
     ExtSelectClipRgn(hdc, win->logo_zbars, RGN_AND);
     SelectObject(hdc, win->logo_zbpen);
     Polyline(hdc, win->logo_z, 4);
-
-    RestoreDC(hdc, -1);
-    ReleaseDC(w->display, hdc);
-    ValidateRect(w->display, NULL);
     return(0);
 }
 

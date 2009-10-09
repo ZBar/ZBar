@@ -232,6 +232,9 @@ static inline int proc_poll_inputs (zbar_processor_t *proc,
                                     int timeout)
 {
     processor_state_t *state = proc->state;
+    if(state->pre_poll_handler)
+        state->pre_poll_handler(proc, -1);
+
     poll_desc_t *p = &state->thr_polling;
     assert(p->num);
     int rc = poll(p->fds, p->num, timeout);
@@ -318,9 +321,6 @@ int _zbar_processor_cleanup (zbar_processor_t *proc)
 
 int _zbar_processor_enable (zbar_processor_t *proc)
 {
-    if(proc->threaded)
-        return(0);
-
     int vid_fd = zbar_video_get_fd(proc->video);
     if(vid_fd < 0)
         return(0);

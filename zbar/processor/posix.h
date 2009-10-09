@@ -46,6 +46,7 @@ struct processor_state_s {
     poll_desc_t thr_polling;            /* thread copy */
 #endif
     int kick_fds[2];                    /* poll kicker */
+    poll_handler_t *pre_poll_handler;   /* special case */
 };
 
 

@@ -115,6 +115,9 @@ static inline int dump_error(MagickWand *wand)
 
 static int scan_image (const char *filename)
 {
+    if(exit_code == 3)
+        return(-1);
+
     int found = 0;
     MagickWand *images = NewMagickWand();
     if(!MagickReadImage(images, filename) && dump_error(images))
@@ -122,6 +125,9 @@ static int scan_image (const char *filename)
 
     unsigned seq, n = MagickGetNumberImages(images);
     for(seq = 0; seq < n; seq++) {
+        if(exit_code == 3)
+            return(-1);
+
         if(!MagickSetIteratorIndex(images, seq) && dump_error(images))
             return(-1);
 
@@ -185,10 +191,8 @@ static int scan_image (const char *filename)
         num_images++;
         if(zbar_processor_is_visible(processor)) {
             int rc = zbar_processor_user_wait(processor, -1);
-            if(rc < 0 || rc == 'q' || rc == 'Q') {
+            if(rc < 0 || rc == 'q' || rc == 'Q')
                 exit_code = 3;
-                return(-1);
-            }
         }
     }
 
@@ -361,6 +365,10 @@ int main (int argc, const char *argv[])
         if(scan_image(argv[i]))
             return(exit_code);
 
+    /* ignore quit during last image */
+    if(exit_code == 3)
+        exit_code = 0;
+
     if(xmllvl > 0) {
         xmllvl--;
         printf(xml_foot);
@@ -388,6 +396,8 @@ int main (int argc, const char *argv[])
         if(notfound)
             fprintf(stderr, warning_not_found);
     }
+    if(num_images && notfound && !exit_code)
+        exit_code = 4;
 
     zbar_processor_destroy(processor);
     MagickWandTerminus();

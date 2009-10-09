@@ -63,7 +63,10 @@ int zbar_window_attach (zbar_window_t *w,
     }
     w->src_format = 0;
     w->src_width = w->src_height = 0;
+    w->scaled_size.x = w->scaled_size.y = 0;
     w->dst_width = w->dst_height = 0;
+    w->max_width = w->max_height = 1 << 15;
+    w->scale_num = w->scale_den = 1;
     return(_zbar_window_attach(w, display, drawable));
 }
 
@@ -81,9 +84,6 @@ static void window_outline_symbol (zbar_window_t *w,
 
 static inline int window_draw_overlay (zbar_window_t *w)
 {
-    /* FIXME TBD
-     * _zbar_draw_line, _zbar_draw_polygon, _zbar_draw_text, etc...
-     */
     if(!w->overlay)
         return(0);
     if(w->overlay >= 1 && w->image && w->image->syms) {
@@ -95,9 +95,22 @@ static inline int window_draw_overlay (zbar_window_t *w)
                 window_outline_symbol(w, color, sym);
             else {
                 /* FIXME linear bbox broken */
+                point_t org = w->scaled_offset;
                 int i;
-                for(i = 0; i < sym->npts; i++)
-                    _zbar_window_draw_marker(w, color, &sym->pts[i]);
+                for(i = 0; i < sym->npts; i++) {
+                    point_t p = window_scale_pt(w, sym->pts[i]);
+                    p.x += org.x;
+                    p.y += org.y;
+                    if(p.x < 3)
+                        p.x = 3;
+                    else if(p.x > w->width - 4)
+                        p.x = w->width - 4;
+                    if(p.y < 3)
+                        p.y = 3;
+                    else if(p.y > w->height - 4)
+                        p.y = w->height - 4;
+                    _zbar_window_draw_marker(w, color, p);
+                }
             }
         }
     }
@@ -119,7 +132,7 @@ static inline int window_draw_overlay (zbar_window_t *w)
         if(w->time) {
             int avg = w->time_avg = (w->time_avg + time - w->time) / 2;
             sprintf(text, "%d.%01d fps", 1000 / avg, (10000 / avg) % 10);
-            _zbar_window_draw_text(w, 3, &p, text);
+            _zbar_window_draw_text(w, 3, p, text);
         }
         w->time = time;
     }
@@ -130,6 +143,11 @@ inline int zbar_window_redraw (zbar_window_t *w)
 {
     if(window_lock(w))
         return(-1);
+    if(!w->display || _zbar_window_begin(w)) {
+        (void)window_unlock(w);
+        return(-1);
+    }
+
     int rc = 0;
     zbar_image_t *img = w->image;
     if(w->init && w->draw_image && img) {
@@ -141,25 +159,53 @@ inline int zbar_window_redraw (zbar_window_t *w)
                 rc = err_capture_int(w, SEV_ERROR, ZBAR_ERR_UNSUPPORTED, __func__,
                                      "no conversion from %x to supported formats",
                                      img->format);
-        }
-        if(w->src_format != img->format)
             w->src_format = img->format;
+        }
 
-        /* FIXME preserve aspect ratio (config?) */
-        if(!rc &&
-           (format_change ||
-            (img->width != w->src_width && img->width != w->dst_width) ||
-            (img->height != w->src_height && img->height != w->dst_height))) {
+        if(!rc && (format_change || !w->scaled_size.x || !w->dst_width)) {
             zprintf(24, "init: src=%.4s(%08x) %dx%d dst=%.4s(%08x) %dx%d\n",
                     (char*)&w->src_format, w->src_format,
                     w->src_width, w->src_height,
                     (char*)&w->format, w->format,
                     w->dst_width, w->dst_height);
+            if(!w->dst_width) {
+                w->src_width = img->width;
+                w->src_height = img->height;
+            }
+
+            point_t size = { w->width, w->height };
+            if(size.x > w->max_width)
+                size.x = w->max_width;
+            if(size.y > w->max_height)
+                size.y = w->max_height;
+
+            if(size.x * w->src_height < size.y * w->src_width) {
+                w->scale_num = size.x;
+                w->scale_den = w->src_width;
+            }
+            else {
+                w->scale_num = size.y;
+                w->scale_den = w->src_height;
+            }
+
             rc = w->init(w, img, format_change);
-        }
-        if(w->src_width != img->width || w->src_height != img->height) {
-            w->src_width = img->width;
-            w->src_height = img->height;
+
+            if(!rc) {
+                size.x = w->src_width;
+                size.y = w->src_height;
+                w->scaled_size = size = window_scale_pt(w, size);
+                w->scaled_offset.x = ((int)w->width - size.x) / 2;
+                w->scaled_offset.y = ((int)w->height - size.y) / 2;
+                zprintf(24, "scale: src=%dx%d win=%dx%d by %d/%d => %dx%d @%d,%d\n",
+                        w->src_width, w->src_height, w->width, w->height,
+                        w->scale_num, w->scale_den,
+                        size.x, size.y, w->scaled_offset.x, w->scaled_offset.y);
+            }
+            else {
+                /* unable to display this image */
+                _zbar_image_refcnt(img, -1);
+                w->image = img = NULL;
+            }
         }
 
         if(!rc &&
@@ -179,14 +225,41 @@ inline int zbar_window_redraw (zbar_window_t *w)
             img = w->image;
         }
 
-        if(!rc)
+        if(!rc) {
             rc = w->draw_image(w, img);
+
+            point_t org = w->scaled_offset;
+            if(org.x > 0) {
+                point_t p = { 0, org.y };
+                point_t s = { org.x, w->scaled_size.y };
+                _zbar_window_fill_rect(w, 0, p, s);
+                s.x = w->width - w->scaled_size.x - s.x;
+                if(s.x > 0) {
+                    p.x = w->width - s.x;
+                    _zbar_window_fill_rect(w, 0, p, s);
+                }
+            }
+            if(org.y > 0) {
+                point_t p = { 0, 0 };
+                point_t s = { w->width, org.y };
+                _zbar_window_fill_rect(w, 0, p, s);
+                s.y = w->height - w->scaled_size.y - s.y;
+                if(s.y > 0) {
+                    p.y = w->height - s.y;
+                    _zbar_window_fill_rect(w, 0, p, s);
+                }
+            }
+        }
         if(!rc)
             rc = window_draw_overlay(w);
     }
     else
+        rc = 1;
+
+    if(rc)
         rc = _zbar_window_draw_logo(w);
-    _zbar_window_flush(w);
+
+    _zbar_window_end(w);
     (void)window_unlock(w);
     return(rc);
 }
@@ -198,8 +271,12 @@ int zbar_window_draw (zbar_window_t *w,
         return(-1);
     if(!w->draw_image)
         img = NULL;
-    if(img)
+    if(img) {
         _zbar_image_refcnt(img, 1);
+        if(img->width != w->src_width ||
+           img->height != w->src_height)
+            w->dst_width = 0;
+    }
     if(w->image)
         _zbar_image_refcnt(w->image, -1);
     w->image = img;
@@ -238,6 +315,7 @@ int zbar_window_resize (zbar_window_t *w,
         return(-1);
     w->width = width;
     w->height = height;
+    w->scaled_size.x = 0;
     _zbar_window_resize(w);
     return(window_unlock(w));
 }

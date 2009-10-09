@@ -40,8 +40,10 @@
 static inline proc_waiter_t *proc_waiter_queue (zbar_processor_t *proc)
 {
     proc_waiter_t *waiter = proc->free_waiter;
-    if(waiter)
+    if(waiter) {
         proc->free_waiter = waiter->next;
+        waiter->events = 0;
+    }
     else {
         waiter = calloc(1, sizeof(proc_waiter_t));
         _zbar_event_init(&waiter->notify);
@@ -60,19 +62,24 @@ static inline proc_waiter_t *proc_waiter_queue (zbar_processor_t *proc)
 
 static inline proc_waiter_t *proc_waiter_dequeue (zbar_processor_t *proc)
 {
-    proc_waiter_t *waiter = proc->wait_next;
-    if(!waiter)
+    proc_waiter_t *prev = proc->wait_next, *waiter;
+    if(prev)
+        waiter = prev->next;
+    else
         waiter = proc->wait_head;
-    while(waiter && waiter->events)
+    while(waiter && waiter->events) {
+        prev = waiter;
+        proc->wait_next = waiter;
         waiter = waiter->next;
+    }
 
     if(waiter) {
-        proc->wait_next = waiter->next;
-        if(proc->wait_head == waiter) {
+        if(prev)
+            prev->next = waiter->next;
+        else
             proc->wait_head = waiter->next;
-            if(!waiter->next)
-                proc->wait_tail = NULL;
-        }
+        if(!waiter->next)
+            proc->wait_tail = prev;
         waiter->next = NULL;
 
         proc->lock_level = 1;

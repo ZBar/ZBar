@@ -119,14 +119,16 @@ int _zbar_process_image (zbar_processor_t *proc,
     }
 
     /* display to window if enabled */
-    if(proc->window &&
-       (zbar_window_draw(proc->window, img) ||
-        _zbar_processor_invalidate(proc)))
-        return(err_copy(proc, proc->window));
+    int rc = 0;
+    if(proc->window) {
+        if((rc = zbar_window_draw(proc->window, img)))
+            err_copy(proc, proc->window);
+        _zbar_processor_invalidate(proc);
+    }
 
     if(force_fmt && img)
         zbar_image_destroy(img);
-    return(0);
+    return(rc);
 
 error:
     return(err_capture(proc, SEV_ERROR, ZBAR_ERR_UNSUPPORTED,
@@ -358,7 +360,8 @@ int zbar_processor_init (zbar_processor_t *proc,
     }
 
     /* spawn blocking video thread */
-    int video_threaded = proc->threaded && proc->video;
+    int video_threaded = (proc->threaded && proc->video &&
+                          zbar_video_get_fd(proc->video) < 0);
     if(video_threaded &&
        _zbar_thread_start(&proc->video_thread, proc_video_thread, proc,
                           &proc->mutex)) {
@@ -368,7 +371,9 @@ int zbar_processor_init (zbar_processor_t *proc,
     }
 
     /* spawn input monitor thread */
-    int input_threaded = proc->threaded && proc->window;
+    int input_threaded = (proc->threaded &&
+                          (proc->window ||
+                           (proc->video && !video_threaded)));
     if(input_threaded &&
        _zbar_thread_start(&proc->input_thread, proc_input_thread, proc,
                           &proc->mutex)) {

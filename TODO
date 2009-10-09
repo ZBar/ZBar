@@ -56,10 +56,8 @@ window:
   * X protocol error handling
   * Direct2D
   * API to query used interface (video, window?) (/format?)
-  * mode to preserve aspect ratio (default?)
   * simple image manipulations scale(xv?)/mirror
     * maintain aspect ratio
-  * overlay doesn't resize w/window
   * more overlay details
     * decoded result(?)
     * stats

@@ -67,6 +67,7 @@ static inline int xv_init (zbar_window_t *w,
             }
         assert(x->img_port > 0);
     }
+
     XvImage *xvimg = XvCreateImage(w->display, x->img_port, w->format,
                                    NULL, img->width, img->height);
     zprintf(3, "new XvImage %.4s(%08" PRIx32 ") %dx%d(%d)"
@@ -102,11 +103,13 @@ static int xv_draw (zbar_window_t *w,
     XvImage *xvimg = x->img.xv;
     assert(xvimg);
     xvimg->data = (void*)img->data;
-    zprintf(24, "XvPutImage(%dx%d -> %dx%d)\n",
-            w->src_width, w->src_height, w->width, w->height);
+    zprintf(24, "XvPutImage(%dx%d -> %dx%d (%08lx))\n",
+            w->src_width, w->src_height, w->scaled_size.x, w->scaled_size.y,
+            img->datalen);
     XvPutImage(w->display, x->img_port, w->xwin, x->gc, xvimg,
                0, 0, w->src_width, w->src_height,
-               0, 0, w->width, w->height);
+               w->scaled_offset.x, w->scaled_offset.y,
+               w->scaled_size.x, w->scaled_size.y);
     xvimg->data = NULL;  /* FIXME hold shm image until completion */
     return(0);
 }

@@ -26,6 +26,7 @@
 #include <windows.h>
 
 struct window_state_s {
+    HDC hdc;
     void* hdd;
 
     BITMAPINFOHEADER bih;
