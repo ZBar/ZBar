@@ -1,4 +1,5 @@
 current:
+  * image scanner cleanup and minor performance enhancements
   * bug hunt and stability improvements
     - fix broken processor locks
     - fix X connection polling, revert previous separate thread workaround

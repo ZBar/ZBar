@@ -210,17 +210,18 @@ zbar_symbol_type_t zbar_scan_y (zbar_scanner_t *scn,
 {
     /* FIXME calc and clip to max y range... */
     /* retrieve short value history */
-    register int y0_1 = scn->y0[(scn->x - 1) & 3];
+    register int x = scn->x;
+    register int y0_1 = scn->y0[(x - 1) & 3];
     register int y0_0 = y0_1;
-    if(scn->x) {
+    if(x) {
         /* update weighted moving average */
         y0_0 += ((int)((y - y0_1) * EWMA_WEIGHT)) >> ZBAR_FIXED;
-        scn->y0[scn->x & 3] = y0_0;
+        scn->y0[x & 3] = y0_0;
     }
     else
         y0_0 = y0_1 = scn->y0[0] = scn->y0[1] = scn->y0[2] = scn->y0[3] = y;
-    register int y0_2 = scn->y0[(scn->x - 2) & 3];
-    register int y0_3 = scn->y0[(scn->x - 3) & 3];
+    register int y0_2 = scn->y0[(x - 2) & 3];
+    register int y0_3 = scn->y0[(x - 3) & 3];
     /* 1st differential @ x-1 */
     register int y1_1 = y0_1 - y0_2;
     {
@@ -235,7 +236,7 @@ zbar_symbol_type_t zbar_scan_y (zbar_scanner_t *scn,
     register int y2_2 = y0_1 - (y0_2 * 2) + y0_3;
 
     dprintf(1, "scan: x=%d y=%d y0=%d y1=%d y2=%d",
-            scn->x, y, y0_1, y1_1, y2_1);
+            x, y, y0_1, y1_1, y2_1);
 
     zbar_symbol_type_t edge = ZBAR_NONE;
     /* 2nd zero-crossing is 1st local min/max - could be edge */
@@ -267,7 +268,7 @@ zbar_symbol_type_t zbar_scan_y (zbar_scanner_t *scn,
             else if(y2_1)
                 /* interpolate zero crossing */
                 scn->cur_edge -= ((y2_1 << ZBAR_FIXED) + 1) / d;
-            scn->cur_edge += scn->x << ZBAR_FIXED;
+            scn->cur_edge += x << ZBAR_FIXED;
             dprintf(1, "\n");
         }
     }
@@ -275,7 +276,7 @@ zbar_symbol_type_t zbar_scan_y (zbar_scanner_t *scn,
         dprintf(1, "\n");
     /* FIXME add fall-thru pass to decoder after heuristic "idle" period
        (eg, 6-8 * last width) */
-    scn->x++;
+    scn->x = x + 1;
     return(edge);
 }
 
