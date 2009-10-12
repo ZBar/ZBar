@@ -43,7 +43,7 @@
 
 #if 1
 # define ASSERT_POS \
-    assert(p == data + x + y * w)
+    assert(p == data + x + y * (intptr_t)w)
 #else
 # define ASSERT_POS
 #endif
