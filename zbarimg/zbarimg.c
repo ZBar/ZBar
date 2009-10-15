@@ -220,7 +220,7 @@ int usage (int rc,
             fprintf(out, "%s", arg);
         fprintf(out, "\n\n");
     }
-    fprintf(out, note_usage);
+    fprintf(out, "%s", note_usage);
     return(rc);
 }
 
@@ -339,13 +339,13 @@ int main (int argc, const char *argv[])
         else if(!strcmp(arg, "--xml")) {
             if(xmllvl < 1) {
                 xmllvl++;
-                printf(xml_head);
+                printf("%s", xml_head);
             }
         }
         else if(!strcmp(arg, "--noxml") || !strcmp(arg, "--raw")) {
             if(xmllvl > 0) {
                 xmllvl--;
-                printf(xml_foot);
+                printf("%s", xml_foot);
                 fflush(stdout);
             }
             if(!strcmp(arg, "--raw"))
@@ -372,7 +372,7 @@ int main (int argc, const char *argv[])
 
     if(xmllvl > 0) {
         xmllvl--;
-        printf(xml_foot);
+        printf("%s", xml_foot);
         fflush(stdout);
     }
 
@@ -395,7 +395,7 @@ int main (int argc, const char *argv[])
 #endif
         fprintf(stderr, "\n");
         if(notfound)
-            fprintf(stderr, warning_not_found);
+            fprintf(stderr, "%s", warning_not_found);
     }
     if(num_images && notfound && !exit_code)
         exit_code = 4;

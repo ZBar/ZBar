@@ -83,8 +83,8 @@ static inline int add_poll (zbar_processor_t *proc,
 
     if(proc->input_thread.started) {
         assert(state->kick_fds[1] >= 0);
-        write(state->kick_fds[1], &i /* unused */, sizeof(unsigned));
-        /* FIXME should sync */
+        if(write(state->kick_fds[1], &i /* unused */, sizeof(unsigned)) < 0)
+            return(-1);
     }
     else if(!proc->threaded) {
         state->thr_polling.num = polling->num;
@@ -123,8 +123,8 @@ static inline int remove_poll (zbar_processor_t *proc,
     _zbar_mutex_unlock(&proc->mutex);
 
     if(proc->input_thread.started) {
-        write(state->kick_fds[1], &i /* unused */, sizeof(unsigned));
-        /* FIXME should sync */
+        if(write(state->kick_fds[1], &i /* unused */, sizeof(unsigned)) < 0)
+            return(-1);
     }
     else if(!proc->threaded) {
         state->thr_polling.num = polling->num;

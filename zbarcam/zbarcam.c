@@ -70,7 +70,7 @@ static unsigned xml_len = 0;
 static int usage (int rc)
 {
     FILE *out = (rc) ? stderr : stdout;
-    fprintf(out, note_usage);
+    fprintf(out, "%s", note_usage);
     return(rc);
 }
 
@@ -146,9 +146,11 @@ int main (int argc, const char *argv[])
             int j;
             for(j = 1; argv[i][j]; j++) {
                 if(argv[i][j] == 'S') {
-                    if((argv[i][++j])
-                       ? parse_config(&argv[i][j], i, argc, "-S")
-                       : parse_config(argv[++i], i, argc, "-S"))
+                    if(!argv[i][++j]) {
+                        i++;
+                        j = 0;
+                    }
+                    if(parse_config(&argv[i][j], i, argc, "-S"))
                         return(usage(1));
                     break;
                 }
@@ -173,7 +175,8 @@ int main (int argc, const char *argv[])
         else if(!strcmp(argv[i], "--version"))
             return(printf(PACKAGE_VERSION "\n") <= 0);
         else if(!strcmp(argv[i], "--set")) {
-            if(parse_config(argv[++i], i, argc, "--set"))
+            i++;
+            if(parse_config(argv[i], i, argc, "--set"))
                 return(usage(1));
         }
         else if(!strncmp(argv[i], "--set=", 6)) {
@@ -267,7 +270,7 @@ int main (int argc, const char *argv[])
     zbar_processor_destroy(proc);
 
     if(format == XML) {
-        printf(xml_foot);
+        printf("%s", xml_foot);
         fflush(stdout);
     }
     return(0);

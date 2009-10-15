@@ -1,4 +1,5 @@
 current:
+  * cleanup warnings from newer gcc versions
   * fix excessive i25 QZ checks
   * add regression script
     - add zbarimg xml output for every source (even empty)
