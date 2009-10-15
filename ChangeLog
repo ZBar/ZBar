@@ -1,4 +1,5 @@
 current:
+  * add regression tests to makefile
   * cleanup warnings from newer gcc versions
   * fix excessive i25 QZ checks
   * add regression script
