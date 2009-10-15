@@ -1,4 +1,7 @@
 current:
+  * add regression script
+    - add zbarimg xml output for every source (even empty)
+    - add edge detection to svg debug overlay
   * image scanner cleanup and minor performance enhancements
   * bug hunt and stability improvements
     - fix broken processor locks

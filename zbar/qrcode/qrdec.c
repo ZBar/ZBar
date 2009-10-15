@@ -3921,7 +3921,7 @@ int _zbar_qr_decode (qr_reader *reader,
        reader->finder_lines[1].nlines < 9)
         return(0);
 
-    svg_group_start("finder", 1. / (1 << QR_FINDER_SUBPREC), 0, 0);
+    svg_group_start("finder", 0, 1. / (1 << QR_FINDER_SUBPREC), 0, 0, 0);
 
     int ncenters = qr_finder_centers_locate(&centers, &edge_pts, reader, 0, 0);
 
