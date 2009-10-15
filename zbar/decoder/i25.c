@@ -102,13 +102,21 @@ static inline signed char i25_decode_start (zbar_decoder_t *dcode)
 
     if((get_color(dcode) == ZBAR_BAR)
        ? enc != 4
-       : i25_decode1(enc, get_width(dcode, i++), dcode25->s10))
+       : (enc = i25_decode1(enc, get_width(dcode, i++), dcode25->s10))) {
+        dprintf(4, "      i25: s=%d enc=%x [invalid]\n", dcode25->s10, enc);
         return(ZBAR_NONE);
+    }
 
-    /* check leading quiet zone - spec is 10x(?) */
+    /* check leading quiet zone - spec is 10n(?)
+     * we require 5.25n for w=2n to 6.75n for w=3n
+     * (FIXME should really factor in w:n ratio)
+     */
     unsigned quiet = get_width(dcode, i++);
-    if(quiet && quiet < dcode25->s10 * 3 / 4)
+    if(quiet && quiet < dcode25->s10 * 3 / 8) {
+        dprintf(3, "      i25: s=%d enc=%x q=%d [invalid qz]\n",
+                dcode25->s10, enc, quiet);
         return(ZBAR_NONE);
+    }
 
     dcode25->direction = get_color(dcode);
     dcode25->element = 1;
@@ -122,10 +130,12 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
 
     /* check trailing quiet zone */
     unsigned quiet = get_width(dcode, 0);
-    if((quiet && quiet < dcode25->width * 3 / 4) ||
+    if((quiet && quiet < dcode25->width * 3 / 8) ||
        decode_e(get_width(dcode, 1), dcode25->width, 45) > 2 ||
-       decode_e(get_width(dcode, 2), dcode25->width, 45) > 2)
+       decode_e(get_width(dcode, 2), dcode25->width, 45) > 2) {
+        dprintf(3, " s=%d q=%d [invalid qz]\n", dcode25->width, quiet);
         return(ZBAR_NONE);
+    }
 
     /* check exit condition */
     unsigned char E = decode_e(get_width(dcode, 3), dcode25->width, 45);
