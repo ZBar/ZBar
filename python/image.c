@@ -22,6 +22,9 @@
  *------------------------------------------------------------------------*/
 
 #include "zbarmodule.h"
+#ifdef HAVE_INTTYPES_H
+# include <inttypes.h>
+#endif
 
 static char image_doc[] = PyDoc_STR(
     "image object.\n"
@@ -202,7 +205,7 @@ image_get_int (zbarImage *self,
                void *closure)
 {
     unsigned int val = -1;
-    switch((int)closure) {
+    switch((intptr_t)closure) {
     case 0:
         val = zbar_image_get_width(self->zimg); break;
     case 1:
@@ -225,7 +228,7 @@ image_set_int (zbarImage *self,
         PyErr_SetString(PyExc_TypeError, "expecting an integer");
         return(-1);
     }
-    switch((int)closure) {
+    switch((intptr_t)closure) {
     case 0:
         tmp = zbar_image_get_height(self->zimg);
         zbar_image_set_size(self->zimg, val, tmp);

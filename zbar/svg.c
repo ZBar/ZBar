@@ -49,6 +49,7 @@ static const char svg_head[] =
     "#cross * { stroke: #44f }\n"
     ".hedge { marker: url(#hedge) }\n"
     ".vedge { marker: url(#vedge) }\n"
+    ".scanner .hedge, .scanner .vedge { stroke-width: 8 }\n"
     ".finder .hedge, .finder .vedge { /*stroke: #a0c;*/ stroke-width: .9 }\n"
     ".cluster { stroke: #a0c; stroke-width: 1; stroke-opacity: .45 }\n"
     ".cluster.valid { stroke: #c0a; stroke-width: 1; stroke-opacity: .666 }\n"
@@ -105,18 +106,26 @@ void svg_image (const char *name, double width, double height)
 }
 
 void svg_group_start (const char *cls,
-                      double scale,
+                      double deg,
+                      double sx,
+                      double sy,
                       double x,
                       double y)
 {
     if(!svg) return;
     fprintf(svg, "<g class='%s'", cls);
-    if(scale != 1. || x || y) {
+    if(sx != 1. || sy != 1 || deg || x || y) {
         fprintf(svg, " transform='");
-        if(scale != 1.)
-            fprintf(svg, "scale(%g)", scale);
+        if(deg)
+            fprintf(svg, "rotate(%g)", deg);
         if(x || y)
             fprintf(svg, "translate(%g,%g)", x, y);
+        if(sx != 1. || sy != 1.) {
+            if(!sy)
+                fprintf(svg, "scale(%g)", sx);
+            else
+                fprintf(svg, "scale(%g,%g)", sx, sy);
+        }
         fprintf(svg, "'");
     }
     fprintf(svg, ">\n");
@@ -136,10 +145,10 @@ void svg_path_start (const char *cls,
     fprintf(svg, "<path class='%s'", cls);
     if(scale != 1. || x || y) {
         fprintf(svg, " transform='");
-        if(scale != 1.)
-            fprintf(svg, "scale(%g)", scale);
         if(x || y)
             fprintf(svg, "translate(%g,%g)", x, y);
+        if(scale != 1.)
+            fprintf(svg, "scale(%g)", scale);
         fprintf(svg, "'");
     }
     fprintf(svg, " d='");

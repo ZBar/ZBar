@@ -26,6 +26,7 @@
 #include <string.h>     /* memset */
 
 #include <zbar.h>
+#include "svg.h"
 
 #ifdef DEBUG_SCANNER
 # define DEBUG_LEVEL (DEBUG_SCANNER)
@@ -160,6 +161,10 @@ static inline zbar_symbol_type_t process_edge (zbar_scanner_t *scn,
             scn->cur_edge & ((1 << ZBAR_FIXED) - 1), scn->width,
             ((y1 > 0) ? "SPACE" : "BAR"));
     scn->last_edge = scn->cur_edge;
+
+#if DEBUG_SVG > 1
+    svg_path_moveto(SVG_ABS, scn->last_edge - (1 << ZBAR_FIXED) - ROUND, 0);
+#endif
 
     /* pass to decoder */
     if(scn->decoder)

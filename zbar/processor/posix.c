@@ -67,7 +67,8 @@ void _zbar_event_trigger (zbar_event_t *event)
 #endif
     if(event->pollfd >= 0) {
         unsigned i = 0; /* unused */
-        write(event->pollfd, &i, sizeof(unsigned));
+        if(write(event->pollfd, &i, sizeof(unsigned)) < 0)
+            perror("");
         event->pollfd = -1;
     }
 }
@@ -219,13 +220,13 @@ static int proc_kick_handler (zbar_processor_t *proc,
     zprintf(5, "kicking %d fds\n", state->polling.num);
 
     unsigned junk[2];
-    read(state->kick_fds[0], junk, 2 * sizeof(unsigned));
+    int rc = read(state->kick_fds[0], junk, 2 * sizeof(unsigned));
 
     assert(proc->threaded);
     _zbar_mutex_lock(&proc->mutex);
     proc_cache_polling(proc->state);
     _zbar_mutex_unlock(&proc->mutex);
-    return(0);
+    return(rc);
 }
 
 static inline int proc_poll_inputs (zbar_processor_t *proc,
@@ -279,7 +280,9 @@ int _zbar_processor_init (zbar_processor_t *proc)
 
     if(proc->threaded) {
         /* FIXME check errors */
-        pipe(state->kick_fds);
+        if(pipe(state->kick_fds))
+            return(err_capture(proc, SEV_FATAL, ZBAR_ERR_SYSTEM, __func__,
+                               "failed to open pipe"));
         add_poll(proc, state->kick_fds[0], proc_kick_handler);
         proc_cache_polling(proc->state);
     }
