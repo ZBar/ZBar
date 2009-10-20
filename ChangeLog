@@ -1,4 +1,7 @@
 current:
+  * Windows updates
+    - update installer and README for distribution of dependency libraries
+    - fix applications to use binary output for xml and raw modes
   * add regression tests to makefile
   * cleanup warnings from newer gcc versions
   * fix excessive i25 QZ checks

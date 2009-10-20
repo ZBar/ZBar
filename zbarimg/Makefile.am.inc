@@ -10,6 +10,8 @@ zbarimg_zbarimg_SOURCES += zbarimg/zbarimg.rc
 zbarimg_zbarimg_LDADD += zbarimg/zbarimg-rc.o
 endif
 
+EXTRA_DIST += test/barcodetest.py
+
 check-local:
 	$(PYTHON) $(srcdir)/test/barcodetest.py
 

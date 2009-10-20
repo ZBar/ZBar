@@ -25,6 +25,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef _WIN32
+# include <io.h>
+# include <fcntl.h>
+#endif
 #include <assert.h>
 
 #include <zbar.h>
@@ -240,6 +244,10 @@ int main (int argc, const char *argv[])
         return(zbar_processor_error_spew(proc, 0));
 
     if(format == XML) {
+#ifdef _WIN32
+        fflush(stdout);
+        _setmode(_fileno(stdout), _O_BINARY);
+#endif
         printf(xml_head, video_device);
         fflush(stdout);
     }

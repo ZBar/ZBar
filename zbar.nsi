@@ -24,6 +24,9 @@
 !ifndef VERSION
   !define VERSION "test"
 !endif
+!ifndef PREFIX
+  !define PREFIX "\usr\mingw32\usr"
+!endif
 
 !define ZBAR_KEY "Software\ZBar"
 !define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\ZBar"
@@ -43,7 +46,7 @@ InstallDirRegKey HKLM ${ZBAR_KEY} "InstallDir"
 Icon ${NSISDIR}\Contrib\Graphics\Icons\orange-install.ico
 UninstallIcon ${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico
 
-# do we need admin to install DLL and uninstall info?
+# do we need admin to install uninstall info?
 #RequestExecutionLevel admin
 
 
@@ -53,30 +56,6 @@ UninstallIcon ${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico
 
 Name "ZBar"
 Caption "ZBar ${VERSION} Setup"
-
-Var MAGICKDIR
-
-# Check that ImageMagick is installed
-Function CheckMagick
-    SearchPath $MAGICKDIR "CORE_RL_wand_.dll"
-    IfErrors 0 goinstall
-        MessageBox MB_OKCANCEL|MB_ICONSTOP \
-                   "ImageMagick was not found in your PATH!$\n\
-                   $\n\
-                   The zbarimg program will not be able to scan image files $\n\
-                   unless you install ImageMagick (http://www.imagemagick.org)$\n\
-                   $\n\
-                   See the README for more details$\n\
-                   $\n\
-                   Press OK to continue anyway...$\n\
-                   Press Cancel to abort the installation..." \
-                   /SD IDOK \
-                   IDOK goinstall
-
-        ExecShell "open" "http://www.imagemagick.org/"
-        Quit
-goinstall:
-FunctionEnd
 
 
 !define MEMENTO_REGISTRY_ROOT HKLM
@@ -103,7 +82,6 @@ FunctionEnd
 
 !insertmacro MUI_PAGE_WELCOME
 
-!define MUI_PAGE_CUSTOMFUNCTION_SHOW CheckMagick
 !insertmacro MUI_PAGE_LICENSE "share\doc\zbar\LICENSE"
 
 !define MUI_COMPONENTSPAGE_SMALLDESC
@@ -159,6 +137,16 @@ Section "ZBar Core Files (required)" SecCore
     File bin\libzbar-0.dll
     File bin\zbarimg.exe
     File bin\zbarcam.exe
+
+    # dependencies
+    File ${PREFIX}\bin\zlib1.dll
+    File ${PREFIX}\bin\libjpeg-7.dll
+    File ${PREFIX}\bin\libpng12-0.dll
+    File ${PREFIX}\bin\libtiff-3.dll
+    File ${PREFIX}\bin\libxml2-2.dll
+    File ${PREFIX}\bin\libiconv-2.dll
+    File ${PREFIX}\bin\libMagickCore-2.dll
+    File ${PREFIX}\bin\libMagickWand-2.dll
 
     FileOpen $0 zbarcam.bat w
     FileWrite $0 "@set PATH=%PATH%;$INSTDIR\bin$\n"

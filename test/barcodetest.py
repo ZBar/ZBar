@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import sys, re, unittest as UT, xml.etree.ElementTree as ET
 from os import path, getcwd
-from errno import EISDIR
+from errno import EISDIR, EINVAL, EACCES
 from StringIO import StringIO
 from subprocess import Popen, PIPE
 from urllib2 import urlopen, HTTPError
@@ -43,6 +43,17 @@ def toxml(node):
     s = StringIO()
     ET.ElementTree(node).write(s)
     return s.getvalue()
+
+def hexdump(data):
+    print(data)
+    for i, c in enumerate(data):
+        if i & 0x7 == 0:
+            print('[%04x]' % i, end='')
+        print(' %04x' % ord(c), end='')
+        if i & 0x7 == 0x7:
+            print()
+    if len(c) & 0x7 != 0x7:
+        print('\n')
 
 
 # search for a file in the distribution
@@ -238,6 +249,7 @@ def compare_indices(expect, actual):
             assert typ is not None
             data = sym.find(str(ET.QName(BC, 'data'))).text
             idxmap[typ, data] = sym
+
         return idxmap
 
     try:
@@ -289,9 +301,9 @@ class TestLoader:
                 # possible remote directory
                 pass
             except IOError, e:
-                if e.errno != EISDIR:
+                if e.errno not in (EISDIR, EINVAL, EACCES):
                     raise
-                # local directory
+                # could be local directory
 
             if (not file or
                 content == 'text/html' or

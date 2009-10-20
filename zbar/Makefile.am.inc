@@ -35,7 +35,7 @@ endif
 if ENABLE_QRCODE
 zbar_libzbar_la_SOURCES += zbar/qrcode.h \
     zbar/decoder/qr_finder.h zbar/decoder/qr_finder.c \
-    zbar/qrcode/qrdec.c zbar/qrcode/qrdectxt.c \
+    zbar/qrcode/qrdec.h zbar/qrcode/qrdec.c zbar/qrcode/qrdectxt.c \
     zbar/qrcode/rs.h zbar/qrcode/rs.c \
     zbar/qrcode/isaac.h zbar/qrcode/isaac.c \
     zbar/qrcode/bch15_5.h zbar/qrcode/bch15_5.c \

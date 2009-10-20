@@ -31,6 +31,10 @@
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
 #endif
+#ifdef _WIN32
+# include <io.h>
+# include <fcntl.h>
+#endif
 #include <assert.h>
 
 #include <zbar.h>
@@ -338,18 +342,30 @@ int main (int argc, const char *argv[])
             zbar_processor_set_visible(processor, 0);
         else if(!strcmp(arg, "--xml")) {
             if(xmllvl < 1) {
-                xmllvl++;
+                xmllvl = 1;
+#ifdef _WIN32
+                fflush(stdout);
+                _setmode(_fileno(stdout), _O_BINARY);
+#endif
                 printf("%s", xml_head);
             }
         }
         else if(!strcmp(arg, "--noxml") || !strcmp(arg, "--raw")) {
             if(xmllvl > 0) {
-                xmllvl--;
+                xmllvl = 0;
                 printf("%s", xml_foot);
                 fflush(stdout);
+#ifdef _WIN32
+                _setmode(_fileno(stdout), _O_TEXT);
+#endif
             }
-            if(!strcmp(arg, "--raw"))
+            if(!strcmp(arg, "--raw")) {
                 xmllvl = -1;
+#ifdef _WIN32
+                fflush(stdout);
+                _setmode(_fileno(stdout), _O_BINARY);
+#endif
+            }
         }
         else if(!strcmp(arg, "--set")) {
             if(parse_config(argv[++i], "--set"))
@@ -371,7 +387,7 @@ int main (int argc, const char *argv[])
         exit_code = 0;
 
     if(xmllvl > 0) {
-        xmllvl--;
+        xmllvl = -1;
         printf("%s", xml_foot);
         fflush(stdout);
     }
@@ -379,7 +395,7 @@ int main (int argc, const char *argv[])
     if(xmlbuf)
         free(xmlbuf);
 
-    if(num_images && !quiet) {
+    if(num_images && !quiet && xmllvl <= 0) {
         fprintf(stderr, "scanned %d barcode symbols from %d images",
                 num_symbols, num_images);
 #ifdef HAVE_SYS_TIMES_H
