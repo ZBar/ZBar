@@ -205,7 +205,7 @@ int _zbar_processor_wait (zbar_processor_t *proc,
 
     if(rc <= 0 || !proc->threaded) {
         /* reacquire api lock */
-        waiter->events = 0;
+        waiter->events &= EVENT_CANCELED;
         proc->wait_next = NULL;
         if(!proc->lock_level) {
             proc_waiter_t *w = proc_waiter_dequeue(proc);

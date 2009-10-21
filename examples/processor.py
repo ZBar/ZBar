@@ -17,10 +17,9 @@ proc.init(device)
 # setup a callback
 def my_handler(proc, image, closure):
     # extract results
-    for symbol in image:
-        if not symbol.count:
-            # do something useful with results
-            print 'decoded', symbol.type, 'symbol', '"%s"' % symbol.data
+    for symbol in image.symbols:
+        # do something useful with results
+        print 'decoded', symbol.type, 'symbol', '"%s"' % symbol.data
 
 proc.set_data_handler(my_handler)
 
@@ -30,6 +29,7 @@ proc.visible = True
 # initiate scanning
 proc.active = True
 try:
+    # keep scanning until user provides key/mouse input
     proc.user_wait()
 except zbar.WindowClosed, e:
     pass

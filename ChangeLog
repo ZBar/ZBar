@@ -1,4 +1,6 @@
 current:
+  * fix window closed notification during events
+    - add read_one example, fix xs compiler warnings, update perl docs
   * add result query interfaces to image scanner and processor
     - move result filtering into image scanner (from user)
     - abort output blockers when window closed

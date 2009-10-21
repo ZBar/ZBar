@@ -91,6 +91,11 @@ Test/set visibility of the output window.
 
 Enable/disable video streaming and scanning for bar codes.
 
+=item get_results()
+
+Return a list of Barcode::ZBar::Symbol results from the last scanned
+image or video frame.
+
 =item user_wait([I<timeout>])
 
 Wait for the user to press a key/button or close the window.  Bar

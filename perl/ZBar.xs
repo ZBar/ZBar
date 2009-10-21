@@ -540,8 +540,10 @@ zbar_processor_set_active(processor, active=1)
 SV *
 get_results(processor)
         Barcode::ZBar::Processor	processor
+    PREINIT:
+        const zbar_symbol_set_t	*syms;
     PPCODE:
-        zbar_symbol_set_t *syms = zbar_processor_get_results(processor);
+        syms = zbar_processor_get_results(processor);
         PUSH_SYMS(zbar_symbol_set_first_symbol(syms));
         zbar_symbol_set_ref(syms, -1);
 
@@ -631,8 +633,10 @@ zbar_image_scanner_recycle_image(scanner, image)
 SV *
 get_results(scanner)
         Barcode::ZBar::ImageScanner	scanner
+    PREINIT:
+        const zbar_symbol_set_t	*syms;
     PPCODE:
-        zbar_symbol_set_t *syms = zbar_image_scanner_get_results(scanner);
+        syms = zbar_image_scanner_get_results(scanner);
         PUSH_SYMS(zbar_symbol_set_first_symbol(syms));
 
 int

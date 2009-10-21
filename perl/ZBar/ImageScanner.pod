@@ -50,6 +50,11 @@ Barcode::ZBar::Image.
 
 Create a new bar code image scanner instance.
 
+=item get_results()
+
+Return a list of Barcode::ZBar::Symbol results from the last scanned
+image.
+
 =item scan_image([I<image>])
 
 Scan a Barcode::ZBar::Image for bar codes.
