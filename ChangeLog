@@ -1,4 +1,7 @@
 current:
+  * add result query interfaces to image scanner and processor
+    - move result filtering into image scanner (from user)
+    - abort output blockers when window closed
   * Windows updates
     - update installer and README for distribution of dependency libraries
     - fix applications to use binary output for xml and raw modes

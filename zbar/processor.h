@@ -56,6 +56,8 @@ typedef struct proc_waiter_s {
 /* high-level API events */
 #define EVENT_INPUT     0x01            /* user input */
 #define EVENT_OUTPUT    0x02            /* decoded output data available */
+#define EVENT_CANCELED  0x80            /* cancelation flag */
+#define EVENTS_PENDING  (EVENT_INPUT | EVENT_OUTPUT)
 
 struct zbar_processor_s {
     errinfo_t err;                      /* error reporting */
@@ -85,6 +87,8 @@ struct zbar_processor_s {
 
     zbar_thread_t input_thread;         /* video input handler */
     zbar_thread_t video_thread;         /* window event handler */
+
+    const zbar_symbol_set_t *syms;      /* previous decode results */
 
     zbar_mutex_t mutex;                 /* shared data mutex */
 

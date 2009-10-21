@@ -33,8 +33,9 @@ typedef struct point_s {
 
 struct zbar_symbol_set_s {
     refcnt_t refcnt;
-    int nsyms;                  /* number of valid symbols */
+    int nsyms;                  /* number of filtered symbols */
     zbar_symbol_t *head;        /* first of decoded symbol results */
+    zbar_symbol_t *tail;        /* last of unfiltered symbol results */
 };
 
 struct zbar_symbol_s {

@@ -127,6 +127,13 @@ class Processor {
             throw_exception(_processor);
     }
 
+    /// retrieve decode results for last scanned image.
+    /// @see zbar_processor_get_results()
+    /// @since 0.10
+    const SymbolSet get_results () const {
+        return(SymbolSet(zbar_processor_get_results(_processor)));
+    }
+
     /// wait for input to the display window from the user.
     /// see zbar_processor_user_wait()
     int user_wait (int timeout = FOREVER)

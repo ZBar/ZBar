@@ -379,8 +379,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
       sa_sym->data_alloc = sa_ntext;
       sa_sym->datalen = sa_ntext - 1;
 
-      _zbar_symbol_set_add(img->syms, sa_sym);
-      _zbar_image_scanner_cache_sym(iscn, sa_sym);
+      _zbar_image_scanner_add_sym(iscn, sa_sym);
     }
     else {
         _zbar_image_scanner_recycle_syms(iscn, syms);

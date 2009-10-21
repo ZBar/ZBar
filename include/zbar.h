@@ -221,7 +221,7 @@ typedef struct zbar_symbol_set_s zbar_symbol_set_t;
  * destroyed or reused.
  * @since 0.9
  */
-extern void zbar_symbol_ref(zbar_symbol_t *symbol,
+extern void zbar_symbol_ref(const zbar_symbol_t *symbol,
                             int refs);
 
 /** retrieve type of decoded symbol.
@@ -340,7 +340,7 @@ extern char *zbar_symbol_xml(const zbar_symbol_t *symbol,
  * the object any longer once references have been released.
  * @since 0.10
  */
-extern void zbar_symbol_set_ref(zbar_symbol_set_t *symbols,
+extern void zbar_symbol_set_ref(const zbar_symbol_set_t *symbols,
                                 int refs);
 
 /** retrieve set size.
@@ -713,6 +713,16 @@ extern int zbar_processor_set_visible(zbar_processor_t *processor,
 extern int zbar_processor_set_active(zbar_processor_t *processor,
                                      int active);
 
+/** retrieve decode results for last scanned image/frame.
+ * @returns the symbol set result container or NULL if no results are
+ * available
+ * @note the returned symbol set has its reference count incremented;
+ * ensure that the count is decremented after use
+ * @since 0.10
+ */
+extern const zbar_symbol_set_t*
+zbar_processor_get_results(const zbar_processor_t *processor);
+
 /** wait for input to the display window from the user
  * (via mouse or keyboard).
  * @returns >0 when input is received, 0 if timeout ms expired
@@ -1064,6 +1074,17 @@ extern void zbar_image_scanner_enable_cache(zbar_image_scanner_t *scanner,
  */
 extern void zbar_image_scanner_recycle_image(zbar_image_scanner_t *scanner,
                                              zbar_image_t *image);
+
+/** retrieve decode results for last scanned image.
+ * @returns the symbol set result container or NULL if no results are
+ * available
+ * @note the symbol set does not have its reference count adjusted;
+ * ensure that the count is incremented if the results may be kept
+ * after the next image is scanned
+ * @since 0.10
+ */
+extern const zbar_symbol_set_t*
+zbar_image_scanner_get_results(const zbar_image_scanner_t *scanner);
 
 /** scan for symbols in provided image.  The image format must be
  * "Y800" or "GRAY".

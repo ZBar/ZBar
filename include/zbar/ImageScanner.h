@@ -91,9 +91,19 @@ public:
         zbar_image_scanner_enable_cache(_scanner, enable);
     }
 
+    /// remove previous results from scanner and image.
+    /// @see zbar_image_scanner_recycle_image()
+    /// @since 0.10
     void recycle_image (Image &image)
     {
         zbar_image_scanner_recycle_image(_scanner, image);
+    }
+
+    /// retrieve decode results for last scanned image.
+    /// @see zbar_image_scanner_get_results()
+    /// @since 0.10
+    const SymbolSet get_results () const {
+        return(SymbolSet(zbar_image_scanner_get_results(_scanner)));
     }
 
     /// scan for symbols in provided image.

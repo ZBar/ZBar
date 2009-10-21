@@ -537,6 +537,14 @@ zbar_processor_set_active(processor, active=1)
 	check_error(zbar_processor_set_active(processor, active),
                     processor);
 
+SV *
+get_results(processor)
+        Barcode::ZBar::Processor	processor
+    PPCODE:
+        zbar_symbol_set_t *syms = zbar_processor_get_results(processor);
+        PUSH_SYMS(zbar_symbol_set_first_symbol(syms));
+        zbar_symbol_set_ref(syms, -1);
+
 int
 zbar_processor_user_wait(processor, timeout=-1)
         Barcode::ZBar::Processor	processor
@@ -619,6 +627,13 @@ void
 zbar_image_scanner_recycle_image(scanner, image)
         Barcode::ZBar::ImageScanner	scanner
         Barcode::ZBar::Image	image
+
+SV *
+get_results(scanner)
+        Barcode::ZBar::ImageScanner	scanner
+    PPCODE:
+        zbar_symbol_set_t *syms = zbar_image_scanner_get_results(scanner);
+        PUSH_SYMS(zbar_symbol_set_first_symbol(syms));
 
 int
 scan_image(scanner, image)

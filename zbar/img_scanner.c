@@ -176,7 +176,7 @@ static inline int recycle_syms (zbar_image_scanner_t *iscn,
         return(1);
 
     _zbar_image_scanner_recycle_syms(iscn, syms->head);
-    syms->head = NULL;
+    syms->head = syms->tail = NULL;
     syms->nsyms = 0;
     return(0);
 }
@@ -291,8 +291,8 @@ static inline zbar_symbol_t *cache_lookup (zbar_image_scanner_t *iscn,
     return(*entry);
 }
 
-inline void _zbar_image_scanner_cache_sym (zbar_image_scanner_t *iscn,
-                                           zbar_symbol_t *sym)
+static inline void cache_sym (zbar_image_scanner_t *iscn,
+                              zbar_symbol_t *sym)
 {
     if(iscn->enable_cache) {
         zbar_symbol_t *entry = cache_lookup(iscn, sym);
@@ -323,6 +323,29 @@ inline void _zbar_image_scanner_cache_sym (zbar_image_scanner_t *iscn,
     }
     else
         sym->cache_count = 0;
+}
+
+void _zbar_image_scanner_add_sym(zbar_image_scanner_t *iscn,
+                                 zbar_symbol_t *sym)
+{
+    cache_sym(iscn, sym);
+
+    zbar_symbol_set_t *syms = iscn->syms;
+    if(sym->cache_count || !syms->tail) {
+        sym->next = syms->head;
+        syms->head = sym;
+    }
+    else {
+        sym->next = syms->tail->next;
+        syms->tail->next = sym;
+    }
+
+    if(!sym->cache_count)
+        syms->nsyms++;
+    else if(!syms->tail)
+        syms->tail = sym;
+
+    _zbar_symbol_refcnt(sym, 1);
 }
 
 #ifdef ENABLE_QRCODE
@@ -420,9 +443,7 @@ static void symbol_handler (zbar_decoder_t *dcode)
     if(TEST_CFG(iscn, ZBAR_CFG_POSITION))
         sym_add_point(sym, x, y);
 
-    /* add to current result set */
-    _zbar_symbol_set_add(iscn->syms, sym);
-    _zbar_image_scanner_cache_sym(iscn, sym);
+    _zbar_image_scanner_add_sym(iscn, sym);
 }
 
 zbar_image_scanner_t *zbar_image_scanner_create ()
@@ -541,8 +562,8 @@ int zbar_image_scanner_set_config (zbar_image_scanner_t *iscn,
     return(0);
 }
 
-void zbar_image_scanner_enable_cache(zbar_image_scanner_t *iscn,
-                                     int enable)
+void zbar_image_scanner_enable_cache (zbar_image_scanner_t *iscn,
+                                      int enable)
 {
     if(iscn->cache) {
         /* recycle all cached syms */
@@ -550,6 +571,12 @@ void zbar_image_scanner_enable_cache(zbar_image_scanner_t *iscn,
         iscn->cache = NULL;
     }
     iscn->enable_cache = (enable) ? 1 : 0;
+}
+
+const zbar_symbol_set_t *
+zbar_image_scanner_get_results (const zbar_image_scanner_t *iscn)
+{
+    return(iscn->syms);
 }
 
 static inline void quiet_border (zbar_image_scanner_t *iscn)
@@ -743,7 +770,6 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
         }
     }
 
-    /* FIXME option to only report count == 0 */
     if(syms->nsyms && iscn->handler)
         iscn->handler(img, iscn->userdata);
 

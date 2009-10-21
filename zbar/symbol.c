@@ -70,10 +70,11 @@ void _zbar_symbol_free (zbar_symbol_t *sym)
     free(sym);
 }
 
-void zbar_symbol_ref (zbar_symbol_t *sym,
+void zbar_symbol_ref (const zbar_symbol_t *sym,
                       int refs)
 {
-    _zbar_symbol_refcnt(sym, refs);
+    zbar_symbol_t *ncsym = (zbar_symbol_t*)sym;
+    _zbar_symbol_refcnt(ncsym, refs);
 }
 
 zbar_symbol_type_t zbar_symbol_get_type (const zbar_symbol_t *sym)
@@ -220,11 +221,12 @@ inline void _zbar_symbol_set_free (zbar_symbol_set_t *syms)
     free(syms);
 }
 
-void zbar_symbol_set_ref (zbar_symbol_set_t *syms,
+void zbar_symbol_set_ref (const zbar_symbol_set_t *syms,
                           int delta)
 {
-    if(!_zbar_refcnt(&syms->refcnt, delta) && delta <= 0)
-        _zbar_symbol_set_free(syms);
+    zbar_symbol_set_t *ncsyms = (zbar_symbol_set_t*)syms;
+    if(!_zbar_refcnt(&ncsyms->refcnt, delta) && delta <= 0)
+        _zbar_symbol_set_free(ncsyms);
 }
 
 int zbar_symbol_set_get_size (const zbar_symbol_set_t *syms)
@@ -235,5 +237,8 @@ int zbar_symbol_set_get_size (const zbar_symbol_set_t *syms)
 const zbar_symbol_t*
 zbar_symbol_set_first_symbol (const zbar_symbol_set_t *syms)
 {
+    zbar_symbol_t *sym = syms->tail;
+    if(sym)
+        return(sym->next);
     return(syms->head);
 }

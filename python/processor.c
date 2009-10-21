@@ -129,11 +129,21 @@ processor_set_bool (zbarProcessor *self,
     return(0);
 }
 
+static zbarSymbolSet*
+processor_get_results (zbarProcessor *self,
+                       void *closure)
+{
+    const zbar_symbol_set_t *zsyms =
+        zbar_processor_get_results(self->zproc);
+    return(zbarSymbolSet_FromSymbolSet(zsyms));
+}
+
 static PyGetSetDef processor_getset[] = {
     { "visible",  (getter)processor_get_bool, (setter)processor_set_bool,
       NULL, (void*)0 },
     { "active",   NULL,                       (setter)processor_set_bool,
       NULL, (void*)1 },
+    { "results",  (getter)processor_get_results, },
     { NULL, },
 };
 
