@@ -37,26 +37,29 @@ pkg-config may be obtained from
 
 The zbarimg program uses ImageMagick to read image files in many
 different formats.  You will need at least ImageMagick version 6.2.6
-and the Magick++ development interface to ImageMagick if you want to
-scan image files.  ImageMagick may be obtained from
+if you want to scan image files.  ImageMagick may be obtained from
     http://www.imagemagick.org/
 
 The Qt widget requires Qt4.  You will need Qt4 if you would like to
-develop a Qt GUI application with an integrated bar code scanning
-widget.  Qt4 may be obtained from
-    http://www.qtsoftware.com/products
+use or develop a Qt GUI application with an integrated bar code
+scanning widget.  Qt4 may be obtained from
+    http://qt.nokia.com/products
 
 The GTK+ widget requires GTK+-2.x.  You will need GTK+ if you would
-like to develop a GTK+ GUI application with an integrated bar code
-scanning widget.  GTK+ may be obtained from
+like to use or develop a GTK+ GUI application with an integrated bar
+code scanning widget.  GTK+ may be obtained from
     http://www.gtk.org/
 
 The PyGTK wrapper for the GTK+ widget requires Python and PyGTK.  You
-will need both if you would like to develop a PyGTK GUI application
-with an integrated bar code scanning widget.  Python and PyGTK may
-respectively be obtained from
-    http://python.org/
+will need both if you would like to use or develop a PyGTK GUI
+application with an integrated bar code scanning widget.  PyGTK may be
+obtained from
     http://www.pygtk.org/
+
+The Python bindings require Python (version?).  You will need Python
+if you would like to scan images or video directly using Python.
+Python is available from
+    http://python.org/
 
 The Perl bindings require Perl (version?).  You will need Perl if you
 would like to scan images or video directly using Perl.  Perl is

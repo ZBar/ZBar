@@ -49,6 +49,7 @@ EXTRA_DIST += zbar.ico zbar.nsi
 
 EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py examples/paginate.pl \
     examples/barcode.png examples/processor.pl examples/processor.py \
+    examples/read_one.py examples/read_one.pl \
     examples/scan_image.c examples/scan_image.cpp examples/scan_image.pl \
     examples/scan_image.py examples/scan_image.vcproj
 
@@ -57,7 +58,7 @@ EXTRA_DIST += perl/MANIFEST perl/README perl/Changes perl/COPYING.LIB \
     perl/ZBar.pm perl/inc/Devel/CheckLib.pm perl/ZBar/Image.pod \
     perl/ZBar/ImageScanner.pod perl/ZBar/Processor.pod perl/ZBar/Symbol.pod \
     perl/examples/paginate.pl perl/examples/processor.pl \
-    perl/examples/scan_image.pl \
+    perl/examples/read_one.pl perl/examples/scan_image.pl \
     perl/t/barcode.png perl/t/ZBar.t perl/t/Decoder.t perl/t/Image.t \
     perl/t/Processor.t perl/t/Scanner.t perl/t/pod.t perl/t/pod-coverage.t
 

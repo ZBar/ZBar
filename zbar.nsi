@@ -259,7 +259,8 @@ Section Uninstall
     Delete $INSTDIR\README.windows
     Delete $INSTDIR\NEWS
     Delete $INSTDIR\TODO
-    Delete $INSTDIR\COPYING.LIB
+    Delete $INSTDIR\COPYING
+    Delete $INSTDIR\LICENSE
     Delete $INSTDIR\zbarvars.bat
     Delete $INSTDIR\uninstall.exe
     RMDir $INSTDIR

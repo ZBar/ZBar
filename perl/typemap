@@ -45,6 +45,8 @@ T_FOURCC
 T_TIMEOUT
 	if(($var = ($type)(SvNV($arg) * 1000.)) < 0)
             $var = -1;
+T_PV
+	$var = SvOK($arg) ? SvPV_nolen($arg) : NULL;
 
 OUTPUT
 

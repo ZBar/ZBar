@@ -134,12 +134,11 @@ extern int _zbar_window_resize(zbar_window_t*);
 extern int _zbar_window_clear(zbar_window_t*);
 extern int _zbar_window_begin(zbar_window_t*);
 extern int _zbar_window_end(zbar_window_t*);
-extern int _zbar_window_draw_logo(zbar_window_t*);
 extern int _zbar_window_draw_marker(zbar_window_t*, uint32_t, point_t);
 extern int _zbar_window_draw_polygon(zbar_window_t*, uint32_t, const point_t*, int);
 extern int _zbar_window_draw_text(zbar_window_t*, uint32_t,
                                   point_t, const char*);
-extern int _zbar_window_fill_rect(zbar_window_t*, uint32_t,
-                                  point_t, const point_t);
+extern int _zbar_window_fill_rect(zbar_window_t*, uint32_t, point_t, point_t);
+extern int _zbar_window_draw_logo(zbar_window_t*);
 
 #endif

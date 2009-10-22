@@ -1,4 +1,6 @@
-current:
+version 0.10:
+  * release updates
+    - fix perl Processor init without video
   * fix window closed notification during events
     - add read_one example, fix xs compiler warnings, update perl docs
   * add result query interfaces to image scanner and processor

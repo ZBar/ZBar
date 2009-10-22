@@ -77,7 +77,7 @@ $proc->set_data_handler(sub {
 
 #########################
 
-$proc->init($ENV{VIDEO_DEVICE} || '/dev/video0');
+$proc->init($ENV{VIDEO_DEVICE});
 ok(!$proc->is_visible(), 'initial visibility');
 
 #########################

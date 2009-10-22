@@ -57,7 +57,9 @@ image.
 
 =item scan_image([I<image>])
 
-Scan a Barcode::ZBar::Image for bar codes.
+Scan a Barcode::ZBar::Image for bar codes.  The image must be in the
+"Y800" format.  If necessary, use C<< I<$image>->convert("Y800") >> to
+convert from other supported formats to Y800 before scanning.
 
 =item enable_cache([I<enable>])
 
