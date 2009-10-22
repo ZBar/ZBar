@@ -64,13 +64,13 @@ def distdir_search(subdir, base, suffixes=('',)):
     # finally, attempt to follow VPATH if present
     try:
         import re
-        with open('Makefile') as makefile:
-            for line in makefile:
-                if re.match('^VPATH\s*=', line):
-                    vpath = line.split('=', 1)[1].strip()
-                    if vpath and vpath != rundir:
-                        search.append(vpath)
-                    break
+        makefile = open('Makefile')
+        for line in makefile:
+            if re.match('^VPATH\s*=', line):
+                vpath = line.split('=', 1)[1].strip()
+                if vpath and vpath != rundir:
+                    search.append(vpath)
+                break
     except:
         pass
 
