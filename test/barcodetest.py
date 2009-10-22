@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
-
 import sys, re, unittest as UT, xml.etree.ElementTree as ET
 from os import path, getcwd
 from errno import EISDIR, EINVAL, EACCES
@@ -45,15 +43,15 @@ def toxml(node):
     return s.getvalue()
 
 def hexdump(data):
-    print(data)
+    print data
     for i, c in enumerate(data):
         if i & 0x7 == 0:
-            print('[%04x]' % i, end='')
-        print(' %04x' % ord(c), end='')
+            print '[%04x]' % i,
+        print ' %04x' % ord(c),
         if i & 0x7 == 0x7:
-            print()
+            print
     if len(c) & 0x7 != 0x7:
-        print('\n')
+        print '\n'
 
 
 # search for a file in the distribution
@@ -98,9 +96,9 @@ def find_zbarimg():
         # fall back to PATH
         zbarimg = 'zbarimg'
         if debug:
-            print('using zbarimg from PATH')
+            print 'using zbarimg from PATH'
     elif debug:
-        print('using:', zbarimg)
+        print 'using:', zbarimg
 
 
 def run_zbarimg(images):
@@ -112,7 +110,7 @@ def run_zbarimg(images):
     args.extend(zbarimg_args)
     args.extend(images)
     if debug:
-        print("running:", ' '.join(args))
+        print 'running:', ' '.join(args)
 
     # FIXME should be able to pipe (feed) parser straight from output
     child = Popen(args, stdout = PIPE, stderr = PIPE)
@@ -120,7 +118,7 @@ def run_zbarimg(images):
 
     rc = child.returncode
     if debug:
-        print("zbarimg returned", rc)
+        print 'zbarimg returned', rc
 
     # FIXME trim usage from error msg
     assert rc in (0, 4), \
@@ -198,9 +196,9 @@ def compare_maps(expect, actual, compare_func):
             errors.append('missing expected result:\n' + toxml(iexp))
 
     if len(notes) == 1:
-        print("(TODO)", end='', file=sys.stderr)
+        print >>sys.stderr, '(TODO)',
     elif notes:
-        print("(%d TODO)" % len(notes), end='', file=sys.stderr)
+        print >>sys.stderr, '(%d TODO)' % len(notes),
     assert not errors, '\n'.join(errors)
 
 
@@ -270,7 +268,7 @@ class TestLoader:
     def __init__(self):
         self.cwd = urlunparse(('file', '', getcwd() + '/', '', '', ''))
         if debug:
-            print('cwd =', self.cwd)
+            print 'cwd =', self.cwd
 
     def loadTestsFromModule(self, module):
         return self.suiteClass([BuiltinTestCase()])
@@ -281,7 +279,7 @@ class TestLoader:
 
     def loadTestsFromURL(self, url=None, file=None):
         if debug:
-            print('loading url:', url)
+            print 'loading url:', url
 
         target = None
         if not file:
@@ -294,7 +292,7 @@ class TestLoader:
 
             try:
                 if debug:
-                    print('trying:', url)
+                    print 'trying:', url
                 file = urlopen(url)
                 content = file.info().get('Content-Type')
             except HTTPError, e:
@@ -312,7 +310,7 @@ class TestLoader:
                 try:
                     tmp = urljoin(url + '/', 'index.xml')
                     if debug:
-                        print('trying index:', tmp)
+                        print 'trying index:', tmp
                     file = urlopen(tmp)
                     content = file.info().get('Content-Type')
                     url = tmp
@@ -320,7 +318,7 @@ class TestLoader:
                     raise IOError('no test index found at: %s' % url)
 
             if debug:
-                print('\tContent-Type:', content)
+                print '\tContent-Type:', content
 
             if content not in ('application/xml', 'text/xml'):
                 # assume url is image to test, try containing index
@@ -329,11 +327,11 @@ class TestLoader:
                     target = url.rsplit('/', 1)[1]
                     index = urljoin(url, 'index.xml')
                     if debug:
-                        print('trying index:', index)
+                        print 'trying index:', index
                     file = urlopen(index)
                     content = file.info().get('Content-Type')
                     if debug:
-                        print('\tContent-Type:', content)
+                        print '\tContent-Type:', content
                     assert content in ('application/xml', 'text/xml')
                     url = index
                 except IOError:
