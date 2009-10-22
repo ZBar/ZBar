@@ -1,4 +1,5 @@
 version 0.10:
+  * attempt fix for Qt4 < 4.4
   * release updates
     - fix perl Processor init without video
   * fix window closed notification during events
