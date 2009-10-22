@@ -122,7 +122,7 @@ static inline int xv_add_format (zbar_window_t *w,
 
     window_state_t *x = w->state;
     if(!w->formats[i + 1])
-        x->xv_ports = realloc(x->xv_ports, (i + 1) * sizeof(uint32_t));
+        x->xv_ports = realloc(x->xv_ports, (i + 1) * sizeof(*x->xv_ports));
 
     /* FIXME could prioritize by something (rate? size?) */
     x->xv_ports[i] = port;
@@ -205,7 +205,7 @@ int _zbar_window_probe_xv (zbar_window_t *w)
 
     window_state_t *x = w->state;
     x->num_xv_adaptors = 0;
-    x->xv_adaptors = calloc(n, sizeof(int));
+    x->xv_adaptors = calloc(n, sizeof(*x->xv_adaptors));
     int i;
     for(i = 0; i < n; i++) {
         XvAdaptorInfo *adapt = &adaptors[i];
