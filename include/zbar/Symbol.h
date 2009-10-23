@@ -423,7 +423,7 @@ public:
     }
 
 private:
-    const SymbolSet _syms;
+    SymbolSet _syms;
     Symbol _sym;
 };
 

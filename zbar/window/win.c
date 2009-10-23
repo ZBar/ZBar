@@ -193,15 +193,13 @@ int _zbar_window_draw_polygon (zbar_window_t *w,
     HDC hdc = w->state->hdc;
     win_set_rgb(hdc, rgb);
 
+    point_t org = w->scaled_offset;
     POINT gdipts[npts + 1];
     int i;
     for(i = 0; i < npts; i++) {
-        gdipts[i].x = pts[i].x;
-        if(w->width != w->image->width)
-            gdipts[i].x = gdipts[i].x * w->width / w->image->width;
-        gdipts[i].y = pts[i].y;
-        if(w->height != w->image->height)
-            gdipts[i].y = gdipts[i].y * w->height / w->image->height;
+        point_t p = window_scale_pt(w, pts[i]);
+        gdipts[i].x = p.x + org.x;
+        gdipts[i].y = p.y + org.y;
     }
     gdipts[npts] = gdipts[0];
 
