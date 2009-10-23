@@ -457,7 +457,7 @@ void *zbar_processor_get_userdata (const zbar_processor_t *proc)
 {
     zbar_processor_t *ncproc = (zbar_processor_t*)proc;
     _zbar_mutex_lock(&ncproc->mutex);
-    void *userdata = (void*)proc->userdata;
+    void *userdata = (void*)ncproc->userdata;
     _zbar_mutex_unlock(&ncproc->mutex);
     return(userdata);
 }
