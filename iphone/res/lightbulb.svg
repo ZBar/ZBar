@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<!--
+   Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+     All Rights Reserved
+-->
+
+<svg version="1.1" id="top"
+  width="512px" height="512px"
+  viewBox="0,0 1,1" preserveAspectRatio="xMidYMid" overflow="visible"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <title>lit light bulb icon</title>
+
+  <defs>
+    <style type="text/css"><![CDATA[
+      path, line { fill: none; stroke-linejoin: round; stroke-linecap: round }
+      #bg { fill: #202020 }
+      #bulb { fill: url(#bulb-on); stroke: #778; stroke-width: .06 }
+      #support { stroke: #888; stroke-width: .03; stroke-opacity: .4 }
+      #filament { stroke: #f80; stroke-width: .06; stroke-opacity: .5 }
+      #rays line { stroke: #fff; stroke-width: .1 }
+      #base { fill: #ccc; stroke: #777; stroke-width: .14 }
+      #screw { stroke: #777; stroke-width: .25 }
+      #nub { fill: #444; stroke: #444; stroke-width: .25 }
+    ]]></style>
+
+    <radialGradient id="bulb-off" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="1.2">
+      <stop offset="0%" stop-color="#ccc"/>
+      <stop offset="33%" stop-color="#ccc"/>
+      <stop offset="100%" stop-color="#999"/>
+    </radialGradient>
+
+    <radialGradient id="bulb-on" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="1.2">
+      <stop offset="0%" stop-color="#ffc"/>
+      <stop offset="33%" stop-color="#ffb"/>
+      <stop offset="100%" stop-color="#dda"/>
+    </radialGradient>
+  </defs>
+
+  <!--<rect id="bg" width="1" height="1"/>-->
+
+  <g transform="translate(.5,.28) scale(.27)">
+    <path id="bulb" d="
+M-.42,1.85
+C-.42,1.4 -.42,1.22 -.866,.5
+A1,1 0 1 1 .866,.5
+C.42,1.22 .42,1.4 .42,1.85
+z
+"/>
+    <path id="support" d="
+M-.42,.1
+C-.15,.9 -.15,1 -.15,1.86
+M.42,.1
+C.15,.9 .15,1 .15,1.86
+"/>
+    <path id="filament" d="
+M-.42,.1
+a.18,.15 0 1 1 .28,0
+a.18,.15 0 1 1 .28,0
+a.18,.15 0 1 1 .28,0
+"/>
+
+    <g id="rays">
+      <line x1="1.2" x2="1.8" transform="rotate(-30)"/>
+      <line x1="1.2" x2="1.8"/>
+      <line x1="1.2" x2="1.8" transform="rotate(30)"/>
+      <line x1="-1.2" x2="-1.8" transform="rotate(-30)"/>
+      <line x1="-1.2" x2="-1.8"/>
+      <line x1="-1.2" x2="-1.8" transform="rotate(30)"/>
+    </g>
+  </g>
+
+  <g transform="translate(.5,.778) scale(.11)">
+    <path id="base" d="
+M-1,-.05
+A2,.75 0 0 0 1,-.05
+V1.2
+L.55,1.6
+H-.55
+L-1,1.2
+z
+"/>
+    <clipPath id="base-clip"><use xlink:href="#base"/></clipPath>
+    <path id="screw" clip-path="url(#base-clip)" d="
+M-1,.1
+a2.2,1 0 0 0 2,-.14
+M-1,.6
+a2.2,1 0 0 0 2,-.14
+M-1,1.1
+a2.2,1 0 0 0 2,-.14
+M-1,1.6
+a2.2,1 0 0 0 2,-.14
+"/>
+  </g>
+
+  <path id="nub" transform="translate(.5,.954) scale(.06)" d="
+M-1,-.05
+A2,.333 0 0 0 1,-.05
+L.5,.5
+H-.5
+z
+"/>
+
+</svg>

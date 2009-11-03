@@ -1,3 +1,6 @@
+current:
+  * first pass working iPhone "widget"
+
 version 0.10:
   * attempt fix for Qt4 < 4.4
   * release updates

@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<!--
+   Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+     All Rights Reserved
+-->
+
+<svg version="1.1" id="top"
+  width="384px" height="384px"
+  viewBox="0,0 1,1" preserveAspectRatio="xMidYMid" overflow="visible"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <title>rounded button overlay</title>
+
+  <defs>
+    <style type="text/css"><![CDATA[
+      #bg { fill: #202020 }
+      #test { fill: #d22 }
+      #button { fill: black; stroke: none; filter: url(#emboss) }
+    ]]></style>
+
+    <filter id="emboss" filterUnits="userSpaceOnUse"
+      x="-1" y="-1" width="3" height="3">
+      <feFlood flood-color="black"
+        x=".05" y=".05" width=".9" height=".9"/>
+      <feGaussianBlur result="grad" stdDeviation=".1"
+        x="-1" y="-1" width="3" height="3"/>
+
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="-1" intercept="1"/>
+      </feComponentTransfer>
+
+      <feSpecularLighting surfaceScale=".25" specularConstant=".75"
+        specularExponent="16" lighting-color="#ccc">
+        <fePointLight x="6" y="-10" z="2"/>
+      </feSpecularLighting>
+      <feGaussianBlur result="spec" stdDeviation="0.015"/>
+
+      <feColorMatrix in="grad" type="matrix" values="
+0 0 0 0 0
+0 0 0 0 0
+0 0 0 0 0
+0 0 0 .8 -.3
+"/>
+      <feComposite in2="spec" operator="over"/>
+      <feComposite in2="SourceAlpha" operator="in"/>
+    </filter>
+  </defs>
+<!--
+  <rect id="bg" x="-.5" y="-.5" width="2" height="2"/>
+  <rect id="test" width="1" height="1" rx=".2" ry=".2"/>
+-->
+  <rect id="button" width="1" height="1" rx=".25" ry=".25"/>
+</svg>
