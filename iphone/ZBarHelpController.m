@@ -23,7 +23,15 @@
 
 #import "ZBarHelpController.h"
 
-enum { BTN_GIVEUP, BTN_TRYAGAIN };
+@interface NSObject (ZBarHelpControllerDelegate)
+
+- (void) helpController: (ZBarHelpController*) help
+   clickedButtonAtIndex: (NSInteger) index;
+
+@end
+
+
+enum { BTN_TRYAGAIN = 1 };
 
 UIButton *_ZBarButton (CGFloat size,
                        CGFloat red,
@@ -192,7 +200,7 @@ UIButton *_ZBarButton (CGFloat size,
           font: smallFont];
 
     r.origin.x = size.width / 20;
-    r.size.width = r.size.height = size.height * 16 / 115;
+    r.size.width = r.size.height = 64;
 
     UIImage *iconset = [UIImage imageNamed: @"zbar-helpicons.png"];
     CGImageRef setimg = iconset.CGImage;
@@ -204,6 +212,7 @@ UIButton *_ZBarButton (CGFloat size,
     icon.image = [UIImage imageWithCGImage: img];
     CGImageRelease(img);
     [view addSubview: icon];
+    [icon release];
 
     r.origin.y = size.height * 55 / 115;
     icon = [[UIImageView alloc] initWithFrame: r];
@@ -211,6 +220,7 @@ UIButton *_ZBarButton (CGFloat size,
     icon.image = [UIImage imageWithCGImage: img];
     CGImageRelease(img);
     [view addSubview: icon];
+    [icon release];
 
     r.origin.y = size.height * 79 / 115;
     icon = [[UIImageView alloc] initWithFrame: r];
@@ -218,25 +228,11 @@ UIButton *_ZBarButton (CGFloat size,
     icon.image = [UIImage imageWithCGImage: img];
     CGImageRelease(img);
     [view addSubview: icon];
+    [icon release];
 
-    r.origin.x = size.width / 40;
-    r.origin.y = size.height * 103 / 115;
-    r.size.width = size.width * 9 / 20;
-    r.size.height = size.height * 12 / 115;
-
-    UIButton *btn = _ZBarButton(48, .85, .15, .15);
-    btn.frame = r;
-    btn.tag = BTN_GIVEUP;
-    [btn addTarget: self
-         action: @selector(buttonPressed:)
-         forControlEvents: UIControlEventTouchUpInside];
-    [btn setTitle: @"Give Up"
-         forState: UIControlStateNormal];
-    [view addSubview: btn];
-
-    btn = _ZBarButton(48, .1, .7, .1);
-    r.origin.x = size.width * 21 / 40;
-    btn.frame = r;
+    UIButton *btn = _ZBarButton(48, .1, .7, .1);
+    btn.frame = CGRectMake(size.width / 4 + 4, size.height - 52,
+                           size.width / 2 - 8, 48);
     btn.tag = BTN_TRYAGAIN;
     [btn addTarget: self
          action: @selector(buttonPressed:)
@@ -249,10 +245,8 @@ UIButton *_ZBarButton (CGFloat size,
 - (void) buttonPressed: (UIButton*) button
 {
     int idx = button.tag;
-    [delegate actionSheet: (UIActionSheet*)self
+    [delegate helpController: self
               clickedButtonAtIndex: idx];
-    if(idx)
-        [self dismissModalViewControllerAnimated: YES];
 }
 
 @end

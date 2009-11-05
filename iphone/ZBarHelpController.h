@@ -27,11 +27,11 @@
 
 @interface ZBarHelpController : UIViewController
 {
-    id <UIActionSheetDelegate> delegate;
+    id delegate;
 }
 
-@property (nonatomic, assign) id <UIActionSheetDelegate> delegate;
-
-extern UIButton *_ZBarButton (CGFloat size, CGFloat r, CGFloat g, CGFloat b);
+@property (nonatomic, assign) id delegate;
 
 @end
+
+extern UIButton *_ZBarButton (CGFloat size, CGFloat r, CGFloat g, CGFloat b);

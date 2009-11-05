@@ -19,3 +19,5 @@ libtool
 ltmain.sh
 autom4te.cache
 missing
+iphone/build
+.DS_Store

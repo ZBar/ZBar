@@ -63,6 +63,7 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
     if(self = [super init]) {
         scanner = zbar_image_scanner_create();
         showsHelpOnFail = YES;
+        showsZBarControls = YES;
         if([UIImagePickerController
                isSourceTypeAvailable: UIImagePickerControllerSourceTypeCamera])
             self.sourceType = UIImagePickerControllerSourceTypeCamera;
@@ -73,37 +74,43 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 - (void) initOverlay
 {
     CGRect r = self.view.bounds;
-    overlay = [[UIView new] initWithFrame: r];
+    overlay = [[UIView alloc] initWithFrame: r];
     overlay.backgroundColor = [UIColor clearColor];
+
+    controls = [UIView new];
 
     UIToolbar *toolbar = [UIToolbar new];
     toolbar.barStyle = UIBarStyleBlackOpaque;
     [toolbar sizeToFit];
     r.origin.y = r.size.height - 56;
     r.size.height = 56;
+    controls.frame = r;
+    r.origin.y = r.origin.x = 0;
     toolbar.frame = r;
-    [overlay addSubview: toolbar];
+    [controls addSubview: toolbar];
     [toolbar release];
 
     UIButton *btn = _ZBarButton(48, .1, .7, .1);
-    btn.frame = CGRectMake(r.size.width / 4 + 4, r.origin.y + 4,
+    btn.frame = CGRectMake(r.size.width / 4 + 4, 4,
                            r.size.width / 2 - 8, 48);
     [btn addTarget: self
          action: @selector(takePicture)
          forControlEvents: UIControlEventTouchDown];
     [btn setTitle: @"Scan!"
          forState: UIControlStateNormal];
-    [overlay addSubview: btn];
+    [controls addSubview: btn];
 
     btn = _ZBarButton(40, .85, .15, .15);
-    btn.frame = CGRectMake(4, r.origin.y + 4,
-                           r.size.width / 4 - 8, 48);
+    btn.frame = CGRectMake(4, 4, r.size.width / 4 - 8, 48);
     [btn addTarget: self
          action: @selector(cancel)
          forControlEvents: UIControlEventTouchUpInside];
     [btn setTitle: @"done"
          forState: UIControlStateNormal];
-    [overlay addSubview: btn];
+    [controls addSubview: btn];
+
+    controls.hidden = YES;
+    [overlay addSubview: controls];
 }
 
 - (void) viewDidLoad
@@ -117,6 +124,10 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 {
     [overlay release];
     overlay = nil;
+    [controls release];
+    controls = nil;
+    [help release];
+    help = nil;
 }
 
 - (void) viewDidUnload
@@ -139,24 +150,97 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 {
     [self performSelector: @selector(imagePickerControllerDidCancel:)
           withObject: self
-          afterDelay: 0];
+          afterDelay: 0.1];
 }
 
 - (void) viewWillAppear: (BOOL) animated
 {
-    if(self.sourceType == UIImagePickerControllerSourceTypeCamera &&
-       showsZBarControls) {
-        self.showsCameraControls = NO;
-        self.cameraOverlayView = overlay;
+    if(help) {
+        [help.view removeFromSuperview];
+        [help release];
+        help = nil;
+    }
+
+    if(self.sourceType == UIImagePickerControllerSourceTypeCamera) {
+        if(showsZBarControls || !self.cameraOverlayView)
+            self.cameraOverlayView = overlay;
+        self.showsCameraControls = !showsZBarControls;
+        controls.hidden = !showsZBarControls;
     }
     [super viewWillAppear: animated];
 }
 
+- (void)  imagePickerController: (UIImagePickerController*) picker
+  didFinishPickingMediaWithInfo: (NSDictionary*) info
+{
+    UIImage *img = [info objectForKey: UIImagePickerControllerOriginalImage];
+
+    id results = [self scanImage: img];
+    if(results) {
+        NSMutableDictionary *newinfo = [info mutableCopy];
+        [newinfo setObject: results
+                 forKey: ZBarReaderControllerResults];
+        SEL cb = @selector(imagePickerController:didFinishPickingMediaWithInfo:);
+        if([readerDelegate respondsToSelector: cb])
+            [readerDelegate imagePickerController: self
+                            didFinishPickingMediaWithInfo: newinfo];
+        else
+            [self dismissModalViewControllerAnimated: YES];
+        [newinfo release];
+        return;
+    }
+
+    if(showsHelpOnFail) {
+        help = [ZBarHelpController new];
+        help.delegate = self;
+
+        if(self.sourceType == UIImagePickerControllerSourceTypeCamera) {
+            help.wantsFullScreenLayout = YES;
+            help.view.alpha = 0;
+            [self.cameraOverlayView addSubview: help.view];
+            [UIView beginAnimations: @"ZBarHelp"
+                    context: nil];
+            help.view.alpha = 1;
+            [UIView commitAnimations];
+        }
+        else
+            [self presentModalViewController: help
+                  animated: YES];
+    }
+
+    SEL cb = @selector(zbarReaderControllerDidFailToRead:);
+    if([readerDelegate respondsToSelector: cb])
+        [readerDelegate zbarReaderControllerDidFailToRead: self];
+}
+
+- (void) imagePickerControllerDidCancel: (UIImagePickerController*) picker
+{
+    SEL cb = @selector(imagePickerControllerDidCancel:);
+    if([readerDelegate respondsToSelector: cb])
+        [readerDelegate imagePickerControllerDidCancel: self];
+    else
+        [self dismissModalViewControllerAnimated: YES];
+}
+
+- (void) helpController: (ZBarHelpController*) hlp
+   clickedButtonAtIndex: (NSInteger) idx
+{
+    if(self.sourceType == UIImagePickerControllerSourceTypeCamera) {
+        [UIView beginAnimations: @"ZBarHelp"
+                context: nil];
+        hlp.view.alpha = 0;
+        [UIView commitAnimations];
+    }
+    else
+        [hlp dismissModalViewControllerAnimated: YES];
+}
+
+// intercept delegate as readerDelegate
+
 - (void) setDelegate: (id <UINavigationControllerDelegate,
                            UIImagePickerControllerDelegate>) delegate
 {
-    // FIXME raise
-    assert(0);
+    self.readerDelegate = (id <ZBarReaderDelegate>)delegate;
 }
 
 // image scanner config wrappers
@@ -283,44 +367,6 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
           (!syms) ? 0 : [syms count], timer_elapsed(t_start, t_end));
 #endif
     return(syms);
-}
-
-- (void)  imagePickerController: (UIImagePickerController*) picker
-  didFinishPickingMediaWithInfo: (NSDictionary*) info
-{
-    UIImage *img = [info objectForKey: UIImagePickerControllerOriginalImage];
-
-    id results = [self scanImage: img];
-    if(results) {
-        NSMutableDictionary *newinfo = [info mutableCopy];
-        [newinfo setObject: results
-                 forKey: ZBarReaderControllerResults];
-        [readerDelegate imagePickerController: self
-                        didFinishPickingMediaWithInfo: newinfo];
-        return;
-    }
-
-    if(showsHelpOnFail) {
-        ZBarHelpController *help = [ZBarHelpController new];
-        help.delegate = self;
-        [self presentModalViewController: help
-              animated: YES];
-        [help release];
-    }
-
-    //[readerDelegate zbarReaderControllerDidFailToRead: self];
-}
-
-- (void) imagePickerControllerDidCancel: (UIImagePickerController*) picker
-{
-    [readerDelegate imagePickerControllerDidCancel: self];
-}
-
-- (void)   actionSheet: (UIActionSheet*) sheet
-  clickedButtonAtIndex: (NSInteger) idx
-{
-    if(!idx)
-        [readerDelegate imagePickerControllerDidCancel: self];
 }
 
 @end

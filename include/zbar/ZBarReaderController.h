@@ -23,28 +23,34 @@
 
 #import <zbar.h>
 #import <UIKit/UIKit.h>
-#import <QuartzCore/QuartzCore.h>
 #import <zbar/ZBarSymbol.h>
 
+@class ZBarReaderController, ZBarHelpController;
+
 @protocol ZBarReaderDelegate <UIImagePickerControllerDelegate>
+
+@optional
+- (void) zbarReaderControllerDidFailToRead: (ZBarReaderController*) reader;
+
 @end
+
 
 @interface ZBarReaderController : UIImagePickerController
                                 < UINavigationControllerDelegate,
-                                  UIImagePickerControllerDelegate,
-                                  UIActionSheetDelegate >
+                                  UIImagePickerControllerDelegate >
 {
     zbar_image_scanner_t *scanner;
-    UIViewController *picker;
-    UIView *overlay;
+    ZBarHelpController *help;
+    UIView *overlay, *controls;
 
     id <ZBarReaderDelegate> readerDelegate;
     BOOL showsZBarControls, showsHelpOnFail;
 }
 
+// barcode result recipient
 @property (nonatomic, assign) id <ZBarReaderDelegate> readerDelegate;
 
-// whether to use alternate control set
+// whether to use alternate control set (FIXME broken for NO)
 @property (nonatomic) BOOL showsZBarControls;
 
 // whether to display helpful information when decoding fails
@@ -56,7 +62,7 @@
                config: (zbar_config_t) config
                    to: (int) value;
 
-// direct scanner interface
+// direct scanner interface - scan UIImage and return something enumerable
 - (id <NSFastEnumeration>) scanImage: (UIImage*) img;
 
 @end
