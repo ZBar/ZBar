@@ -7,7 +7,7 @@ aclocal.m4
 configure
 config
 config.guess
-config.h
+config/config.h
 config.h.in
 config.log
 config.status
