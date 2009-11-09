@@ -1,0 +1,2 @@
+include MANIFEST MANIFEST.in zbarmodule.h test/barcode.png
+recursive-include examples *.py

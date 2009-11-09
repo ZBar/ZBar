@@ -19,5 +19,6 @@ libtool
 ltmain.sh
 autom4te.cache
 missing
+python/MANIFEST
 iphone/build
 .DS_Store
