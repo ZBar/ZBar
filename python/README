@@ -1,30 +1,32 @@
 ==========================================
-ZBar -- read barcodes from images or video
+zbar -- read barcodes from images or video
 ==========================================
 
-The ZBar Bar Code Reader is a library for scanning and decoding bar
-codes from various sources such as video streams, image files or raw
-intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
-Interleaved 2 of 5.  These are the Python bindings for the library.
+ZBar Bar Code Reader is an open source software suite for reading bar
+codes from various sources, such as video streams, image files and raw
+intensity sensors. It supports EAN-13/UPC-A, UPC-E, EAN-8, Code 128,
+Code 39, Interleaved 2 of 5 and QR Code.  These are the Python
+bindings for the library.
 
 Check the ZBar project home page for the latest release, mailing
 lists, etc.
-    http://zbar.sourceforge.net/
 
+* http://zbar.sourceforge.net/
 
 Installation
 ------------
 
-To install this module type the following:
+To install this module type the following::
 
-   ptython setup.py install
+   python setup.py install
 
 Dependencies
 ------------
 
 This module requires the ZBar Bar Code Reader, which may be obtained
 from:
-    http://zbar.sourceforge.net/
+
+* http://zbar.sourceforge.net/
 
 Examples
 --------
