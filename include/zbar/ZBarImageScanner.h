@@ -22,40 +22,29 @@
 //------------------------------------------------------------------------
 
 #import <zbar.h>
-#import <Foundation/Foundation.h>
+#import <zbar/ZBarImage.h>
 
 #ifdef __cplusplus
 using namespace zbar;
 #endif
 
-// Obj-C wrapper for ZBar result types
+// Obj-C wrapper for ZBar image scanner
 
-@interface ZBarSymbolSet : NSObject <NSFastEnumeration>
+@interface ZBarImageScanner : NSObject
 {
-    const zbar_symbol_set_t *set;
+    zbar_image_scanner_t *scanner;
 }
 
-@property (readonly, nonatomic) int count;
-@property (readonly, nonatomic) const zbar_symbol_set_t *zbarSymbolSet;
+@property (nonatomic) BOOL enableCache;
+@property (readonly, nonatomic) ZBarSymbolSet *results;
 
-- (id) initWithSymbolSet: (const zbar_symbol_set_t*) set;
+// decoder configuration
+- (void) parseConfig: (NSString*) configStr;
+- (void) setSymbology: (zbar_symbol_type_t) symbology
+               config: (zbar_config_t) config
+                   to: (int) value;
 
-@end
-
-
-@interface ZBarSymbol : NSObject
-{
-    const zbar_symbol_t *symbol;
-}
-
-@property (readonly, nonatomic) zbar_symbol_type_t type;
-@property (readonly, nonatomic) NSString *typeName;
-@property (readonly, nonatomic) NSString *data;
-@property (readonly, nonatomic) int quality;
-@property (readonly, nonatomic) int count;
-@property (readonly, nonatomic) ZBarSymbolSet *components;
-@property (readonly, nonatomic) const zbar_symbol_t *zbarSymbol;
-
-- (id) initWithSymbol: (const zbar_symbol_t*) symbol;
+// image scanning interface
+- (NSInteger) scanImage: (ZBarImage*) image;
 
 @end

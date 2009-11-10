@@ -22,40 +22,41 @@
 //------------------------------------------------------------------------
 
 #import <zbar.h>
-#import <Foundation/Foundation.h>
+#import <zbar/ZBarSymbol.h>
+#import <UIKit/UIKit.h>
 
 #ifdef __cplusplus
 using namespace zbar;
 #endif
 
-// Obj-C wrapper for ZBar result types
+// Obj-C wrapper for ZBar image
 
-@interface ZBarSymbolSet : NSObject <NSFastEnumeration>
+@interface ZBarImage : NSObject
 {
-    const zbar_symbol_set_t *set;
+    zbar_image_t *zimg;
 }
 
-@property (readonly, nonatomic) int count;
-@property (readonly, nonatomic) const zbar_symbol_set_t *zbarSymbolSet;
+@property (nonatomic) unsigned long format;
+@property (nonatomic) unsigned sequence;
+@property (nonatomic) CGSize size;
+@property (readonly, nonatomic) const void *data;
+@property (readonly, nonatomic) unsigned long dataLength;
+@property (readonly, nonatomic) ZBarSymbolSet *symbols;
+@property (readonly, nonatomic) zbar_image_t *zbarImage;
 
-- (id) initWithSymbolSet: (const zbar_symbol_set_t*) set;
+- initWithImage: (zbar_image_t*) image;
+- initWithUIImage: (UIImage*) image;
+- initWithUIImage: (UIImage*) image
+             size: (CGSize) size;
 
-@end
+- (void) setData: (const void*) data
+      withLength: (unsigned long) length;
+- (void) cleanup;
 
++ (unsigned long) fourcc: (NSString*) format;
 
-@interface ZBarSymbol : NSObject
-{
-    const zbar_symbol_t *symbol;
-}
-
-@property (readonly, nonatomic) zbar_symbol_type_t type;
-@property (readonly, nonatomic) NSString *typeName;
-@property (readonly, nonatomic) NSString *data;
-@property (readonly, nonatomic) int quality;
-@property (readonly, nonatomic) int count;
-@property (readonly, nonatomic) ZBarSymbolSet *components;
-@property (readonly, nonatomic) const zbar_symbol_t *zbarSymbol;
-
-- (id) initWithSymbol: (const zbar_symbol_t*) symbol;
+#if 0
+- convertToFormat: (unsigned long) format;
+#endif
 
 @end

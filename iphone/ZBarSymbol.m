@@ -21,12 +21,11 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
-#import <zbar.h>
 #import <zbar/ZBarSymbol.h>
 
 @implementation ZBarSymbol
 
-@dynamic type, typeName, data, quality;
+@dynamic type, typeName, data, quality, count, zbarSymbol;
 
 - (id) initWithSymbol: (zbar_symbol_t*) sym
 {
@@ -65,6 +64,79 @@
 - (int) quality
 {
     return(zbar_symbol_get_quality(symbol));
+}
+
+- (int) count
+{
+    return(zbar_symbol_get_count(symbol));
+}
+
+- (const zbar_symbol_t*) zbarSymbol
+{
+    return(symbol);
+}
+
+- (ZBarSymbolSet*) components
+{
+    return([[[ZBarSymbolSet alloc]
+                initWithSymbolSet: zbar_symbol_get_components(symbol)]
+               autorelease]);
+}
+
+@end
+
+
+@implementation ZBarSymbolSet
+
+@dynamic count, zbarSymbolSet;
+
+- (id) initWithSymbolSet: (const zbar_symbol_set_t*) s
+{
+    if(self = [super init]) {
+        set = s;
+        zbar_symbol_set_ref(s, 1);
+    }
+    return(self);
+}
+
+- (void) dealloc
+{
+    if(set) {
+        zbar_symbol_set_ref(set, -1);
+        set = NULL;
+    }
+    [super dealloc];
+}
+
+- (int) count
+{
+    return(zbar_symbol_set_get_size(set));
+}
+
+- (const zbar_symbol_set_t*) zbarSymbolSet
+{
+    return(set);
+}
+
+- (NSUInteger) countByEnumeratingWithState: (NSFastEnumerationState*) state
+                                   objects: (id*) stackbuf
+                                     count: (NSUInteger) len
+{
+    const zbar_symbol_t *sym = (void*)state->state; // FIXME
+    if(sym)
+        sym = zbar_symbol_next(sym);
+    else if(set)
+        sym = zbar_symbol_set_first_symbol(set);
+
+    if(sym)
+        *stackbuf = [[[ZBarSymbol alloc]
+                         initWithSymbol: sym]
+                        autorelease];
+
+    state->state = (unsigned long)sym; // FIXME
+    state->itemsPtr = stackbuf;
+    state->mutationsPtr = (void*)self;
+    return((sym) ? 1 : 0);
 }
 
 @end

@@ -23,7 +23,11 @@
 
 #import <zbar.h>
 #import <UIKit/UIKit.h>
-#import <zbar/ZBarSymbol.h>
+#import <zbar/ZBarImageScanner.h>
+
+#ifdef __cplusplus
+using namespace zbar;
+#endif
 
 @class ZBarReaderController, ZBarHelpController;
 
@@ -39,13 +43,16 @@
                                 < UINavigationControllerDelegate,
                                   UIImagePickerControllerDelegate >
 {
-    zbar_image_scanner_t *scanner;
+    ZBarImageScanner *scanner;
     ZBarHelpController *help;
     UIView *overlay, *controls;
 
     id <ZBarReaderDelegate> readerDelegate;
     BOOL showsZBarControls, showsHelpOnFail;
 }
+
+// access to configure image scanner
+@property (readonly, nonatomic) ZBarImageScanner *scanner;
 
 // barcode result recipient
 @property (nonatomic, assign) id <ZBarReaderDelegate> readerDelegate;
@@ -56,14 +63,8 @@
 // whether to display helpful information when decoding fails
 @property (nonatomic) BOOL showsHelpOnFail;
 
-// decoder configuration
-- (void) parseConfig: (NSString*) configStr;
-- (void) setSymbology: (zbar_symbol_type_t) symbology
-               config: (zbar_config_t) config
-                   to: (int) value;
-
 // direct scanner interface - scan UIImage and return something enumerable
-- (id <NSFastEnumeration>) scanImage: (UIImage*) img;
+- (id <NSFastEnumeration>) scanImage: (UIImage*) image;
 
 @end
 

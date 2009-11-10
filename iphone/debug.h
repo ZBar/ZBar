@@ -21,41 +21,33 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
-#import <zbar.h>
-#import <Foundation/Foundation.h>
+#include <sys/times.h>
 
-#ifdef __cplusplus
-using namespace zbar;
+#ifdef DEBUG_OBJC
+# define zlog(fmt, ...) \
+    NSLog(@"ZBarReaderController: " fmt , ##__VA_ARGS__)
+
+#define timer_start \
+    long t_start = timer_now();
+
+static inline long timer_now ()
+{
+    struct tms now;
+    times(&now);
+    return(now.tms_utime + now.tms_stime);
+}
+
+static inline double timer_elapsed (long start, long end)
+{
+    double clk_tck = sysconf(_SC_CLK_TCK);
+    if(!clk_tck)
+        return(-1);
+    return((end - start) / clk_tck);
+}
+
+#else
+# define zlog(...)
+# define timer_start
+# define timer_now(...) 0
+# define timer_elapsed(...) 0
 #endif
-
-// Obj-C wrapper for ZBar result types
-
-@interface ZBarSymbolSet : NSObject <NSFastEnumeration>
-{
-    const zbar_symbol_set_t *set;
-}
-
-@property (readonly, nonatomic) int count;
-@property (readonly, nonatomic) const zbar_symbol_set_t *zbarSymbolSet;
-
-- (id) initWithSymbolSet: (const zbar_symbol_set_t*) set;
-
-@end
-
-
-@interface ZBarSymbol : NSObject
-{
-    const zbar_symbol_t *symbol;
-}
-
-@property (readonly, nonatomic) zbar_symbol_type_t type;
-@property (readonly, nonatomic) NSString *typeName;
-@property (readonly, nonatomic) NSString *data;
-@property (readonly, nonatomic) int quality;
-@property (readonly, nonatomic) int count;
-@property (readonly, nonatomic) ZBarSymbolSet *components;
-@property (readonly, nonatomic) const zbar_symbol_t *zbarSymbol;
-
-- (id) initWithSymbol: (const zbar_symbol_t*) symbol;
-
-@end

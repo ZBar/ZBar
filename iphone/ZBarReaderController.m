@@ -26,44 +26,23 @@
 
 #import <zbar/ZBarReaderController.h>
 #import "ZBarHelpController.h"
+#import "debug.h"
 
 #define MIN_QUALITY 10
-#ifdef ZRC_DEBUG
-# define zlog(fmt, ...) \
-    NSLog(@"ZBarReaderController: " fmt , ##__VA_ARGS__)
-
-static inline long timer_now ()
-{
-    struct tms now;
-    times(&now);
-    return(now.tms_utime + now.tms_stime);
-}
-
-static inline double timer_elapsed (long start, long end)
-{
-    double clk_tck = sysconf(_SC_CLK_TCK);
-    if(!clk_tck)
-        return(-1);
-    return((end - start) / clk_tck);
-}
-
-#else
-# define zlog(...)
-#endif
 
 NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 
 
 @implementation ZBarReaderController
 
-@synthesize readerDelegate, showsZBarControls, showsHelpOnFail;
+@synthesize scanner, readerDelegate, showsZBarControls, showsHelpOnFail;
 
 - (id) init
 {
     if(self = [super init]) {
-        scanner = zbar_image_scanner_create();
         showsHelpOnFail = YES;
         showsZBarControls = YES;
+        scanner = [ZBarImageScanner new];
         if([UIImagePickerController
                isSourceTypeAvailable: UIImagePickerControllerSourceTypeCamera])
             self.sourceType = UIImagePickerControllerSourceTypeCamera;
@@ -139,10 +118,8 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 - (void) dealloc
 {
     [self cleanup];
-    if(scanner) {
-        zbar_image_scanner_destroy(scanner);
-        scanner = NULL;
-    }
+    [scanner release];
+    scanner = nil;
     [super dealloc];
 }
 
@@ -243,62 +220,16 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
     self.readerDelegate = (id <ZBarReaderDelegate>)delegate;
 }
 
-// image scanner config wrappers
-- (void) parseConfig: (NSString*) cfg
+- (id <NSFastEnumeration>) scanImage: (UIImage*) image
 {
-    const char *str = [cfg UTF8String];
-    zbar_image_scanner_parse_config(scanner, str);
-    // FIXME throw errors
-}
+    timer_start;
 
-- (void) setSymbology: (zbar_symbol_type_t) sym
-               config: (zbar_config_t) cfg
-                   to: (int) val
-{
-    zbar_image_scanner_set_config(scanner, sym, cfg, val);
-    // FIXME throw errors
-}
-
-
-// scan UIImage and return something enumerable
-- (id <NSFastEnumeration>) scanImage: (UIImage*) img
-{
-#ifdef ZRC_DEBUG
-    long t_start = timer_now();
-    zlog(@"captured image %gx%g\n", img.size.width, img.size.height);
-#endif
-
-    int w = img.size.width;
-    int h = img.size.height;
+    int w = image.size.width;
+    int h = image.size.height;
     if(w > 1280 || h > 1280) {
         w /= 2;
         h /= 2;
     }
-    long datalen = w * h;
-    uint8_t *raw = malloc(datalen);
-    // FIXME handle OOM
-    assert(raw);
-
-    zbar_image_t *zimg = zbar_image_create();
-    zbar_image_set_data(zimg, raw, datalen, zbar_image_free_data);
-    zbar_image_set_format(zimg, *(int*)"Y800");
-    zbar_image_set_size(zimg, w, h);
-
-    // generate grayscale image data
-    CGColorSpaceRef cs = CGColorSpaceCreateDeviceGray();
-    CGContextRef ctx =
-        CGBitmapContextCreate(raw, w, h, 8, w, cs, kCGImageAlphaNone);
-    CGColorSpaceRelease(cs);
-    CGContextSetAllowsAntialiasing(ctx, 0);
-    CGRect bbox = CGRectMake(0, 0, w, h);
-    CGContextDrawImage(ctx, bbox, img.CGImage);
-    CGContextRelease(ctx);
-
-#ifdef ZRC_DEBUG
-    long t_convert = timer_now();
-    zlog(@"  converted to %dx%d Y800 in +%gs\n",
-         w, h, timer_elapsed(t_start, t_convert));
-#endif
 
     // limit the maximum number of scan passes
     int density;
@@ -306,38 +237,33 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
         density = (w / 240 + 1) / 2;
     else
         density = 1;
-    zbar_image_scanner_set_config(scanner, 0, ZBAR_CFG_X_DENSITY, density);
+    [scanner setSymbology: 0
+             config: ZBAR_CFG_X_DENSITY
+             to: density];
 
     if(h > 480)
         density = (h / 240 + 1) / 2;
     else
         density = 1;
-    zbar_image_scanner_set_config(scanner, 0, ZBAR_CFG_Y_DENSITY, density);
+    [scanner setSymbology: 0
+             config: ZBAR_CFG_Y_DENSITY
+             to: density];
 
-    int nsyms = zbar_scan_image(scanner, zimg);
-
-#ifdef ZRC_DEBUG
-    long t_scan = timer_now();
-    zlog(@"  scanned %d raw symbols in +%gs\n",
-         nsyms, timer_elapsed(t_convert, t_scan));
-#endif
+    ZBarImage *zimg = [[ZBarImage alloc] initWithUIImage: image];
+    int nsyms = [scanner scanImage: zimg];
+    [zimg release];
 
     NSMutableArray *syms = nil;
     if(nsyms) {
         // quality/type filtering
         int max_quality = MIN_QUALITY;
-        const zbar_symbol_t *zsym = zbar_image_first_symbol(zimg);
-        assert(zsym);
-        for(; zsym; zsym = zbar_symbol_next(zsym)) {
-            if(zbar_symbol_get_count(zsym))
-                continue;
-
-            zbar_symbol_type_t type = zbar_symbol_get_type(zsym);
+        for(ZBarSymbol *sym in scanner.results) {
+            zbar_symbol_type_t type = sym.type;
             int quality;
             if(type == ZBAR_QRCODE)
                 quality = INT_MAX;
             else
-                quality = zbar_symbol_get_quality(zsym);
+                quality = sym.quality;
 
             if(quality < max_quality) {
                 zlog(@"    type=%d quality=%d < %d\n",
@@ -354,18 +280,12 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
             if(!syms)
                 syms = [NSMutableArray arrayWithCapacity: 1];
 
-            ZBarSymbol *sym = [[ZBarSymbol alloc] initWithSymbol: zsym];
             [syms addObject: sym];
-            [sym release];
         }
     }
-    zbar_image_destroy(zimg);
 
-#ifdef ZRC_DEBUG
-    long t_end = timer_now();
     zlog(@"read %d filtered symbols in %gs total\n",
-          (!syms) ? 0 : [syms count], timer_elapsed(t_start, t_end));
-#endif
+          (!syms) ? 0 : [syms count], timer_elapsed(t_start, timer_now()));
     return(syms);
 }
 
