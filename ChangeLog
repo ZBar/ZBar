@@ -1,8 +1,10 @@
 current:
+  * add python distutils build infrastructure
   * add Obj-C wrapper
   * first pass working iPhone "widget"
 
 version 0.10:
+  * hotfix add MinGW import lib to Windows installer
   * attempt fix for Qt4 < 4.4
   * release updates
     - fix perl Processor init without video
