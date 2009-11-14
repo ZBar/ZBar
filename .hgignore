@@ -21,4 +21,6 @@ autom4te.cache
 missing
 python/MANIFEST
 iphone/build
+iphone/*.xcodeproj/*.mode1v3
+iphone/*.xcodeproj/*.pbxuser
 .DS_Store

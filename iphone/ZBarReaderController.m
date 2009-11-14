@@ -221,35 +221,31 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 }
 
 - (id <NSFastEnumeration>) scanImage: (UIImage*) image
+                                size: (CGSize) size
 {
     timer_start;
 
-    int w = image.size.width;
-    int h = image.size.height;
-    if(w > 1280 || h > 1280) {
-        w /= 2;
-        h /= 2;
-    }
-
     // limit the maximum number of scan passes
     int density;
-    if(w > 480)
-        density = (w / 240 + 1) / 2;
+    if(size.width > 480)
+        density = (size.width / 240 + 1) / 2;
     else
         density = 1;
     [scanner setSymbology: 0
              config: ZBAR_CFG_X_DENSITY
              to: density];
 
-    if(h > 480)
-        density = (h / 240 + 1) / 2;
+    if(size.height > 480)
+        density = (size.height / 240 + 1) / 2;
     else
         density = 1;
     [scanner setSymbology: 0
              config: ZBAR_CFG_Y_DENSITY
              to: density];
 
-    ZBarImage *zimg = [[ZBarImage alloc] initWithUIImage: image];
+    ZBarImage *zimg = [[ZBarImage alloc]
+                          initWithUIImage: image
+                          size: size];
     int nsyms = [scanner scanImage: zimg];
     [zimg release];
 
@@ -286,6 +282,28 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 
     zlog(@"read %d filtered symbols in %gs total\n",
           (!syms) ? 0 : [syms count], timer_elapsed(t_start, timer_now()));
+    return(syms);
+}
+
+- (id <NSFastEnumeration>) scanImage: (UIImage*) image
+{
+    CGSize size = image.size;
+    if(size.width > 1280 || size.height > 1280) {
+        size.width /= 2;
+        size.height /= 2;
+    }
+
+    id <NSFastEnumeration> syms =
+        [self scanImage: image
+              size: size];
+    if(!syms) {
+        // make one more attempt for close up, grainy images
+        size.width /= 2;
+        size.height /= 2;
+        syms = [self scanImage: image
+                     size: size];
+    }
+
     return(syms);
 }
 
