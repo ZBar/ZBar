@@ -100,8 +100,9 @@ static void image_cleanup(zbar_image_t *zimg)
     CGContextDrawImage(ctx, CGRectMake(0, 0, w, h), image.CGImage);
     CGContextRelease(ctx);
 
-    zlog(@"ZBarImage: converted UIImage %dx%d to %dx%d Y800 in %gs\n",
-         w, h, timer_elapsed(t_start, timer_now()));
+    zlog(@"ZBarImage: converted UIImage %gx%g to %dx%d Y800 in %gs\n",
+         image.size.width, image.size.height, w, h,
+         timer_elapsed(t_start, timer_now()));
 
     return(self);
 }

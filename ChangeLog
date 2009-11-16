@@ -1,4 +1,5 @@
 current:
+  * iphone widget back compat updates, add basic test app
   * add python distutils build infrastructure
   * add Obj-C wrapper
   * first pass working iPhone "widget"

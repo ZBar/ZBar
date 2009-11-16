@@ -35,13 +35,15 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 
 @implementation ZBarReaderController
 
-@synthesize scanner, readerDelegate, showsZBarControls, showsHelpOnFail;
+@synthesize scanner, readerDelegate, showsHelpOnFail;
+@dynamic showsZBarControls;
 
 - (id) init
 {
     if(self = [super init]) {
         showsHelpOnFail = YES;
-        showsZBarControls = YES;
+        hasOverlay = showsZBarControls =
+            [self respondsToSelector: @selector(cameraOverlayView)];
         scanner = [ZBarImageScanner new];
         if([UIImagePickerController
                isSourceTypeAvailable: UIImagePickerControllerSourceTypeCamera])
@@ -96,7 +98,8 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 {
     [super viewDidLoad];
     [super setDelegate: self];
-    [self initOverlay];
+    if(hasOverlay)
+        [self initOverlay];
 }
 
 - (void) cleanup
@@ -138,10 +141,16 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
         help = nil;
     }
 
-    if(self.sourceType == UIImagePickerControllerSourceTypeCamera) {
-        if(showsZBarControls || !self.cameraOverlayView)
-            self.cameraOverlayView = overlay;
-        self.showsCameraControls = !showsZBarControls;
+    if(hasOverlay &&
+       self.sourceType == UIImagePickerControllerSourceTypeCamera) {
+        if(showsZBarControls || ![self cameraOverlayView])
+            [self setCameraOverlayView: overlay];
+
+        if(showsZBarControls)
+            [self setShowsCameraControls: NO];
+        else if([self cameraOverlayView] == overlay)
+            [self setShowsCameraControls: YES];
+
         controls.hidden = !showsZBarControls;
     }
     [super viewWillAppear: animated];
@@ -153,6 +162,7 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
     UIImage *img = [info objectForKey: UIImagePickerControllerOriginalImage];
 
     id results = [self scanImage: img];
+
     if(results) {
         NSMutableDictionary *newinfo = [info mutableCopy];
         [newinfo setObject: results
@@ -167,14 +177,16 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
         return;
     }
 
-    if(showsHelpOnFail) {
+    BOOL camera = (self.sourceType == UIImagePickerControllerSourceTypeCamera);
+    BOOL retry = !camera || (hasOverlay && ![self showsCameraControls]);
+    if(showsHelpOnFail && retry) {
         help = [ZBarHelpController new];
         help.delegate = self;
 
-        if(self.sourceType == UIImagePickerControllerSourceTypeCamera) {
+        if(camera) {
             help.wantsFullScreenLayout = YES;
             help.view.alpha = 0;
-            [self.cameraOverlayView addSubview: help.view];
+            [[self cameraOverlayView] addSubview: help.view];
             [UIView beginAnimations: @"ZBarHelp"
                     context: nil];
             help.view.alpha = 1;
@@ -185,9 +197,14 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
                   animated: YES];
     }
 
-    SEL cb = @selector(zbarReaderControllerDidFailToRead:);
+    SEL cb = @selector(readerControllerDidFailToRead:withRetry:);
     if([readerDelegate respondsToSelector: cb])
-        [readerDelegate zbarReaderControllerDidFailToRead: self];
+        // assume delegate dismisses controller if necessary
+        [readerDelegate readerControllerDidFailToRead: self
+                        withRetry: retry];
+    else if(!retry)
+        // must dismiss stock controller
+        [self dismissModalViewControllerAnimated: YES];
 }
 
 - (void) imagePickerControllerDidCancel: (UIImagePickerController*) picker
@@ -210,6 +227,20 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
     }
     else
         [hlp dismissModalViewControllerAnimated: YES];
+}
+
+- (BOOL) showsZBarControls
+{
+    return(showsZBarControls);
+}
+
+- (void) setShowsZBarControls: (BOOL) show
+{
+    if(show && !hasOverlay)
+        [NSException raise: NSInvalidArgumentException
+            format: @"ZBarReaderController cannot set showsZBarControls=YES for OS<3.1"];
+
+    showsZBarControls = show;
 }
 
 // intercept delegate as readerDelegate

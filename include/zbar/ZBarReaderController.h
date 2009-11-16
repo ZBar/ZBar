@@ -32,9 +32,12 @@ using namespace zbar;
 @class ZBarReaderController, ZBarHelpController;
 
 @protocol ZBarReaderDelegate <UIImagePickerControllerDelegate>
-
 @optional
-- (void) zbarReaderControllerDidFailToRead: (ZBarReaderController*) reader;
+
+// called when no barcode is found in an image selected by the user.
+// if retry is NO, the delegate *must* dismiss the controller
+- (void) readerControllerDidFailToRead: (ZBarReaderController*) reader
+                             withRetry: (BOOL) retry;
 
 @end
 
@@ -48,7 +51,7 @@ using namespace zbar;
     UIView *overlay, *controls;
 
     id <ZBarReaderDelegate> readerDelegate;
-    BOOL showsZBarControls, showsHelpOnFail;
+    BOOL hasOverlay, showsZBarControls, showsHelpOnFail;
 }
 
 // access to configure image scanner
