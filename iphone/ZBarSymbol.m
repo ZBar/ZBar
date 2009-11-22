@@ -27,6 +27,11 @@
 
 @dynamic type, typeName, data, quality, count, zbarSymbol;
 
++ (NSString*) nameForType: (zbar_symbol_type_t) type
+{
+    return([NSString stringWithUTF8String: zbar_get_symbol_name(type)]);
+}
+
 - (id) initWithSymbol: (zbar_symbol_t*) sym
 {
     if(self = [super init]) {
@@ -52,8 +57,7 @@
 
 - (NSString*) typeName
 {
-    zbar_symbol_type_t type = zbar_symbol_get_type(symbol);
-    return([NSString stringWithUTF8String: zbar_get_symbol_name(type)]);
+    return([[self class] nameForType: zbar_symbol_get_type(symbol)]);
 }
 
 - (NSString*) data

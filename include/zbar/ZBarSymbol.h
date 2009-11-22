@@ -58,4 +58,6 @@ using namespace zbar;
 
 - (id) initWithSymbol: (const zbar_symbol_t*) symbol;
 
++ (NSString*) nameForType: (zbar_symbol_type_t) type;
+
 @end
