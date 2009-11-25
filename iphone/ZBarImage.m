@@ -71,12 +71,12 @@ static void image_cleanup(zbar_image_t *zimg)
     [super dealloc];
 }
 
-- (id) initWithUIImage: (UIImage*) image
+- (id) initWithCGImage: (CGImageRef) image
+                  crop: (CGRect) crop
                   size: (CGSize) size
 {
     if(!(self = [self init]))
         return(nil);
-
     timer_start;
 
     unsigned int w = size.width + 0.5;
@@ -91,26 +91,49 @@ static void image_cleanup(zbar_image_t *zimg)
     zbar_image_set_format(zimg, *(int*)"Y800");
     zbar_image_set_size(zimg, w, h);
 
+    // scale and crop simultaneously
+    CGFloat scale = size.width / crop.size.width;
+    crop.origin.x *= -scale;
+    crop.size.width = scale * (CGFloat)CGImageGetWidth(image);
+    scale = size.height / crop.size.height;
+    crop.origin.y *= -scale;
+    crop.size.height = scale * (CGFloat)CGImageGetHeight(image);
+    // compensate for wacky origin
+    crop.origin.y += size.height - crop.size.height;
+
     // generate grayscale image data
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceGray();
     CGContextRef ctx =
         CGBitmapContextCreate(raw, w, h, 8, w, cs, kCGImageAlphaNone);
     CGColorSpaceRelease(cs);
     CGContextSetAllowsAntialiasing(ctx, 0);
-    CGContextDrawImage(ctx, CGRectMake(0, 0, w, h), image.CGImage);
+
+    CGContextDrawImage(ctx, crop, image);
     CGContextRelease(ctx);
 
-    zlog(@"ZBarImage: converted UIImage %gx%g to %dx%d Y800 in %gs\n",
-         image.size.width, image.size.height, w, h,
-         timer_elapsed(t_start, timer_now()));
-
+    t_convert = timer_elapsed(t_start, timer_now());
     return(self);
 }
 
-- (id) initWithUIImage: (UIImage*) image
+- (id) initWithCGImage: (CGImageRef) image
+                  size: (CGSize) size
 {
-    return([self initWithUIImage: image
-                 size: image.size]);
+    CGRect crop = CGRectMake(0, 0,
+                             CGImageGetWidth(image),
+                             CGImageGetHeight(image));
+    return([self initWithCGImage: image
+                 crop: crop
+                 size: size]);
+}
+
+- (id) initWithCGImage: (CGImageRef) image
+{
+    CGRect crop = CGRectMake(0, 0,
+                             CGImageGetWidth(image),
+                             CGImageGetHeight(image));
+    return([self initWithCGImage: image
+                 crop: crop
+                 size: crop.size]);
 }
 
 - (zbar_image_t*) image

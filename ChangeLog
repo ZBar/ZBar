@@ -1,4 +1,9 @@
 current:
+  * realtime scanning for iphone widget
+    - uses UIGetScreenImage() (NB private)
+    - ZBarImage from CGImage (instead of UIImage)
+    - add crop to scaling step
+    - expose symbol set unfiltered results
   * iphone widget back compat updates, add basic test app
   * add python distutils build infrastructure
   * add Obj-C wrapper

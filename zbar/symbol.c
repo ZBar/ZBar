@@ -242,3 +242,9 @@ zbar_symbol_set_first_symbol (const zbar_symbol_set_t *syms)
         return(sym->next);
     return(syms->head);
 }
+
+const zbar_symbol_t*
+zbar_symbol_set_first_unfiltered (const zbar_symbol_set_t *syms)
+{
+    return(syms->head);
+}

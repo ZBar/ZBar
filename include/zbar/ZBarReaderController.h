@@ -29,6 +29,11 @@
 using namespace zbar;
 #endif
 
+typedef enum {
+    ZBarReaderControllerCameraModeDefault = 0,
+    ZBarReaderControllerCameraModeSampling,
+} ZBarReaderControllerCameraMode;
+
 @class ZBarReaderController, ZBarHelpController;
 
 @protocol ZBarReaderDelegate <UIImagePickerControllerDelegate>
@@ -48,26 +53,44 @@ using namespace zbar;
 {
     ZBarImageScanner *scanner;
     ZBarHelpController *help;
-    UIView *overlay, *controls;
+    UIView *overlay, *boxView;
+    CALayer *boxLayer;
+
+    UIToolbar *toolbar;
+    UIBarButtonItem *cancelBtn, *scanBtn, *space[3];
 
     id <ZBarReaderDelegate> readerDelegate;
-    BOOL hasOverlay, showsZBarControls, showsHelpOnFail;
+    BOOL showsZBarControls, showsHelpOnFail, takesPicture;
+    ZBarReaderControllerCameraMode cameraMode;
+
+    BOOL hasOverlay, sampling;
+    uint64_t t_frame;
+    double dt_frame;
+
+    ZBarSymbol *symbol;
 }
 
 // access to configure image scanner
 @property (readonly, nonatomic) ZBarImageScanner *scanner;
 
-// barcode result recipient
+// barcode result recipient (NB don't use delegate)
 @property (nonatomic, assign) id <ZBarReaderDelegate> readerDelegate;
 
-// whether to use alternate control set (FIXME broken for NO)
+// whether to use alternate control set
 @property (nonatomic) BOOL showsZBarControls;
 
 // whether to display helpful information when decoding fails
 @property (nonatomic) BOOL showsHelpOnFail;
 
+// how to use the camera (when sourceType == ...Camera)
+@property (nonatomic) ZBarReaderControllerCameraMode cameraMode;
+
+// whether to automatically take a full picture when a barcode is detected
+// (when cameraMode != ...Default)
+@property (nonatomic) BOOL takesPicture;
+
 // direct scanner interface - scan UIImage and return something enumerable
-- (id <NSFastEnumeration>) scanImage: (UIImage*) image;
+- (id <NSFastEnumeration>) scanImage: (CGImageRef) image;
 
 @end
 

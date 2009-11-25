@@ -87,18 +87,40 @@
                autorelease]);
 }
 
+- (CGRect) bounds
+{
+    int n = zbar_symbol_get_loc_size(symbol);
+    if(!n)
+        return(CGRectNull);
+
+    int xmin = INT_MAX, xmax = INT_MIN;
+    int ymin = INT_MAX, ymax = INT_MIN;
+
+    for(int i = 0; i < n; i++) {
+        int t = zbar_symbol_get_loc_x(symbol, i);
+        if(xmin > t) xmin = t;
+        if(xmax < t) xmax = t;
+        t = zbar_symbol_get_loc_y(symbol, i);
+        if(ymin > t) ymin = t;
+        if(ymax < t) ymax = t;
+    }
+    return(CGRectMake(xmin, ymin, xmax - xmin, ymax - ymin));
+}
+
 @end
 
 
 @implementation ZBarSymbolSet
 
 @dynamic count, zbarSymbolSet;
+@synthesize filterSymbols;
 
 - (id) initWithSymbolSet: (const zbar_symbol_set_t*) s
 {
     if(self = [super init]) {
         set = s;
         zbar_symbol_set_ref(s, 1);
+        filterSymbols = YES;
     }
     return(self);
 }
@@ -129,8 +151,10 @@
     const zbar_symbol_t *sym = (void*)state->state; // FIXME
     if(sym)
         sym = zbar_symbol_next(sym);
-    else if(set)
+    else if(set && filterSymbols)
         sym = zbar_symbol_set_first_symbol(set);
+    else if(set)
+        sym = zbar_symbol_set_first_unfiltered(set);
 
     if(sym)
         *stackbuf = [[[ZBarSymbol alloc]

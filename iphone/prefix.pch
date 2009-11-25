@@ -2,4 +2,5 @@
 # import <config.h>
 # import <zbar.h>
 # import <UIKit/UIKit.h>
+# import <QuartzCore/QuartzCore.h>
 #endif

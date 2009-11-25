@@ -21,9 +21,6 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
-#import <sys/times.h>
-#import <limits.h>
-
 #import <zbar/ZBarReaderController.h>
 #import "ZBarHelpController.h"
 #import "debug.h"
@@ -32,10 +29,12 @@
 
 NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 
+// expose undocumented API
+CGImageRef UIGetScreenImage(void);
 
 @implementation ZBarReaderController
 
-@synthesize scanner, readerDelegate, showsHelpOnFail;
+@synthesize scanner, readerDelegate, showsHelpOnFail, takesPicture, cameraMode;
 @dynamic showsZBarControls;
 
 - (id) init
@@ -48,50 +47,59 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
         if([UIImagePickerController
                isSourceTypeAvailable: UIImagePickerControllerSourceTypeCamera])
             self.sourceType = UIImagePickerControllerSourceTypeCamera;
+        cameraMode = ZBarReaderControllerCameraModeSampling;
     }
     return(self);
 }
 
 - (void) initOverlay
 {
-    CGRect r = self.view.bounds;
-    overlay = [[UIView alloc] initWithFrame: r];
+    CGRect bounds = self.view.bounds;
+    overlay = [[UIView alloc] initWithFrame: bounds];
     overlay.backgroundColor = [UIColor clearColor];
 
-    controls = [UIView new];
+    CGRect r = bounds;
+    r.size.height -= 54;
+    boxView = [[UIView alloc] initWithFrame: r];
 
-    UIToolbar *toolbar = [UIToolbar new];
+    boxLayer = [CALayer new];
+    boxLayer.frame = r;
+    boxLayer.borderWidth = 1;
+    boxLayer.borderColor = [UIColor greenColor].CGColor;
+    [boxView.layer addSublayer: boxLayer];
+
+    toolbar = [UIToolbar new];
     toolbar.barStyle = UIBarStyleBlackOpaque;
-    [toolbar sizeToFit];
-    r.origin.y = r.size.height - 56;
-    r.size.height = 56;
-    controls.frame = r;
-    r.origin.y = r.origin.x = 0;
+    r.origin.y = r.size.height;
+    r.size.height = 54;
     toolbar.frame = r;
-    [controls addSubview: toolbar];
-    [toolbar release];
 
-    UIButton *btn = _ZBarButton(48, .1, .7, .1);
-    btn.frame = CGRectMake(r.size.width / 4 + 4, 4,
-                           r.size.width / 2 - 8, 48);
-    [btn addTarget: self
-         action: @selector(takePicture)
-         forControlEvents: UIControlEventTouchDown];
-    [btn setTitle: @"Scan!"
-         forState: UIControlStateNormal];
-    [controls addSubview: btn];
+    cancelBtn = [[UIBarButtonItem alloc]
+                    initWithBarButtonSystemItem: UIBarButtonSystemItemCancel
+                    target: self
+                    action: @selector(cancel)];
+    cancelBtn.width = r.size.width / 4 - 16;
 
-    btn = _ZBarButton(40, .85, .15, .15);
-    btn.frame = CGRectMake(4, 4, r.size.width / 4 - 8, 48);
-    [btn addTarget: self
-         action: @selector(cancel)
-         forControlEvents: UIControlEventTouchUpInside];
-    [btn setTitle: @"done"
-         forState: UIControlStateNormal];
-    [controls addSubview: btn];
+    scanBtn = [[UIBarButtonItem alloc]
+                  initWithTitle: @"Scan!"
+                  style: UIBarButtonItemStyleDone
+                  target: self
+                  action: @selector(scan)];
+    scanBtn.width = r.size.width / 2 - 16;
 
-    controls.hidden = YES;
-    [overlay addSubview: controls];
+    for(int i = 0; i < 2; i++)
+        space[i] = [[UIBarButtonItem alloc]
+                       initWithBarButtonSystemItem:
+                           UIBarButtonSystemItemFlexibleSpace
+                       target: nil
+                       action: nil];
+
+    space[2] = [[UIBarButtonItem alloc]
+                    initWithBarButtonSystemItem:
+                        UIBarButtonSystemItemFixedSpace
+                    target: nil
+                    action: nil];
+    space[2].width = r.size.width / 4 - 16;
 }
 
 - (void) viewDidLoad
@@ -106,8 +114,20 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 {
     [overlay release];
     overlay = nil;
-    [controls release];
-    controls = nil;
+    [boxView release];
+    boxView = nil;
+    [boxLayer release];
+    boxLayer = nil;
+    [toolbar release];
+    toolbar = nil;
+    [cancelBtn release];
+    cancelBtn = nil;
+    [scanBtn release];
+    scanBtn = nil;
+    for(int i = 0; i < 3; i++) {
+        [space[i] release];
+        space[i] = nil;
+    }
     [help release];
     help = nil;
 }
@@ -126,11 +146,24 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
     [super dealloc];
 }
 
+- (void) scan
+{
+    scanBtn.enabled = NO;
+    self.view.userInteractionEnabled = NO;
+    [self takePicture];
+}
+
 - (void) cancel
 {
     [self performSelector: @selector(imagePickerControllerDidCancel:)
           withObject: self
           afterDelay: 0.1];
+}
+
+- (void) reenable
+{
+    scanBtn.enabled = YES;
+    self.view.userInteractionEnabled = YES;
 }
 
 - (void) viewWillAppear: (BOOL) animated
@@ -146,22 +179,234 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
         if(showsZBarControls || ![self cameraOverlayView])
             [self setCameraOverlayView: overlay];
 
-        if(showsZBarControls)
-            [self setShowsCameraControls: NO];
-        else if([self cameraOverlayView] == overlay)
-            [self setShowsCameraControls: YES];
+        UIView *activeOverlay = [self cameraOverlayView];
 
-        controls.hidden = !showsZBarControls;
+        if(showsZBarControls) {
+            if(!toolbar.superview)
+                [overlay addSubview: toolbar];
+            [self setShowsCameraControls: NO];
+        }
+        else {
+            [toolbar removeFromSuperview];
+            if(activeOverlay == overlay)
+                [self setShowsCameraControls: YES];
+        }
+
+        self.view.userInteractionEnabled = YES;
+        if(cameraMode == ZBarReaderControllerCameraModeSampling)
+            toolbar.items = [NSArray arrayWithObjects:
+                                                     cancelBtn, space[0], nil];
+        else {
+            scanBtn.enabled = NO;
+            toolbar.items = [NSArray arrayWithObjects:
+                        cancelBtn, space[0], scanBtn, space[1], space[2], nil];
+
+            [self performSelector: @selector(reenable)
+                  withObject: nil
+                  afterDelay: .5];
+        }
+
+        if(cameraMode == ZBarReaderControllerCameraModeSampling) {
+            t_frame = timer_now();
+            dt_frame = 0;
+            sampling = YES;
+            boxLayer.opacity = 0;
+            if(boxView.superview != activeOverlay)
+                [boxView removeFromSuperview];
+            if(!boxView.superview)
+                [activeOverlay addSubview: boxView];
+
+            [scanner setSymbology: 0
+                     config: ZBAR_CFG_X_DENSITY
+                     to: 2];
+            [scanner setSymbology: 0
+                     config: ZBAR_CFG_Y_DENSITY
+                     to: 2];
+            scanner.enableCache = YES;
+
+            [self performSelector: @selector(scanScreen)
+                  withObject: nil
+                  afterDelay: 1];
+#ifndef NDEBUG
+            [self performSelector: @selector(dumpFPS)
+                  withObject: nil
+                  afterDelay: 4];
+#endif
+        }
+        else {
+            sampling = NO;
+            [boxView removeFromSuperview];
+        }
     }
+
     [super viewWillAppear: animated];
 }
+
+- (void) viewWillDisappear: (BOOL) animated
+{
+    sampling = NO;
+    scanner.enableCache = NO;
+    [super viewWillDisappear: animated];
+}
+
+- (void) scanScreen
+{
+    if(!sampling)
+        return;
+
+    uint64_t now = timer_now();
+    if(dt_frame)
+        dt_frame = (dt_frame + timer_elapsed(t_frame, now)) / 2;
+    else
+        dt_frame = timer_elapsed(t_frame, now);
+    t_frame = now;
+
+    // FIXME ugly hack: use private API to sample screen
+    CGImageRef image = UIGetScreenImage();
+
+    CGRect crop = CGRectMake(0, 0,
+                             CGImageGetWidth(image), CGImageGetHeight(image));
+    if(crop.size.width > crop.size.height)
+        crop.size.width -= 54;
+    else
+        crop.size.height -= 54;
+
+    ZBarImage *zimg = [[ZBarImage alloc]
+                          initWithCGImage: image
+                          crop: crop
+                          size: crop.size];
+    CGImageRelease(image);
+
+    [scanner scanImage: zimg];
+    [zimg release];
+
+    ZBarSymbol *sym = nil;
+    ZBarSymbolSet *results = scanner.results;
+    results.filterSymbols = NO;
+    for(ZBarSymbol *s in results)
+        if(!sym || sym.quality < s.quality)
+            sym = s;
+
+    if(sym && !sym.count) {
+        SEL cb = @selector(imagePickerController:didFinishPickingMediaWithInfo:);
+        if(takesPicture) {
+            symbol = [sym retain];
+            [self takePicture];
+        }
+        else if([readerDelegate respondsToSelector: cb]) {
+            symbol = [sym retain];
+
+            [CATransaction begin];
+            [CATransaction setDisableActions: YES];
+            boxLayer.opacity = 0;
+            [CATransaction commit];
+
+            // capture preview image and send to delegate
+            // after box has been hidden
+            [self performSelector: @selector(captureScreen)
+                  withObject: nil
+                  afterDelay: 0.001];
+            return;
+        }
+    }
+
+    // reschedule
+    [self performSelector: @selector(scanScreen)
+          withObject: nil
+          afterDelay: 0.001];
+
+    [CATransaction begin];
+    [CATransaction setAnimationDuration: .3];
+    [CATransaction setAnimationTimingFunction:
+        [CAMediaTimingFunction functionWithName:
+            kCAMediaTimingFunctionLinear]];
+
+    CGFloat alpha = boxLayer.opacity;
+    if(sym) {
+        CGRect r = sym.bounds;
+        if(r.size.width > 16 && r.size.height > 16) {
+            r = CGRectInset(r, -16, -16);
+            if(alpha > .25) {
+                CGRect frame = boxLayer.frame;
+                r.origin.x = (r.origin.x * 3 + frame.origin.x) / 4;
+                r.origin.y = (r.origin.y * 3 + frame.origin.y) / 4;
+                r.size.width = (r.size.width * 3 + frame.size.width) / 4;
+                r.size.height = (r.size.height * 3 + frame.size.height) / 4;
+            }
+            boxLayer.frame = r;
+            boxLayer.opacity = 1;
+        }
+    }
+    else {
+        if(alpha > .1)
+            boxLayer.opacity = alpha / 2;
+        else if(alpha > 0)
+            boxLayer.opacity = 0;
+    }
+    [CATransaction commit];
+}
+
+- (void) captureScreen
+{
+    CGImageRef screen = UIGetScreenImage();
+    CGRect r = CGRectMake(0, 0,
+                          CGImageGetWidth(screen), CGImageGetHeight(screen));
+    if(r.size.width > r.size.height)
+        r.size.width -= 54;
+    else
+        r.size.height -= 54;
+    CGImageRef preview = CGImageCreateWithImageInRect(screen, r);
+    CGImageRelease(screen);
+
+    UIImage *image = [UIImage imageWithCGImage: preview];
+    CGImageRelease(preview);
+
+    [readerDelegate
+        imagePickerController: self
+        didFinishPickingMediaWithInfo:
+            [NSDictionary dictionaryWithObjectsAndKeys:
+                image, UIImagePickerControllerOriginalImage,
+                [NSArray arrayWithObject: symbol],
+                    ZBarReaderControllerResults,
+                nil]];
+    [symbol release];
+    symbol = nil;
+
+    // continue scanning until dismissed
+    [self performSelector: @selector(scanScreen)
+          withObject: nil
+          afterDelay: 0.001];
+}
+
+#ifndef NDEBUG
+- (void) dumpFPS
+{
+    if(!sampling)
+        return;
+    [self performSelector: @selector(dumpFPS)
+          withObject: nil
+          afterDelay: 2];
+    zlog(@"fps=%g", 1 / dt_frame);
+}
+#endif
 
 - (void)  imagePickerController: (UIImagePickerController*) picker
   didFinishPickingMediaWithInfo: (NSDictionary*) info
 {
     UIImage *img = [info objectForKey: UIImagePickerControllerOriginalImage];
 
-    id results = [self scanImage: img];
+    id results = nil;
+    if(sampling) {
+        results = [NSArray arrayWithObject: symbol];
+        [symbol release];
+        symbol = nil;
+    }
+    else
+        results = [self scanImage: img.CGImage];
+
+    [self performSelector: @selector(reenable)
+         withObject: nil
+         afterDelay: .25];
 
     if(results) {
         NSMutableDictionary *newinfo = [info mutableCopy];
@@ -251,7 +496,7 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
     self.readerDelegate = (id <ZBarReaderDelegate>)delegate;
 }
 
-- (id <NSFastEnumeration>) scanImage: (UIImage*) image
+- (id <NSFastEnumeration>) scanImage: (CGImageRef) image
                                 size: (CGSize) size
 {
     timer_start;
@@ -275,7 +520,7 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
              to: density];
 
     ZBarImage *zimg = [[ZBarImage alloc]
-                          initWithUIImage: image
+                          initWithCGImage: image
                           size: size];
     int nsyms = [scanner scanImage: zimg];
     [zimg release];
@@ -316,9 +561,10 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
     return(syms);
 }
 
-- (id <NSFastEnumeration>) scanImage: (UIImage*) image
+- (id <NSFastEnumeration>) scanImage: (CGImageRef) image
 {
-    CGSize size = image.size;
+    CGSize size = CGSizeMake(CGImageGetWidth(image),
+                             CGImageGetHeight(image));
     if(size.width > 1280 || size.height > 1280) {
         size.width /= 2;
         size.height /= 2;
@@ -327,6 +573,7 @@ NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
     id <NSFastEnumeration> syms =
         [self scanImage: image
               size: size];
+
     if(!syms) {
         // make one more attempt for close up, grainy images
         size.width /= 2;

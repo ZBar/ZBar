@@ -34,6 +34,7 @@ using namespace zbar;
 @interface ZBarImage : NSObject
 {
     zbar_image_t *zimg;
+    double t_convert;
 }
 
 @property (nonatomic) unsigned long format;
@@ -44,10 +45,13 @@ using namespace zbar;
 @property (readonly, nonatomic) ZBarSymbolSet *symbols;
 @property (readonly, nonatomic) zbar_image_t *zbarImage;
 
-- initWithImage: (zbar_image_t*) image;
-- initWithUIImage: (UIImage*) image;
-- initWithUIImage: (UIImage*) image
-             size: (CGSize) size;
+- (id) initWithImage: (zbar_image_t*) image;
+- (id) initWithCGImage: (CGImageRef) image;
+- (id) initWithCGImage: (CGImageRef) image
+                  size: (CGSize) size;
+- (id) initWithCGImage: (CGImageRef) image
+                  crop: (CGRect) crop
+                  size: (CGSize) size;
 
 - (void) setData: (const void*) data
       withLength: (unsigned long) length;

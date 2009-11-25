@@ -357,6 +357,14 @@ extern int zbar_symbol_set_get_size(const zbar_symbol_set_t *symbols);
 extern const zbar_symbol_t*
 zbar_symbol_set_first_symbol(const zbar_symbol_set_t *symbols);
 
+/** raw result iterator.
+ * @returns the first decoded symbol result in a set, *before* filtering
+ * @returns NULL if the set is empty
+ * @since 0.11
+ */
+extern const zbar_symbol_t*
+zbar_symbol_set_first_unfiltered(const zbar_symbol_set_t *symbols);
+
 /*@}*/
 
 /*------------------------------------------------------------*/

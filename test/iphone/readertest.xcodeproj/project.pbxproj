@@ -12,9 +12,10 @@
 		288765FD0DF74451002DB57D /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 288765FC0DF74451002DB57D /* CoreGraphics.framework */; };
 		DC0BB57C10B124EB000448CB /* zbar-button.png in Resources */ = {isa = PBXBuildFile; fileRef = DC0BB57A10B124EB000448CB /* zbar-button.png */; };
 		DC0BB57D10B124EB000448CB /* zbar-helpicons.png in Resources */ = {isa = PBXBuildFile; fileRef = DC0BB57B10B124EB000448CB /* zbar-helpicons.png */; };
+		DCB9118510BC5DA200B907F0 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCB9118410BC5DA200B907F0 /* QuartzCore.framework */; };
+		DCB9118810BC5DB500B907F0 /* libiconv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DCD6E13B10B0AFD4002005CD /* libiconv.dylib */; };
+		DCB9119B10BC5DCB00B907F0 /* libzbar.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DCD6E0E610B0AE16002005CD /* libzbar.a */; };
 		DCD6E0D010B0AD41002005CD /* readertest.m in Sources */ = {isa = PBXBuildFile; fileRef = DCD6E0CF10B0AD41002005CD /* readertest.m */; };
-		DCD6E13C10B0AFD4002005CD /* libiconv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DCD6E13B10B0AFD4002005CD /* libiconv.dylib */; };
-		DCD6E13D10B0AFDE002005CD /* libzbar.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DCD6E0E610B0AE16002005CD /* libzbar.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +42,7 @@
 		288765FC0DF74451002DB57D /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		DC0BB57A10B124EB000448CB /* zbar-button.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "zbar-button.png"; path = "../../iphone/res/zbar-button.png"; sourceTree = SOURCE_ROOT; };
 		DC0BB57B10B124EB000448CB /* zbar-helpicons.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "zbar-helpicons.png"; path = "../../iphone/res/zbar-helpicons.png"; sourceTree = SOURCE_ROOT; };
+		DCB9118410BC5DA200B907F0 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		DCD6E0CE10B0AD41002005CD /* prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = prefix.pch; sourceTree = "<group>"; };
 		DCD6E0CF10B0AD41002005CD /* readertest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = readertest.m; sourceTree = "<group>"; };
 		DCD6E0D810B0AD55002005CD /* readertest.plist */ = {isa = PBXFileReference; explicitFileType = text.plist.info; fileEncoding = 4; path = readertest.plist; sourceTree = "<group>"; };
@@ -56,8 +58,9 @@
 				1D60589F0D05DD5A006BFB54 /* Foundation.framework in Frameworks */,
 				1DF5F4E00D08C38300B7A737 /* UIKit.framework in Frameworks */,
 				288765FD0DF74451002DB57D /* CoreGraphics.framework in Frameworks */,
-				DCD6E13C10B0AFD4002005CD /* libiconv.dylib in Frameworks */,
-				DCD6E13D10B0AFDE002005CD /* libzbar.a in Frameworks */,
+				DCB9118510BC5DA200B907F0 /* QuartzCore.framework in Frameworks */,
+				DCB9118810BC5DB500B907F0 /* libiconv.dylib in Frameworks */,
+				DCB9119B10BC5DCB00B907F0 /* libzbar.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,7 +86,6 @@
 				DCD6E0DE10B0AE16002005CD /* zbar.xcodeproj */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
-				DCD6E13B10B0AFD4002005CD /* libiconv.dylib */,
 			);
 			name = CustomTemplate;
 			sourceTree = "<group>";
@@ -94,6 +96,8 @@
 				1DF5F4DF0D08C38300B7A737 /* UIKit.framework */,
 				1D30AB110D05D00D00671497 /* Foundation.framework */,
 				288765FC0DF74451002DB57D /* CoreGraphics.framework */,
+				DCB9118410BC5DA200B907F0 /* QuartzCore.framework */,
+				DCD6E13B10B0AFD4002005CD /* libiconv.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
