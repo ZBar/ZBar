@@ -77,7 +77,7 @@ static void image_cleanup(zbar_image_t *zimg)
 {
     if(!(self = [self init]))
         return(nil);
-    timer_start;
+    uint64_t t_start = timer_now();
 
     unsigned int w = size.width + 0.5;
     unsigned int h = size.height + 0.5;

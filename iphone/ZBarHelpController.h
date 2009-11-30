@@ -27,10 +27,13 @@
 
 @interface ZBarHelpController : UIViewController
 {
+    NSString *title;
     id delegate;
 }
 
 @property (nonatomic, assign) id delegate;
+
+- (id) initWithTitle: (NSString*) title;
 
 @end
 

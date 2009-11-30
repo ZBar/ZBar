@@ -99,6 +99,20 @@ UIButton *_ZBarButton (CGFloat size,
 
 @synthesize delegate;
 
+- (id) initWithTitle: (NSString*) t
+{
+    if(self = [super init])
+        title = [t retain];
+    return(self);
+}
+
+- (void) dealloc
+{
+    [title release];
+    title = nil;
+    [super dealloc];
+}
+
 - (UILabel*) addLabelAt: (CGRect) frame
                withText: (NSString*) text
                    font: (UIFont*) font
@@ -130,7 +144,7 @@ UIButton *_ZBarButton (CGFloat size,
     r.size.height = size.height * 19 / 115;
     UILabel *label =
         [self addLabelAt: r
-              withText: @"No Barcode Found"
+              withText: title
               font: [UIFont boldSystemFontOfSize: size.height * 12 / 115]];
     label.textAlignment = UITextAlignmentCenter;
     label.adjustsFontSizeToFitWidth = YES;

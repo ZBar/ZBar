@@ -52,6 +52,22 @@ CGImageRef UIGetScreenImage(void);
     return(self);
 }
 
+- (void) showHelpOverlay
+{
+    if(!help) {
+        help = [[ZBarHelpController alloc]
+                   initWithTitle: @"Barcode Reader"];
+        help.delegate = self;
+    }
+    help.wantsFullScreenLayout = YES;
+    help.view.alpha = 0;
+    [[self cameraOverlayView] addSubview: help.view];
+    [UIView beginAnimations: @"ZBarHelp"
+            context: nil];
+    help.view.alpha = 1;
+    [UIView commitAnimations];
+}
+
 - (void) initOverlay
 {
     CGRect bounds = self.view.bounds;
@@ -100,6 +116,14 @@ CGImageRef UIGetScreenImage(void);
                     target: nil
                     action: nil];
     space[2].width = r.size.width / 4 - 16;
+
+    infoBtn = [[UIButton buttonWithType: UIButtonTypeInfoLight] retain];
+    r.origin.x = r.size.width - 54;
+    r.size.width = 54;
+    infoBtn.frame = r;
+    [infoBtn addTarget: self
+             action: @selector(showHelpOverlay)
+             forControlEvents: UIControlEventTouchUpInside];
 }
 
 - (void) viewDidLoad
@@ -128,6 +152,8 @@ CGImageRef UIGetScreenImage(void);
         [space[i] release];
         space[i] = nil;
     }
+    [infoBtn release];
+    infoBtn = nil;
     [help release];
     help = nil;
 }
@@ -182,12 +208,15 @@ CGImageRef UIGetScreenImage(void);
         UIView *activeOverlay = [self cameraOverlayView];
 
         if(showsZBarControls) {
-            if(!toolbar.superview)
+            if(!toolbar.superview) {
                 [overlay addSubview: toolbar];
+                [overlay addSubview: infoBtn];
+            }
             [self setShowsCameraControls: NO];
         }
         else {
             [toolbar removeFromSuperview];
+            [infoBtn removeFromSuperview];
             if(activeOverlay == overlay)
                 [self setShowsCameraControls: YES];
         }
@@ -425,18 +454,11 @@ CGImageRef UIGetScreenImage(void);
     BOOL camera = (self.sourceType == UIImagePickerControllerSourceTypeCamera);
     BOOL retry = !camera || (hasOverlay && ![self showsCameraControls]);
     if(showsHelpOnFail && retry) {
-        help = [ZBarHelpController new];
+        help = [[ZBarHelpController alloc]
+                   initWithTitle: @"No Barcode Found"];
         help.delegate = self;
-
-        if(camera) {
-            help.wantsFullScreenLayout = YES;
-            help.view.alpha = 0;
-            [[self cameraOverlayView] addSubview: help.view];
-            [UIView beginAnimations: @"ZBarHelp"
-                    context: nil];
-            help.view.alpha = 1;
-            [UIView commitAnimations];
-        }
+        if(camera)
+            [self showHelpOverlay];
         else
             [self presentModalViewController: help
                   animated: YES];

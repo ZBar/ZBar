@@ -58,6 +58,7 @@ typedef enum {
 
     UIToolbar *toolbar;
     UIBarButtonItem *cancelBtn, *scanBtn, *space[3];
+    UIButton *infoBtn;
 
     id <ZBarReaderDelegate> readerDelegate;
     BOOL showsZBarControls, showsHelpOnFail, takesPicture;
