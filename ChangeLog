@@ -1,4 +1,5 @@
 current:
+  * report QR immediately for video (no inter-frame consistency check)
   * realtime scanning for iphone widget
     - uses UIGetScreenImage() (NB private)
     - ZBarImage from CGImage (instead of UIImage)

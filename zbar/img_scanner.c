@@ -295,6 +295,7 @@ static inline void cache_sym (zbar_image_scanner_t *iscn,
                               zbar_symbol_t *sym)
 {
     if(iscn->enable_cache) {
+        char qr = (sym->type == ZBAR_QRCODE);
         zbar_symbol_t *entry = cache_lookup(iscn, sym);
         if(!entry) {
             /* FIXME reuse sym */
@@ -302,7 +303,7 @@ static inline void cache_sym (zbar_image_scanner_t *iscn,
                                                   sym->datalen + 1);
             memcpy(entry->data, sym->data, sym->datalen);
             entry->time = sym->time - CACHE_HYSTERESIS;
-            entry->cache_count = -CACHE_CONSISTENCY;
+            entry->cache_count = (qr) ? 0 : -CACHE_CONSISTENCY;
             /* add to cache */
             entry->next = iscn->cache;
             iscn->cache = entry;
@@ -315,7 +316,7 @@ static inline void cache_sym (zbar_image_scanner_t *iscn,
         int far_thresh = (age >= CACHE_HYSTERESIS);
         int dup = (entry->cache_count >= 0);
         if((!dup && !near_thresh) || far_thresh)
-            entry->cache_count = -CACHE_CONSISTENCY;
+            entry->cache_count = (qr) ? 0 : -CACHE_CONSISTENCY;
         else if(dup || near_thresh)
             entry->cache_count++;
 
