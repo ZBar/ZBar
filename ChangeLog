@@ -1,4 +1,11 @@
 current:
+  * iphone widget performance tuning enhancements
+    - fix crop calculation bug in ZBarImage
+    - add properties to control pre-scan image cropping and scaling
+    - add property for scanner cache control
+    - enable some scanner density control (FIXME should be property)
+    - fix ifdef for quality control (FIXME should be property)
+    - add "sequence" mode test (not actually so useful)
   * report QR immediately for video (no inter-frame consistency check)
   * realtime scanning for iphone widget
     - uses UIGetScreenImage() (NB private)

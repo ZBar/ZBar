@@ -84,10 +84,10 @@ enum {
     }
 
     static NSString* const modeNames[] = {
-        @"Default", @"Sampling"
+        @"Default", @"Sampling", @"Sequence"
     };
-    NSMutableArray *modes = [NSMutableArray arrayWithCapacity: 2];
-    for(int i = 0; i < 2; i++) {
+    NSMutableArray *modes = [NSMutableArray arrayWithCapacity: 3];
+    for(int i = 0; i < 3; i++) {
         UITableViewCell *cell = [UITableViewCell new];
         cell.textLabel.text = modeNames[i];
         cell.tag = i;
@@ -99,9 +99,10 @@ enum {
 
     static NSString* const configNames[] = {
         @"showsHelpOnFail", @"showsZBarControls", @"takesPicture",
+        @"enableCache"
     };
-    NSMutableArray *configs = [NSMutableArray arrayWithCapacity: 3];
-    for(int i = 0; i < 3; i++) {
+    NSMutableArray *configs = [NSMutableArray arrayWithCapacity: 4];
+    for(int i = 0; i < 4; i++) {
         UITableViewCell *cell = [UITableViewCell new];
         cell.textLabel.text = configNames[i];
         if([reader performSelector: NSSelectorFromString(configNames[i])])
@@ -284,6 +285,10 @@ enum {
             reader.takesPicture = !reader.takesPicture;
             state = reader.takesPicture;
             break;
+        case 3:
+            reader.enableCache = !reader.enableCache;
+            state = reader.enableCache;
+            break;
         default:
             assert(0);
         }
@@ -310,6 +315,7 @@ enum {
     case 2: return(300);
     default: assert(0);
     }
+    return(44);
 }
 
 // ZBarReaderDelegate

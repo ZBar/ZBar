@@ -12,6 +12,7 @@
 		288765FD0DF74451002DB57D /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 288765FC0DF74451002DB57D /* CoreGraphics.framework */; };
 		DC0BB57C10B124EB000448CB /* zbar-button.png in Resources */ = {isa = PBXBuildFile; fileRef = DC0BB57A10B124EB000448CB /* zbar-button.png */; };
 		DC0BB57D10B124EB000448CB /* zbar-helpicons.png in Resources */ = {isa = PBXBuildFile; fileRef = DC0BB57B10B124EB000448CB /* zbar-helpicons.png */; };
+		DC1C8DED10DAAEBA004C0F9E /* entitlements.plist in Resources */ = {isa = PBXBuildFile; fileRef = DC1C8DEC10DAAEBA004C0F9E /* entitlements.plist */; };
 		DCB9118510BC5DA200B907F0 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCB9118410BC5DA200B907F0 /* QuartzCore.framework */; };
 		DCB9118810BC5DB500B907F0 /* libiconv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DCD6E13B10B0AFD4002005CD /* libiconv.dylib */; };
 		DCB9119B10BC5DCB00B907F0 /* libzbar.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DCD6E0E610B0AE16002005CD /* libzbar.a */; };
@@ -42,6 +43,7 @@
 		288765FC0DF74451002DB57D /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		DC0BB57A10B124EB000448CB /* zbar-button.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "zbar-button.png"; path = "../../iphone/res/zbar-button.png"; sourceTree = SOURCE_ROOT; };
 		DC0BB57B10B124EB000448CB /* zbar-helpicons.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "zbar-helpicons.png"; path = "../../iphone/res/zbar-helpicons.png"; sourceTree = SOURCE_ROOT; };
+		DC1C8DEC10DAAEBA004C0F9E /* entitlements.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = entitlements.plist; sourceTree = "<group>"; };
 		DCB9118410BC5DA200B907F0 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		DCD6E0CE10B0AD41002005CD /* prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = prefix.pch; sourceTree = "<group>"; };
 		DCD6E0CF10B0AD41002005CD /* readertest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = readertest.m; sourceTree = "<group>"; };
@@ -78,6 +80,7 @@
 		29B97314FDCFA39411CA2CEA /* CustomTemplate */ = {
 			isa = PBXGroup;
 			children = (
+				DC1C8DEC10DAAEBA004C0F9E /* entitlements.plist */,
 				DCD6E0CF10B0AD41002005CD /* readertest.m */,
 				DCD6E0CE10B0AD41002005CD /* prefix.pch */,
 				DCD6E0D810B0AD55002005CD /* readertest.plist */,
@@ -171,6 +174,7 @@
 			files = (
 				DC0BB57C10B124EB000448CB /* zbar-button.png in Resources */,
 				DC0BB57D10B124EB000448CB /* zbar-helpicons.png in Resources */,
+				DC1C8DED10DAAEBA004C0F9E /* entitlements.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,6 +254,35 @@
 			};
 			name = Release;
 		};
+		DC1C8DF010DAAED5004C0F9E /* AdHoc */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_PREPROCESSOR_DEFINITIONS = "NDEBUG=1";
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = ../../include;
+				PREBINDING = NO;
+				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
+				SDKROOT = iphoneos3.0;
+			};
+			name = AdHoc;
+		};
+		DC1C8DF110DAAED5004C0F9E /* AdHoc */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_ENTITLEMENTS = entitlements.plist;
+				COPY_PHASE_STRIP = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = prefix.pch;
+				INFOPLIST_FILE = readertest.plist;
+				PRODUCT_NAME = readertest;
+			};
+			name = AdHoc;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -258,6 +291,7 @@
 			buildConfigurations = (
 				1D6058940D05DD3E006BFB54 /* Debug */,
 				1D6058950D05DD3E006BFB54 /* Release */,
+				DC1C8DF110DAAED5004C0F9E /* AdHoc */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -267,6 +301,7 @@
 			buildConfigurations = (
 				C01FCF4F08A954540054247B /* Debug */,
 				C01FCF5008A954540054247B /* Release */,
+				DC1C8DF010DAAED5004C0F9E /* AdHoc */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -25,7 +25,9 @@
 #import "ZBarHelpController.h"
 #import "debug.h"
 
-#define MIN_QUALITY 10
+#ifndef MIN_QUALITY
+# define MIN_QUALITY 10
+#endif
 
 NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 
@@ -34,7 +36,8 @@ CGImageRef UIGetScreenImage(void);
 
 @implementation ZBarReaderController
 
-@synthesize scanner, readerDelegate, showsHelpOnFail, takesPicture, cameraMode;
+@synthesize scanner, readerDelegate, cameraMode, scanCrop, maxScanDimension,
+    showsHelpOnFail, takesPicture, enableCache;
 @dynamic showsZBarControls;
 
 - (id) init
@@ -43,7 +46,18 @@ CGImageRef UIGetScreenImage(void);
         showsHelpOnFail = YES;
         hasOverlay = showsZBarControls =
             [self respondsToSelector: @selector(cameraOverlayView)];
+        enableCache = YES;
+        scanCrop = CGRectMake(0, 0, 1, 1);
+        maxScanDimension = 640;
+
         scanner = [ZBarImageScanner new];
+        [scanner setSymbology: 0
+                 config: ZBAR_CFG_X_DENSITY
+                 to: 2];
+        [scanner setSymbology: 0
+                 config: ZBAR_CFG_Y_DENSITY
+                 to: 2];
+
         if([UIImagePickerController
                isSourceTypeAvailable: UIImagePickerControllerSourceTypeCamera])
             self.sourceType = UIImagePickerControllerSourceTypeCamera;
@@ -222,9 +236,43 @@ CGImageRef UIGetScreenImage(void);
         }
 
         self.view.userInteractionEnabled = YES;
-        if(cameraMode == ZBarReaderControllerCameraModeSampling)
+
+        sampling = (cameraMode == ZBarReaderControllerCameraModeSampling ||
+                    cameraMode == ZBarReaderControllerCameraModeSequence);
+
+        if(sampling) {
             toolbar.items = [NSArray arrayWithObjects:
-                                                     cancelBtn, space[0], nil];
+                                cancelBtn, space[0], nil];
+
+            t_frame = timer_now();
+            dt_frame = 0;
+            boxLayer.opacity = 0;
+            if(boxView.superview != activeOverlay)
+                [boxView removeFromSuperview];
+            if(!boxView.superview)
+                [activeOverlay addSubview: boxView];
+            scanner.enableCache = enableCache;
+
+            SEL meth = nil;
+            if(cameraMode == ZBarReaderControllerCameraModeSampling) {
+                // ensure crop rect does not include controls
+                if(scanCrop.origin.x + scanCrop.size.width > .8875)
+                    scanCrop.size.width = .8875 - scanCrop.origin.x;
+
+                meth = @selector(scanScreen);
+            }
+            else
+                meth = @selector(takePicture);
+
+            [self performSelector: meth
+                  withObject: nil
+                  afterDelay: 2];
+#ifdef DEBUG_OBJC
+            [self performSelector: @selector(dumpFPS)
+                  withObject: nil
+                  afterDelay: 4];
+#endif
+        }
         else {
             scanBtn.enabled = NO;
             toolbar.items = [NSArray arrayWithObjects:
@@ -233,37 +281,7 @@ CGImageRef UIGetScreenImage(void);
             [self performSelector: @selector(reenable)
                   withObject: nil
                   afterDelay: .5];
-        }
 
-        if(cameraMode == ZBarReaderControllerCameraModeSampling) {
-            t_frame = timer_now();
-            dt_frame = 0;
-            sampling = YES;
-            boxLayer.opacity = 0;
-            if(boxView.superview != activeOverlay)
-                [boxView removeFromSuperview];
-            if(!boxView.superview)
-                [activeOverlay addSubview: boxView];
-
-            [scanner setSymbology: 0
-                     config: ZBAR_CFG_X_DENSITY
-                     to: 2];
-            [scanner setSymbology: 0
-                     config: ZBAR_CFG_Y_DENSITY
-                     to: 2];
-            scanner.enableCache = YES;
-
-            [self performSelector: @selector(scanScreen)
-                  withObject: nil
-                  afterDelay: 1];
-#ifndef NDEBUG
-            [self performSelector: @selector(dumpFPS)
-                  withObject: nil
-                  afterDelay: 4];
-#endif
-        }
-        else {
-            sampling = NO;
             [boxView removeFromSuperview];
         }
     }
@@ -278,11 +296,45 @@ CGImageRef UIGetScreenImage(void);
     [super viewWillDisappear: animated];
 }
 
-- (void) scanScreen
+
+- (BOOL) showsZBarControls
+{
+    return(showsZBarControls);
+}
+
+- (void) setShowsZBarControls: (BOOL) show
+{
+    if(show && !hasOverlay)
+        [NSException raise: NSInvalidArgumentException
+            format: @"ZBarReaderController cannot set showsZBarControls=YES for OS<3.1"];
+
+    showsZBarControls = show;
+}
+
+// intercept delegate as readerDelegate
+
+- (void) setDelegate: (id <UINavigationControllerDelegate,
+                           UIImagePickerControllerDelegate>) delegate
+{
+    self.readerDelegate = (id <ZBarReaderDelegate>)delegate;
+}
+
+
+#ifdef DEBUG_OBJC
+- (void) dumpFPS
 {
     if(!sampling)
         return;
+    [self performSelector: @selector(dumpFPS)
+          withObject: nil
+          afterDelay: 2];
+    zlog(@"fps=%g", 1 / dt_frame);
+}
+#endif
 
+- (NSInteger) scanImage: (CGImageRef) image
+            withScaling: (CGFloat) scale
+{
     uint64_t now = timer_now();
     if(dt_frame)
         dt_frame = (dt_frame + timer_elapsed(t_frame, now)) / 2;
@@ -290,31 +342,124 @@ CGImageRef UIGetScreenImage(void);
         dt_frame = timer_elapsed(t_frame, now);
     t_frame = now;
 
-    // FIXME ugly hack: use private API to sample screen
-    CGImageRef image = UIGetScreenImage();
-
-    CGRect crop = CGRectMake(0, 0,
-                             CGImageGetWidth(image), CGImageGetHeight(image));
-    if(crop.size.width > crop.size.height)
-        crop.size.width -= 54;
+    int w = CGImageGetWidth(image);
+    int h = CGImageGetHeight(image);
+    CGRect crop;
+    if(w >= h)
+        crop = CGRectMake(scanCrop.origin.x * w, scanCrop.origin.y * h,
+                          scanCrop.size.width * w, scanCrop.size.height * h);
     else
-        crop.size.height -= 54;
+        crop = CGRectMake(scanCrop.origin.y * w, scanCrop.origin.x * h,
+                          scanCrop.size.height * w, scanCrop.size.width * h);
+
+    CGSize size;
+    if(crop.size.width >= crop.size.height &&
+       crop.size.width > maxScanDimension)
+        size = CGSizeMake(maxScanDimension,
+                          crop.size.height * maxScanDimension / crop.size.width);
+    else if(crop.size.height > maxScanDimension)
+        size = CGSizeMake(crop.size.width * maxScanDimension / crop.size.height,
+                          maxScanDimension);
+    else
+        size = crop.size;
+
+    if(scale) {
+        size.width *= scale;
+        size.height *= scale;
+    }
+
+    if(self.sourceType != UIImagePickerControllerSourceTypeCamera ||
+       cameraMode == ZBarReaderControllerCameraModeDefault) {
+        // limit the maximum number of scan passes
+        int density;
+        if(size.width > 720)
+            density = (size.width / 240 + 1) / 2;
+        else
+            density = 1;
+        [scanner setSymbology: 0
+                 config: ZBAR_CFG_X_DENSITY
+                 to: density];
+
+        if(size.height > 720)
+            density = (size.height / 240 + 1) / 2;
+        else
+            density = 1;
+        [scanner setSymbology: 0
+                 config: ZBAR_CFG_Y_DENSITY
+                 to: density];
+    }
 
     ZBarImage *zimg = [[ZBarImage alloc]
                           initWithCGImage: image
                           crop: crop
-                          size: crop.size];
-    CGImageRelease(image);
-
-    [scanner scanImage: zimg];
+                          size: size];
+    int nsyms = [scanner scanImage: zimg];
     [zimg release];
 
+    return(nsyms);
+}
+
+- (ZBarSymbol*) extractBestResult: (BOOL) filter
+{
     ZBarSymbol *sym = nil;
     ZBarSymbolSet *results = scanner.results;
-    results.filterSymbols = NO;
+    results.filterSymbols = filter;
     for(ZBarSymbol *s in results)
         if(!sym || sym.quality < s.quality)
             sym = s;
+    return(sym);
+}
+
+- (void) updateBox: (ZBarSymbol*) sym
+{
+    [CATransaction begin];
+    [CATransaction setAnimationDuration: .3];
+    [CATransaction setAnimationTimingFunction:
+        [CAMediaTimingFunction functionWithName:
+            kCAMediaTimingFunctionLinear]];
+
+    CGFloat alpha = boxLayer.opacity;
+    if(sym) {
+        CGRect r = sym.bounds;
+        // FIXME reverse image scaling
+        //r = crop.origin + ;
+        if(r.size.width > 16 && r.size.height > 16) {
+            r = CGRectInset(r, -16, -16);
+            if(alpha > .25) {
+                CGRect frame = boxLayer.frame;
+                r.origin.x = (r.origin.x * 3 + frame.origin.x) / 4;
+                r.origin.y = (r.origin.y * 3 + frame.origin.y) / 4;
+                r.size.width = (r.size.width * 3 + frame.size.width) / 4;
+                r.size.height = (r.size.height * 3 + frame.size.height) / 4;
+            }
+            boxLayer.frame = r;
+            boxLayer.opacity = 1;
+        }
+    }
+    else {
+        if(alpha > .1)
+            boxLayer.opacity = alpha / 2;
+        else if(alpha)
+            boxLayer.opacity = 0;
+    }
+    [CATransaction commit];
+}
+
+- (void) scanScreen
+{
+    if(!sampling)
+        return;
+
+    // FIXME ugly hack: use private API to sample screen
+    CGImageRef image = UIGetScreenImage();
+
+    int nsyms = [self scanImage: image
+                      withScaling: 0];
+    CGImageRelease(image);
+
+    ZBarSymbol *sym = nil;
+    if(nsyms)
+        sym = [self extractBestResult: NO];
 
     if(sym && !sym.count) {
         SEL cb = @selector(imagePickerController:didFinishPickingMediaWithInfo:);
@@ -344,35 +489,7 @@ CGImageRef UIGetScreenImage(void);
           withObject: nil
           afterDelay: 0.001];
 
-    [CATransaction begin];
-    [CATransaction setAnimationDuration: .3];
-    [CATransaction setAnimationTimingFunction:
-        [CAMediaTimingFunction functionWithName:
-            kCAMediaTimingFunctionLinear]];
-
-    CGFloat alpha = boxLayer.opacity;
-    if(sym) {
-        CGRect r = sym.bounds;
-        if(r.size.width > 16 && r.size.height > 16) {
-            r = CGRectInset(r, -16, -16);
-            if(alpha > .25) {
-                CGRect frame = boxLayer.frame;
-                r.origin.x = (r.origin.x * 3 + frame.origin.x) / 4;
-                r.origin.y = (r.origin.y * 3 + frame.origin.y) / 4;
-                r.size.width = (r.size.width * 3 + frame.size.width) / 4;
-                r.size.height = (r.size.height * 3 + frame.size.height) / 4;
-            }
-            boxLayer.frame = r;
-            boxLayer.opacity = 1;
-        }
-    }
-    else {
-        if(alpha > .1)
-            boxLayer.opacity = alpha / 2;
-        else if(alpha > 0)
-            boxLayer.opacity = 0;
-    }
-    [CATransaction commit];
+    [self updateBox: sym];
 }
 
 - (void) captureScreen
@@ -407,17 +524,40 @@ CGImageRef UIGetScreenImage(void);
           afterDelay: 0.001];
 }
 
-#ifndef NDEBUG
-- (void) dumpFPS
+- (void) scanSequence: (UIImage*) image
 {
-    if(!sampling)
+    if(!sampling) {
+        [image release];
         return;
-    [self performSelector: @selector(dumpFPS)
+    }
+
+    int nsyms = [self scanImage: image.CGImage
+                      withScaling: 0];
+
+    ZBarSymbol *sym = nil;
+    if(nsyms)
+        sym = [self extractBestResult: NO];
+
+    SEL cb = @selector(imagePickerController:didFinishPickingMediaWithInfo:);
+    if(sym && !sym.count &&
+       [readerDelegate respondsToSelector: cb])
+        [readerDelegate
+            imagePickerController: self
+            didFinishPickingMediaWithInfo:
+                [NSDictionary dictionaryWithObjectsAndKeys:
+                    image, UIImagePickerControllerOriginalImage,
+                    [NSArray arrayWithObject: sym],
+                        ZBarReaderControllerResults,
+                    nil]];
+    [image release];
+
+    // reschedule
+    [self performSelector: @selector(takePicture)
           withObject: nil
-          afterDelay: 2];
-    zlog(@"fps=%g", 1 / dt_frame);
+          afterDelay: 0.001];
+
+    [self updateBox: sym];
 }
-#endif
 
 - (void)  imagePickerController: (UIImagePickerController*) picker
   didFinishPickingMediaWithInfo: (NSDictionary*) info
@@ -425,13 +565,19 @@ CGImageRef UIGetScreenImage(void);
     UIImage *img = [info objectForKey: UIImagePickerControllerOriginalImage];
 
     id results = nil;
-    if(sampling) {
+    if(!sampling)
+        results = [self scanImage: img.CGImage];
+    else if(cameraMode == ZBarReaderControllerCameraModeSampling) {
         results = [NSArray arrayWithObject: symbol];
         [symbol release];
         symbol = nil;
     }
-    else
-        results = [self scanImage: img.CGImage];
+    else {
+        [self performSelector: @selector(scanSequence:)
+              withObject: [img retain]
+              afterDelay: 0.001];
+        return;
+    }
 
     [self performSelector: @selector(reenable)
          withObject: nil
@@ -496,56 +642,19 @@ CGImageRef UIGetScreenImage(void);
         [hlp dismissModalViewControllerAnimated: YES];
 }
 
-- (BOOL) showsZBarControls
-{
-    return(showsZBarControls);
-}
-
-- (void) setShowsZBarControls: (BOOL) show
-{
-    if(show && !hasOverlay)
-        [NSException raise: NSInvalidArgumentException
-            format: @"ZBarReaderController cannot set showsZBarControls=YES for OS<3.1"];
-
-    showsZBarControls = show;
-}
-
-// intercept delegate as readerDelegate
-
-- (void) setDelegate: (id <UINavigationControllerDelegate,
-                           UIImagePickerControllerDelegate>) delegate
-{
-    self.readerDelegate = (id <ZBarReaderDelegate>)delegate;
-}
-
 - (id <NSFastEnumeration>) scanImage: (CGImageRef) image
-                                size: (CGSize) size
 {
     timer_start;
 
-    // limit the maximum number of scan passes
-    int density;
-    if(size.width > 480)
-        density = (size.width / 240 + 1) / 2;
-    else
-        density = 1;
-    [scanner setSymbology: 0
-             config: ZBAR_CFG_X_DENSITY
-             to: density];
+    int nsyms = [self scanImage: image
+                      withScaling: 0];
 
-    if(size.height > 480)
-        density = (size.height / 240 + 1) / 2;
-    else
-        density = 1;
-    [scanner setSymbology: 0
-             config: ZBAR_CFG_Y_DENSITY
-             to: density];
-
-    ZBarImage *zimg = [[ZBarImage alloc]
-                          initWithCGImage: image
-                          size: size];
-    int nsyms = [scanner scanImage: zimg];
-    [zimg release];
+    if(!nsyms &&
+       CGImageGetWidth(image) >= 640 &&
+       CGImageGetHeight(image) >= 640)
+        // make one more attempt for close up, grainy images
+        nsyms = [self scanImage: image
+                      withScaling: .5];
 
     NSMutableArray *syms = nil;
     if(nsyms) {
@@ -580,30 +689,6 @@ CGImageRef UIGetScreenImage(void);
 
     zlog(@"read %d filtered symbols in %gs total\n",
           (!syms) ? 0 : [syms count], timer_elapsed(t_start, timer_now()));
-    return(syms);
-}
-
-- (id <NSFastEnumeration>) scanImage: (CGImageRef) image
-{
-    CGSize size = CGSizeMake(CGImageGetWidth(image),
-                             CGImageGetHeight(image));
-    if(size.width > 1280 || size.height > 1280) {
-        size.width /= 2;
-        size.height /= 2;
-    }
-
-    id <NSFastEnumeration> syms =
-        [self scanImage: image
-              size: size];
-
-    if(!syms) {
-        // make one more attempt for close up, grainy images
-        size.width /= 2;
-        size.height /= 2;
-        syms = [self scanImage: image
-                     size: size];
-    }
-
     return(syms);
 }
 

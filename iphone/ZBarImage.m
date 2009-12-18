@@ -96,10 +96,11 @@ static void image_cleanup(zbar_image_t *zimg)
     crop.origin.x *= -scale;
     crop.size.width = scale * (CGFloat)CGImageGetWidth(image);
     scale = size.height / crop.size.height;
-    crop.origin.y *= -scale;
-    crop.size.height = scale * (CGFloat)CGImageGetHeight(image);
+    CGFloat height = CGImageGetHeight(image);
     // compensate for wacky origin
-    crop.origin.y += size.height - crop.size.height;
+    crop.origin.y = height - crop.origin.y - crop.size.height;
+    crop.origin.y *= -scale;
+    crop.size.height = scale * height;
 
     // generate grayscale image data
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceGray();
@@ -109,6 +110,20 @@ static void image_cleanup(zbar_image_t *zimg)
     CGContextSetAllowsAntialiasing(ctx, 0);
 
     CGContextDrawImage(ctx, crop, image);
+
+#if 0
+    zlog(@"convert image %dx%d: crop %g,%g %gx%g size %gx%g (%dx%d)",
+         CGImageGetWidth(image), CGImageGetHeight(image),
+         crop.origin.x, crop.origin.y, crop.size.width, crop.size.height,
+         size.width, size.height, w, h);
+    CGImageRef cgdump = CGBitmapContextCreateImage(ctx);
+    UIImage *uidump = [[UIImage alloc]
+                          initWithCGImage: cgdump];
+    CGImageRelease(cgdump);
+    UIImageWriteToSavedPhotosAlbum(uidump, nil, nil, NULL);
+    [uidump release];
+#endif
+
     CGContextRelease(ctx);
 
     t_convert = timer_elapsed(t_start, timer_now());
