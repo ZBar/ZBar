@@ -1,4 +1,7 @@
 current:
+  * fix inconsistent fourcc endian handling bugs (bug #2918994)
+    - thanks to jdccdevel for a patch!
+    - add fourcc conversion and parse interfaces to zbar.h
   * report QR immediately for video (no inter-frame consistency check)
   * iphone widget back compat updates, add basic test app
   * add python distutils build infrastructure

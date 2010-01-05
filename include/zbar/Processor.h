@@ -183,8 +183,8 @@ class Processor {
     void force_format (std::string& input_format,
                        std::string& output_format)
     {
-        unsigned long ifourcc = *(unsigned long*)input_format.c_str();
-        unsigned long ofourcc = *(unsigned long*)output_format.c_str();
+        unsigned long ifourcc = zbar_fourcc_parse(input_format.c_str());
+        unsigned long ofourcc = zbar_fourcc_parse(output_format.c_str());
         if(zbar_processor_force_format(_processor, ifourcc, ofourcc))
             throw_exception(_processor);
     }

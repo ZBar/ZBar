@@ -30,14 +30,8 @@ T_ENUM
 T_FOURCC
 	{
             if(SvPOK($arg)) {
-                STRLEN len;
-                char *str = SvPV($arg, len);
-                if(len != 4)
-                    croak(\"invalid fourcc: \%s\", str);
-                $var = ((unsigned long)str[0] |
-                        ((unsigned long)str[1] << 8) |
-                        ((unsigned long)str[2] << 16) |
-                        ((unsigned long)str[3] << 24));
+                char *str = SvPV_nolen($arg);
+                $var = zbar_fourcc_parse(str);
             }
             else
                 $var = SvUV($arg);

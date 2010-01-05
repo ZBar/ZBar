@@ -184,6 +184,28 @@ extern int zbar_parse_config(const char *config_string,
                              zbar_config_t *config,
                              int *value);
 
+/** consistently compute fourcc values across architectures
+ * (adapted from v4l2 specification)
+ */
+#define zbar_fourcc(a, b, c, d)                 \
+        ((unsigned long)(a) |                   \
+         ((unsigned long)(b) << 8) |            \
+         ((unsigned long)(c) << 16) |           \
+         ((unsigned long)(d) << 24))
+
+/** parse a fourcc string into its encoded integer value.
+ */
+static inline unsigned long zbar_fourcc_parse (const char *format)
+{
+    unsigned long fourcc = 0;
+    if(format) {
+        int i;
+        for(i = 0; i < 4 && format[i]; i++)
+            fourcc |= ((unsigned long)format[i]) << (i * 8);
+    }
+    return(fourcc);
+}
+
 /** @internal type unsafe error API (don't use) */
 extern int _zbar_error_spew(const void *object,
                             int verbosity);

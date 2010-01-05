@@ -35,11 +35,6 @@
 #define DEFAULT_WIDTH 640
 #define DEFAULT_HEIGHT 480
 
-/* adapted from v4l2 spec */
-#define fourcc(a, b, c, d)                      \
-    ((long)(a) | ((long)(b) << 8) |             \
-     ((long)(c) << 16) | ((long)(d) << 24))
-
 enum {
     DECODED,
     DECODED_TEXT,
@@ -88,15 +83,15 @@ gboolean zbar_gtk_image_from_pixbuf (zbar_image_t *zimg,
 
     /* these are all guesses... */
     if(nchannels == 3 && bps == 8)
-        type = fourcc('R','G','B','3');
+        type = zbar_fourcc('R','G','B','3');
     else if(nchannels == 4 && bps == 8)
-        type = fourcc('B','G','R','4'); /* FIXME alpha flipped?! */
+        type = zbar_fourcc('B','G','R','4'); /* FIXME alpha flipped?! */
     else if(nchannels == 1 && bps == 8)
-        type = fourcc('Y','8','0','0');
+        type = zbar_fourcc('Y','8','0','0');
     else if(nchannels == 3 && bps == 5)
-        type = fourcc('R','G','B','R');
+        type = zbar_fourcc('R','G','B','R');
     else if(nchannels == 3 && bps == 4)
-        type = fourcc('R','4','4','4'); /* FIXME maybe? */
+        type = zbar_fourcc('R','4','4','4'); /* FIXME maybe? */
     else {
         g_warning("unsupported combination: nchannels=%d bps=%d\n",
                   nchannels, bps);
@@ -209,7 +204,7 @@ static inline int zbar_gtk_process_image (ZBarGtk *self,
     if(!image)
         return(-1);
 
-    zbar_image_t *tmp = zbar_image_convert(image, fourcc('Y','8','0','0'));
+    zbar_image_t *tmp = zbar_image_convert(image, zbar_fourcc('Y','8','0','0'));
     if(!tmp)
         return(-1);
 

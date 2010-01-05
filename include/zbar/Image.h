@@ -143,12 +143,7 @@ public:
     /// see zbar_image_set_format()
     void set_format (const std::string& format)
     {
-        if(format.length() != 4)
-            throw FormatError();
-        unsigned long fourcc = ((format[0] & 0xff) |
-                                ((format[1] & 0xff) << 8) |
-                                ((format[2] & 0xff) << 16) |
-                                ((format[3] & 0xff) << 24));
+        unsigned long fourcc = zbar_fourcc_parse(format.c_str());
         zbar_image_set_format(_img, fourcc);
     }
 

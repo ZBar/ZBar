@@ -92,7 +92,7 @@ public:
     /// see zbar_video_init()
     void init (std::string& format)
     {
-        unsigned int fourcc = *(unsigned int*)format.c_str();
+        unsigned int fourcc = zbar_fourcc_parse(format.c_str());
         if(zbar_video_init(_video, fourcc))
             throw_exception(_video);
     }

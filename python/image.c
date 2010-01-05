@@ -148,7 +148,7 @@ image_set_format (zbarImage *self,
                      format);
         return(-1);
     }
-    zbar_image_set_format(self->zimg,*((unsigned long*)format));
+    zbar_image_set_format(self->zimg, zbar_fourcc_parse(format));
     return(0);
 }
 
@@ -359,6 +359,7 @@ image_convert (zbarImage *self,
                      format);
         return(NULL);
     }
+    unsigned long fourcc = zbar_fourcc_parse(format);
 
     zbarImage *img = PyObject_GC_New(zbarImage, &zbarImage_Type);
     if(!img)
@@ -366,11 +367,9 @@ image_convert (zbarImage *self,
     img->data = NULL;
     if(width > 0 && height > 0)
         img->zimg =
-            zbar_image_convert_resize(self->zimg,
-                                       *((unsigned long*)format),
-                                       width, height);
+            zbar_image_convert_resize(self->zimg, fourcc, width, height);
     else
-        img->zimg = zbar_image_convert(self->zimg, *((unsigned long*)format));
+        img->zimg = zbar_image_convert(self->zimg, fourcc);
 
     if(!img->zimg) {
         /* FIXME propagate exception */

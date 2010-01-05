@@ -137,7 +137,7 @@ static int scan_image (const char *filename)
 
         zbar_image_t *zimage = zbar_image_create();
         assert(zimage);
-        zbar_image_set_format(zimage, *(unsigned long*)"Y800");
+        zbar_image_set_format(zimage, zbar_fourcc('Y','8','0','0'));
 
         int width = MagickGetImageWidth(images);
         int height = MagickGetImageHeight(images);

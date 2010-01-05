@@ -37,7 +37,7 @@ static void image_cleanup(zbar_image_t *zimg)
 
 + (unsigned long) fourcc: (NSString*) format
 {
-    return(*(uint32_t*)[format UTF8String]);
+    return(zbar_fourcc_parse([format UTF8String]));
 }
 
 - (id) initWithImage: (zbar_image_t*) image
@@ -88,7 +88,7 @@ static void image_cleanup(zbar_image_t *zimg)
     assert(raw);
 
     zbar_image_set_data(zimg, raw, datalen, zbar_image_free_data);
-    zbar_image_set_format(zimg, *(int*)"Y800");
+    zbar_image_set_format(zimg, zbar_fourcc('Y','8','0','0'));
     zbar_image_set_size(zimg, w, h);
 
     // generate grayscale image data
