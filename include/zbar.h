@@ -205,6 +205,7 @@ extern int zbar_parse_config(const char *config_string,
 
 /** consistently compute fourcc values across architectures
  * (adapted from v4l2 specification)
+ * @since 0.11
  */
 #define zbar_fourcc(a, b, c, d)                 \
         ((unsigned long)(a) |                   \
@@ -213,6 +214,7 @@ extern int zbar_parse_config(const char *config_string,
          ((unsigned long)(d) << 24))
 
 /** parse a fourcc string into its encoded integer value.
+ * @since 0.11
  */
 static inline unsigned long zbar_fourcc_parse (const char *format)
 {
