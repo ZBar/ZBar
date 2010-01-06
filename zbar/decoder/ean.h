@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -26,6 +26,7 @@
 /* state of each parallel decode attempt */
 typedef struct ean_pass_s {
     signed char state;          /* module position of w[idx] in symbol */
+#define STATE_REV   0x80        /*   scan direction reversed */
 #define STATE_ADDON 0x40        /*   scanning add-on */
 #define STATE_IDX   0x1f        /*   element offset into symbol */
     unsigned char raw[7];       /* decode in process */
@@ -34,9 +35,10 @@ typedef struct ean_pass_s {
 /* EAN/UPC specific decode state */
 typedef struct ean_decoder_s {
     ean_pass_t pass[4];         /* state of each parallel decode attempt */
-    zbar_symbol_type_t left;   /* current holding buffer contents */
+    zbar_symbol_type_t left;    /* current holding buffer contents */
     zbar_symbol_type_t right;
     zbar_symbol_type_t addon;
+    int direction;              /* scan direction */
     unsigned s4;                /* character width */
     signed char buf[18];        /* holding buffer */
 

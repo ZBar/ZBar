@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2009-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -191,4 +191,17 @@ zbarEnum_Add (zbarEnum *self,
     if(!item)
         return(-1);
     return(0);
+}
+
+zbarEnumItem*
+zbarEnum_LookupValue (zbarEnum *self,
+                      int val)
+{
+    PyObject *key = PyInt_FromLong(val);
+    zbarEnumItem *e = (zbarEnumItem*)PyDict_GetItem(self->byvalue, key);
+    if(!e)
+        return((zbarEnumItem*)key);
+    Py_INCREF((PyObject*)e);
+    Py_DECREF(key);
+    return(e);
 }

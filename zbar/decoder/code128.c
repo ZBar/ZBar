@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -321,6 +321,7 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
     dprintf(2, "\n    postproc len=%d", dcode128->character);
     unsigned i, j;
     unsigned char code = 0;
+    dcode->direction = 1 - 2 * dcode128->direction;
     if(dcode128->direction) {
         /* reverse buffer */
         dprintf(2, " (rev)");

@@ -1,4 +1,9 @@
 current:
+  * add coarse symbol orientation information (patch #2913094)
+    - thanks to Anssi for a patch!
+    - add decode direction feedback to decoder
+    - update C++, Python, Perl and ObjC wrappers
+    - add orientation to test suites
   * fix inconsistent fourcc endian handling bugs (bug #2918994)
     - thanks to jdccdevel for a patch!
     - add fourcc conversion and parse interfaces to zbar.h

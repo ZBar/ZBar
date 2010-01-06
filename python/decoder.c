@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2009-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -111,10 +111,18 @@ decoder_get_data (zbarDecoder *self,
                                       zbar_decoder_get_data_length(self->zdcode)));
 }
 
+static PyObject*
+decoder_get_direction (zbarDecoder *self,
+                       void *closure)
+{
+    return(PyInt_FromLong(zbar_decoder_get_direction(self->zdcode)));
+}
+
 static PyGetSetDef decoder_getset[] = {
-    { "color",    (getter)decoder_get_color, },
-    { "type",     (getter)decoder_get_type, },
-    { "data",     (getter)decoder_get_data, },
+    { "color",     (getter)decoder_get_color, },
+    { "type",      (getter)decoder_get_type, },
+    { "data",      (getter)decoder_get_data, },
+    { "direction", (getter)decoder_get_direction },
     { NULL, },
 };
 

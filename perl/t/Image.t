@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 22;
+use Test::More tests => 23;
 
 #########################
 
@@ -94,7 +94,8 @@ SKIP: {
 
     #########################
 
-    can_ok($sym, qw(get_type get_data get_quality get_count get_loc));
+    can_ok($sym, qw(get_type get_data get_quality get_count get_loc
+                    get_orientation));
 
     #########################
 
@@ -130,6 +131,10 @@ SKIP: {
     }
     ok(!defined($failure), 'location structure') or
       diag($failure);
+
+    #########################
+
+    is($sym->get_orientation(), Barcode::ZBar::Orient::UP, 'orientation');
 
     #########################
 

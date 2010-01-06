@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2008-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -145,6 +145,7 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
           decode_e(get_width(dcode, 4), dcode25->width, 45) > 2))
         return(ZBAR_NONE);
 
+    dcode->direction = 1 - 2 * dcode25->direction;
     if(dcode25->direction) {
         /* reverse buffer */
         dprintf(2, " (rev)");

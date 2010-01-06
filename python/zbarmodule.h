@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2009-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -61,6 +61,8 @@ extern zbarEnum *zbarEnum_New(void);
 extern int zbarEnum_Add(zbarEnum *self,
                          int val,
                          const char *name);
+extern zbarEnumItem *zbarEnum_LookupValue(zbarEnum *self,
+                                          int val);
 
 typedef struct {
     PyObject_HEAD
@@ -146,6 +148,7 @@ extern zbarEnumItem *color_enum[2];
 extern zbarEnum *config_enum;
 extern PyObject *symbol_enum;
 extern zbarEnumItem *symbol_NONE;
+extern zbarEnum *orient_enum;
 
 int object_to_bool(PyObject *obj,
                    int *val);

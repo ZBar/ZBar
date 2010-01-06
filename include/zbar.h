@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -103,6 +103,17 @@ typedef enum zbar_symbol_type_e {
     ZBAR_ADDON       = 0x0700,  /**< add-on flag mask */
 } zbar_symbol_type_t;
 
+/** decoded symbol coarse orientation.
+ * @since 0.11
+ */
+typedef enum zbar_orientation_e {
+    ZBAR_ORIENT_UNKNOWN = -1,   /**< unable to determine orientation */
+    ZBAR_ORIENT_UP,             /**< upright, read left to right */
+    ZBAR_ORIENT_RIGHT,          /**< sideways, read top to bottom */
+    ZBAR_ORIENT_DOWN,           /**< upside-down, read right to left */
+    ZBAR_ORIENT_LEFT,           /**< sideways, read bottom to top */
+} zbar_orientation_t;
+
 /** error codes. */
 typedef enum zbar_error_e {
     ZBAR_OK = 0,                /**< no error */
@@ -170,6 +181,14 @@ extern const char *zbar_get_symbol_name(zbar_symbol_type_t sym);
  * if no addons were decoded
  */
 extern const char *zbar_get_addon_name(zbar_symbol_type_t sym);
+
+/** retrieve string name for orientation.
+ * @param orientation orientation encoding
+ * @returns the static string name for the specified orientation,
+ * or "UNKNOWN" if the orientation is not recognized
+ * @since 0.11
+ */
+extern const char *zbar_get_orientation_name(zbar_orientation_t orientation);
 
 /** parse a configuration string of the form "[symbology.]config[=value]".
  * the config must match one of the recognized names.
@@ -305,6 +324,14 @@ extern int zbar_symbol_get_loc_x(const zbar_symbol_t *symbol,
  */
 extern int zbar_symbol_get_loc_y(const zbar_symbol_t *symbol,
                                  unsigned index);
+
+/** retrieve general orientation of decoded symbol.
+ * @returns a coarse, axis-aligned indication of symbol orientation or
+ * ZBAR_ORIENT_UNKNOWN if unknown
+ * @since 0.11
+ */
+extern zbar_orientation_t
+zbar_symbol_get_orientation(const zbar_symbol_t *symbol);
 
 /** iterate the set to which this symbol belongs (there can be only one).
  * @returns the next symbol in the set, or
@@ -1216,6 +1243,13 @@ zbar_decoder_get_data_length(const zbar_decoder_t *decoder);
  */
 extern zbar_symbol_type_t
 zbar_decoder_get_type(const zbar_decoder_t *decoder);
+
+/** retrieve last decode direction.
+ * @returns 1 for forward and -1 for reverse
+ * @returns 0 if the decode direction is unknown or does not apply
+ * @since 0.11
+ */
+extern int zbar_decoder_get_direction(const zbar_decoder_t *decoder);
 
 /** setup data handler callback.
  * the registered function will be called by the decoder

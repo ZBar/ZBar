@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2009-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the ZBar Bar Code Reader.
 //
@@ -73,6 +73,11 @@
 - (int) count
 {
     return(zbar_symbol_get_count(symbol));
+}
+
+- (zbar_orientation_t) orientation
+{
+    return(zbar_symbol_get_orientation(symbol));
 }
 
 - (const zbar_symbol_t*) zbarSymbol

@@ -14,6 +14,7 @@ zbar_color_t					T_ENUM
 zbar_error_t					T_ENUM
 zbar_symbol_type_t				T_ENUM
 zbar_config_t					T_ENUM
+zbar_orientation_t				T_ENUM
 
 # special scalars
 fourcc_t					T_FOURCC

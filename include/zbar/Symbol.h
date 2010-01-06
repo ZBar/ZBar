@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the ZBar Bar Code Reader.
 //
@@ -309,6 +309,13 @@ public:
     int get_location_y (unsigned index) const
     {
         return((_sym) ? zbar_symbol_get_loc_y(_sym, index) : -1);
+    }
+
+    /// see zbar_symbol_get_orientation().
+    /// @since 0.11
+    int get_orientation () const
+    {
+        return(zbar_symbol_get_orientation(_sym));
     }
 
     /// see zbar_symbol_xml().

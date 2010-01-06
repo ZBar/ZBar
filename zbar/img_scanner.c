@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -246,6 +246,7 @@ _zbar_image_scanner_alloc_sym (zbar_image_scanner_t *iscn,
     sym->type = type;
     sym->quality = 1;
     sym->npts = 0;
+    sym->orient = ZBAR_ORIENT_UNKNOWN;
     sym->cache_count = 0;
     sym->time = iscn->time;
     assert(!sym->syms);
@@ -443,6 +444,10 @@ static void symbol_handler (zbar_decoder_t *dcode)
     /* initialize first point */
     if(TEST_CFG(iscn, ZBAR_CFG_POSITION))
         sym_add_point(sym, x, y);
+
+    int dir = zbar_decoder_get_direction(dcode);
+    if(dir)
+        sym->orient = (iscn->dy != 0) + ((iscn->du ^ dir) & 2);
 
     _zbar_image_scanner_add_sym(iscn, sym);
 }

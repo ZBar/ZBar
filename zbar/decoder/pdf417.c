@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2008-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -213,6 +213,7 @@ zbar_symbol_type_t _zbar_decode_pdf417 (zbar_decoder_t *dcode)
     if(c == PDF417_STOP) {
         dprintf(1, " [valid stop]");
         /* FIXME check trailing bar and qz */
+        dcode->direction = 1 - 2 * dcode417->direction;
         dcode->lock = 0;
         dcode417->character = -1;
     }

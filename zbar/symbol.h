@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -47,6 +47,7 @@ struct zbar_symbol_s {
     unsigned pts_alloc;         /* allocation size of pts */
     unsigned npts;              /* number of points in location polygon */
     point_t *pts;               /* list of points in location polygon */
+    zbar_orientation_t orient;  /* coarse orientation */
 
     refcnt_t refcnt;            /* reference count */
     zbar_symbol_t *next;        /* linked list of results (or siblings) */

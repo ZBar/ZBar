@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2008-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -194,12 +194,11 @@ static inline signed char code39_decode_start (zbar_decoder_t *dcode)
     code39_decoder_t *dcode39 = &dcode->code39;
 
     signed char c = code39_decode9(dcode);
-    if(c == 0x19)
-        dcode39->direction ^= 1;
-    else if(c != 0x2b) {
+    if(c != 0x19 && c != 0x2b) {
         dprintf(2, "\n");
         return(ZBAR_NONE);
     }
+    dcode39->direction = (c == 0x19);
 
     /* check leading quiet zone - spec is 10x */
     unsigned quiet = get_width(dcode, 9);
@@ -217,6 +216,7 @@ static inline signed char code39_decode_start (zbar_decoder_t *dcode)
 static inline void code39_postprocess (zbar_decoder_t *dcode)
 {
     code39_decoder_t *dcode39 = &dcode->code39;
+    dcode->direction = 1 - 2 * dcode39->direction;
     int i;
     if(dcode39->direction) {
         /* reverse buffer */

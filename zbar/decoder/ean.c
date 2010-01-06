@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -243,6 +243,7 @@ static inline zbar_symbol_type_t ean_part_end4 (ean_pass_t *pass,
         return(ZBAR_NONE);
 
     if(!par == fwd) {
+        pass->state |= STATE_REV;
         /* reverse sampled digits */
         unsigned char tmp = pass->raw[1];
         pass->raw[1] = pass->raw[4];
@@ -292,6 +293,7 @@ static inline zbar_symbol_type_t ean_part_end7 (ean_decoder_t *ean,
         return(ZBAR_NONE);
 
     if(!par == fwd) {
+        pass->state |= STATE_REV;
         /* reverse sampled digits */
         unsigned char i;
         for(i = 1; i < 4; i++) {
@@ -334,6 +336,8 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
        !aux_end(dcode, fwd)) {
         dprintf(2, " fwd=%x", fwd);
         zbar_symbol_type_t part = ean_part_end4(pass, fwd);
+        if(part)
+            dcode->ean.direction = (pass->state & STATE_REV) != 0;
         pass->state = -1;
         return(part);
     }
@@ -369,6 +373,8 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
         dprintf(2, " fwd=%x", fwd);
         if(!aux_end(dcode, fwd))
             part = ean_part_end7(&dcode->ean, pass, fwd);
+        if(part)
+            dcode->ean.direction = (pass->state & STATE_REV) != 0;
         pass->state = -1;
         return(part);
     }
@@ -556,7 +562,8 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
     if(part > ZBAR_PARTIAL)
         part |= ean->addon;
 
-    dprintf(2, " %x/%x=%x", ean->left, ean->right, part);
+    dprintf(2, " dir=%d %x/%x=%x",
+            ean->direction, ean->left, ean->right, part);
     return(part);
 }
 
@@ -596,6 +603,7 @@ static inline void postprocess (zbar_decoder_t *dcode,
             dcode->buf[j] = ean->buf[i] + '0';
     dcode->buflen = j;
     dcode->buf[j] = '\0';
+    dcode->direction = 1 - 2 * ean->direction;
 }
 
 zbar_symbol_type_t _zbar_decode_ean (zbar_decoder_t *dcode)

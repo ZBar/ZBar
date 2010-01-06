@@ -1,4 +1,4 @@
-/*Copyright (C) 2008-2009  Timothy B. Terriberry (tterribe@xiph.org)
+/*Copyright (C) 2008-2010  Timothy B. Terriberry (tterribe@xiph.org)
   You can redistribute this library and/or modify it under the terms of the
    GNU Lesser General Public License as published by the Free Software
    Foundation; either version 2.1 of the License, or (at your option) any later
@@ -166,6 +166,16 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
       sym_add_point(*sym, qrdataj->bbox[2][0], qrdataj->bbox[2][1]);
       sym_add_point(*sym, qrdataj->bbox[3][0], qrdataj->bbox[3][1]);
       sym_add_point(*sym, qrdataj->bbox[1][0], qrdataj->bbox[1][1]);
+
+      /* approx symbol "up" direction */
+      qr_point dir = {
+          qrdataj->bbox[0][0] - qrdataj->bbox[2][0] +
+          qrdataj->bbox[1][0] - qrdataj->bbox[3][0],
+          qrdataj->bbox[2][1] - qrdataj->bbox[0][1] +
+          qrdataj->bbox[3][1] - qrdataj->bbox[1][1],
+      };
+      int horiz = abs(dir[0]) > abs(dir[1]);
+      (*sym)->orient = horiz + 2 * (dir[1 - horiz] < 0);
 
       for(k=0;k<qrdataj->nentries&&!err;k++){
         size_t              inleft;

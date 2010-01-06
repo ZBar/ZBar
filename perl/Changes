@@ -1,5 +1,17 @@
 Revision history for Perl extension Barcode::ZBar.
 
+current spadix
+	* add Symbol orientation and Decoder direction interfaces
+
+0.04  2009-10-23 spadix
+	* add result query interfaces to ImageScanner and Processor
+
+0.03  2009-09-24 spadix
+	* add support for binary symbol data
+	* fix symbol leaks
+	* add symbol quality metric
+	* add support for QR Code
+
 0.02  2009-04-16 spadix
 	* project name change: package becomes Barcode::ZBar
 

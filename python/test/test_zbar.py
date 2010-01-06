@@ -84,6 +84,16 @@ class TestZBarFunctions(ut.TestCase):
             self.assert_(int(sym) >= 0)
             self.assert_(is_identifier.match(str(sym)))
 
+    def test_orientations(self):
+        for orient in (zbar.Orient.UNKNOWN,
+                       zbar.Orient.UP,
+                       zbar.Orient.RIGHT,
+                       zbar.Orient.DOWN,
+                       zbar.Orient.LEFT):
+            self.assert_(isinstance(orient, zbar.EnumItem))
+            self.assert_(-1 <= int(orient) <= 3)
+            self.assert_(is_identifier.match(str(orient)))
+
 class TestScanner(ut.TestCase):
     def setUp(self):
         self.scn = zbar.Scanner()
@@ -135,6 +145,9 @@ class TestDecoder(ut.TestCase):
             self.dcode.data = data
         self.assertRaises(AttributeError, set_data, 'yomama')
 
+        self.assertRaises(AttributeError,
+                          self.dcode.__setattr__, 'direction', -1)
+
     def test_width(self):
         sym = self.dcode.decode_width(5)
         self.assert_(sym is zbar.Symbol.NONE)
@@ -150,6 +163,7 @@ class TestDecoder(ut.TestCase):
         self.assert_(self.dcode.color is zbar.BAR)
         self.dcode.reset()
         self.assert_(self.dcode.color is zbar.SPACE)
+        self.assertEqual(self.dcode.direction, 0)
 
     def test_decode(self):
         inline_sym = [ -1 ]
@@ -174,6 +188,7 @@ class TestDecoder(ut.TestCase):
 
         self.assertEqual(self.dcode.data, '6268964977804')
         self.assert_(self.dcode.color is zbar.BAR)
+        self.assertEqual(self.dcode.direction, 1)
         self.assert_(sym is zbar.Symbol.EAN13)
         self.assert_(inline_sym[0] is zbar.Symbol.EAN13)
         self.assertEqual(explicit_closure, [ 2 ])
@@ -310,6 +325,7 @@ class TestImageScan(ut.TestCase):
                 self.assertEqual(len(pt), 2)
                 # FIXME test values (API currently in flux)
 
+            self.assert_(sym.orientation is zbar.Orient.UP)
             self.assert_(data is sym.data)
             self.assert_(loc is sym.location)
 
@@ -370,13 +386,14 @@ class TestProcessor(ut.TestCase):
             symiter = iter(image)
             self.assert_(isinstance(symiter, zbar.SymbolIter))
 
-            symbols = tuple(image)
-            self.assertEqual(len(symbols), 1)
-            for symbol in symbols:
-                self.assert_(isinstance(symbol, zbar.Symbol))
-                self.assert_(symbol.type is zbar.Symbol.EAN13)
-                self.assertEqual(symbol.data, '9876543210128')
-                self.assert_(symbol.quality > 0)
+            syms = tuple(image)
+            self.assertEqual(len(syms), 1)
+            for sym in syms:
+                self.assert_(isinstance(sym, zbar.Symbol))
+                self.assert_(sym.type is zbar.Symbol.EAN13)
+                self.assertEqual(sym.data, '9876543210128')
+                self.assert_(sym.quality > 0)
+                self.assert_(sym.orientation is zbar.Orient.UP)
             closure[0] += 1
 
         explicit_closure = [ 0 ]

@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------
-#  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+#  Copyright 2008-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
 #
 #  This file is part of the ZBar Bar Code Reader.
 #
@@ -137,6 +137,46 @@ Dark area or colored bar segment.
 
 =back
 
+Decoder configuration constants:
+
+=over 4
+
+=item Config::ENABLE
+
+=item Config::ADD_CHECK
+
+=item Config::EMIT_CHECK
+
+=item Config::ASCII
+
+=item Config::MIN_LEN
+
+=item Config::MAX_LEN
+
+=item Config::POSITION
+
+=item Config::X_DENSITY
+
+=item Config::Y_DENSITY
+
+=back
+
+Symbol orientation constants:
+
+=over 4
+
+=item Orient::UNKNOWN
+
+=item Orient::UP
+
+=item Orient::RIGHT
+
+=item Orient::DOWN
+
+=item Orient::LEFT
+
+=back
+
 
 =head1 SEE ALSO
 
@@ -156,7 +196,7 @@ Jeff Brown, E<lt>spadix@users.sourceforge.netE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2008-2009 (c) Jeff Brown E<lt>spadix@users.sourceforge.netE<gt>
+Copyright 2008-2010 (c) Jeff Brown E<lt>spadix@users.sourceforge.netE<gt>
 
 The ZBar Bar Code Reader is free software; you can redistribute it
 and/or modify it under the terms of the GNU Lesser Public License as

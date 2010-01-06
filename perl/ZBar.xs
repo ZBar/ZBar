@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2008-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the ZBar Bar Code Reader.
 //
@@ -53,6 +53,7 @@ static AV *LOOKUP_zbar_color_t = NULL;
 static AV *LOOKUP_zbar_symbol_type_t = NULL;
 static AV *LOOKUP_zbar_error_t = NULL;
 static AV *LOOKUP_zbar_config_t = NULL;
+static AV *LOOKUP_zbar_orientation_t = NULL;
 
 #define CONSTANT(typ, prefix, sym, name)                \
     do {                                                \
@@ -283,6 +284,21 @@ BOOT:
     }
 
 
+MODULE = Barcode::ZBar	PACKAGE = Barcode::ZBar::Orient	PREFIX = zbar_orientation_
+
+BOOT:
+    {
+        HV *stash = gv_stashpv("Barcode::ZBar::Orient", TRUE);
+
+        LOOKUP_zbar_orientation_t = newAV();
+        CONSTANT(orientation, ORIENT_, UNKNOWN, "UNKNOWN");
+        CONSTANT(orientation, ORIENT_, UP, "UP");
+        CONSTANT(orientation, ORIENT_, RIGHT, "RIGHT");
+        CONSTANT(orientation, ORIENT_, DOWN, "DOWN");
+        CONSTANT(orientation, ORIENT_, LEFT, "LEFT");
+    }
+
+
 MODULE = Barcode::ZBar	PACKAGE = Barcode::ZBar::Symbol	PREFIX = zbar_symbol_
 
 BOOT:
@@ -346,6 +362,10 @@ zbar_symbol_get_loc(symbol)
             av_push(pt, newSVuv(zbar_symbol_get_loc_x(symbol, i)));
             av_push(pt, newSVuv(zbar_symbol_get_loc_y(symbol, i)));
         }
+
+zbar_orientation_t
+zbar_symbol_get_orientation(symbol)
+	Barcode::ZBar::Symbol symbol
 
 SV *
 get_components(symbol)
@@ -710,6 +730,10 @@ zbar_decoder_get_data(decoder)
 
 zbar_symbol_type_t
 zbar_decoder_get_type(decoder)
+	Barcode::ZBar::Decoder	decoder
+
+int
+zbar_decoder_get_direction(decoder)
 	Barcode::ZBar::Decoder	decoder
 
 void

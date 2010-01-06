@@ -167,7 +167,8 @@ class BuiltinTestCase(TestCase):
             href = 'http://zbar.sf.net/test/barcode.png'
 
         self.source = src = ET.Element(ET.QName(BC, 'source'), href=href)
-        sym = ET.SubElement(src, ET.QName(BC, 'symbol'), type='EAN-13')
+        sym = ET.SubElement(src, ET.QName(BC, 'symbol'), type='EAN-13',
+                            orientation='UP')
         data = ET.SubElement(sym, ET.QName(BC, 'data'))
         data.text = '9876543210128'
 
@@ -258,8 +259,9 @@ def compare_indices(expect, actual):
 
 
 def compare_symbols(expect, actual):
-    pass
-
+    orient = expect.get('orientation')
+    if orient:
+        assert actual.get('orientation') == orient
 
 # override unittest.TestLoader to populate tests from xml description
 class TestLoader:

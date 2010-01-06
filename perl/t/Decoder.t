@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 13;
+use Test::More tests => 15;
 
 #########################
 
@@ -19,7 +19,7 @@ $decoder->parse_config('enable');
 #########################
 
 can_ok($decoder, qw(set_config parse_config reset new_scan decode_width
-                    get_color get_data get_type set_handler));
+                    get_color get_direction get_data get_type set_handler));
 
 #########################
 
@@ -58,6 +58,10 @@ is($decoder->get_color(), Barcode::ZBar::SPACE, 'reset color');
 
 #########################
 
+is($decoder->get_direction(), 0, 'reset direction');
+
+#########################
+
 $decoder->set_config(Barcode::ZBar::Symbol::QRCODE,
                      Barcode::ZBar::Config::ENABLE, 0);
 
@@ -79,6 +83,10 @@ is($decoder->get_data(), '6268964977804', 'EAN-13 data');
 #########################
 
 is($decoder->get_color(), Barcode::ZBar::BAR, 'post-scan color');
+
+#########################
+
+is($decoder->get_direction(), 1, 'decode direction');
 
 #########################
 

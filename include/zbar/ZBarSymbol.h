@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2009-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the ZBar Bar Code Reader.
 //
@@ -53,6 +53,7 @@ using namespace zbar;
 @property (readonly, nonatomic) NSString *data;
 @property (readonly, nonatomic) int quality;
 @property (readonly, nonatomic) int count;
+@property (readonly, nonatomic) zbar_orientation_t orientation;
 @property (readonly, nonatomic) ZBarSymbolSet *components;
 @property (readonly, nonatomic) const zbar_symbol_t *zbarSymbol;
 

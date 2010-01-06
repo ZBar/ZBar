@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -56,6 +56,16 @@ const char *zbar_get_addon_name (zbar_symbol_type_t sym)
     }
 }
 
+const char *zbar_get_orientation_name (zbar_orientation_t orient)
+{
+    switch(orient) {
+    case ZBAR_ORIENT_UP: return("UP");
+    case ZBAR_ORIENT_RIGHT: return("RIGHT");
+    case ZBAR_ORIENT_DOWN: return("DOWN");
+    case ZBAR_ORIENT_LEFT: return("LEFT");
+    default: return("UNKNOWN");
+    }
+}
 
 void _zbar_symbol_free (zbar_symbol_t *sym)
 {
@@ -125,6 +135,11 @@ int zbar_symbol_get_loc_y (const zbar_symbol_t *sym,
         return(-1);
 }
 
+zbar_orientation_t zbar_symbol_get_orientation (const zbar_symbol_t *sym)
+{
+    return(sym->orient);
+}
+
 const zbar_symbol_t *zbar_symbol_next (const zbar_symbol_t *sym)
 {
     return((sym) ? sym->next : NULL);
@@ -143,7 +158,7 @@ const zbar_symbol_t *zbar_symbol_first_component (const zbar_symbol_t *sym)
 
 
 static const char *xmlfmt[] = {
-    "<symbol type='%s' quality='%d'",
+    "<symbol type='%s' quality='%d' orientation='%s'",
     " count='%d'",
     "><data><![CDATA[",
     "]]></data></symbol>",
@@ -170,7 +185,8 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
         *len = maxlen;
     }
 
-    int n = snprintf(*buf, maxlen, xmlfmt[0], type, sym->quality);
+    int n = snprintf(*buf, maxlen, xmlfmt[0], type, sym->quality,
+                     zbar_get_orientation_name(sym->orient));
     assert(n > 0);
     assert(n <= maxlen);
 

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the ZBar Bar Code Reader.
 //
@@ -147,6 +147,14 @@ class Decoder {
     int get_data_length() const
     {
         return(zbar_decoder_get_data_length(_decoder));
+    }
+
+    /// retrieve last decode direction.
+    /// see zbar_decoder_get_direction()
+    /// @since 0.11
+    int get_direction() const
+    {
+        return(zbar_decoder_get_direction(_decoder));
     }
 
     /// setup callback to handle result data.

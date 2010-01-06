@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -147,6 +147,11 @@ const char *zbar_decoder_get_data (const zbar_decoder_t *dcode)
 unsigned int zbar_decoder_get_data_length (const zbar_decoder_t *dcode)
 {
     return(dcode->buflen);
+}
+
+int zbar_decoder_get_direction (const zbar_decoder_t *dcode)
+{
+    return(dcode->direction);
 }
 
 zbar_decoder_handler_t *
