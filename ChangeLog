@@ -1,4 +1,7 @@
 current:
+  * fix output of binary data in zbarimg and zbarcam
+    - thanks to fukuchi for a patch!
+    - add base64 format for binary xml output
   * add coarse symbol orientation information (patch #2913094)
     - thanks to Anssi for a patch!
     - add decode direction feedback to decoder

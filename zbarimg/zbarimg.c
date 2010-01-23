@@ -167,21 +167,25 @@ static int scan_image (const char *filename)
             zbar_symbol_type_t typ = zbar_symbol_get_type(sym);
             if(typ == ZBAR_PARTIAL)
                 continue;
-            else if(!xmllvl)
-                printf("%s%s:%s\n",
-                       zbar_get_symbol_name(typ),
-                       zbar_get_addon_name(typ),
-                       zbar_symbol_get_data(sym));
+            else if(!xmllvl) {
+                printf("%s:", zbar_get_symbol_name(typ));
+                fwrite(zbar_symbol_get_data(sym),
+                       zbar_symbol_get_data_length(sym),
+                       1, stdout);
+            }
             else if(xmllvl < 0)
-                printf("%s\n", zbar_symbol_get_data(sym));
+                fwrite(zbar_symbol_get_data(sym),
+                       zbar_symbol_get_data_length(sym),
+                       1, stdout);
             else {
                 if(xmllvl < 3) {
                     xmllvl++;
                     printf("<index num='%u'>\n", seq);
                 }
                 zbar_symbol_xml(sym, &xmlbuf, &xmlbuflen);
-                printf("%s\n", xmlbuf);
+                fwrite(xmlbuf, xmlbuflen, 1, stdout);
             }
+            printf("\n");
             found++;
             num_symbols++;
         }

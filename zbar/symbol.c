@@ -157,26 +157,88 @@ const zbar_symbol_t *zbar_symbol_first_component (const zbar_symbol_t *sym)
 }
 
 
+unsigned base64_encode (char *dst,
+                        const char *src,
+                        unsigned srclen)
+{
+    static const char alphabet[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    char *start = dst;
+    int nline = 19;
+    for(; srclen; srclen -= 3) {
+        unsigned int buf = *(src++) << 16;
+        if(srclen > 1) buf |= *(src++) << 8;
+        if(srclen > 2) buf |= *(src++);
+        *(dst++) = alphabet[(buf >> 18) & 0x3f];
+        *(dst++) = alphabet[(buf >> 12) & 0x3f];
+        *(dst++) = (srclen > 1) ? alphabet[(buf >> 6) & 0x3f] : '=';
+        *(dst++) = (srclen > 2) ? alphabet[buf & 0x3f] : '=';
+        if(srclen < 3) break;
+        if(!--nline) { *(dst++) = '\n'; nline = 19; }
+    }
+    *(dst++) = '\n';
+    *(dst++) = '\0';
+    return(dst - start - 1);
+}
+
 static const char *xmlfmt[] = {
     "<symbol type='%s' quality='%d' orientation='%s'",
     " count='%d'",
-    "><data><![CDATA[",
+    "><data",
+    " format='base64' length='%d'",
+    "><![CDATA[",
+    "\n",
     "]]></data></symbol>",
 };
 
 /* FIXME suspect... */
 #define MAX_INT_DIGITS 10
 
+#define TMPL_COPY(t) do {                        \
+        i = strlen(xmlfmt[(t)]);                 \
+        memcpy(*buf + n, xmlfmt[(t)], i + 1);    \
+        n += i;                                  \
+        assert(n <= maxlen);                     \
+    } while(0)
+
+#define TMPL_FMT(t, ...) do {                                         \
+        i = snprintf(*buf + n, maxlen - n, xmlfmt[(t)], __VA_ARGS__); \
+        assert(i > 0);                                                \
+        n += i;                                                       \
+        assert(n <= maxlen);                                          \
+    } while(0)
+
 char *zbar_symbol_xml (const zbar_symbol_t *sym,
                        char **buf,
                        unsigned *len)
 {
     const char *type = zbar_get_symbol_name(sym->type);
-    /* FIXME binary data */
+    const char *orient = zbar_get_orientation_name(sym->orient);
+
+    /* check for binary data */
+    char binary = ((sym->data[0] == 0xff && sym->data[1] == 0xfe) ||
+                   (sym->data[0] == 0xfe && sym->data[1] == 0xff) ||
+                   !strncmp(sym->data, "<?xml", 5));
+    int i;
+    for(i = 0; !binary && i < sym->datalen; i++) {
+        char c = sym->data[i];
+        binary = ((c < 0x20 && ((~0x00002600 >> c) & 1)) ||
+                  (c == ']' && i + 2 < sym->datalen &&
+                   sym->data[i + 1] == ']' &&
+                   sym->data[i + 2] == '>'));
+    }
+
     unsigned datalen = strlen(sym->data);
+    if(binary)
+        datalen = (sym->datalen + 2) / 3 * 4 + sym->datalen / 57 + 3;
+
     unsigned maxlen = (strlen(xmlfmt[0]) + strlen(xmlfmt[1]) +
-                       strlen(xmlfmt[2]) + strlen(xmlfmt[3]) +
-                       strlen(type) + datalen + MAX_INT_DIGITS + 1);
+                       strlen(xmlfmt[2]) + strlen(xmlfmt[4]) +
+                       strlen(xmlfmt[6]) + strlen(type) + strlen(orient) +
+                       datalen + MAX_INT_DIGITS + 1);
+    if(binary)
+        maxlen += (strlen(xmlfmt[3]) + strlen(xmlfmt[5]) + MAX_INT_DIGITS);
+
     if(!*buf || (*len < maxlen)) {
         if(*buf)
             free(*buf);
@@ -185,33 +247,29 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
         *len = maxlen;
     }
 
-    int n = snprintf(*buf, maxlen, xmlfmt[0], type, sym->quality,
-                     zbar_get_orientation_name(sym->orient));
-    assert(n > 0);
-    assert(n <= maxlen);
+    int n = 0;
 
-    if(sym->cache_count) {
-        int i = snprintf(*buf + n, maxlen - n, xmlfmt[1], sym->cache_count);
-        assert(i > 0);
-        n += i;
-        assert(n <= maxlen);
+    TMPL_FMT(0, type, sym->quality, orient);
+
+    if(sym->cache_count)
+        TMPL_FMT(1, sym->cache_count);
+
+    TMPL_COPY(2);
+    if(binary)
+        TMPL_FMT(3, sym->datalen);
+    TMPL_COPY(4);
+
+    if(!binary) {
+        memcpy(*buf + n, sym->data, sym->datalen + 1);
+        n += sym->datalen;
     }
-
-    int i = strlen(xmlfmt[2]);
-    memcpy(*buf + n, xmlfmt[2], i + 1);
-    n += i;
+    else {
+        TMPL_COPY(5);
+        n += base64_encode(*buf + n, sym->data, sym->datalen);
+    }
     assert(n <= maxlen);
 
-    /* FIXME binary data */
-    /* FIXME handle "]]>" */
-    strncpy(*buf + n, sym->data, datalen + 1);
-    n += datalen;
-    assert(n <= maxlen);
-
-    i = strlen(xmlfmt[3]);
-    memcpy(*buf + n, xmlfmt[3], i + 1);
-    n += i;
-    assert(n <= maxlen);
+    TMPL_COPY(6);
 
     *len = n;
     return(*buf);
