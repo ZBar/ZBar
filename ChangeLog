@@ -1,4 +1,6 @@
 current:
+  * fix iphone custom overlay response (bug #2959617)
+    - thanks to an anonymous user for the patch!
   * report QR immediately for video (no inter-frame consistency check)
   * realtime scanning for iphone widget
     - uses UIGetScreenImage() (NB private)

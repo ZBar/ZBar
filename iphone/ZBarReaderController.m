@@ -243,7 +243,7 @@ CGImageRef UIGetScreenImage(void);
             if(boxView.superview != activeOverlay)
                 [boxView removeFromSuperview];
             if(!boxView.superview)
-                [activeOverlay addSubview: boxView];
+                [activeOverlay insertSubview: boxView atIndex:0];
 
             [scanner setSymbology: 0
                      config: ZBAR_CFG_X_DENSITY
