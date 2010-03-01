@@ -46,6 +46,13 @@ AC_DEFINE_UNQUOTED([LIB_VERSION_REVISION],
   [[`echo "$LIB_VERSION" | sed -e 's/^[^:]*:\([^:]*\):.*$/\1/'`]],
   [Library revision])
 
+AM_CPPFLAGS="-I$srcdir/include"
+AM_CFLAGS="-Wall -Wno-parentheses -Werror"
+AM_CXXFLAGS="$AM_CFLAGS"
+AC_SUBST([AM_CPPFLAGS])
+AC_SUBST([AM_CFLAGS])
+AC_SUBST([AM_CXXFLAGS])
+
 dnl windows build
 
 AC_CANONICAL_HOST
@@ -72,6 +79,29 @@ AC_ARG_VAR([XMLTO], [location of xmlto, used for optional \
 documentation generation])
 AC_ARG_VAR([XMLTOFLAGS], [additional arguments for xmlto])
 AC_CHECK_PROGS([XMLTO], [xmlto], [:])
+
+have_java="maybe"
+AC_ARG_VAR([JAVA_HOME], [root location of JDK])
+AS_IF([test "x$JAVA_HOME" = "x"],
+  [JAVA_PATH="$PATH"],
+  [JAVA_PATH="$JAVA_HOME/bin$PATH_SEPARATOR$PATH"])
+
+AC_ARG_VAR([JAVAC], [location of Java language compiler])
+AC_PATH_PROGS([JAVAC], [javac jikes ecj gcj], [:], [$JAVA_PATH])
+AS_IF([test "x$JAVAC" = "x:"], [have_java="no"])
+
+AC_ARG_VAR([JAVAH], [location of Java header generator])
+AC_PATH_PROGS([JAVAH], [javah], [/bin/false], [$JAVA_PATH])
+
+AC_ARG_VAR([JAR], [location of Java archive tool])
+AC_PATH_PROGS([JAR], [jar], [:], [$JAVA_PATH])
+AS_IF([test "x$JAR" = "x:"], [have_java="no"])
+
+AC_ARG_VAR([JAVA], [location of Java application launcher])
+AC_PATH_PROGS([JAVA], [java], [/bin/false], [$JAVA_PATH])
+
+AC_ARG_VAR([CLASSPATH], [Java class path (include JUnit to run java tests)])
+AS_IF([test "x$CLASSPATH" = "x"], [CLASSPATH="."])
 
 dnl symbologies
 
@@ -255,7 +285,7 @@ AM_CONDITIONAL([HAVE_JPEG], [test "x$with_jpeg" = "xyes"])
 dnl ImageMagick
 AC_ARG_WITH([imagemagick],
   [AS_HELP_STRING([--without-imagemagick],
-    [disable support for scanning images using ImageMagick])],
+    [disable support for scanning images with ImageMagick])],
   [],
   [with_imagemagick="yes"])
 
@@ -296,7 +326,7 @@ AM_CONDITIONAL([HAVE_MAGICK], [test "x$with_imagemagick" = "xyes"])
 dnl Mozilla NPAPI
 AC_ARG_WITH([npapi],
   [AS_HELP_STRING([--with-npapi],
-    [enable support for Firefox/Mozilla/OpenOffice NPAPI plugin])],
+    [enable support for Firefox/Mozilla/OpenOffice plugin])],
   [],
   [with_npapi="no"])
 
@@ -383,6 +413,31 @@ AS_IF([test "x$with_qt" != "xno"],
 
 AM_CONDITIONAL([HAVE_QT], [test "x$with_qt" = "xyes"])
 
+dnl Java
+AC_ARG_WITH([java],
+  [AS_HELP_STRING([--without-java],
+    [disable support for Java interface])],
+  [],
+  [with_java="check"])
+
+AC_ARG_VAR([JAVA_CFLAGS], [compiler flags for building JNI extensions])
+AS_IF([test "x$JAVA_CFLAGS" = "x" && test "x$JAVA_HOME" != "x"],
+  [JAVA_CFLAGS="-I$JAVA_HOME/include"])
+
+AS_IF([test "x$with_java" != "xno"],
+  [CPPFLAGS_save="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS $JAVA_CFLAGS"
+   AC_CHECK_HEADER([jni.h], [], [have_java="no"])
+   CPPFLAGS="$CPPFLAGS_save"
+   AS_IF([test "x$have_java" != "xno"],
+     [with_java="yes"],
+     [test "x$with_java" = "xyes"],
+     [AC_MSG_FAILURE([unable to find Java JNI! ensure CFLAGS are set
+appropriately or configure --without-java])],
+     [with_java="no"])
+])
+AM_CONDITIONAL([HAVE_JAVA], [test "x$with_java" = "xyes"])
+
 
 dnl header files
 
@@ -428,6 +483,7 @@ AC_CONFIG_COMMANDS([doc/reldate.xml],
 
 AC_CONFIG_FILES([
 Makefile
+java/Makefile
 zbar.pc
 zbar-gtk.pc
 zbar-qt.pc
@@ -460,6 +516,9 @@ AS_IF([test "x$with_gtk" != "xyes"],
 echo "Qt4               --with-qt=$with_qt"
 AS_IF([test "x$with_qt" != "xyes"],
   [echo "        => the Qt4 widget will *NOT* be built"])
+echo "Java              --with-java=$with_java"
+AS_IF([test "x$with_java" != "xyes"],
+  [echo "        => the Java interface will *NOT* be built"])
 #echo "NPAPI Plugin     --with-npapi=$with_npapi"
 #AS_IF([test "x$with_mozilla" != "xyes"],
 #  [echo "       => the Mozilla/Firefox/OpenOffice plugin will *NOT* be built"])

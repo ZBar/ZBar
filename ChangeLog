@@ -1,4 +1,7 @@
 current:
+  * add Java interface to library via JNI
+    - add Java tools and JNI build tests to configure
+    - fix compiler warnings from binary output changes
   * fix output of binary data in zbarimg and zbarcam
     - thanks to fukuchi for a patch!
     - add base64 format for binary xml output

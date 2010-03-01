@@ -169,21 +169,31 @@ static int scan_image (const char *filename)
                 continue;
             else if(!xmllvl) {
                 printf("%s:", zbar_get_symbol_name(typ));
-                fwrite(zbar_symbol_get_data(sym),
-                       zbar_symbol_get_data_length(sym),
-                       1, stdout);
+                if(fwrite(zbar_symbol_get_data(sym),
+                          zbar_symbol_get_data_length(sym),
+                          1, stdout) != 1) {
+                    exit_code = 1;
+                    return(-1);
+                }
             }
-            else if(xmllvl < 0)
-                fwrite(zbar_symbol_get_data(sym),
-                       zbar_symbol_get_data_length(sym),
-                       1, stdout);
+            else if(xmllvl < 0) {
+                if(fwrite(zbar_symbol_get_data(sym),
+                          zbar_symbol_get_data_length(sym),
+                          1, stdout) != 1) {
+                    exit_code = 1;
+                    return(-1);
+                }
+            }
             else {
                 if(xmllvl < 3) {
                     xmllvl++;
                     printf("<index num='%u'>\n", seq);
                 }
                 zbar_symbol_xml(sym, &xmlbuf, &xmlbuflen);
-                fwrite(xmlbuf, xmlbuflen, 1, stdout);
+                if(fwrite(xmlbuf, xmlbuflen, 1, stdout) != 1) {
+                    exit_code = 1;
+                    return(-1);
+                }
             }
             printf("\n");
             found++;

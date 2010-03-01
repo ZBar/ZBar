@@ -1,6 +1,3 @@
-AM_CPPFLAGS = -I$(srcdir)/include
-AM_CFLAGS = -Wall -Wno-parentheses -Werror
-AM_CXXFLAGS = $(AM_CFLAGS)
 ACLOCAL_AMFLAGS = -I config
 bin_PROGRAMS =
 check_PROGRAMS =
@@ -9,8 +6,10 @@ lib_LTLIBRARIES =
 pyexec_LTLIBRARIES =
 CLEANFILES =
 DISTCLEANFILES =
+MAINTAINERCLEANFILES =
 BUILT_SOURCES =
 EXTRA_DIST =
+SUBDIRS = .
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = zbar.pc
@@ -38,6 +37,9 @@ endif
 if HAVE_QT
 include $(srcdir)/qt/Makefile.am.inc
 pkgconfig_DATA += zbar-qt.pc
+endif
+if HAVE_JAVA
+SUBDIRS += java
 endif
 if HAVE_NPAPI
 include $(srcdir)/plugin/Makefile.am.inc
