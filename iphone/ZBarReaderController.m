@@ -250,7 +250,7 @@ CGImageRef UIGetScreenImage(void);
             if(boxView.superview != activeOverlay)
                 [boxView removeFromSuperview];
             if(!boxView.superview)
-                [activeOverlay addSubview: boxView];
+                [activeOverlay insertSubview: boxView atIndex:0];
             scanner.enableCache = enableCache;
 
             SEL meth = nil;

@@ -236,7 +236,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = ../../include;
 				PREBINDING = NO;
-				SDKROOT = iphoneos3.0;
+				SDKROOT = iphoneos3.1.3;
 			};
 			name = Debug;
 		};
@@ -250,7 +250,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = ../../include;
 				PREBINDING = NO;
-				SDKROOT = iphoneos3.0;
+				SDKROOT = iphoneos3.1.3;
 			};
 			name = Release;
 		};
@@ -266,7 +266,7 @@
 				HEADER_SEARCH_PATHS = ../../include;
 				PREBINDING = NO;
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
-				SDKROOT = iphoneos3.0;
+				SDKROOT = iphoneos3.1.3;
 			};
 			name = AdHoc;
 		};

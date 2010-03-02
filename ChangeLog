@@ -1,4 +1,6 @@
 current:
+  * fix iphone custom overlay response (bug #2959617)
+    - thanks to an anonymous user for the patch!
   * iphone widget performance tuning enhancements
     - fix crop calculation bug in ZBarImage
     - add properties to control pre-scan image cropping and scaling
