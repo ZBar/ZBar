@@ -21,33 +21,28 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
-#include <sys/times.h>
+#include <mach/mach_time.h>
 
 #ifdef DEBUG_OBJC
 # define zlog(fmt, ...) \
     NSLog(@"ZBarReaderController: " fmt , ##__VA_ARGS__)
 
 #define timer_start \
-    long t_start = timer_now();
-
-static inline long timer_now ()
-{
-    struct tms now;
-    times(&now);
-    return(now.tms_utime + now.tms_stime);
-}
-
-static inline double timer_elapsed (long start, long end)
-{
-    double clk_tck = sysconf(_SC_CLK_TCK);
-    if(!clk_tck)
-        return(-1);
-    return((end - start) / clk_tck);
-}
+    uint64_t t_start = timer_now();
 
 #else
 # define zlog(...)
 # define timer_start
-# define timer_now(...) 0
-# define timer_elapsed(...) 0
 #endif
+
+static inline uint64_t timer_now ()
+{
+    return(mach_absolute_time());
+}
+
+static inline double timer_elapsed (uint64_t start, uint64_t end)
+{
+    mach_timebase_info_data_t info;
+    mach_timebase_info(&info);
+    return((double)(end - start) * info.numer / (info.denom * 1000000000.));
+}

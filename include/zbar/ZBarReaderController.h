@@ -29,6 +29,25 @@
 using namespace zbar;
 #endif
 
+typedef enum {
+    // default interface provided by UIImagePickerController - user manually
+    // captures an image by pressing a button
+    ZBarReaderControllerCameraModeDefault = 0,
+
+    // automatically scan by taking screenshots with UIGetScreenImage().
+    // resolution is limited by the screen, so this is inappropriate for
+    // longer codes
+    ZBarReaderControllerCameraModeSampling,
+
+    // automatically scan by rapidly taking pictures with takePicture.
+    // tradeoff resolution with frame rate by adjusting the crop, and size
+    // properties of the reader along with the density configs of the image
+    // scanner
+    ZBarReaderControllerCameraModeSequence,
+
+} ZBarReaderControllerCameraMode;
+
+
 @class ZBarReaderController, ZBarHelpController;
 
 @protocol ZBarReaderDelegate <UIImagePickerControllerDelegate>
@@ -48,26 +67,66 @@ using namespace zbar;
 {
     ZBarImageScanner *scanner;
     ZBarHelpController *help;
-    UIView *overlay, *controls;
+    UIView *overlay, *boxView;
+    CALayer *boxLayer;
+
+    UIToolbar *toolbar;
+    UIBarButtonItem *cancelBtn, *scanBtn, *space[3];
+    UIButton *infoBtn;
 
     id <ZBarReaderDelegate> readerDelegate;
-    BOOL hasOverlay, showsZBarControls, showsHelpOnFail;
+    BOOL showsZBarControls, showsHelpOnFail, takesPicture, enableCache;
+    ZBarReaderControllerCameraMode cameraMode;
+    CGRect scanCrop;
+    NSInteger maxScanDimension;
+
+    BOOL hasOverlay, sampling;
+    uint64_t t_frame;
+    double dt_frame;
+
+    ZBarSymbol *symbol;
 }
 
 // access to configure image scanner
 @property (readonly, nonatomic) ZBarImageScanner *scanner;
 
-// barcode result recipient
+// barcode result recipient (NB don't use delegate)
 @property (nonatomic, assign) id <ZBarReaderDelegate> readerDelegate;
 
-// whether to use alternate control set (FIXME broken for NO)
+// whether to use alternate control set
 @property (nonatomic) BOOL showsZBarControls;
 
 // whether to display helpful information when decoding fails
 @property (nonatomic) BOOL showsHelpOnFail;
 
+// how to use the camera (when sourceType == Camera)
+@property (nonatomic) ZBarReaderControllerCameraMode cameraMode;
+
+// whether to automatically take a full picture when a barcode is detected
+// (when cameraMode == Sampling)
+@property (nonatomic) BOOL takesPicture;
+
+// whether to use the "cache" for realtime modes (default YES).  this can be
+// used to safely disable the inter-frame consistency and duplicate checks,
+// speeding up recognition, iff:
+//     1. the controller is dismissed when a barcode is read and
+//     2. unreliable symbologies are disabled (all EAN/UPC variants and I2/5)
+@property (nonatomic) BOOL enableCache;
+
+// crop images for scanning.  the original image will be cropped to this
+// rectangle before scanning.  the rectangle is normalized to the image size
+// and aspect ratio; useful values will place the rectangle between 0 and 1
+// on each axis, where the x-axis corresponds to the image major axis.
+// defaults to the full image (0, 0, 1, 1).
+@property (nonatomic) CGRect scanCrop;
+
+// scale image to scan.  after cropping, the image will be scaled if
+// necessary, such that neither of its dimensions exceed this value.
+// defaults to 640.
+@property (nonatomic) NSInteger maxScanDimension;
+
 // direct scanner interface - scan UIImage and return something enumerable
-- (id <NSFastEnumeration>) scanImage: (UIImage*) image;
+- (id <NSFastEnumeration>) scanImage: (CGImageRef) image;
 
 @end
 

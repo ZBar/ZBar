@@ -6,6 +6,7 @@
 
 enum {
     SOURCE_SECTION = 0,
+    CAMODE_SECTION,
     CONFIG_SECTION,
     RESULT_SECTION,
     NUM_SECTIONS
@@ -82,11 +83,26 @@ enum {
         }
     }
 
-    static NSString* const configNames[] = {
-        @"showsHelpOnFail", @"showsZBarControls"
+    static NSString* const modeNames[] = {
+        @"Default", @"Sampling", @"Sequence"
     };
-    NSMutableArray *configs = [NSMutableArray arrayWithCapacity: 2];
-    for(int i = 0; i < 2; i++) {
+    NSMutableArray *modes = [NSMutableArray arrayWithCapacity: 3];
+    for(int i = 0; i < 3; i++) {
+        UITableViewCell *cell = [UITableViewCell new];
+        cell.textLabel.text = modeNames[i];
+        cell.tag = i;
+        if(reader.cameraMode == i)
+            cell.accessoryType = UITableViewCellAccessoryCheckmark;
+        [modes addObject: cell];
+        [cell release];
+    }
+
+    static NSString* const configNames[] = {
+        @"showsHelpOnFail", @"showsZBarControls", @"takesPicture",
+        @"enableCache"
+    };
+    NSMutableArray *configs = [NSMutableArray arrayWithCapacity: 4];
+    for(int i = 0; i < 4; i++) {
         UITableViewCell *cell = [UITableViewCell new];
         cell.textLabel.text = configNames[i];
         if([reader performSelector: NSSelectorFromString(configNames[i])])
@@ -114,7 +130,8 @@ enum {
         [NSArray arrayWithObjects: typeCell, dataCell, imageCell, nil];
 
     sections =
-        [[NSArray arrayWithObjects: sources, configs, results, nil] retain];
+        [[NSArray arrayWithObjects: sources, modes, configs, results, nil]
+            retain];
 }
 
 - (void) viewDidUnload
@@ -156,11 +173,11 @@ enum {
          : UITableViewCellAccessoryNone);
 }
 
-- (void) setSource: (int) state
+- (void) setCheckForTag: (int) tag
+              inSection: (int) section
 {
-    NSArray *sources = [sections objectAtIndex: 0];
-    for(UITableViewCell *cell in sources)
-        [self setCheck: (cell.tag == state)
+    for(UITableViewCell *cell in [sections objectAtIndex: section])
+        [self setCheck: (cell.tag == tag)
               forCell: cell];
 }
 
@@ -205,6 +222,7 @@ enum {
 {
     static NSString * const titles[] = {
         @"SourceType",
+        @"CameraMode",
         @"Reader Configuration",
         @"Decode Results",
     };
@@ -232,7 +250,12 @@ enum {
 
     switch(path.section) {
     case SOURCE_SECTION:
-        [self setSource: reader.sourceType = cell.tag];
+        [self setCheckForTag: reader.sourceType = cell.tag
+              inSection: SOURCE_SECTION];
+        break;
+    case CAMODE_SECTION:
+        [self setCheckForTag: reader.cameraMode = cell.tag
+              inSection: CAMODE_SECTION];
         break;
     case CONFIG_SECTION: {
         BOOL state;
@@ -257,6 +280,14 @@ enum {
                 [alert release];
             }
             state = reader.showsZBarControls;
+            break;
+        case 2:
+            reader.takesPicture = !reader.takesPicture;
+            state = reader.takesPicture;
+            break;
+        case 3:
+            reader.enableCache = !reader.enableCache;
+            state = reader.enableCache;
             break;
         default:
             assert(0);
@@ -284,6 +315,7 @@ enum {
     case 2: return(300);
     default: assert(0);
     }
+    return(44);
 }
 
 // ZBarReaderDelegate

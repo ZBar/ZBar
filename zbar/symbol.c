@@ -216,8 +216,9 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
     const char *orient = zbar_get_orientation_name(sym->orient);
 
     /* check for binary data */
-    char binary = ((sym->data[0] == 0xff && sym->data[1] == 0xfe) ||
-                   (sym->data[0] == 0xfe && sym->data[1] == 0xff) ||
+    unsigned char *data = (unsigned char*)sym->data;
+    char binary = ((data[0] == 0xff && data[1] == 0xfe) ||
+                   (data[0] == 0xfe && data[1] == 0xff) ||
                    !strncmp(sym->data, "<?xml", 5));
     int i;
     for(i = 0; !binary && i < sym->datalen; i++) {
@@ -314,5 +315,11 @@ zbar_symbol_set_first_symbol (const zbar_symbol_set_t *syms)
     zbar_symbol_t *sym = syms->tail;
     if(sym)
         return(sym->next);
+    return(syms->head);
+}
+
+const zbar_symbol_t*
+zbar_symbol_set_first_unfiltered (const zbar_symbol_set_t *syms)
+{
     return(syms->head);
 }

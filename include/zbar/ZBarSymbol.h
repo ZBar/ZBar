@@ -33,10 +33,12 @@ using namespace zbar;
 @interface ZBarSymbolSet : NSObject <NSFastEnumeration>
 {
     const zbar_symbol_set_t *set;
+    BOOL filterSymbols;
 }
 
 @property (readonly, nonatomic) int count;
 @property (readonly, nonatomic) const zbar_symbol_set_t *zbarSymbolSet;
+@property (nonatomic) BOOL filterSymbols;
 
 - (id) initWithSymbolSet: (const zbar_symbol_set_t*) set;
 
@@ -56,6 +58,7 @@ using namespace zbar;
 @property (readonly, nonatomic) zbar_orientation_t orientation;
 @property (readonly, nonatomic) ZBarSymbolSet *components;
 @property (readonly, nonatomic) const zbar_symbol_t *zbarSymbol;
+@property (readonly, nonatomic) CGRect bounds;
 
 - (id) initWithSymbol: (const zbar_symbol_t*) symbol;
 

@@ -1,4 +1,18 @@
 current:
+  * fix iphone custom overlay response (bug #2959617)
+    - thanks to an anonymous user for the patch!
+  * iphone widget performance tuning enhancements
+    - fix crop calculation bug in ZBarImage
+    - add properties to control pre-scan image cropping and scaling
+    - add property for scanner cache control
+    - enable some scanner density control (FIXME should be property)
+    - fix ifdef for quality control (FIXME should be property)
+    - add "sequence" mode test (not actually so useful)
+  * realtime scanning for iphone widget
+    - uses UIGetScreenImage() (NB private)
+    - ZBarImage from CGImage (instead of UIImage)
+    - add crop to scaling step
+    - expose symbol set unfiltered results
   * add Java interface to library via JNI
     - add Java tools and JNI build tests to configure
     - fix compiler warnings from binary output changes
