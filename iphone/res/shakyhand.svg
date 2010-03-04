@@ -22,7 +22,7 @@
       #hand-outline { stroke: #a76; stroke-width: .75; stroke-opacity: 1 }
       #skin-base { fill: #db9 }
       #skin circle { fill: url(#skin-grad);/* stroke: red; stroke-width: .01*/ }
-      #shakes { stroke: #f43; stroke-width: .03125 }
+      #shakes { stroke: #d5f; stroke-width: .03125 } /* #f43 */
     ]]></style>
 
     <clipPath id="hand-clip"><use xlink:href="#hand-outline"/></clipPath>

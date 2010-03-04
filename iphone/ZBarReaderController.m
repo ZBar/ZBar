@@ -68,9 +68,10 @@ CGImageRef UIGetScreenImage(void);
 
 - (void) showHelpOverlay
 {
+    sampling = NO;
+    scanner.enableCache = NO;
     if(!help) {
-        help = [[ZBarHelpController alloc]
-                   initWithTitle: @"Barcode Reader"];
+        help = [ZBarHelpController new];
         help.delegate = self;
     }
     help.wantsFullScreenLayout = YES;
@@ -206,7 +207,7 @@ CGImageRef UIGetScreenImage(void);
     self.view.userInteractionEnabled = YES;
 }
 
-- (void) viewWillAppear: (BOOL) animated
+- (void) initScanning
 {
     if(help) {
         [help.view removeFromSuperview];
@@ -285,7 +286,11 @@ CGImageRef UIGetScreenImage(void);
             [boxView removeFromSuperview];
         }
     }
+}
 
+- (void) viewWillAppear: (BOOL) animated
+{
+    [self initScanning];
     [super viewWillAppear: animated];
 }
 
@@ -598,8 +603,13 @@ CGImageRef UIGetScreenImage(void);
     BOOL camera = (self.sourceType == UIImagePickerControllerSourceTypeCamera);
     BOOL retry = !camera || (hasOverlay && ![self showsCameraControls]);
     if(showsHelpOnFail && retry) {
+        assert(!help);
+        if(help) {
+            [help.view removeFromSuperview];
+            [help release];
+        }
         help = [[ZBarHelpController alloc]
-                   initWithTitle: @"No Barcode Found"];
+                   initWithReason: @"FAIL"];
         help.delegate = self;
         if(camera)
             [self showHelpOverlay];
@@ -634,10 +644,14 @@ CGImageRef UIGetScreenImage(void);
         [UIView beginAnimations: @"ZBarHelp"
                 context: nil];
         hlp.view.alpha = 0;
+        [help.view removeFromSuperview];
         [UIView commitAnimations];
+        [self initScanning];
     }
     else
         [hlp dismissModalViewControllerAnimated: YES];
+    [help release];
+    help = nil;
 }
 
 - (id <NSFastEnumeration>) scanImage: (CGImageRef) image

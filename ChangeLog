@@ -1,4 +1,11 @@
 current:
+  * migrate iphone help display to integrated web page (NB resource updates!)
+    - allows easier customization
+    - local links open directly, external links confirm and jump out to Safari
+    - JavaScript hook for help context customization
+    - also enhanced default help (note this changes the required resources)
+    - fix to disable scanning during help overlay
+    - thanks to iafanasyev and others for detailed suggestions
   * fix iphone custom overlay response (bug #2959617)
     - thanks to an anonymous user for the patch!
   * iphone widget performance tuning enhancements

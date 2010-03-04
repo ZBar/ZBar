@@ -26,15 +26,19 @@
 // failure dialog w/a few useful tips
 
 @interface ZBarHelpController : UIViewController
+                              < UIWebViewDelegate,
+                                UIAlertViewDelegate >
 {
-    NSString *title;
+    NSString *reason;
     id delegate;
+    UIWebView *webView;
+    UIToolbar *toolbar;
+    UIBarButtonItem *doneBtn, *backBtn, *space[2];
+    NSURL *linkURL;
 }
 
 @property (nonatomic, assign) id delegate;
 
-- (id) initWithTitle: (NSString*) title;
+- (id) initWithReason: (NSString*) reason;
 
 @end
-
-extern UIButton *_ZBarButton (CGFloat size, CGFloat r, CGFloat g, CGFloat b);
