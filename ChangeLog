@@ -1,4 +1,5 @@
 current:
+  * fixes to new iphone help display
   * migrate iphone help display to integrated web page (NB resource updates!)
     - allows easier customization
     - local links open directly, external links confirm and jump out to Safari

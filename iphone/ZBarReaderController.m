@@ -66,23 +66,6 @@ CGImageRef UIGetScreenImage(void);
     return(self);
 }
 
-- (void) showHelpOverlay
-{
-    sampling = NO;
-    scanner.enableCache = NO;
-    if(!help) {
-        help = [ZBarHelpController new];
-        help.delegate = self;
-    }
-    help.wantsFullScreenLayout = YES;
-    help.view.alpha = 0;
-    [[self cameraOverlayView] addSubview: help.view];
-    [UIView beginAnimations: @"ZBarHelp"
-            context: nil];
-    help.view.alpha = 1;
-    [UIView commitAnimations];
-}
-
 - (void) initOverlay
 {
     CGRect bounds = self.view.bounds;
@@ -137,7 +120,7 @@ CGImageRef UIGetScreenImage(void);
     r.size.width = 54;
     infoBtn.frame = r;
     [infoBtn addTarget: self
-             action: @selector(showHelpOverlay)
+             action: @selector(info)
              forControlEvents: UIControlEventTouchUpInside];
 }
 
@@ -209,12 +192,6 @@ CGImageRef UIGetScreenImage(void);
 
 - (void) initScanning
 {
-    if(help) {
-        [help.view removeFromSuperview];
-        [help release];
-        help = nil;
-    }
-
     if(hasOverlay &&
        self.sourceType == UIImagePickerControllerSourceTypeCamera) {
         if(showsZBarControls || ![self cameraOverlayView])
@@ -296,6 +273,11 @@ CGImageRef UIGetScreenImage(void);
 
 - (void) viewWillDisappear: (BOOL) animated
 {
+    if(help) {
+        [help.view removeFromSuperview];
+        [help release];
+        help = nil;
+    }
     sampling = NO;
     scanner.enableCache = NO;
     [super viewWillDisappear: animated];
@@ -562,6 +544,36 @@ CGImageRef UIGetScreenImage(void);
     [self updateBox: sym];
 }
 
+- (void) initHelpWithReason: (NSString*) reason
+{
+    if(help) {
+        [help.view removeFromSuperview];
+        [help release];
+    }
+    help = [[ZBarHelpController alloc]
+               initWithReason: reason];
+    help.delegate = self;
+}
+
+- (void) showHelpOverlay
+{
+    sampling = NO;
+    scanner.enableCache = NO;
+    help.wantsFullScreenLayout = YES;
+    help.view.alpha = 0;
+    [[self cameraOverlayView] addSubview: help.view];
+    [UIView beginAnimations: @"ZBarHelp"
+            context: nil];
+    help.view.alpha = 1;
+    [UIView commitAnimations];
+}
+
+- (void) info
+{
+    [self initHelpWithReason: @"HELP"];
+    [self showHelpOverlay];
+}
+
 - (void)  imagePickerController: (UIImagePickerController*) picker
   didFinishPickingMediaWithInfo: (NSDictionary*) info
 {
@@ -603,14 +615,7 @@ CGImageRef UIGetScreenImage(void);
     BOOL camera = (self.sourceType == UIImagePickerControllerSourceTypeCamera);
     BOOL retry = !camera || (hasOverlay && ![self showsCameraControls]);
     if(showsHelpOnFail && retry) {
-        assert(!help);
-        if(help) {
-            [help.view removeFromSuperview];
-            [help release];
-        }
-        help = [[ZBarHelpController alloc]
-                   initWithReason: @"FAIL"];
-        help.delegate = self;
+        [self initHelpWithReason: @"FAIL"];
         if(camera)
             [self showHelpOverlay];
         else
@@ -644,14 +649,11 @@ CGImageRef UIGetScreenImage(void);
         [UIView beginAnimations: @"ZBarHelp"
                 context: nil];
         hlp.view.alpha = 0;
-        [help.view removeFromSuperview];
         [UIView commitAnimations];
         [self initScanning];
     }
     else
         [hlp dismissModalViewControllerAnimated: YES];
-    [help release];
-    help = nil;
 }
 
 - (id <NSFastEnumeration>) scanImage: (CGImageRef) image

@@ -62,10 +62,8 @@ enum { BTN_TRYAGAIN = 1 };
     doneBtn = nil;
     [backBtn release];
     backBtn = nil;
-    [space[0] release];
-    space[0] = nil;
-    [space[1] release];
-    space[1] = nil;
+    [space release];
+    space = nil;
 }
 
 - (void) dealloc
@@ -101,10 +99,9 @@ enum { BTN_TRYAGAIN = 1 };
     toolbar.frame = r;
 
     doneBtn = [[UIBarButtonItem alloc]
-                  initWithBarButtonSystemItem: UIBarButtonSystemItemCamera
+                  initWithBarButtonSystemItem: UIBarButtonSystemItemDone
                   target: self
                   action: @selector(dismiss)];
-    doneBtn.width = 32;
 
     backBtn = [[UIBarButtonItem alloc]
                   initWithImage: [UIImage imageNamed: @"back.png"]
@@ -112,20 +109,13 @@ enum { BTN_TRYAGAIN = 1 };
                   target: webView
                   action: @selector(goBack)];
 
-    space[0] = [[UIBarButtonItem alloc]
-                   initWithBarButtonSystemItem:
-                       UIBarButtonSystemItemFlexibleSpace
-                   target: nil
-                   action: nil];
-    space[1] = [[UIBarButtonItem alloc]
-                   initWithBarButtonSystemItem:
-                       UIBarButtonSystemItemFixedSpace
-                   target: nil
-                   action: nil];
-    space[1].width = r.size.width / 2 - 17;
+    space = [[UIBarButtonItem alloc]
+                initWithBarButtonSystemItem:
+                    UIBarButtonSystemItemFlexibleSpace
+                target: nil
+                action: nil];
 
-    toolbar.items = [NSArray arrayWithObjects:
-                         space[0], doneBtn, space[1], nil];
+    toolbar.items = [NSArray arrayWithObjects: space, doneBtn, nil];
 
     [view addSubview: toolbar];
 
@@ -189,11 +179,9 @@ enum { BTN_TRYAGAIN = 1 };
     NSArray *items = toolbar.items;
     if(canGoBack != ([items objectAtIndex: 0] == backBtn)) {
         if(canGoBack)
-            items = [NSArray arrayWithObjects:
-                         backBtn, space[0], doneBtn, space[1], nil];
+            items = [NSArray arrayWithObjects: backBtn, space, doneBtn, nil];
         else
-            items = [NSArray arrayWithObjects:
-                         space[0], doneBtn, space[1], nil];
+            items = [NSArray arrayWithObjects: space, doneBtn, nil];
         [toolbar setItems: items
                  animated: YES];
     }

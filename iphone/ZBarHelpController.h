@@ -33,7 +33,7 @@
     id delegate;
     UIWebView *webView;
     UIToolbar *toolbar;
-    UIBarButtonItem *doneBtn, *backBtn, *space[2];
+    UIBarButtonItem *doneBtn, *backBtn, *space;
     NSURL *linkURL;
 }
 
