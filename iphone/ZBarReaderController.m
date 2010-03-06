@@ -273,16 +273,10 @@ CGImageRef UIGetScreenImage(void);
 
 - (void) viewWillDisappear: (BOOL) animated
 {
-    if(help) {
-        [help.view removeFromSuperview];
-        [help release];
-        help = nil;
-    }
     sampling = NO;
     scanner.enableCache = NO;
     [super viewWillDisappear: animated];
 }
-
 
 - (BOOL) showsZBarControls
 {
@@ -544,7 +538,7 @@ CGImageRef UIGetScreenImage(void);
     [self updateBox: sym];
 }
 
-- (void) initHelpWithReason: (NSString*) reason
+- (void) showHelpWithReason: (NSString*) reason
 {
     if(help) {
         [help.view removeFromSuperview];
@@ -553,10 +547,14 @@ CGImageRef UIGetScreenImage(void);
     help = [[ZBarHelpController alloc]
                initWithReason: reason];
     help.delegate = self;
-}
 
-- (void) showHelpOverlay
-{
+    if(self.sourceType != UIImagePickerControllerSourceTypeCamera) {
+        [self presentModalViewController: help
+              animated: YES];
+        return;
+    }
+
+    // show help as overlay view to workaround controller bugs
     sampling = NO;
     scanner.enableCache = NO;
     help.wantsFullScreenLayout = YES;
@@ -570,8 +568,7 @@ CGImageRef UIGetScreenImage(void);
 
 - (void) info
 {
-    [self initHelpWithReason: @"HELP"];
-    [self showHelpOverlay];
+    [self showHelpWithReason: @"INFO"];
 }
 
 - (void)  imagePickerController: (UIImagePickerController*) picker
@@ -580,18 +577,20 @@ CGImageRef UIGetScreenImage(void);
     UIImage *img = [info objectForKey: UIImagePickerControllerOriginalImage];
 
     id results = nil;
-    if(!sampling)
+    if(self.sourceType == UIImagePickerControllerSourceTypeCamera &&
+       cameraMode == ZBarReaderControllerCameraModeSequence) {
+        if(sampling)
+            [self performSelector: @selector(scanSequence:)
+                  withObject: [img retain]
+                  afterDelay: 0.001];
+        return;
+    }
+    else if(!sampling)
         results = [self scanImage: img.CGImage];
-    else if(cameraMode == ZBarReaderControllerCameraModeSampling) {
+    else {
         results = [NSArray arrayWithObject: symbol];
         [symbol release];
         symbol = nil;
-    }
-    else {
-        [self performSelector: @selector(scanSequence:)
-              withObject: [img retain]
-              afterDelay: 0.001];
-        return;
     }
 
     [self performSelector: @selector(reenable)
@@ -614,14 +613,8 @@ CGImageRef UIGetScreenImage(void);
 
     BOOL camera = (self.sourceType == UIImagePickerControllerSourceTypeCamera);
     BOOL retry = !camera || (hasOverlay && ![self showsCameraControls]);
-    if(showsHelpOnFail && retry) {
-        [self initHelpWithReason: @"FAIL"];
-        if(camera)
-            [self showHelpOverlay];
-        else
-            [self presentModalViewController: help
-                  animated: YES];
-    }
+    if(showsHelpOnFail && retry)
+        [self showHelpWithReason: @"FAIL"];
 
     SEL cb = @selector(readerControllerDidFailToRead:withRetry:);
     if([readerDelegate respondsToSelector: cb])

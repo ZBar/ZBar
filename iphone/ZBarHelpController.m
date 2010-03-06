@@ -41,7 +41,7 @@ enum { BTN_TRYAGAIN = 1 };
 {
     if(self = [super init]) {
         if(!_reason)
-            _reason = @"HELP";
+            _reason = @"INFO";
         reason = [_reason retain];
     }
     return(self);
