@@ -25,12 +25,12 @@
 #include <string.h>     /* memmove */
 
 #include <zbar.h>
-#include "decoder.h"
 
 #ifdef DEBUG_I25
 # define DEBUG_LEVEL (DEBUG_I25)
 #endif
 #include "debug.h"
+#include "decoder.h"
 
 static inline unsigned char i25_decode1 (unsigned char enc,
                                          unsigned e,
@@ -162,7 +162,7 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
        (CFG(*dcode25, ZBAR_CFG_MAX_LEN) > 0 &&
         dcode25->character > CFG(*dcode25, ZBAR_CFG_MAX_LEN))) {
         dprintf(2, " [invalid len]\n");
-        dcode->lock = 0;
+        release_lock(dcode, ZBAR_I25);
         dcode25->character = -1;
         return(ZBAR_NONE);
     }
@@ -199,7 +199,7 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
             dcode25->character, dcode25->element);
 
     /* lock shared resources */
-    if(!dcode25->character && get_lock(dcode, ZBAR_I25)) {
+    if(!dcode25->character && acquire_lock(dcode, ZBAR_I25)) {
         dcode25->character = -1;
         dprintf(2, " [locked %d]\n", dcode->lock);
         return(ZBAR_PARTIAL);
@@ -212,7 +212,7 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
        ((dcode25->character >= BUFFER_MIN) &&
         size_buf(dcode, dcode25->character + 2))) {
         dprintf(2, (c > 9) ? " [aborted]\n" : " [overflow]\n");
-        dcode->lock = 0;
+        release_lock(dcode, ZBAR_I25);
         dcode25->character = -1;
         return(ZBAR_NONE);
     }
@@ -222,7 +222,7 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
     dprintf(2, " c=%x", c);
     if(c > 9) {
         dprintf(2, " [aborted]\n");
-        dcode->lock = 0;
+        release_lock(dcode, ZBAR_I25);
         dcode25->character = -1;
         return(ZBAR_NONE);
     }

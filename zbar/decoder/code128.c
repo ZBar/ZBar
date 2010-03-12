@@ -25,12 +25,12 @@
 #include <string.h>     /* memmove */
 
 #include <zbar.h>
-#include "decoder.h"
 
 #ifdef DEBUG_CODE128
 # define DEBUG_LEVEL (DEBUG_CODE128)
 #endif
 #include "debug.h"
+#include "decoder.h"
 
 #define NUM_CHARS 108           /* total number of character codes */
 
@@ -457,8 +457,7 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
             return(0);
         }
         /* lock shared resources */
-        if(get_lock(dcode, ZBAR_CODE128)) {
-            dprintf(2, " [locked %d]\n", dcode->lock);
+        if(acquire_lock(dcode, ZBAR_CODE128)) {
             dcode128->character = -1;
             return(0);
         }
@@ -477,7 +476,7 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
             ((dcode128->character >= BUFFER_MIN) &&
              size_buf(dcode, dcode128->character + 1))) {
         dprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
-        dcode->lock = 0;
+        release_lock(dcode, ZBAR_CODE128);
         dcode128->character = -1;
         return(0);
     }
@@ -507,7 +506,7 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
             dprintf(2, " [valid end]\n");
         dcode128->character = -1;
         if(!sym)
-            dcode->lock = 0;
+            release_lock(dcode, ZBAR_CODE128);
         return(sym);
     }
 

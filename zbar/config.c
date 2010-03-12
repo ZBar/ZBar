@@ -25,7 +25,6 @@
 #include <stdlib.h>     /* strtol */
 #include <string.h>     /* strchr, strncmp, strlen */
 #include <errno.h>
-#include <assert.h>
 
 #include <zbar.h>
 

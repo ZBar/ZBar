@@ -1,4 +1,5 @@
 current:
+  * cleanup decoder assertions and locking
   * cleanup and expose iphone help display API
   * fixes to new iphone help display
   * migrate iphone help display to integrated web page (NB resource updates!)

@@ -25,12 +25,12 @@
 #include <string.h>     /* memmove */
 
 #include <zbar.h>
-#include "decoder.h"
 
 #ifdef DEBUG_CODE39
 # define DEBUG_LEVEL (DEBUG_CODE39)
 #endif
 #include "debug.h"
+#include "decoder.h"
 
 #define NUM_CHARS (0x2c)
 
@@ -284,14 +284,15 @@ zbar_symbol_type_t _zbar_decode_code39 (zbar_decoder_t *dcode)
             }
             dcode39->character = -1;
             if(!sym)
-                dcode->lock = 0;
+                release_lock(dcode, ZBAR_CODE39);
             return(sym);
         }
         if(space > dcode39->width / 2) {
             /* inter-character space check failure */
-            dcode->lock = 0;
-            dcode39->character = -1;
             dprintf(2, " ics>%d [invalid ics]", dcode39->width);
+            if(dcode39->character)
+                release_lock(dcode, ZBAR_CODE39);
+            dcode39->character = -1;
         }
         dcode39->element = 0;
         dprintf(2, "\n");
@@ -302,7 +303,7 @@ zbar_symbol_type_t _zbar_decode_code39 (zbar_decoder_t *dcode)
     dprintf(2, " c=%d", c);
 
     /* lock shared resources */
-    if(!dcode39->character && get_lock(dcode, ZBAR_CODE39)) {
+    if(!dcode39->character && acquire_lock(dcode, ZBAR_CODE39)) {
         dcode39->character = -1;
         dprintf(1, " [locked %d]\n", dcode->lock);
         return(ZBAR_PARTIAL);
@@ -312,7 +313,7 @@ zbar_symbol_type_t _zbar_decode_code39 (zbar_decoder_t *dcode)
        ((dcode39->character >= BUFFER_MIN) &&
         size_buf(dcode, dcode39->character + 1))) {
         dprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
-        dcode->lock = 0;
+        release_lock(dcode, ZBAR_CODE39);
         dcode39->character = -1;
         return(ZBAR_NONE);
     }

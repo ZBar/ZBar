@@ -24,14 +24,14 @@
 #include <config.h>
 
 #include <zbar.h>
-#include "decoder.h"
-
-#include "pdf417_hash.h"
 
 #ifdef DEBUG_PDF417
 # define DEBUG_LEVEL (DEBUG_PDF417)
 #endif
 #include "debug.h"
+#include "decoder.h"
+
+#include "pdf417_hash.h"
 
 #define PDF417_STOP 0xbff
 
@@ -152,7 +152,7 @@ static inline signed char pdf417_decode_start(zbar_decoder_t *dcode)
     }
 
     /* lock shared resources */
-    if(get_lock(dcode, ZBAR_PDF417)) {
+    if(acquire_lock(dcode, ZBAR_PDF417)) {
         dprintf(2, " [locked %d]\n", dcode->lock);
         return(0);
     }
@@ -190,7 +190,7 @@ zbar_symbol_type_t _zbar_decode_pdf417 (zbar_decoder_t *dcode)
 
     if(get_color(dcode) != dcode417->direction) {
         int c = dcode417->character;
-        dcode->lock = 0;
+        release_lock(dcode, ZBAR_PDF417);
         dcode417->character = -1;
         zassert(get_color(dcode) == dcode417->direction, ZBAR_NONE,
                 "color=%x dir=%x char=%d elem=0 %s\n",
@@ -203,7 +203,7 @@ zbar_symbol_type_t _zbar_decode_pdf417 (zbar_decoder_t *dcode)
        ((dcode417->character >= BUFFER_MIN) &&
         size_buf(dcode, dcode417->character + 1))) {
         dprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
-        dcode->lock = 0;
+        release_lock(dcode, ZBAR_PDF417);
         dcode417->character = -1;
         return(0);
     }
@@ -214,7 +214,7 @@ zbar_symbol_type_t _zbar_decode_pdf417 (zbar_decoder_t *dcode)
         dprintf(1, " [valid stop]");
         /* FIXME check trailing bar and qz */
         dcode->direction = 1 - 2 * dcode417->direction;
-        dcode->lock = 0;
+        release_lock(dcode, ZBAR_PDF417);
         dcode417->character = -1;
     }
 

@@ -169,12 +169,24 @@ static inline int decode_e (unsigned e,
 }
 
 /* acquire shared state lock */
-static inline char get_lock (zbar_decoder_t *dcode,
-                             zbar_symbol_type_t req)
+static inline char acquire_lock (zbar_decoder_t *dcode,
+                                 zbar_symbol_type_t req)
 {
-    if(dcode->lock)
+    if(dcode->lock) {
+        dprintf(2, " [locked %d]\n", dcode->lock);
         return(1);
+    }
     dcode->lock = req;
+    return(0);
+}
+
+/* check and release shared state lock */
+static inline char release_lock (zbar_decoder_t *dcode,
+                                 zbar_symbol_type_t req)
+{
+    zassert(dcode->lock == req, 1, "lock=%d req=%d\n",
+            dcode->lock, req);
+    dcode->lock = 0;
     return(0);
 }
 

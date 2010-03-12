@@ -27,7 +27,6 @@
 #include <string.h>     /* memset, strlen */
 
 #include <zbar.h>
-#include "decoder.h"
 
 #if defined(DEBUG_DECODER) || defined(DEBUG_EAN) ||             \
     defined(DEBUG_CODE39) || defined(DEBUG_I25) ||              \
@@ -36,6 +35,7 @@
 # define DEBUG_LEVEL 1
 #endif
 #include "debug.h"
+#include "decoder.h"
 
 zbar_decoder_t *zbar_decoder_create ()
 {
@@ -186,47 +186,48 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
     dprintf(1, "    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
 
     /* each decoder processes width stream in parallel */
-    zbar_symbol_type_t sym = dcode->type = ZBAR_NONE;
+    zbar_symbol_type_t tmp, sym = ZBAR_NONE;
 
 #ifdef ENABLE_EAN
     if((dcode->ean.enable) &&
-       (sym = _zbar_decode_ean(dcode)))
-        dcode->type = sym;
-#endif
-#ifdef ENABLE_CODE39
-    if(TEST_CFG(dcode->code39.config, ZBAR_CFG_ENABLE) &&
-       (sym = _zbar_decode_code39(dcode)) > ZBAR_PARTIAL)
-        dcode->type = sym;
-#endif
-#ifdef ENABLE_CODE128
-    if(TEST_CFG(dcode->code128.config, ZBAR_CFG_ENABLE) &&
-       (sym = _zbar_decode_code128(dcode)) > ZBAR_PARTIAL)
-        dcode->type = sym;
-#endif
-#ifdef ENABLE_I25
-    if(TEST_CFG(dcode->i25.config, ZBAR_CFG_ENABLE) &&
-       (sym = _zbar_decode_i25(dcode)) > ZBAR_PARTIAL)
-        dcode->type = sym;
-#endif
-#ifdef ENABLE_PDF417
-    if(TEST_CFG(dcode->pdf417.config, ZBAR_CFG_ENABLE) &&
-       (sym = _zbar_decode_pdf417(dcode)) > ZBAR_PARTIAL)
-        dcode->type = sym;
+       (tmp = _zbar_decode_ean(dcode)))
+        sym = tmp;
 #endif
 #ifdef ENABLE_QRCODE
     if(TEST_CFG(dcode->qrf.config, ZBAR_CFG_ENABLE) &&
-       (sym = _zbar_find_qr(dcode)) > ZBAR_PARTIAL)
-        dcode->type = sym;
+       (tmp = _zbar_find_qr(dcode)) > ZBAR_PARTIAL)
+        sym = tmp;
+#endif
+#ifdef ENABLE_CODE39
+    if(TEST_CFG(dcode->code39.config, ZBAR_CFG_ENABLE) &&
+       (tmp = _zbar_decode_code39(dcode)) > ZBAR_PARTIAL)
+        sym = tmp;
+#endif
+#ifdef ENABLE_CODE128
+    if(TEST_CFG(dcode->code128.config, ZBAR_CFG_ENABLE) &&
+       (tmp = _zbar_decode_code128(dcode)) > ZBAR_PARTIAL)
+        sym = tmp;
+#endif
+#ifdef ENABLE_I25
+    if(TEST_CFG(dcode->i25.config, ZBAR_CFG_ENABLE) &&
+       (tmp = _zbar_decode_i25(dcode)) > ZBAR_PARTIAL)
+        sym = tmp;
+#endif
+#ifdef ENABLE_PDF417
+    if(TEST_CFG(dcode->pdf417.config, ZBAR_CFG_ENABLE) &&
+       (tmp = _zbar_decode_pdf417(dcode)) > ZBAR_PARTIAL)
+        sym = tmp;
 #endif
 
     dcode->idx++;
-    if(dcode->type) {
+    dcode->type = sym;
+    if(sym) {
+        if(dcode->lock && sym > ZBAR_PARTIAL && sym != ZBAR_QRCODE)
+            release_lock(dcode, sym);
         if(dcode->handler)
             dcode->handler(dcode);
-        if(dcode->lock && dcode->type > ZBAR_PARTIAL)
-            dcode->lock = 0;
     }
-    return(dcode->type);
+    return(sym);
 }
 
 static inline int decoder_set_config_bool (zbar_decoder_t *dcode,
