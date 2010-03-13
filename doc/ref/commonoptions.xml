@@ -48,7 +48,8 @@
       <option>upca</option>, <option>upce</option>,
       <option>isbn13</option>, <option>isbn10</option>,
       <option>i25</option>, <option>code39</option>,
-      <option>code128</option> or the special value <option>*</option>.
+      <option>code128</option>, <option>qrcode</option>
+      or the special value <option>*</option>.
       If <replaceable class="parameter">symbology</replaceable> is
       omitted or <option>*</option>, the <replaceable
       class="parameter">config</replaceable> will be set for all

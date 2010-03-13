@@ -1,5 +1,6 @@
 current:
-  * cleanup decoder assertions and locking
+  * fix QR Code missing from man pages (bug #2969857)
+  * cleanup decoder assertions and locking (bug #2966916)
   * cleanup and expose iphone help display API
   * fixes to new iphone help display
   * migrate iphone help display to integrated web page (NB resource updates!)
