@@ -1,4 +1,5 @@
 current:
+  * adjust Python module README (add examples and note DLL in path)
   * fix QR Code missing from man pages (bug #2969857)
   * cleanup decoder assertions and locking (bug #2966916)
   * cleanup and expose iphone help display API
