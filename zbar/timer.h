@@ -45,7 +45,8 @@ typedef struct timespec zbar_timer_t;
 
 static inline int _zbar_timer_now ()
 {
-    clock_gettime(CLOCK_REALTIME, timer);
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
     return(now.tv_sec * 1000 + now.tv_nsec / 1000000);
 }
 

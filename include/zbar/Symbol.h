@@ -178,6 +178,7 @@ public:
             _sym->ref(-1);
             _sym = iter._sym;
             _index = iter._index;
+            return(*this);
         }
 
         /// truth testing.
@@ -269,6 +270,7 @@ public:
             zbar_symbol_ref(sym, 1);
         ref(-1);
         init(sym);
+        return(*this);
     }
 
     /// truth testing.
@@ -450,6 +452,7 @@ public:
     {
         _syms = iter._syms;
         _sym = iter._sym;
+        return(*this);
     }
 
     bool operator! () const
