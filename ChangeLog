@@ -1,4 +1,8 @@
 current:
+  * core library portability improvements
+    - remove some unnecessary C99 syntax
+    - add configure checks for errno
+    - enhance C++ Symbol interface
   * adjust Python module README (add examples and note DLL in path)
   * fix QR Code missing from man pages (bug #2969857)
   * cleanup decoder assertions and locking (bug #2966916)

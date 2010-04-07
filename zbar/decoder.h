@@ -194,6 +194,7 @@ static inline char release_lock (zbar_decoder_t *dcode,
 static inline char size_buf (zbar_decoder_t *dcode,
                              unsigned len)
 {
+    unsigned char *buf;
     if(len < dcode->buf_alloc)
         /* FIXME size reduction heuristic? */
         return(0);
@@ -204,7 +205,7 @@ static inline char size_buf (zbar_decoder_t *dcode,
         if(len > BUFFER_MAX)
             len = BUFFER_MAX;
     }
-    unsigned char *buf = realloc(dcode->buf, len);
+    buf = realloc(dcode->buf, len);
     if(!buf)
         return(1);
     dcode->buf = buf;

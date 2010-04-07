@@ -212,6 +212,9 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
                        char **buf,
                        unsigned *len)
 {
+    unsigned int datalen, maxlen;
+    int i, n = 0;
+
     const char *type = zbar_get_symbol_name(sym->type);
     const char *orient = zbar_get_orientation_name(sym->orient);
 
@@ -220,7 +223,6 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
     char binary = ((data[0] == 0xff && data[1] == 0xfe) ||
                    (data[0] == 0xfe && data[1] == 0xff) ||
                    !strncmp(sym->data, "<?xml", 5));
-    int i;
     for(i = 0; !binary && i < sym->datalen; i++) {
         char c = sym->data[i];
         binary = ((c < 0x20 && ((~0x00002600 >> c) & 1)) ||
@@ -229,14 +231,14 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
                    sym->data[i + 2] == '>'));
     }
 
-    unsigned datalen = strlen(sym->data);
+    datalen = strlen(sym->data);
     if(binary)
         datalen = (sym->datalen + 2) / 3 * 4 + sym->datalen / 57 + 3;
 
-    unsigned maxlen = (strlen(xmlfmt[0]) + strlen(xmlfmt[1]) +
-                       strlen(xmlfmt[2]) + strlen(xmlfmt[4]) +
-                       strlen(xmlfmt[6]) + strlen(type) + strlen(orient) +
-                       datalen + MAX_INT_DIGITS + 1);
+    maxlen = (strlen(xmlfmt[0]) + strlen(xmlfmt[1]) +
+              strlen(xmlfmt[2]) + strlen(xmlfmt[4]) +
+              strlen(xmlfmt[6]) + strlen(type) + strlen(orient) +
+              datalen + MAX_INT_DIGITS + 1);
     if(binary)
         maxlen += (strlen(xmlfmt[3]) + strlen(xmlfmt[5]) + MAX_INT_DIGITS);
 
@@ -247,8 +249,6 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
         /* FIXME check OOM */
         *len = maxlen;
     }
-
-    int n = 0;
 
     TMPL_FMT(0, type, sym->quality, orient);
 

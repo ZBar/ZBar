@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -30,7 +30,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
+#ifdef HAVE_ERRNO_H
+# include <errno.h>
+#endif
 #include <assert.h>
 
 #include <zbar.h>
@@ -146,10 +148,12 @@ static inline int err_capture (const void *container,
 {
     errinfo_t *err = (errinfo_t*)container;
     assert(err->magic == ERRINFO_MAGIC);
+#ifdef HAVE_ERRNO_H
     if(type == ZBAR_ERR_SYSTEM)
         err->errnum = errno;
+#endif
 #ifdef _WIN32
-    else if(type == ZBAR_ERR_WINAPI)
+    if(type == ZBAR_ERR_WINAPI)
         err->errnum = GetLastError();
 #endif
     err->sev = sev;

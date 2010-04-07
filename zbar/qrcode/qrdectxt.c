@@ -3,6 +3,7 @@
    GNU Lesser General Public License as published by the Free Software
    Foundation; either version 2.1 of the License, or (at your option) any later
    version.*/
+#include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -79,6 +80,10 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
     int                       err;
     int                       j;
     int                       k;
+    zbar_symbol_t *syms = NULL, **sym = &syms;
+    qr_point dir;
+    int horiz;
+
     /*Step 0: Collect the other QR codes belonging to this S-A group.*/
     if(qrdata[i].sa_size){
       unsigned sa_parity;
@@ -138,7 +143,6 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
     enc_list[2]=utf8_cd;
     eci_cd=(iconv_t)-1;
     err=0;
-    zbar_symbol_t *syms = NULL, **sym = &syms;
     for(j = 0; j < sa_size && !err; j++, sym = &(*sym)->next) {
       *sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, 0);
       (*sym)->datalen = sa_ntext;
@@ -168,13 +172,11 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
       sym_add_point(*sym, qrdataj->bbox[1][0], qrdataj->bbox[1][1]);
 
       /* approx symbol "up" direction */
-      qr_point dir = {
-          qrdataj->bbox[0][0] - qrdataj->bbox[2][0] +
-          qrdataj->bbox[1][0] - qrdataj->bbox[3][0],
-          qrdataj->bbox[2][1] - qrdataj->bbox[0][1] +
-          qrdataj->bbox[3][1] - qrdataj->bbox[1][1],
-      };
-      int horiz = abs(dir[0]) > abs(dir[1]);
+      dir[0] = (qrdataj->bbox[0][0] - qrdataj->bbox[2][0] +
+                qrdataj->bbox[1][0] - qrdataj->bbox[3][0]);
+      dir[1] = (qrdataj->bbox[2][1] - qrdataj->bbox[0][1] +
+                qrdataj->bbox[3][1] - qrdataj->bbox[1][1]);
+      horiz = abs(dir[0]) > abs(dir[1]);
       (*sym)->orient = horiz + 2 * (dir[1 - horiz] < 0);
 
       for(k=0;k<qrdataj->nentries&&!err;k++){
@@ -341,26 +343,27 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
     }
     if(eci_cd!=(iconv_t)-1)iconv_close(eci_cd);
     if(!err){
+      zbar_symbol_t *sa_sym;
       sa_text[sa_ntext++]='\0';
       if(sa_ctext+1>sa_ntext){
         sa_text=(char *)realloc(sa_text,sa_ntext*sizeof(*sa_text));
       }
 
-      zbar_symbol_t *sa_sym;
       if(sa_size == 1)
           sa_sym = syms;
       else {
+          /* cheap out w/axis aligned bbox for now */
+          int xmin = img->width, xmax = -2;
+          int ymin = img->height, ymax = -2;
+
           /* create "virtual" container symbol for composite result */
           sa_sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, 0);
           sa_sym->syms = _zbar_symbol_set_create();
           sa_sym->syms->head = syms;
 
-          /* cheap out w/axis aligned bbox for now */
-          int xmin = img->width, xmax = -2;
-          int ymin = img->height, ymax = -2;
-
           /* fixup data references */
           for(; syms; syms = syms->next) {
+              int next;
               _zbar_symbol_refcnt(syms, 1);
               if(syms->type == ZBAR_PARTIAL)
                   sa_sym->type = ZBAR_PARTIAL;
@@ -374,7 +377,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
                       if(ymax <= u) ymax = u + 1;
                   }
               syms->data = sa_text + syms->datalen;
-              int next = (syms->next) ? syms->next->datalen : sa_ntext;
+              next = (syms->next) ? syms->next->datalen : sa_ntext;
               assert(next > syms->datalen);
               syms->datalen = next - syms->datalen - 1;
           }

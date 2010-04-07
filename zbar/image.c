@@ -109,9 +109,10 @@ inline void zbar_image_free_data (zbar_image_t *img)
     if(!img)
         return;
     if(img->src) {
+        zbar_image_t *newimg;
         /* replace video image w/new copy */
         assert(img->refcnt); /* FIXME needs lock */
-        zbar_image_t *newimg = zbar_image_create();
+        newimg = zbar_image_create();
         memcpy(newimg, img, sizeof(zbar_image_t));
         /* recycle video image */
         newimg->cleanup(newimg);
@@ -202,10 +203,12 @@ int zbar_image_write (const zbar_image_t *img,
                       const char *filebase)
 {
     int len = strlen(filebase) + 16;
-    char filename[len];
+    char *filename = malloc(len);
+    int n = 0, rc = 0;
+    FILE *f;
+    zimg_hdr_t hdr;
     strcpy(filename, filebase);
-    int n = 0;
-    if(img->format & 0xff >= ' ')
+    if((img->format & 0xff) >= ' ')
         n = snprintf(filename, len, "%s.%.4s.zimg",
                      filebase, (char*)&img->format);
     else
@@ -217,14 +220,17 @@ int zbar_image_write (const zbar_image_t *img,
     zprintf(1, "dumping %.4s(%08" PRIx32 ") image to %s\n",
             (char*)&img->format, img->format, filename);
 
-    FILE *f = fopen(filename, "w");
+    f = fopen(filename, "w");
     if(!f) {
-        int rc = errno;
+#ifdef HAVE_ERRNO_H
+        rc = errno;
         zprintf(1, "ERROR opening %s: %s\n", filename, strerror(rc));
-        return(rc);
+#else
+        rc = 1;
+#endif
+        goto error;
     }
 
-    zimg_hdr_t hdr;
     hdr.magic = 0x676d697a;
     hdr.format = img->format;
     hdr.width = img->width;
@@ -233,12 +239,21 @@ int zbar_image_write (const zbar_image_t *img,
 
     if(fwrite(&hdr, sizeof(hdr), 1, f) != 1 ||
        fwrite(img->data, 1, img->datalen, f) != img->datalen) {
-        int rc = errno;
+#ifdef HAVE_ERRNO_H
+        rc = errno;
         zprintf(1, "ERROR writing %s: %s\n", filename, strerror(rc));
+#else
+        rc = 1;
+#endif
         fclose(f);
-        return(rc);
+        goto error;
     }
-    return(fclose(f));
+
+    rc = fclose(f);
+
+error:
+    free(filename);
+    return(rc);
 }
 
 #ifdef DEBUG_SVG

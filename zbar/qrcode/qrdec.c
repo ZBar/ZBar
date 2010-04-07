@@ -3,6 +3,7 @@
    GNU Lesser General Public License as published by the Free Software
    Foundation; either version 2.1 of the License, or (at your option) any later
    version.*/
+#include <config.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
@@ -2577,8 +2578,8 @@ static inline void qr_svg_points(const char *cls,
                                  qr_point *p,
                                  int n)
 {
-    svg_path_start(cls, 1, 0, 0);
     int i;
+    svg_path_start(cls, 1, 0, 0);
     for(i = 0; i < n; i++, p++)
         svg_path_moveto(SVG_ABS, p[0][0], p[0][1]);
     svg_path_end();
@@ -3913,7 +3914,7 @@ int _zbar_qr_decode (qr_reader *reader,
                      zbar_image_scanner_t *iscn,
                      zbar_image_t *img)
 {
-    int nqrdata = 0;
+    int nqrdata = 0, ncenters;
     qr_finder_edge_pt *edge_pts = NULL;
     qr_finder_center *centers = NULL;
 
@@ -3923,7 +3924,7 @@ int _zbar_qr_decode (qr_reader *reader,
 
     svg_group_start("finder", 0, 1. / (1 << QR_FINDER_SUBPREC), 0, 0, 0);
 
-    int ncenters = qr_finder_centers_locate(&centers, &edge_pts, reader, 0, 0);
+    ncenters = qr_finder_centers_locate(&centers, &edge_pts, reader, 0, 0);
 
     zprintf(14, "%dx%d finders, %d centers:\n",
             reader->finder_lines[0].nlines,

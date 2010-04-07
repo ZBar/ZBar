@@ -24,7 +24,9 @@
 #include <config.h>
 #include <stdlib.h>     /* strtol */
 #include <string.h>     /* strchr, strncmp, strlen */
-#include <errno.h>
+#ifdef HAVE_ERRNO_H
+# include <errno.h>
+#endif
 
 #include <zbar.h>
 
@@ -33,10 +35,13 @@ int zbar_parse_config (const char *cfgstr,
                         zbar_config_t *cfg,
                         int *val)
 {
+    const char *dot, *eq;
+    int len;
+    char negate;
     if(!cfgstr)
         return(1);
 
-    const char *dot = strchr(cfgstr, '.');
+    dot = strchr(cfgstr, '.');
     if(dot) {
         int len = dot - cfgstr;
         if(!len || (len == 1 && !strncmp(cfgstr, "*", len)))
@@ -89,13 +94,13 @@ int zbar_parse_config (const char *cfgstr,
     else
         *sym = 0;
 
-    int len = strlen(cfgstr);
-    const char *eq = strchr(cfgstr, '=');
+    len = strlen(cfgstr);
+    eq = strchr(cfgstr, '=');
     if(eq)
         len = eq - cfgstr;
     else
         *val = 1;  /* handle this here so we can override later */
-    char negate = 0;
+    negate = 0;
 
     if(len > 3 && !strncmp(cfgstr, "no-", 3)) {
         negate = 1;
@@ -135,10 +140,14 @@ int zbar_parse_config (const char *cfgstr,
         return(1);
 
     if(eq) {
+#ifdef HAVE_ERRNO_H
         errno = 0;
+#endif
         *val = strtol(eq + 1, NULL, 0);
+#ifdef HAVE_ERRNO_H
         if(errno)
             return(1);
+#endif
     }
     if(negate)
         *val = !*val;

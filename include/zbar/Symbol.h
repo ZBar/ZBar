@@ -64,6 +64,21 @@ public:
         ref(-1);
     }
 
+    /// assignment.
+    SymbolSet& operator= (const SymbolSet& syms)
+    {
+        syms.ref();
+        ref(-1);
+        _syms = syms._syms;
+        return(*this);
+    }
+
+    /// truth testing.
+    bool operator! () const
+    {
+        return(!_syms || !get_size());
+    }
+
     /// manipulate reference count.
     void ref (int delta = 1) const
     {
@@ -77,7 +92,7 @@ public:
         return(_syms);
     }
 
-    int get_size ()
+    int get_size () const
     {
         return((_syms) ? zbar_symbol_set_get_size(_syms) : 0);
     }
@@ -112,9 +127,16 @@ public:
 
         /// copy constructor.
         Point (const Point& pt)
+            : x(pt.x),
+              y(pt.y)
+        { }
+
+        /// assignment.
+        Point& operator= (const Point& pt)
         {
             x = pt.x;
             y = pt.y;
+            return(*this);
         }
     };
 
@@ -135,7 +157,7 @@ public:
                 _index = -1;
         }
 
-        /// constructor.
+        /// copy constructor.
         PointIterator (const PointIterator& iter)
             : _sym(iter._sym),
               _index(iter._index)
@@ -147,6 +169,21 @@ public:
         ~PointIterator ()
         {
             _sym->ref(-1);
+        }
+
+        /// assignment.
+        PointIterator& operator= (const PointIterator& iter)
+        {
+            iter._sym->ref();
+            _sym->ref(-1);
+            _sym = iter._sym;
+            _index = iter._index;
+        }
+
+        /// truth testing.
+        bool operator! () const
+        {
+            return(!_sym || _index < 0);
         }
 
         /// advance iterator to next Point.
@@ -161,7 +198,9 @@ public:
         /// retrieve currently referenced Point.
         const Point operator* () const
         {
-            assert(_index >= 0);
+            assert(!!*this);
+            if(!*this)
+                return(Point());
             return(Point(zbar_symbol_get_loc_x(*_sym, _index),
                          zbar_symbol_get_loc_y(*_sym, _index)));
         }
@@ -211,6 +250,31 @@ public:
         if(_xmlbuf)
             free(_xmlbuf);
         ref(-1);
+    }
+
+    /// assignment.
+    Symbol& operator= (const Symbol& sym)
+    {
+        sym.ref(1);
+        ref(-1);
+        _sym = sym._sym;
+        _type = sym._type;
+        _data = sym._data;
+        return(*this);
+    }
+
+    Symbol& operator= (const zbar_symbol_t *sym)
+    {
+        if(sym)
+            zbar_symbol_ref(sym, 1);
+        ref(-1);
+        init(sym);
+    }
+
+    /// truth testing.
+    bool operator! () const
+    {
+        return(!_sym);
     }
 
     void ref (int delta = 1) const
@@ -327,9 +391,6 @@ public:
     }
 
 protected:
-
-    friend class SymbolIterator;
-
     /// (re)initialize Symbol from C symbol object.
     void init (const zbar_symbol_t *sym = NULL)
     {
@@ -368,7 +429,7 @@ public:
     {
         const zbar_symbol_set_t *zsyms = _syms;
         if(zsyms)
-            _sym.init(zbar_symbol_set_first_symbol(zsyms));
+            _sym = zbar_symbol_set_first_symbol(zsyms);
     }
 
     /// copy constructor.
@@ -377,25 +438,32 @@ public:
     {
         const zbar_symbol_set_t *zsyms = _syms;
         if(zsyms)
-            _sym.init(zbar_symbol_set_first_symbol(zsyms));
+            _sym = zbar_symbol_set_first_symbol(zsyms);
     }
 
     ~SymbolIterator ()
     {
-        _sym.init();
+    }
+
+    /// assignment.
+    SymbolIterator& operator= (const SymbolIterator& iter)
+    {
+        _syms = iter._syms;
+        _sym = iter._sym;
+    }
+
+    bool operator! () const
+    {
+        return(!_syms || !_sym);
     }
 
     /// advance iterator to next Symbol.
     SymbolIterator& operator++ ()
     {
-        const zbar_symbol_t *zsym = _sym;
-        if(zsym)
-            _sym.init(zbar_symbol_next(zsym));
-        else {
-            const zbar_symbol_set_t *zsyms = _syms;
-            if(zsyms)
-                _sym.init(zbar_symbol_set_first_symbol(zsyms));
-        }
+        if(!!_sym)
+            _sym = zbar_symbol_next(_sym);
+        else if(!!_syms)
+            _sym = zbar_symbol_set_first_symbol(_syms);
         return(*this);
     }
 

@@ -156,7 +156,7 @@ int zbar_decoder_get_direction (const zbar_decoder_t *dcode)
 
 zbar_decoder_handler_t *
 zbar_decoder_set_handler (zbar_decoder_t *dcode,
-                          zbar_decoder_handler_t handler)
+                          zbar_decoder_handler_t *handler)
 {
     zbar_decoder_handler_t *result = dcode->handler;
     dcode->handler = handler;
@@ -182,12 +182,12 @@ zbar_symbol_type_t zbar_decoder_get_type (const zbar_decoder_t *dcode)
 zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
                                       unsigned w)
 {
+    zbar_symbol_type_t tmp, sym = ZBAR_NONE;
+
     dcode->w[dcode->idx & (DECODE_WINDOW - 1)] = w;
     dprintf(1, "    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
 
     /* each decoder processes width stream in parallel */
-    zbar_symbol_type_t tmp, sym = ZBAR_NONE;
-
 #ifdef ENABLE_EAN
     if((dcode->ean.enable) &&
        (tmp = _zbar_decode_ean(dcode)))
@@ -391,16 +391,18 @@ const char *_zbar_decoder_buf_dump (unsigned char *buf,
                                     unsigned int buflen)
 {
     int dumplen = (buflen * 3) + 12;
+    char *p;
+    int i;
+
     if(!decoder_dump || dumplen > decoder_dumplen) {
         if(decoder_dump)
             free(decoder_dump);
         decoder_dump = malloc(dumplen);
         decoder_dumplen = dumplen;
     }
-    char *p = decoder_dump +
+    p = decoder_dump +
         snprintf(decoder_dump, 12, "buf[%04x]=",
                  (buflen > 0xffff) ? 0xffff : buflen);
-    int i;
     for(i = 0; i < buflen; i++)
         p += snprintf(p, 4, "%s%02x", (i) ? " " : "",  buf[i]);
     return(decoder_dump);

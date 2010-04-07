@@ -43,18 +43,20 @@ qr_finder_line *_zbar_decoder_get_qr_finder_line (zbar_decoder_t *dcode)
 zbar_symbol_type_t _zbar_find_qr (zbar_decoder_t *dcode)
 {
     qr_finder_t *qrf = &dcode->qrf;
+    unsigned s, qz, w;
+    int ei;
 
     /* update latest finder pattern width */
     qrf->s5 -= get_width(dcode, 6);
     qrf->s5 += get_width(dcode, 1);
-    unsigned s = qrf->s5;
+    s = qrf->s5;
 
     if(get_color(dcode) != ZBAR_SPACE || s < 7)
         return(0);
 
     dprintf(2, "    qrf: s=%d", s);
 
-    int ei = decode_e(pair_width(dcode, 1), s, 7);
+    ei = decode_e(pair_width(dcode, 1), s, 7);
     dprintf(2, " %d", ei);
     if(ei)
         goto invalid;
@@ -77,8 +79,8 @@ zbar_symbol_type_t _zbar_find_qr (zbar_decoder_t *dcode)
     /* valid QR finder symbol
      * mark positions needed by decoder
      */
-    unsigned qz = get_width(dcode, 0);
-    unsigned w = get_width(dcode, 1);
+    qz = get_width(dcode, 0);
+    w = get_width(dcode, 1);
     qrf->line.eoffs = qz + (w + 1) / 2;
     qrf->line.len = qz + w + get_width(dcode, 2);
     qrf->line.pos[0] = qrf->line.len + get_width(dcode, 3);
