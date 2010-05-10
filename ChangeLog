@@ -1,4 +1,5 @@
 current:
+  * relax Code 39 width ratio checks
   * core library portability improvements
     - remove some unnecessary C99 syntax
     - add configure checks for errno

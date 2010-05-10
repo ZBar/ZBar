@@ -130,11 +130,11 @@ static inline unsigned char code39_decode1 (unsigned char enc,
                                             unsigned e,
                                             unsigned s)
 {
-    unsigned char E = decode_e(e, s, 36);
-    if(E > 7)
+    unsigned char E = decode_e(e, s, 72);
+    if(E > 18)
         return(0xff);
     enc <<= 1;
-    if(E > 2) {
+    if(E > 6) {
         enc |= 1;
         dprintf(2, "1");
     }
