@@ -33,7 +33,6 @@
       <holder>Jeff Brown</holder>
     </copyright>
     <legalnotice><para>All Rights Reserved</para></legalnotice>
-    <!-- <legalnotice><para>insert GNU FDL header?</para></legalnotice> -->
   </bookinfo>
 
   <chapter id="intro">
@@ -48,7 +47,4 @@
     &refzbarimg;
 
   </reference>
-
-  <!-- insert GNU FDL? -->
-
 </book>
