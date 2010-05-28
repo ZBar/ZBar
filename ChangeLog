@@ -1,4 +1,5 @@
 current:
+  * fix couple of leaks
   * remove doc hints about GFDL (bug #3004411)
     - apply LGPL to API docs
   * relax Code 39 width ratio checks

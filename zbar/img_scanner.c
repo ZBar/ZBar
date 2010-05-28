@@ -653,6 +653,8 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
     svg_open("debug.svg", 0, 0, w, h);
     svg_image("debug.png", w, h);
 
+    zbar_scanner_new_scan(scn);
+
     density = CFG(iscn, ZBAR_CFG_Y_DENSITY);
     if(density > 0) {
         const uint8_t *p = data;
@@ -666,8 +668,6 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 
         movedelta(0, border);
         iscn->v = y;
-
-        zbar_scanner_new_scan(scn);
 
         while(y < h) {
             zprintf(128, "img_x+: %04d,%04d @%p\n", x, y, p);

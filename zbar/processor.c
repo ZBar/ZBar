@@ -289,6 +289,10 @@ void zbar_processor_destroy (zbar_processor_t *proc)
 {
     zbar_processor_init(proc, NULL, 0);
 
+    if(proc->syms) {
+        zbar_symbol_set_ref(proc->syms, -1);
+        proc->syms = NULL;
+    }
     if(proc->scanner) {
         zbar_image_scanner_destroy(proc->scanner);
         proc->scanner = NULL;
