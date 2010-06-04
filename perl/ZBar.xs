@@ -418,6 +418,19 @@ get_size(image)
         mPUSHu(zbar_image_get_width(image));
         mPUSHu(zbar_image_get_height(image));
 
+void
+get_crop(image)
+        Barcode::ZBar::Image	image
+    PREINIT:
+        unsigned x, y, w, h;
+    PPCODE:
+        zbar_image_get_crop(image, &x, &y, &w, &h);
+        EXTEND(SP, 4);
+        mPUSHu(x);
+        mPUSHu(y);
+        mPUSHu(w);
+        mPUSHu(h);
+
 SV *
 zbar_image_get_data(image)
         Barcode::ZBar::Image	image
@@ -446,8 +459,16 @@ zbar_image_set_sequence(image, seq_num)
 void
 zbar_image_set_size(image, width, height)
         Barcode::ZBar::Image	image
-	unsigned	width
-	unsigned	height
+        int	width + if(width < 0) width = 0;
+        int	height + if(height < 0) height = 0;
+
+void
+zbar_image_set_crop(image, x, y, width, height)
+        Barcode::ZBar::Image	image
+        int	x + if(x < 0) { width += x; x = 0; }
+        int	y + if(y < 0) { height += y; y = 0; }
+        int	width
+        int	height
 
 void
 zbar_image_set_data(image, data)

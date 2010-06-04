@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 23;
+use Test::More tests => 27;
 
 #########################
 
@@ -45,6 +45,26 @@ ok($fmt == 0x50323234, 'numeric format accessors');
 
 $image->set_size(114, 80);
 is_deeply([$image->get_size()], [114, 80], 'size accessors');
+
+#########################
+
+$image->set_crop(20, 20, 74, 40);
+is_deeply([$image->get_crop()], [20, 20, 74, 40], 'crop accessors');
+
+#########################
+
+$image->set_crop(-57, -40, 228, 160);
+is_deeply([$image->get_crop()], [0, 0, 114, 80], 'crop clipping');
+
+#########################
+
+$image->set_crop(10, 10, 94, 60);
+is_deeply([$image->get_crop()], [10, 10, 94, 60], 'crop accessors');
+
+#########################
+
+$image->set_size(114, 80);
+is_deeply([$image->get_crop()], [0, 0, 114, 80], 'crop reset');
 
 #########################
 

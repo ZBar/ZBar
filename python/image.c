@@ -156,9 +156,9 @@ static PyObject*
 image_get_size (zbarImage *self,
                 void *closure)
 {
-    unsigned int width = zbar_image_get_width(self->zimg);
-    unsigned int height = zbar_image_get_height(self->zimg);
-    return(PyTuple_Pack(2, PyInt_FromLong(width), PyInt_FromLong(height)));
+    unsigned int w, h;
+    zbar_image_get_size(self->zimg, &w, &h);
+    return(PyTuple_Pack(2, PyInt_FromLong(w), PyInt_FromLong(h)));
 }
 
 static int
@@ -170,33 +170,82 @@ image_set_size (zbarImage *self,
         PyErr_SetString(PyExc_TypeError, "cannot delete size attribute");
         return(-1);
     }
-    int rc = -1;
-    PyObject *wobj = NULL, *hobj = NULL;
+    int rc = -1, i, dims[2];
     if(!PySequence_Check(value) ||
        PySequence_Size(value) != 2)
         goto error;
-    wobj = PySequence_GetItem(value, 0);
-    hobj = PySequence_GetItem(value, 1);
-    if(!wobj || !hobj)
-        goto error;
+    for(i = 0; i < 2; i++) {
+        PyObject *dim = PySequence_GetItem(value, i);
+        if(!dim)
+            goto error;
+        dims[i] = PyInt_AsSsize_t(dim);
+        Py_DECREF(dim);
+        if(dims[i] < 0)
+            goto error;
+    }
 
-    int width = PyInt_AsSsize_t(wobj);
-    if(width == -1 && PyErr_Occurred())
-        goto error;
-
-    int height = PyInt_AsSsize_t(hobj);
-    if(height == -1 && PyErr_Occurred())
-        goto error;
-
-    zbar_image_set_size(self->zimg, width, height);
+    zbar_image_set_size(self->zimg, dims[0], dims[1]);
     rc = 0;
 
 error:
-    Py_XDECREF(wobj);
-    Py_XDECREF(hobj);
     if(rc)
         PyErr_SetString(PyExc_ValueError,
-                        "size must be a sequence of two ints");
+                        "size must be a sequence of two positive ints");
+    return(rc);
+}
+
+static PyObject*
+image_get_crop (zbarImage *self,
+                void *closure)
+{
+    unsigned int x, y, w, h;
+    zbar_image_get_crop(self->zimg, &x, &y, &w, &h);
+    return(PyTuple_Pack(4, PyInt_FromLong(x), PyInt_FromLong(y),
+                        PyInt_FromLong(w), PyInt_FromLong(h)));
+}
+
+static int
+image_set_crop (zbarImage *self,
+                PyObject *value,
+                void *closure)
+{
+    unsigned w, h;
+    zbar_image_get_size(self->zimg, &w, &h);
+    if(!value) {
+        zbar_image_set_crop(self->zimg, 0, 0, w, h);
+        return(0);
+    }
+    int rc = -1, i, dims[4];
+    if(!PySequence_Check(value) ||
+       PySequence_Size(value) != 4)
+        goto error;
+    for(i = 0; i < 4; i++) {
+        PyObject *dim = PySequence_GetItem(value, i);
+        if(!dim)
+            goto error;
+        dims[i] = PyInt_AsSsize_t(dim);
+        Py_DECREF(dim);
+        if(dims[i] == -1 && PyErr_Occurred())
+            goto error;
+    }
+    if(dims[2] < 0 || dims[3] < 0)
+        goto error;
+    if(dims[0] < 0) {
+        dims[2] += dims[0];
+        dims[0] = 0;
+    }
+    if(dims[1] < 0) {
+        dims[3] += dims[1];
+        dims[1] = 0;
+    }
+
+    zbar_image_set_crop(self->zimg, dims[0], dims[1], dims[2], dims[3]);
+    rc = 0;
+
+error:
+    if(rc)
+        PyErr_SetString(PyExc_ValueError,
+                        "crop must be a sequence of four positive ints");
     return(rc);
 }
 
@@ -308,6 +357,7 @@ image_set_data (zbarImage *self,
 static PyGetSetDef image_getset[] = {
     { "format",   (getter)image_get_format, (setter)image_set_format, },
     { "size",     (getter)image_get_size,   (setter)image_set_size, },
+    { "crop",     (getter)image_get_crop,   (setter)image_set_crop, },
     { "width",    (getter)image_get_int,    (setter)image_set_int,
       NULL, (void*)0 },
     { "height",   (getter)image_get_int,    (setter)image_set_int,

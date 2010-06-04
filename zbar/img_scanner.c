@@ -615,7 +615,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
     zbar_symbol_set_t *syms;
     const uint8_t *data;
     zbar_scanner_t *scn = iscn->scn;
-    unsigned w, h;
+    unsigned w, h, cx1, cy1;
     int density;
 
     /* timestamp image
@@ -647,6 +647,10 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 
     w = img->width;
     h = img->height;
+    cx1 = img->crop_x + img->crop_w;
+    assert(cx1 <= w);
+    cy1 = img->crop_y + img->crop_h;
+    assert(cy1 <= h);
     data = img->data;
 
     zbar_image_write_png(img, "debug.png");
@@ -660,21 +664,24 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
         const uint8_t *p = data;
         int x = 0, y = 0;
 
-        int border = (((h - 1) % density) + 1) / 2;
-        if(border > h / 2)
-            border = h / 2;
+        int border = (((img->crop_h - 1) % density) + 1) / 2;
+        if(border > img->crop_h / 2)
+            border = img->crop_h / 2;
+        border += img->crop_y;
+        assert(border <= h);
         svg_group_start("scanner", 0, 1, 1, 0, 0);
         iscn->dy = 0;
 
-        movedelta(0, border);
+        movedelta(img->crop_x, border);
         iscn->v = y;
 
-        while(y < h) {
+        while(y < cy1) {
+            int cx0;
             zprintf(128, "img_x+: %04d,%04d @%p\n", x, y, p);
             svg_path_start("vedge", 1. / 32, 0, y + 0.5);
             iscn->dx = iscn->du = 1;
             iscn->umin = 0;
-            while(x < w) {
+            while(x < cx1) {
                 uint8_t d = *p;
                 movedelta(1, 0);
                 zbar_scan_y(scn, d);
@@ -685,14 +692,15 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 
             movedelta(-1, density);
             iscn->v = y;
-            if(y >= h)
+            if(y >= cy1)
                 break;
 
             zprintf(128, "img_x-: %04d,%04d @%p\n", x, y, p);
             svg_path_start("vedge", -1. / 32, w, y + 0.5);
             iscn->dx = iscn->du = -1;
             iscn->umin = w;
-            while(x >= 0) {
+            cx0 = img->crop_x;
+            while(x >= cx0) {
                 uint8_t d = *p;
                 movedelta(-1, 0);
                 zbar_scan_y(scn, d);
@@ -713,19 +721,22 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
         const uint8_t *p = data;
         int x = 0, y = 0;
 
-        int border = (((w - 1) % density) + 1) / 2;
-        if(border > w / 2)
-            border = w / 2;
+        int border = (((img->crop_w - 1) % density) + 1) / 2;
+        if(border > img->crop_w / 2)
+            border = img->crop_w / 2;
+        border += img->crop_x;
+        assert(border <= w);
         svg_group_start("scanner", 90, 1, -1, 0, 0);
-        movedelta(border, 0);
+        movedelta(border, img->crop_y);
         iscn->v = x;
 
-        while(x < w) {
+        while(x < cx1) {
+            int cy0;
             zprintf(128, "img_y+: %04d,%04d @%p\n", x, y, p);
             svg_path_start("vedge", 1. / 32, 0, x + 0.5);
             iscn->dy = iscn->du = 1;
             iscn->umin = 0;
-            while(y < h) {
+            while(y < cy1) {
                 uint8_t d = *p;
                 movedelta(0, 1);
                 zbar_scan_y(scn, d);
@@ -736,14 +747,15 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 
             movedelta(density, -1);
             iscn->v = x;
-            if(x >= w)
+            if(x >= cx1)
                 break;
 
             zprintf(128, "img_y-: %04d,%04d @%p\n", x, y, p);
             svg_path_start("vedge", -1. / 32, h, x + 0.5);
             iscn->dy = iscn->du = -1;
             iscn->umin = h;
-            while(y >= 0) {
+            cy0 = img->crop_y;
+            while(y >= cy0) {
                 uint8_t d = *p;
                 movedelta(0, -1);
                 zbar_scan_y(scn, d);
