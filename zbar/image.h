@@ -62,6 +62,8 @@ struct zbar_image_s {
     unsigned width, height;     /* image size */
     const void *data;           /* image sample data */
     unsigned long datalen;      /* allocated/mapped size of data */
+    unsigned crop_x, crop_y;    /* crop rectangle */
+    unsigned crop_w, crop_h;
     void *userdata;             /* user specified data associated w/image */
 
     /* cleanup handler */

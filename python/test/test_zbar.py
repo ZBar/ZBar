@@ -209,11 +209,13 @@ class TestImage(ut.TestCase):
     def test_new(self):
         self.assertEqual(self.image.format, 'Y800')
         self.assertEqual(self.image.size, (123, 456))
+        self.assertEqual(self.image.crop, (0, 0, 123, 456))
 
         image = zbar.Image()
         self.assert_(isinstance(image, zbar.Image))
         self.assertEqual(image.format, '\0\0\0\0')
         self.assertEqual(image.size, (0, 0))
+        self.assertEqual(image.crop, (0, 0, 0, 0))
 
     def test_format(self):
         def set_format(fmt):
@@ -245,6 +247,23 @@ class TestImage(ut.TestCase):
         self.assertEqual(self.image.size, (81, 64))
         self.assertEqual(self.image.width, 81)
         self.assertEqual(self.image.height, 64)
+
+    def test_crop(self):
+        def set_crop(crp):
+            self.image.crop = crp
+        self.assertRaises(ValueError, set_crop, (1,))
+        self.assertRaises(ValueError, set_crop, 1)
+        self.image.crop = (1, 2, 100, 200)
+        self.assertRaises(ValueError, set_crop, (1, 2, 3, 4, 5))
+        self.assertEqual(self.image.crop, (1, 2, 100, 200))
+        self.assertRaises(ValueError, set_crop, "foo")
+        self.assertEqual(self.image.crop, (1, 2, 100, 200))
+        self.image.crop = (-100, -100, 400, 700)
+        self.assertEqual(self.image.crop, (0, 0, 123, 456))
+        self.image.crop = (40, 50, 60, 70)
+        self.assertEqual(self.image.crop, (40, 50, 60, 70))
+        self.image.size = (82, 65)
+        self.assertEqual(self.image.crop, (0, 0, 82, 65))
 
 class TestImageScanner(ut.TestCase):
     def setUp(self):
@@ -335,6 +354,21 @@ class TestImageScan(ut.TestCase):
 
         self.scn.recycle(self.image)
         self.assertEqual(len(self.image.symbols), 0)
+
+    def test_scan_crop(self):
+        self.image.crop = (0, 71, 114, 9)
+        self.assertEqual(self.image.crop, (0, 71, 114, 9))
+        n = self.scn.scan(self.image)
+        self.assertEqual(n, 0)
+
+        self.image.crop = (12, 24, 90, 12)
+        self.assertEqual(self.image.crop, (12, 24, 90, 12))
+        n = self.scn.scan(self.image)
+        self.assertEqual(n, 0)
+
+        self.image.crop = (9, 24, 96, 12)
+        self.assertEqual(self.image.crop, (9, 24, 96, 12))
+        self.test_scan()
 
     def test_scan_again(self):
         self.test_scan()

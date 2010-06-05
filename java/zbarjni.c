@@ -394,14 +394,96 @@ Java_net_sourceforge_zbar_Image_getHeight (JNIEnv *env,
     return(zbar_image_get_height(GET_PEER(Image, obj)));
 }
 
-JNIEXPORT void JNICALL
-Java_net_sourceforge_zbar_Image_setSize (JNIEnv *env,
-                                         jobject obj,
-                                         jint width,
-                                         jint height)
+JNIEXPORT jobject JNICALL
+Java_net_sourceforge_zbar_Image_getSize (JNIEnv *env,
+                                         jobject obj)
 {
+    jintArray size = (*env)->NewIntArray(env, 2);
+    if(!size)
+        return(NULL);
+
+    unsigned dims[2];
+    zbar_image_get_size(GET_PEER(Image, obj), dims, dims + 1);
+    jint jdims[2] = { dims[0], dims[1] };
+    (*env)->SetIntArrayRegion(env, size, 0, 2, jdims);
+    return(size);
+}
+
+JNIEXPORT void JNICALL
+Java_net_sourceforge_zbar_Image_setSize__II (JNIEnv *env,
+                                             jobject obj,
+                                             jint width,
+                                             jint height)
+{
+    if(width < 0) width = 0;
+    if(height < 0) height = 0;
     zbar_image_set_size(GET_PEER(Image, obj), width, height);
 }
+
+JNIEXPORT void JNICALL
+Java_net_sourceforge_zbar_Image_setSize___3I (JNIEnv *env,
+                                              jobject obj,
+                                              jintArray size)
+{
+    if((*env)->GetArrayLength(env, size) != 2)
+        throw_exc(env, "java/lang/IllegalArgumentException",
+                  "size must be an array of two ints");
+    jint dims[2];
+    (*env)->GetIntArrayRegion(env, size, 0, 2, dims);
+    if(dims[0] < 0) dims[0] = 0;
+    if(dims[1] < 0) dims[1] = 0;
+    zbar_image_set_size(GET_PEER(Image, obj), dims[0], dims[1]);
+}
+
+JNIEXPORT jobject JNICALL
+Java_net_sourceforge_zbar_Image_getCrop (JNIEnv *env,
+                                         jobject obj)
+{
+    jintArray crop = (*env)->NewIntArray(env, 4);
+    if(!crop)
+        return(NULL);
+
+    unsigned dims[4];
+    zbar_image_get_crop(GET_PEER(Image, obj), dims, dims + 1,
+                        dims + 2, dims + 3);
+    jint jdims[4] = { dims[0], dims[1], dims[2], dims[3] };
+    (*env)->SetIntArrayRegion(env, crop, 0, 4, jdims);
+    return(crop);
+}
+
+#define VALIDATE_CROP(u, m) \
+    if((u) < 0) {           \
+        (m) += (u);         \
+        (u) = 0;            \
+    }
+
+JNIEXPORT void JNICALL
+Java_net_sourceforge_zbar_Image_setCrop__IIII (JNIEnv *env,
+                                               jobject obj,
+                                               jint x, jint y,
+                                               jint w, jint h)
+{
+    VALIDATE_CROP(x, w);
+    VALIDATE_CROP(y, h);
+    zbar_image_set_crop(GET_PEER(Image, obj), x, y, w, h);
+}
+
+JNIEXPORT void JNICALL
+Java_net_sourceforge_zbar_Image_setCrop___3I (JNIEnv *env,
+                                              jobject obj,
+                                              jintArray crop)
+{
+    if((*env)->GetArrayLength(env, crop) != 4)
+        throw_exc(env, "java/lang/IllegalArgumentException",
+                  "crop must be an array of four ints");
+    jint dims[4];
+    (*env)->GetIntArrayRegion(env, crop, 0, 4, dims);
+    VALIDATE_CROP(dims[0], dims[2]);
+    VALIDATE_CROP(dims[1], dims[3]);
+    zbar_image_set_crop(GET_PEER(Image, obj),
+                        dims[0], dims[1], dims[2], dims[3]);
+}
+#undef VALIDATE_CROP
 
 JNIEXPORT jobject JNICALL
 Java_net_sourceforge_zbar_Image_getData (JNIEnv *env,

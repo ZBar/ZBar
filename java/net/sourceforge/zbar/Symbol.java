@@ -30,11 +30,6 @@ package net.sourceforge.zbar;
  */
 public class Symbol
 {
-    public class Rect
-    {
-        public int x, y, width, height;
-    };
-
     /** No symbol decoded. */
     public static final int NONE = 0;
     /** Symbol detected but not decoded. */
@@ -133,13 +128,13 @@ public class Symbol
     /** Retrieve an approximate, axis-aligned bounding box for the
      * symbol.
      */
-    public Rect getBounds ()
+    public int[] getBounds ()
     {
         int n = getLocationSize(peer);
         if(n <= 0)
             return(null);
 
-        Rect bounds = new Rect();
+        int[] bounds = new int[4];
         int xmin = Integer.MAX_VALUE;
         int xmax = Integer.MIN_VALUE;
         int ymin = Integer.MAX_VALUE;
@@ -154,16 +149,24 @@ public class Symbol
             if(ymin > y) ymin = y;
             if(ymax < y) ymax = y;
         }
-        bounds.x = xmin;
-        bounds.y = ymin;
-        bounds.width = xmax - xmin;
-        bounds.height = ymax - ymin;
+        bounds[0] = xmin;
+        bounds[1] = ymin;
+        bounds[2] = xmax - xmin;
+        bounds[3] = ymax - ymin;
         return(bounds);
     }
 
     private native int getLocationSize(long peer);
     private native int getLocationX(long peer, int idx);
     private native int getLocationY(long peer, int idx);
+
+    public int[] getLocationPoint (int idx)
+    {
+        int[] p = new int[2];
+        p[0] = getLocationX(peer, idx);
+        p[1] = getLocationY(peer, idx);
+        return(p);
+    }
 
     /** Retrieve general axis-aligned, orientation of decoded
      * symbol.

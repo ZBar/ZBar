@@ -125,8 +125,23 @@ public class Image
     /** Retrieve the height of the image. */
     public native int getHeight();
 
+    /** Retrieve the size of the image. */
+    public native int[] getSize();
+
     /** Specify the pixel size of the image. */
     public native void setSize(int width, int height);
+
+    /** Specify the pixel size of the image. */
+    public native void setSize(int[] size);
+
+    /** Retrieve the crop region of the image. */
+    public native int[] getCrop();
+
+    /** Specify the crop region of the image. */
+    public native void setCrop(int x, int y, int width, int height);
+
+    /** Specify the crop region of the image. */
+    public native void setCrop(int[] crop);
 
     /** Retrieve the image sample data. */
     public native byte[] getData();

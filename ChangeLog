@@ -4,6 +4,8 @@ current:
     - separate view for use without controller
     - separate capture delegate for use standalone
     - add continuous autofocus
+  * add support for scanning partial images (cropping)
+    - update c++, python, perl, java bindings and tests
   * fix couple of leaks
   * remove doc hints about GFDL (bug #3004411)
     - apply LGPL to API docs

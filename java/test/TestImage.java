@@ -52,9 +52,44 @@ public class TestImage
     {
         assertEquals(0, image.getWidth());
         assertEquals(0, image.getHeight());
+
         image.setSize(640, 480);
-        assertEquals(640, image.getWidth());
-        assertEquals(480, image.getHeight());
+        int[] size0 = { 640, 480 };
+        assertArrayEquals(size0, image.getSize());
+
+        int[] size1 = { 320, 240 };
+        image.setSize(size1);
+        assertEquals(320, image.getWidth());
+        assertEquals(240, image.getHeight());
+    }
+
+    @Test public void crop ()
+    {
+        int[] zeros = { 0, 0, 0, 0 };
+        assertArrayEquals(zeros, image.getCrop());
+
+        image.setSize(123, 456);
+        int[] crop0 = { 0, 0, 123, 456 };
+        assertArrayEquals(crop0, image.getCrop());
+
+        image.setCrop(1, 2, 34, 56);
+        int[] crop1 = { 1, 2, 34, 56 };
+        assertArrayEquals(crop1, image.getCrop());
+
+        image.setCrop(-20, -20, 200, 500);
+        assertArrayEquals(crop0, image.getCrop());
+
+        int[] crop2 = { 7, 8, 90, 12};
+        image.setCrop(crop2);
+        assertArrayEquals(crop2, image.getCrop());
+
+        image.setSize(654, 321);
+        int[] crop3 = { 0, 0, 654, 321 };
+        assertArrayEquals(crop3, image.getCrop());
+
+        int[] crop4 = { -10, -10, 700, 400 };
+        image.setCrop(crop4);
+        assertArrayEquals(crop3, image.getCrop());
     }
 
     @Test public void format ()

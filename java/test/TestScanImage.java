@@ -103,11 +103,11 @@ public class TestScanImage
         byte[] exp = { '6','2','6','8','9','6','4','9','7','7','8','0','4' };
         assertArrayEquals(exp, bytes);
 
-        Symbol.Rect r = sym.getBounds();
-        assertTrue(r.x > 6);
-        assertTrue(r.y > 6);
-        assertTrue(r.width < 102);
-        assertTrue(r.height < 73);
+        int[] r = sym.getBounds();
+        assertTrue(r[0] > 6);
+        assertTrue(r[1] > 6);
+        assertTrue(r[2] < 102);
+        assertTrue(r[3] < 73);
 
         assertEquals(Orientation.UP, sym.getOrientation());
     }

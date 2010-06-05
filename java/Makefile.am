@@ -16,8 +16,7 @@ zbar_jar_SRCS = \
     $(PKG)/Symbol.java $(PKG)/SymbolIterator.java $(PKG)/SymbolSet.java \
     $(PKG)/Image.java $(PKG)/ImageScanner.java
 
-zbar_jar_CLASSES = $(zbar_jar_SRCS:.java=.class) \
-    $(PKG)/Symbol\$$Rect.class
+zbar_jar_CLASSES = $(zbar_jar_SRCS:.java=.class)
 
 test_SRCS = test/TestImage.java test/TestImageScanner.java \
     test/TestScanImage.java
