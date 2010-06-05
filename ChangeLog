@@ -1,4 +1,9 @@
 current:
+  * add iPhone OS 4.0 video capture support
+    - replacement view controller for new camera reader
+    - separate view for use without controller
+    - separate capture delegate for use standalone
+    - add continuous autofocus
   * fix couple of leaks
   * remove doc hints about GFDL (bug #3004411)
     - apply LGPL to API docs

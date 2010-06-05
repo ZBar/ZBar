@@ -45,6 +45,18 @@ static inline int _zbar_refcnt (refcnt_t *cnt,
     return(rc);
 }
 
+#elif defined(TARGET_OS_MAC)
+# include <libkern/OSAtomic.h>
+
+typedef int32_t refcnt_t;
+
+static inline int _zbar_refcnt (refcnt_t *cnt,
+                                int delta)
+{
+    int rc = OSAtomicAdd32Barrier(delta, cnt);
+    assert(rc >= 0);
+    return(rc);
+}
 
 #elif defined(HAVE_LIBPTHREAD)
 # include <pthread.h>

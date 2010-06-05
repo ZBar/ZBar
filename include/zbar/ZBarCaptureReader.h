@@ -1,0 +1,89 @@
+//------------------------------------------------------------------------
+//  Copyright 2010 (c) Jeff Brown <spadix@users.sourceforge.net>
+//
+//  This file is part of the ZBar Bar Code Reader.
+//
+//  The ZBar Bar Code Reader is free software; you can redistribute it
+//  and/or modify it under the terms of the GNU Lesser Public License as
+//  published by the Free Software Foundation; either version 2.1 of
+//  the License, or (at your option) any later version.
+//
+//  The ZBar Bar Code Reader is distributed in the hope that it will be
+//  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+//  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU Lesser Public License for more details.
+//
+//  You should have received a copy of the GNU Lesser Public License
+//  along with the ZBar Bar Code Reader; if not, write to the Free
+//  Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+//  Boston, MA  02110-1301  USA
+//
+//  http://sourceforge.net/projects/zbar
+//------------------------------------------------------------------------
+
+#import <AVFoundation/AVFoundation.h>
+
+@class ZBarCaptureReader, ZBarImageScanner, ZBarImage, ZBarCVImage,
+    ZBarSymbolSet;
+
+@protocol ZBarCaptureDelegate <NSObject>
+
+// called when a new barcode is detected.  the image refers to the
+// video buffer and must not be retained for long
+- (void)       captureReader: (ZBarCaptureReader*) captureReader
+  didReadNewSymbolsFromImage: (ZBarImage*) image;
+
+@optional
+// called when a potential/uncertain barcode is detected.  will also
+// be called *after* captureReader:didReadNewSymbolsFromImage:
+// when good barcodes are detected
+- (void) captureReader: (ZBarCaptureReader*) captureReader
+       didTrackSymbols: (ZBarSymbolSet*) symbols;
+
+@end
+
+@interface ZBarCaptureReader
+    : NSObject
+{
+    AVCaptureVideoDataOutput *captureOutput;
+    id<ZBarCaptureDelegate> captureDelegate;
+    ZBarImageScanner *scanner;
+    CGRect scanCrop;
+    CGFloat framesPerSecond;
+
+    dispatch_queue_t queue;
+    ZBarImage *image;
+    ZBarCVImage *result;
+    int32_t running;
+    int framecnt;
+    uint64_t t_frame, t_fps, t_scan;
+    CGFloat dt_frame;
+}
+
+// supply a pre-configured image scanner
+- (id) initWithImageScanner: (ZBarImageScanner*) imageScanner;
+
+// this must be called before the session is started
+- (void) willStartRunning;
+
+// this must be called *before* the session is stopped
+- (void) willStopRunning;
+
+// the capture output.  add this to an instance of AVCaptureSession
+@property (nonatomic, readonly) AVCaptureOutput *captureOutput;
+
+// delegate is notified of decode results and symbol tracking.
+@property (assign) id<ZBarCaptureDelegate> captureDelegate;
+
+// access to image scanner for configuration.
+@property (readonly) ZBarImageScanner *scanner;
+
+// region of image to scan in normalized coordinates.
+// NB horizontal crop currently ignored...
+@property (assign) CGRect scanCrop;
+
+// current frame rate (for debug/optimization).
+// only valid when running
+@property (nonatomic, readonly) CGFloat framesPerSecond;
+
+@end

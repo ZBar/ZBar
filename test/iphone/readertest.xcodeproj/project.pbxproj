@@ -19,6 +19,9 @@
 		DCB9118810BC5DB500B907F0 /* libiconv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DCD6E13B10B0AFD4002005CD /* libiconv.dylib */; };
 		DCB9119B10BC5DCB00B907F0 /* libzbar.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DCD6E0E610B0AE16002005CD /* libzbar.a */; };
 		DCD6E0D010B0AD41002005CD /* readertest.m in Sources */ = {isa = PBXBuildFile; fileRef = DCD6E0CF10B0AD41002005CD /* readertest.m */; };
+		DCDC6D9B11ACA23000021380 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCDC6D9A11ACA23000021380 /* CoreVideo.framework */; };
+		DCDC6D9F11ACA23900021380 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCDC6D9E11ACA23900021380 /* CoreMedia.framework */; };
+		DCDC6DEC11ACA5B400021380 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCDC6DEB11ACA5B400021380 /* AVFoundation.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,6 +57,9 @@
 		DCD6E0D810B0AD55002005CD /* readertest.plist */ = {isa = PBXFileReference; explicitFileType = text.plist.info; fileEncoding = 4; path = readertest.plist; sourceTree = "<group>"; };
 		DCD6E0DE10B0AE16002005CD /* zbar.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = zbar.xcodeproj; path = ../../iphone/zbar.xcodeproj; sourceTree = SOURCE_ROOT; };
 		DCD6E13B10B0AFD4002005CD /* libiconv.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libiconv.dylib; path = usr/lib/libiconv.dylib; sourceTree = SDKROOT; };
+		DCDC6D9A11ACA23000021380 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		DCDC6D9E11ACA23900021380 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		DCDC6DEB11ACA5B400021380 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +73,9 @@
 				DCB9118510BC5DA200B907F0 /* QuartzCore.framework in Frameworks */,
 				DCB9118810BC5DB500B907F0 /* libiconv.dylib in Frameworks */,
 				DCB9119B10BC5DCB00B907F0 /* libzbar.a in Frameworks */,
+				DCDC6D9B11ACA23000021380 /* CoreVideo.framework in Frameworks */,
+				DCDC6D9F11ACA23900021380 /* CoreMedia.framework in Frameworks */,
+				DCDC6DEC11ACA5B400021380 /* AVFoundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -106,6 +115,9 @@
 				1D30AB110D05D00D00671497 /* Foundation.framework */,
 				288765FC0DF74451002DB57D /* CoreGraphics.framework */,
 				DCB9118410BC5DA200B907F0 /* QuartzCore.framework */,
+				DCDC6DEB11ACA5B400021380 /* AVFoundation.framework */,
+				DCDC6D9A11ACA23000021380 /* CoreVideo.framework */,
+				DCDC6D9E11ACA23900021380 /* CoreMedia.framework */,
 				DCD6E13B10B0AFD4002005CD /* libiconv.dylib */,
 			);
 			name = Frameworks;
@@ -243,8 +255,10 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = ../../include;
+				IPHONEOS_DEPLOYMENT_TARGET = 3.1.2;
 				PREBINDING = NO;
-				SDKROOT = iphoneos3.1.3;
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SDKROOT = iphoneos4.0;
 			};
 			name = Debug;
 		};
@@ -258,7 +272,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = ../../include;
 				PREBINDING = NO;
-				SDKROOT = iphoneos3.1.3;
+				SDKROOT = iphoneos4.0;
 			};
 			name = Release;
 		};
@@ -274,7 +288,7 @@
 				HEADER_SEARCH_PATHS = ../../include;
 				PREBINDING = NO;
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
-				SDKROOT = iphoneos3.1.3;
+				SDKROOT = iphoneos4.0;
 			};
 			name = AdHoc;
 		};

@@ -21,6 +21,7 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
+#import <zbar.h>
 #import <zbar/ZBarSymbol.h>
 
 @implementation ZBarSymbol
@@ -141,7 +142,14 @@
 
 - (int) count
 {
-    return(zbar_symbol_set_get_size(set));
+    if(filterSymbols)
+        return(zbar_symbol_set_get_size(set));
+
+    int n = 0;
+    const zbar_symbol_t *sym = zbar_symbol_set_first_unfiltered(set);
+    for(; sym; sym = zbar_symbol_next(sym))
+        n++;
+    return(n);
 }
 
 - (const zbar_symbol_set_t*) zbarSymbolSet
