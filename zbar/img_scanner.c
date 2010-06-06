@@ -730,7 +730,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
         iscn->v = x;
 
         while(x < cx1) {
-            int cy0 = img->crop_y;;
+            int cy0 = img->crop_y;
             zprintf(128, "img_y+: %04d,%04d @%p\n", x, y, p);
             svg_path_start("vedge", 1. / 32, 0, x + 0.5);
             iscn->dy = iscn->du = 1;
