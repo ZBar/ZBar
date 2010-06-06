@@ -38,6 +38,7 @@
     id <ZBarReaderDelegate> readerDelegate;
     ZBarReaderView *readerView;
     UIView *cameraOverlayView;
+    CGAffineTransform cameraViewTransform;
     CGRect scanCrop;
     BOOL showsZBarControls;
 
@@ -66,6 +67,9 @@
 // showsZBarControls enabled (but not if you want backward compatibility)
 @property (nonatomic, retain) UIView *cameraOverlayView;
 
+// transform applied to the preview image.
+@property (nonatomic) CGAffineTransform cameraViewTransform;
+
 // display the built-in help browser.  the argument will be passed to
 // the onZBarHelp() javascript function.
 - (void) showHelpWithReason: (NSString*) reason;
@@ -79,7 +83,7 @@
 @property (nonatomic) BOOL allowsEditing; // NO
 @property (nonatomic) BOOL allowsImageEditing; // NO
 @property (nonatomic) BOOL showsCameraControls; // NO
-@property (nonatomic) BOOL showsHelpOnFail; // NO
+@property (nonatomic) BOOL showsHelpOnFail; // ignored
 @property (nonatomic) ZBarReaderControllerCameraMode cameraMode; // Sampling
 @property (nonatomic) BOOL takesPicture; // NO
 @property (nonatomic) BOOL enableCache; // ignored

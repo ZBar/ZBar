@@ -40,6 +40,7 @@ using namespace zbar;
 @property (nonatomic) unsigned long format;
 @property (nonatomic) unsigned sequence;
 @property (nonatomic) CGSize size;
+@property (nonatomic) CGRect crop;
 @property (readonly, nonatomic) const void *data;
 @property (readonly, nonatomic) unsigned long dataLength;
 @property (copy, nonatomic) ZBarSymbolSet *symbols;

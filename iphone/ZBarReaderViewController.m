@@ -31,7 +31,7 @@
 @implementation ZBarReaderViewController
 
 @synthesize scanner, readerDelegate, showsZBarControls, cameraOverlayView,
-    readerView, scanCrop;
+    cameraViewTransform, readerView, scanCrop;
 @dynamic sourceType, allowsEditing, allowsImageEditing, showsCameraControls,
     showsHelpOnFail, cameraMode, takesPicture, maxScanDimension;
 
@@ -58,6 +58,7 @@
 
     showsZBarControls = YES;
     scanCrop = CGRectMake(0, 0, 1, 1);
+    cameraViewTransform = CGAffineTransformIdentity;
 
     // create our own scanner to store configuration,
     // independent of whether view is loaded
@@ -160,6 +161,7 @@
                      initWithImageScanner: scanner];
     readerView.readerDelegate = (id<ZBarReaderViewDelegate>)self;
     readerView.scanCrop = scanCrop;
+    readerView.previewTransform = cameraViewTransform;
     [view addSubview: readerView];
 
     [self initControls];
@@ -212,16 +214,6 @@
     [self viewDidUnload];
 }
 
-- (BOOL) enableCache
-{
-    return(NO);
-}
-
-- (void) setEnableCache: (BOOL) enable
-{
-    // NB ignoring deprecated property
-}
-
 - (ZBarReaderView*) readerView
 {
     self.view;
@@ -248,18 +240,12 @@
     [oldview release];
 }
 
-#if 0
-- (CGAffineTransform) cameraViewTransform
+- (void) setCameraViewTransform: (CGAffineTransform) xfrm
 {
-    // FIXME TBD
-    return(CGAffineTransformIdentity);
+    cameraViewTransform = xfrm;
+    if(readerView)
+        readerView.previewTransform = xfrm;
 }
-
-- (void) setCameraViewTransform
-{
-    // FIXME TBD
-}
-#endif
 
 - (void) cancel
 {
@@ -331,24 +317,26 @@
 
 // "deprecated" properties
 
-#define DEPRECATED_PROPERTY(getter, setter, type, val) \
+#define DEPRECATED_PROPERTY(getter, setter, type, val, ignore) \
     - (type) getter                                    \
     {                                                  \
         return(val);                                   \
     }                                                  \
     - (void) setter: (type) v                          \
     {                                                  \
-        NSAssert2(v == val, @"attempt to set unsupported value (%d)" \
+        NSAssert2(ignore || v == val,                  \
+                  @"attempt to set unsupported value (%d)" \
                   @" for %@ property", val, @#getter); \
     }
 
-DEPRECATED_PROPERTY(sourceType, setSourceType, UIImagePickerControllerSourceType, UIImagePickerControllerSourceTypeCamera)
-DEPRECATED_PROPERTY(allowsEditing, setAllowsEditing, BOOL, NO)
-DEPRECATED_PROPERTY(allowsImageEditing, setAllowsImageEditing, BOOL, NO)
-DEPRECATED_PROPERTY(showsCameraControls, setShowsCameraControls, BOOL, NO)
-DEPRECATED_PROPERTY(showsHelpOnFail, setShowsHelpOnFail, BOOL, NO)
-DEPRECATED_PROPERTY(cameraMode, setCameraMode, ZBarReaderControllerCameraMode, ZBarReaderControllerCameraModeSampling)
-DEPRECATED_PROPERTY(takesPicture, setTakesPicture, BOOL, NO)
-DEPRECATED_PROPERTY(maxScanDimension, setMaxScanDimension, NSInteger, 640)
+DEPRECATED_PROPERTY(sourceType, setSourceType, UIImagePickerControllerSourceType, UIImagePickerControllerSourceTypeCamera, NO)
+DEPRECATED_PROPERTY(allowsEditing, setAllowsEditing, BOOL, NO, NO)
+DEPRECATED_PROPERTY(allowsImageEditing, setAllowsImageEditing, BOOL, NO, NO)
+DEPRECATED_PROPERTY(showsCameraControls, setShowsCameraControls, BOOL, NO, NO)
+DEPRECATED_PROPERTY(showsHelpOnFail, setShowsHelpOnFail, BOOL, NO, YES)
+DEPRECATED_PROPERTY(cameraMode, setCameraMode, ZBarReaderControllerCameraMode, ZBarReaderControllerCameraModeSampling, NO)
+DEPRECATED_PROPERTY(takesPicture, setTakesPicture, BOOL, NO, NO)
+DEPRECATED_PROPERTY(enableCache, setEnableCache, BOOL, YES, YES)
+DEPRECATED_PROPERTY(maxScanDimension, setMaxScanDimension, NSInteger, 640, YES)
 
 @end

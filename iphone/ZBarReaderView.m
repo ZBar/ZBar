@@ -29,8 +29,9 @@
 
 @implementation ZBarReaderView
 
-@synthesize readerDelegate, showsFPS, tracksSymbols, session, captureReader;
-@dynamic scanner, scanCrop, device;
+@synthesize readerDelegate, tracksSymbols, showsFPS, zoom, scanCrop,
+    previewTransform, session, captureReader;
+@dynamic scanner, allowsPinchZoom, device;
 
 - (id) initWithImageScanner: (ZBarImageScanner*) _scanner
 {
@@ -45,6 +46,9 @@
         UIViewAutoresizingFlexibleHeight;
 
     tracksSymbols = YES;
+    scanCrop = CGRectMake(0, 0, 1, 1);
+    previewTransform = CGAffineTransformIdentity;
+
     session = [AVCaptureSession new];
     NSNotificationCenter *notify =
         [NSNotificationCenter defaultCenter];
@@ -81,16 +85,17 @@
                    layerWithSession: session]
                   retain];
     preview.frame = self.bounds;
+    preview.videoGravity = AVLayerVideoGravityResizeAspectFill;
     [self.layer addSublayer: preview];
 
-    CGRect r = self.bounds;
+    CGRect r = preview.bounds;
     tracking = [CALayer new];
     tracking.frame = r;
     tracking.opacity = 0;
     tracking.borderWidth = 1;
     tracking.backgroundColor = [UIColor clearColor].CGColor;
     tracking.borderColor = [UIColor greenColor].CGColor;
-    [self.layer addSublayer: tracking];
+    [preview addSublayer: tracking];
 
     r.origin.x = 3 * r.size.width / 4;
     r.origin.y = r.size.height - 32;
@@ -116,6 +121,13 @@
     fpsLabel.font = [UIFont systemFontOfSize: 18];
     fpsLabel.textAlignment = UITextAlignmentRight;
     [fpsView addSubview: fpsLabel];
+
+    pinch = [[UIPinchGestureRecognizer alloc]
+                initWithTarget: self
+                action: @selector(handlePinch)];
+    [self addGestureRecognizer: pinch];
+
+    self.zoom = 1.25;
 
     return(self);
 }
@@ -167,6 +179,8 @@
     session = nil;
     [tracking release];
     tracking = nil;
+    [pinch release];
+    pinch = nil;
     [super dealloc];
 }
 
@@ -175,14 +189,34 @@
     return(captureReader.scanner);
 }
 
-- (CGRect) scanCrop
+- (void) resetTracking
 {
-    return(captureReader.scanCrop);
+    tracking.opacity = 0;
+    CGSize size = preview.bounds.size;
+    CGRect crop = captureReader.scanCrop;
+    tracking.frame = CGRectMake(crop.origin.y * size.width,
+                                crop.origin.x * size.height,
+                                crop.size.height * size.width,
+                                crop.size.width * size.height);
+}
+
+- (void) cropUpdate
+{
+    CGAffineTransform xfrm =
+        CGAffineTransformMakeTranslation(.5, .5);
+    CGFloat z = 1 / zoom;
+    xfrm = CGAffineTransformScale(xfrm, z, z);
+    xfrm = CGAffineTransformTranslate(xfrm, -.5, -.5);
+    captureReader.scanCrop = CGRectApplyAffineTransform(scanCrop, xfrm);
+    [self resetTracking];
 }
 
 - (void) setScanCrop: (CGRect) r
 {
-    captureReader.scanCrop = r;
+    if(CGRectEqualToRect(scanCrop, r))
+        return;
+    scanCrop = r;
+    [self cropUpdate];
 }
 
 - (AVCaptureDevice*) device
@@ -223,10 +257,18 @@
 {
     if(track == tracksSymbols)
         return;
-
     tracksSymbols = track;
-    tracking.opacity = 0;
-    tracking.frame = self.bounds;
+    [self resetTracking];
+}
+
+- (BOOL) allowsPinchZoom
+{
+    return(pinch.enabled);
+}
+
+- (void) setAllowsPinchZoom: (BOOL) enabled
+{
+    pinch.enabled = enabled;
 }
 
 - (void) setShowsFPS: (BOOL) show
@@ -247,6 +289,35 @@
     @catch(...) { }
 }
 
+- (void) setZoom: (CGFloat) z
+{
+    if(z < 1.0)
+        z = 1.0;
+    if(z > 2.0)
+        z = 2.0;
+    if(z == zoom)
+        return;
+    zoom = z;
+
+    [CATransaction begin];
+    [CATransaction setAnimationDuration: .1];
+    [CATransaction setAnimationTimingFunction:
+        [CAMediaTimingFunction functionWithName:
+            kCAMediaTimingFunctionLinear]];
+    [preview setAffineTransform:
+        CGAffineTransformScale(previewTransform, z, z)];
+    [CATransaction commit];
+
+    [self cropUpdate];
+}
+
+- (void) setPreviewTransform: (CGAffineTransform) xfrm
+{
+    previewTransform = xfrm;
+    [preview setAffineTransform:
+        CGAffineTransformScale(previewTransform, zoom, zoom)];
+}
+
 - (void) start
 {
     if(started)
@@ -256,8 +327,7 @@
     [[UIDevice currentDevice]
         beginGeneratingDeviceOrientationNotifications];
 
-    tracking.frame = self.bounds;
-    tracking.opacity = 0;
+    [self resetTracking];
     fpsLabel.text = @"";
 
     [captureReader willStartRunning];
@@ -276,6 +346,8 @@
         endGeneratingDeviceOrientationNotifications];
     started = NO;
 }
+
+// AVCaptureSession notifications
 
 - (void) onVideoStart: (NSNotification*) note
 {
@@ -317,6 +389,31 @@
           [err localizedFailureReason]);
 }
 
+// UIGestureRecognizer callback
+
+- (void) handlePinch
+{
+    if(pinch.state == UIGestureRecognizerStateBegan)
+        zoom0 = zoom;
+    CGFloat z = zoom0 * pinch.scale;
+    self.zoom = z;
+
+    if((zoom < 1.5) != (z < 1.5)) {
+        int d = (z < 1.5) ? 3 : 2;
+        ZBarImageScanner *scanner = captureReader.scanner;
+        @synchronized(scanner) {
+            [scanner setSymbology: 0
+                     config: ZBAR_CFG_X_DENSITY
+                     to: d];
+            [scanner setSymbology: 0
+                     config: ZBAR_CFG_Y_DENSITY
+                     to: d];
+        }
+    }
+}
+
+// NSKeyValueObserving
+
 - (void) observeValueForKeyPath: (NSString*) path
                        ofObject: (id) obj
                          change: (NSDictionary*) info
@@ -328,6 +425,8 @@
                                   captureReader.framesPerSecond];
 }
 
+// ZBarCaptureDelegate
+
 - (void) updateTracking: (CALayer*) trk
              withSymbol: (ZBarSymbol*) sym
 {
@@ -336,12 +435,13 @@
 
     CGRect b = sym.bounds;
     CGPoint c = CGPointMake(CGRectGetMidX(b), CGRectGetMidY(b));
-    CGSize size = preview.bounds.size;
-    CGPoint p = CGPointMake((480 - c.y) * size.width / 480,
-                            c.x * size.height / 640);
+    CGSize isize = captureReader.size;
+    CGSize psize = preview.bounds.size;
+    CGPoint p = CGPointMake((isize.height - c.y) * psize.width / isize.height,
+                            c.x * psize.height / isize.width);
     CGRect r = CGRectMake(0, 0,
-                          b.size.height * size.width / 480,
-                          b.size.width * size.height / 640);
+                          b.size.height * psize.width / isize.height,
+                          b.size.width * psize.height / isize.width);
     if(r.size.width <= 24 && r.size.height <= 24)
         return;
     r = CGRectInset(r, -16, -16);
@@ -363,7 +463,7 @@
         [CABasicAnimation animationWithKeyPath: @"bounds"];
     resize.fromValue = [NSValue valueWithCGRect: cr];
     resize.toValue = [NSValue valueWithCGRect: r];
-    resize.duration = .3;
+    resize.duration = .2;
     resize.timingFunction = linear;
     resize.fillMode = kCAFillModeForwards;
     resize.removedOnCompletion = NO;
@@ -372,7 +472,7 @@
         [CABasicAnimation animationWithKeyPath: @"position"];
     move.fromValue = [NSValue valueWithCGPoint: cp];
     move.toValue = [NSValue valueWithCGPoint: p];
-    move.duration = .3;
+    move.duration = .2;
     move.timingFunction = linear;
     move.fillMode = kCAFillModeForwards;
     move.removedOnCompletion = NO;
@@ -381,7 +481,7 @@
         [CABasicAnimation animationWithKeyPath: @"opacity"];
     on.fromValue = [NSNumber numberWithDouble: current.opacity];
     on.toValue = [NSNumber numberWithDouble: 1];
-    on.duration = .3;
+    on.duration = .2;
     on.timingFunction = linear;
     on.fillMode = kCAFillModeForwards;
     on.removedOnCompletion = NO;

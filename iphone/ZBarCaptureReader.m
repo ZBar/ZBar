@@ -32,6 +32,7 @@
 @implementation ZBarCaptureReader
 
 @synthesize captureOutput, captureDelegate, scanner, scanCrop, framesPerSecond;
+@dynamic size;
 
 - (void) initResult
 {
@@ -125,6 +126,38 @@
         return;
 }
 
+- (void) setCaptureDelegate: (id<ZBarCaptureDelegate>) delegate
+{
+    @synchronized(scanner) {
+        captureDelegate = delegate;
+    }
+}
+
+- (CGSize) size
+{
+    @synchronized(scanner) {
+        return(CGSizeMake(width, height));
+    }
+}
+
+- (void) cropUpdate
+{
+    @synchronized(scanner) {
+        image.crop = CGRectMake(scanCrop.origin.x * width,
+                                scanCrop.origin.y * height,
+                                scanCrop.size.width * width,
+                                scanCrop.size.height * height);
+    }
+}
+
+- (void) setScanCrop: (CGRect) crop
+{
+    if(CGRectEqualToRect(scanCrop, crop))
+        return;
+    scanCrop = crop;
+    [self cropUpdate];
+}
+
 - (void) didTrackSymbols: (ZBarSymbolSet*) syms
 {
     [captureDelegate
@@ -212,25 +245,24 @@
 
     void *data = CVPixelBufferGetBaseAddressOfPlane(buf, 0);
     if(data) {
-        int yc = h * scanCrop.origin.y + .5;
-        if(yc < 0)
-            yc = 0;
-        if(yc >= h)
-            yc = h - 1;
-        int hc = h * scanCrop.size.height + .5;
-        if(hc <= 0)
-            hc = 1;
-        if(yc + hc > h)
-            hc = h - yc;
-        image.size = CGSizeMake(w, hc);
-        [image setData: data + w * yc
-               withLength: w * hc];
+        [image setData: data
+               withLength: w * h];
 
+        BOOL doTrack = NO;
         int ngood = 0;
         ZBarSymbolSet *syms = nil;
         @synchronized(scanner) {
+            if(width != w || height != h) {
+                width = w;
+                height = h;
+                image.size = CGSizeMake(w, h);
+                [self cropUpdate];
+            }
+
             ngood = [scanner scanImage: image];
             syms = scanner.results;
+            doTrack = [captureDelegate respondsToSelector:
+                          @selector(captureReader:didTrackSymbols:)];
         }
         now = timer_now();
 
@@ -239,11 +271,10 @@
             syms.filterSymbols = NO;
             int nraw = syms.count;
             if(nraw > 0)
-                zlog(@"scan image: %dx%d ngood=%d nraw=%d",
-                     w, hc, ngood, nraw);
+                zlog(@"scan image: %dx%d crop=%@ ngood=%d nraw=%d",
+                     w, h, NSStringFromCGRect(image.crop), ngood, nraw);
 
-            SEL cb = @selector(captureReader:didReadNewSymbolsFromImage:);
-            if(ngood && [captureDelegate respondsToSelector: cb]) {
+            if(ngood) {
                 // copy image data so we can release the buffer
                 result.size = CGSizeMake(w, h);
                 result.pixelBuffer = buf;
@@ -257,8 +288,7 @@
                 [self initResult];
             }
 
-            cb = @selector(captureReader:didTrackSymbols:);
-            if(nraw && [captureDelegate respondsToSelector: cb])
+            if(nraw && doTrack)
                 [self performSelectorOnMainThread:
                           @selector(didTrackSymbols:)
                       withObject: syms

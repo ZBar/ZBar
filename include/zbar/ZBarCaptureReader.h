@@ -56,6 +56,7 @@
     ZBarCVImage *result;
     int32_t running;
     int framecnt;
+    unsigned width, height;
     uint64_t t_frame, t_fps, t_scan;
     CGFloat dt_frame;
 }
@@ -73,14 +74,17 @@
 @property (nonatomic, readonly) AVCaptureOutput *captureOutput;
 
 // delegate is notified of decode results and symbol tracking.
-@property (assign) id<ZBarCaptureDelegate> captureDelegate;
+@property (nonatomic, assign) id<ZBarCaptureDelegate> captureDelegate;
 
 // access to image scanner for configuration.
-@property (readonly) ZBarImageScanner *scanner;
+@property (nonatomic, readonly) ZBarImageScanner *scanner;
 
 // region of image to scan in normalized coordinates.
 // NB horizontal crop currently ignored...
-@property (assign) CGRect scanCrop;
+@property (nonatomic, assign) CGRect scanCrop;
+
+// size of video frames.
+@property (nonatomic, readonly) CGSize size;
 
 // current frame rate (for debug/optimization).
 // only valid when running

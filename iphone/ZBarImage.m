@@ -33,7 +33,8 @@ static void image_cleanup(zbar_image_t *zimg)
 
 @implementation ZBarImage
 
-@dynamic format, sequence, size, data, dataLength, symbols, zbarImage, UIImage;
+@dynamic format, sequence, size, crop, data, dataLength, symbols, zbarImage,
+    UIImage;
 
 + (unsigned long) fourcc: (NSString*) format
 {
@@ -178,13 +179,27 @@ static void image_cleanup(zbar_image_t *zimg)
 
 - (CGSize) size
 {
-    return(CGSizeMake(zbar_image_get_width(zimg),
-                      zbar_image_get_height(zimg)));
+    unsigned w, h;
+    zbar_image_get_size(zimg, &w, &h);
+    return(CGSizeMake(w, h));
 }
 
 - (void) setSize: (CGSize) size
 {
     zbar_image_set_size(zimg, size.width + .5, size.height + .5);
+}
+
+- (CGRect) crop
+{
+    unsigned x, y, w, h;
+    zbar_image_get_crop(zimg, &x, &y, &w, &h);
+    return(CGRectMake(x, y, w, h));
+}
+
+- (void) setCrop: (CGRect) crop
+{
+    zbar_image_set_crop(zimg, crop.origin.x + .5, crop.origin.y + .5,
+                        crop.size.width + .5, crop.size.height + .5);
 }
 
 - (ZBarSymbolSet*) symbols

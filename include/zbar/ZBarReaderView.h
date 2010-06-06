@@ -49,6 +49,9 @@
     id<ZBarReaderViewDelegate> readerDelegate;
     AVCaptureSession *session;
     AVCaptureDevice *device;
+    CGRect scanCrop;
+    CGAffineTransform previewTransform;
+    CGFloat zoom, zoom0;
     BOOL tracksSymbols, showsFPS;
 
     AVCaptureInput *input;
@@ -57,6 +60,7 @@
     CALayer *tracking;
     UIView *fpsView;
     UILabel *fpsLabel;
+    UIPinchGestureRecognizer *pinch;
     BOOL started, running;
 }
 
@@ -79,12 +83,25 @@
 // (default YES).
 @property (nonatomic) BOOL tracksSymbols;
 
+// enable pinch gesture recognition for zooming the preview/decode
+// (default YES).
+@property (nonatomic) BOOL allowsPinchZoom;
+
 // whether to display the frame rate for debug/configuration
 // (default NO).
 @property (nonatomic) BOOL showsFPS;
 
+// zoom scale factor applied to video preview *and* scanCrop.
+// also updated by pinch-zoom gesture.  clipped to range [1,2],
+// defaults to 1.25
+@property (nonatomic) CGFloat zoom;
+
 // the region of the image that will be scanned.  normalized coordinates.
 @property (nonatomic) CGRect scanCrop;
+
+// additional transform applied to video preview.
+// (NB *not* applied to scan crop)
+@property (nonatomic) CGAffineTransform previewTransform;
 
 // specify an alternate capture device.
 @property (nonatomic, retain) AVCaptureDevice *device;
