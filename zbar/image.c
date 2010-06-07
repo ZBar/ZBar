@@ -203,12 +203,7 @@ zbar_image_t *zbar_image_copy (const zbar_image_t *src)
 {
     zbar_image_t *dst = zbar_image_create();
     dst->format = src->format;
-    dst->width = src->width;
-    dst->height = src->height;
-    dst->crop_x = src->crop_x;
-    dst->crop_y = src->crop_y;
-    dst->crop_w = src->crop_w;
-    dst->crop_h = src->crop_h;
+    _zbar_image_copy_size(dst, src);
     dst->datalen = src->datalen;
     dst->data = malloc(src->datalen);
     assert(dst->data);

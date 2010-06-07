@@ -1,4 +1,8 @@
 current:
+  * add per-symbology cache consistency
+    - reliable symbologies decode immediately by default
+    - no more need to disable cache with video
+    - also fix crop bugs w/video scanning
   * add support for scanning partial images (cropping)
     - update c++, python, perl, java bindings and tests
   * fix couple of leaks

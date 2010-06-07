@@ -144,6 +144,8 @@ typedef enum zbar_config_e {
     ZBAR_CFG_MIN_LEN = 0x20,    /**< minimum data length for valid decode */
     ZBAR_CFG_MAX_LEN,           /**< maximum data length for valid decode */
 
+    ZBAR_CFG_UNCERTAINTY = 0x40,/**< required video consistency frames */
+
     ZBAR_CFG_POSITION = 0x80,   /**< enable scanner to collect position data */
 
     ZBAR_CFG_X_DENSITY = 0x100, /**< image scanner vertical scan density */

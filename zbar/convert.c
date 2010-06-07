@@ -966,22 +966,12 @@ static void convert_jpeg (zbar_image_t *dst,
     if(!src->src) {
         tmp = zbar_image_create();
         tmp->format = fourcc('Y','8','0','0');
-        tmp->width = dst->width;
-        tmp->height = dst->height;
-        tmp->crop_x = dst->crop_x;
-        tmp->crop_y = dst->crop_y;
-        tmp->crop_w = dst->crop_w;
-        tmp->crop_h = dst->crop_h;
+        _zbar_image_copy_size(tmp, dst);
     }
     else {
         tmp = src->src->jpeg_img;
         assert(tmp);
-        dst->width = tmp->width;
-        dst->height = tmp->height;
-        dst->crop_x = tmp->crop_x;
-        dst->crop_y = tmp->crop_y;
-        dst->crop_w = tmp->crop_w;
-        dst->crop_h = tmp->crop_h;
+        _zbar_image_copy_size(dst, tmp);
     }
 
     const zbar_format_def_t *tmpfmt = _zbar_format_lookup(tmp->format);
@@ -991,12 +981,7 @@ static void convert_jpeg (zbar_image_t *dst,
     _zbar_convert_jpeg_to_y(tmp, tmpfmt, src, srcfmt);
 
     /* now convert to dst */
-    dst->width = tmp->width;
-    dst->height = tmp->height;
-    dst->crop_x = tmp->crop_x;
-    dst->crop_y = tmp->crop_y;
-    dst->crop_w = tmp->crop_w;
-    dst->crop_h = tmp->crop_h;
+    _zbar_image_copy_size(dst, tmp);
 
     conversion_handler_t *func =
         conversions[tmpfmt->group][dstfmt->group].func;

@@ -244,8 +244,7 @@ static inline int video_init_images (zbar_video_t *vdo)
     for(i = 0; i < vdo->num_images; i++) {
         zbar_image_t *img = vdo->images[i];
         img->format = vdo->format;
-        img->width = vdo->width;
-        img->height = vdo->height;
+        zbar_image_set_size(img, vdo->width, vdo->height);
         if(vdo->iomode != VIDEO_MMAP) {
             unsigned long offset = i * vdo->datalen;
             img->datalen = vdo->datalen;
@@ -285,8 +284,7 @@ int zbar_video_init (zbar_video_t *vdo,
         /* create intermediate image for decoder to use*/
         img = vdo->jpeg_img = zbar_image_create();
         img->format = fourcc('Y','8','0','0');
-        img->width = vdo->width;
-        img->height = vdo->height;
+        zbar_image_set_size(img, vdo->width, vdo->height);
         img->datalen = vdo->width * vdo->height;
     }
 #endif
@@ -369,8 +367,7 @@ zbar_image_t *zbar_video_next_image (zbar_video_t *vdo)
                 /* recycle the shadow images */
 
                 img->format = vdo->format;
-                img->width = vdo->width;
-                img->height = vdo->height;
+                zbar_image_set_size(img, vdo->width, vdo->height);
                 img->datalen = vdo->datalen;
                 img->data = malloc(vdo->datalen);
             }

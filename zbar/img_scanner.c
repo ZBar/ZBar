@@ -51,11 +51,6 @@
 
 /* FIXME cache setting configurability */
 
-/* number of times the same result must be detected
- * in "nearby" images before being reported
- */
-#define CACHE_CONSISTENCY    3 /* images */
-
 /* time interval for which two images are considered "nearby"
  */
 #define CACHE_PROXIMITY   1000 /* ms */
@@ -113,6 +108,7 @@ struct zbar_image_scanner_s {
     /* configuration settings */
     unsigned config;            /* config flags */
     int configs[NUM_SCN_CFGS];  /* int valued configurations */
+    int sym_configs[1][16];     /* per-symbology configurations */
 
 #ifndef NO_STATS
     int stat_syms_new;
@@ -297,9 +293,8 @@ static inline zbar_symbol_t *cache_lookup (zbar_image_scanner_t *iscn,
 static inline void cache_sym (zbar_image_scanner_t *iscn,
                               zbar_symbol_t *sym)
 {
-    uint32_t age, near_thresh, far_thresh, dup;
     if(iscn->enable_cache) {
-        char qr = (sym->type == ZBAR_QRCODE);
+        uint32_t age, near_thresh, far_thresh, dup;
         zbar_symbol_t *entry = cache_lookup(iscn, sym);
         if(!entry) {
             /* FIXME reuse sym */
@@ -307,7 +302,7 @@ static inline void cache_sym (zbar_image_scanner_t *iscn,
                                                   sym->datalen + 1);
             memcpy(entry->data, sym->data, sym->datalen);
             entry->time = sym->time - CACHE_HYSTERESIS;
-            entry->cache_count = (qr) ? 0 : -CACHE_CONSISTENCY;
+            entry->cache_count = 0;
             /* add to cache */
             entry->next = iscn->cache;
             iscn->cache = entry;
@@ -319,8 +314,11 @@ static inline void cache_sym (zbar_image_scanner_t *iscn,
         near_thresh = (age < CACHE_PROXIMITY);
         far_thresh = (age >= CACHE_HYSTERESIS);
         dup = (entry->cache_count >= 0);
-        if((!dup && !near_thresh) || far_thresh)
-            entry->cache_count = (qr) ? 0 : -CACHE_CONSISTENCY;
+        if((!dup && !near_thresh) || far_thresh) {
+            int type = sym->type;
+            int h = ((type - (type >> 3)) ^ (type >> 5)) & 0xf;
+            entry->cache_count = -iscn->sym_configs[0][h];
+        }
         else if(dup || near_thresh)
             entry->cache_count++;
 
@@ -483,6 +481,10 @@ zbar_image_scanner_t *zbar_image_scanner_create ()
     CFG(iscn, ZBAR_CFG_X_DENSITY) = 1;
     CFG(iscn, ZBAR_CFG_Y_DENSITY) = 1;
     zbar_image_scanner_set_config(iscn, 0, ZBAR_CFG_POSITION, 1);
+    zbar_image_scanner_set_config(iscn, 0, ZBAR_CFG_UNCERTAINTY, 2);
+    zbar_image_scanner_set_config(iscn, ZBAR_QRCODE, ZBAR_CFG_UNCERTAINTY, 0);
+    zbar_image_scanner_set_config(iscn, ZBAR_CODE128, ZBAR_CFG_UNCERTAINTY, 0);
+    zbar_image_scanner_set_config(iscn, ZBAR_CODE39, ZBAR_CFG_UNCERTAINTY, 0);
     return(iscn);
 }
 
@@ -551,8 +553,23 @@ int zbar_image_scanner_set_config (zbar_image_scanner_t *iscn,
                                    zbar_config_t cfg,
                                    int val)
 {
-    if(cfg < ZBAR_CFG_POSITION)
+    if(cfg < ZBAR_CFG_UNCERTAINTY)
         return(zbar_decoder_set_config(iscn->dcode, sym, cfg, val));
+
+    if(cfg < ZBAR_CFG_POSITION) {
+        int c, i;
+        if(cfg > ZBAR_CFG_UNCERTAINTY)
+            return(1);
+        c = cfg - ZBAR_CFG_UNCERTAINTY;
+        if(sym > ZBAR_PARTIAL) {
+            i = ((sym - (sym >> 3)) ^ (sym >> 5)) & 0xf;
+            iscn->sym_configs[c][i] = val;
+        }
+        else
+            for(i = 0; i < 16; i++)
+                iscn->sym_configs[c][i] = val;
+        return(0);
+    }
 
     if(sym > ZBAR_PARTIAL)
         return(1);
