@@ -67,7 +67,12 @@ public:
         {
             if(userdata) {
                 Image *image = (Image*)zbar_image_get_userdata(zimg);
-                ((Handler*)userdata)->image_callback(*image);
+                if(image)
+                    ((Handler*)userdata)->image_callback(*image);
+                else {
+                    Image tmp(zimg, 1);
+                    ((Handler*)userdata)->image_callback(tmp);
+                }
             }
         }
     };

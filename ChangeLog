@@ -1,4 +1,6 @@
 current:
+  * fix C++ video callback bug
+    - add C++ processor example
   * add per-symbology cache consistency
     - reliable symbologies decode immediately by default
     - no more need to disable cache with video
