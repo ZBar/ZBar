@@ -1,12 +1,18 @@
 current:
   * fix C++ video callback bug
-    - add C++ processor example
+    - add C and C++ processor examples
   * add per-symbology cache consistency
     - reliable symbologies decode immediately by default
     - no more need to disable cache with video
     - also fix crop bugs w/video scanning
+  * add iPhone zoom support, integrate with crop
   * add support for scanning partial images (cropping)
     - update c++, python, perl, java bindings and tests
+  * add iPhone OS 4.0 video capture support
+    - replacement view controller for new camera reader
+    - separate view for use without controller
+    - separate capture delegate for use standalone
+    - add continuous autofocus
   * fix couple of leaks
   * remove doc hints about GFDL (bug #3004411)
     - apply LGPL to API docs

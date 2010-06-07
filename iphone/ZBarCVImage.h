@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2010 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the ZBar Bar Code Reader.
 //
@@ -21,33 +21,24 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
-#include <mach/mach_time.h>
-#define xNSSTR(s) @#s
-#define NSSTR(s) xNSSTR(s)
+#import <zbar/ZBarImage.h>
+#import <CoreVideo/CoreVideo.h>
 
-#ifdef DEBUG_OBJC
-# ifndef MODULE
-#  define MODULE ZBarReaderController
-# endif
-# define zlog(fmt, ...) \
-    NSLog(NSSTR(MODULE) @": " fmt , ##__VA_ARGS__)
+// ZBarImage referring to a CVPixelBuffer.  used internally to handle
+// asynchronous conversion to UIImage
 
-#define timer_start \
-    uint64_t t_start = timer_now();
-
-#else
-# define zlog(...)
-# define timer_start
-#endif
-
-static inline uint64_t timer_now ()
+@interface ZBarCVImage
+    : ZBarImage
 {
-    return(mach_absolute_time());
+    CVPixelBufferRef pixelBuffer;
+    void *rgbBuffer;
+    NSInvocationOperation *conversion;
 }
 
-static inline double timer_elapsed (uint64_t start, uint64_t end)
-{
-    mach_timebase_info_data_t info;
-    mach_timebase_info(&info);
-    return((double)(end - start) * info.numer / (info.denom * 1000000000.));
-}
+@property (nonatomic) CVPixelBufferRef pixelBuffer;
+@property (nonatomic, readonly) void *rgbBuffer;
+@property (nonatomic, readonly) NSOperation *conversion;
+
+- (void) convertCVtoRGB;
+
+@end

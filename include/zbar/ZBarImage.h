@@ -40,10 +40,12 @@ using namespace zbar;
 @property (nonatomic) unsigned long format;
 @property (nonatomic) unsigned sequence;
 @property (nonatomic) CGSize size;
+@property (nonatomic) CGRect crop;
 @property (readonly, nonatomic) const void *data;
 @property (readonly, nonatomic) unsigned long dataLength;
-@property (readonly, nonatomic) ZBarSymbolSet *symbols;
+@property (copy, nonatomic) ZBarSymbolSet *symbols;
 @property (readonly, nonatomic) zbar_image_t *zbarImage;
+@property (readonly, nonatomic) UIImage *UIImage;
 
 - (id) initWithImage: (zbar_image_t*) image;
 - (id) initWithCGImage: (CGImageRef) image;
@@ -55,6 +57,7 @@ using namespace zbar;
 
 - (void) setData: (const void*) data
       withLength: (unsigned long) length;
+- (UIImage*) UIImageWithOrientation: (UIImageOrientation) imageOrientation;
 - (void) cleanup;
 
 + (unsigned long) fourcc: (NSString*) format;

@@ -33,7 +33,8 @@ static void image_cleanup(zbar_image_t *zimg)
 
 @implementation ZBarImage
 
-@dynamic format, sequence, size, data, dataLength, zbarImage;
+@dynamic format, sequence, size, crop, data, dataLength, symbols, zbarImage,
+    UIImage;
 
 + (unsigned long) fourcc: (NSString*) format
 {
@@ -178,13 +179,27 @@ static void image_cleanup(zbar_image_t *zimg)
 
 - (CGSize) size
 {
-    return(CGSizeMake(zbar_image_get_width(zimg),
-                      zbar_image_get_height(zimg)));
+    unsigned w, h;
+    zbar_image_get_size(zimg, &w, &h);
+    return(CGSizeMake(w, h));
 }
 
 - (void) setSize: (CGSize) size
 {
     zbar_image_set_size(zimg, size.width + .5, size.height + .5);
+}
+
+- (CGRect) crop
+{
+    unsigned x, y, w, h;
+    zbar_image_get_crop(zimg, &x, &y, &w, &h);
+    return(CGRectMake(x, y, w, h));
+}
+
+- (void) setCrop: (CGRect) crop
+{
+    zbar_image_set_crop(zimg, crop.origin.x + .5, crop.origin.y + .5,
+                        crop.size.width + .5, crop.size.height + .5);
 }
 
 - (ZBarSymbolSet*) symbols
@@ -218,6 +233,57 @@ static void image_cleanup(zbar_image_t *zimg)
 - (zbar_image_t*) zbarImage
 {
     return(zimg);
+}
+
+- (UIImage*) UIImageWithOrientation: (UIImageOrientation) orient
+{
+    unsigned long format = self.format;
+    size_t bpc, bpp;
+    switch(format)
+    {
+    case zbar_fourcc('R','G','B','3'):
+        bpc = 8;
+        bpp = 24;
+        break;
+    case zbar_fourcc('R','G','B','4'):
+        bpc = 8;
+        bpp = 32;
+        break;
+    case zbar_fourcc('R','G','B','Q'):
+        bpc = 5;
+        bpp = 16;
+        break;
+    default:
+        assert(0);
+        return(nil);
+    };
+
+    unsigned w = zbar_image_get_width(zimg);
+    unsigned h = zbar_image_get_height(zimg);
+    const void *data = zbar_image_get_data(zimg);
+    size_t datalen = zbar_image_get_data_length(zimg);
+    CGDataProviderRef datasrc =
+        CGDataProviderCreateWithData(self, data, datalen, (void*)CFRelease);
+    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+    CGImageRef cgimg =
+        CGImageCreate(w, h, bpc, bpp, ((bpp + 7) >> 3) * w, cs,
+                      kCGBitmapByteOrderDefault |
+                      kCGImageAlphaNoneSkipFirst,
+                      datasrc, NULL, YES, kCGRenderingIntentDefault);
+    CGColorSpaceRelease(cs);
+    CGDataProviderRelease(datasrc);
+
+    UIImage *uiimg =
+        [UIImage imageWithCGImage: cgimg
+                 scale: 1
+                 orientation: orient];
+    CGImageRelease(cgimg);
+    return(uiimg);
+}
+
+- (UIImage*) UIImage
+{
+    return([self UIImageWithOrientation: UIImageOrientationUp]);
 }
 
 - (void) cleanup

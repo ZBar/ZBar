@@ -32,6 +32,7 @@
 NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 
 // expose undocumented API
+CF_RETURNS_RETAINED
 CGImageRef UIGetScreenImage(void);
 
 @implementation ZBarReaderController
