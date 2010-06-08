@@ -10,6 +10,7 @@ enum {
     SOURCE_SECTION,
     CAMODE_SECTION,
     CONFIG_SECTION,
+    CUSTOM_SECTION,
     SYMBOL_SECTION,
     RESULT_SECTION,
     NUM_SECTIONS
@@ -20,8 +21,20 @@ static NSString* const section_titles[] = {
     @"SourceType",
     @"CameraMode",
     @"Reader Configuration",
+    nil,
     @"Enabled Symbologies",
     @"Decode Results",
+};
+
+static const CGRect const crop_choices[] = {
+    { { 0, 0 }, { 1, 1 } },
+    { { .25, 0 }, { .5, 1 } },
+    { { 0, .3 }, { 1, .4 } },
+    { { 0, 0 }, { 0, 0 } }
+};
+
+static const NSInteger const density_choices[] = {
+    3, 2, 1, 0, 4, -1
 };
 
 @interface AppDelegate
@@ -37,13 +50,14 @@ static NSString* const section_titles[] = {
 
     NSMutableArray *sections, *symbolEnables;
 
-    BOOL found, paused;
+    BOOL found, paused, continuous;
     NSInteger dataHeight;
     UILabel *typeLabel, *dataLabel;
     UIImageView *imageView;
 
     ZBarReaderViewController *reader;
     UIView *overlay;
+    UILabel *typeOvl, *dataOvl;
     NSArray *masks;
 }
 
@@ -104,6 +118,21 @@ static NSString* const section_titles[] = {
     label.text = @"Custom Overlay";
     [overlay addSubview: label];
     [label release];
+
+    typeOvl = [[UILabel alloc]
+                  initWithFrame: CGRectMake(0, 48, 80, 24)];
+    typeOvl.backgroundColor = [UIColor clearColor];
+    typeOvl.textColor = [UIColor whiteColor];
+    typeOvl.font = [UIFont systemFontOfSize: 16];
+    typeOvl.textAlignment = UITextAlignmentCenter;
+    [overlay addSubview: typeOvl];
+
+    dataOvl = [[UILabel alloc]
+                  initWithFrame: CGRectMake(96, 48, 224, 24)];
+    dataOvl.backgroundColor = [UIColor clearColor];
+    dataOvl.textColor = [UIColor whiteColor];
+    dataOvl.font = [UIFont systemFontOfSize: 16];
+    [overlay addSubview: dataOvl];
 
     UIToolbar *toolbar =
         [[UIToolbar alloc]
@@ -216,7 +245,7 @@ static NSString* const section_titles[] = {
               withObject: modes];
 
     static NSString* const configNames[] = {
-        @"showsZBarControls", @"enableCache",
+        @"showsCameraControls", @"showsZBarControls", @"enableCache",
         @"showsHelpOnFail", @"takesPicture",
         nil
     };
@@ -228,6 +257,44 @@ static NSString* const section_titles[] = {
                   checked: [[reader valueForKey: configNames[i]] boolValue]]];
     [sections replaceObjectAtIndex: CONFIG_SECTION
               withObject: configs];
+
+    UITableViewCell *cropCell =
+        [[[UITableViewCell alloc]
+             initWithStyle: UITableViewCellStyleValue1
+             reuseIdentifier: nil]
+            autorelease];
+    cropCell.textLabel.text = @"scanCrop";
+    cropCell.detailTextLabel.text = NSStringFromCGRect(crop_choices[0]);
+
+    UITableViewCell *xDensityCell =
+        [[[UITableViewCell alloc]
+             initWithStyle: UITableViewCellStyleValue1
+             reuseIdentifier: nil]
+            autorelease];
+    xDensityCell.textLabel.text = @"CFG_X_DENSITY";
+    xDensityCell.detailTextLabel.tag = ZBAR_CFG_X_DENSITY;
+    xDensityCell.detailTextLabel.text =
+        [NSString stringWithFormat: @"%d", density_choices[0]];
+
+    UITableViewCell *yDensityCell =
+        [[[UITableViewCell alloc]
+             initWithStyle: UITableViewCellStyleValue1
+             reuseIdentifier: nil]
+            autorelease];
+    yDensityCell.textLabel.text = @"CFG_Y_DENSITY";
+    yDensityCell.detailTextLabel.tag = ZBAR_CFG_Y_DENSITY;
+    yDensityCell.detailTextLabel.text =
+        [NSString stringWithFormat: @"%d", density_choices[0]];
+
+    [sections replaceObjectAtIndex: CUSTOM_SECTION
+              withObject: [NSArray arrayWithObjects:
+                              xDensityCell,
+                              yDensityCell,
+                              cropCell,
+                              [self cellWithTitle: @"continuous"
+                                    tag: 1
+                                    checked: NO],
+                              nil]];
 
     static const int symbolValues[] = {
         ZBAR_QRCODE, ZBAR_CODE128, ZBAR_CODE39, ZBAR_I25, ZBAR_EAN13, ZBAR_EAN8,
@@ -285,9 +352,9 @@ static NSString* const section_titles[] = {
               withObject: classes];
 
     UITableViewCell *typeCell = [UITableViewCell new];
-    typeLabel = typeCell.textLabel;
+    typeLabel = [typeCell.textLabel retain];
     UITableViewCell *dataCell = [UITableViewCell new];
-    dataLabel = dataCell.textLabel;
+    dataLabel = [dataCell.textLabel retain];
     dataLabel.numberOfLines = 0;
     dataLabel.lineBreakMode = UILineBreakModeCharacterWrap;
     UITableViewCell *imageCell = [UITableViewCell new];
@@ -319,6 +386,10 @@ static NSString* const section_titles[] = {
     dataLabel = nil;
     [imageView release];
     imageView = nil;
+    [typeOvl release];
+    typeOvl = nil;
+    [dataOvl release];
+    dataOvl = nil;
     [overlay release];
     overlay = nil;
     [masks release];
@@ -343,6 +414,8 @@ static NSString* const section_titles[] = {
     imageView.image = nil;
     typeLabel.text = nil;
     dataLabel.text = nil;
+    typeOvl.text = nil;
+    dataOvl.text = nil;
     [self.tableView reloadData];
     if([reader respondsToSelector: @selector(readerView)])
         reader.readerView.showsFPS = YES;
@@ -428,6 +501,55 @@ static NSString* const section_titles[] = {
     [alert release];
 }
 
+- (void) advanceCrop: (UILabel*) label
+{
+    CGRect r = CGRectFromString(label.text);
+    int i;
+    for(i = 0; crop_choices[i].size.width;)
+        if(CGRectEqualToRect(r, crop_choices[i++]))
+            break;
+    if(!crop_choices[i].size.width)
+        i = 0;
+    r = crop_choices[i];
+    reader.scanCrop = r;
+    label.text = NSStringFromCGRect(r);
+
+    r.origin.x *= 426;
+    r.origin.y *= 320;
+    r.size.width *= 426;
+    r.size.height *= 320;
+    UIView *mask = [masks objectAtIndex: 0];
+    mask.frame = CGRectMake(0, 0, 320, r.origin.x);
+    mask = [masks objectAtIndex: 1];
+    mask.frame = CGRectMake(0, r.origin.x, r.origin.y, r.size.width);
+
+    r.origin.y += r.size.height;
+    mask = [masks objectAtIndex: 2];
+    mask.frame = CGRectMake(r.origin.y, r.origin.x,
+                            320 - r.origin.y, r.size.width);
+
+    r.origin.x += r.size.width;
+    mask = [masks objectAtIndex: 3];
+    mask.frame = CGRectMake(0, r.origin.x, 320, 426 - r.origin.x);
+}
+
+- (void) advanceDensity: (UILabel*) label
+{
+    NSInteger d = [label.text integerValue];
+    int i;
+    for(i = 0; density_choices[i] >= 0;)
+        if(d == density_choices[i++])
+            break;
+    if(density_choices[i] < 0)
+        i = 0;
+    d = density_choices[i];
+    assert(d >= 0);
+    [reader.scanner setSymbology: 0
+           config: label.tag
+           to: d];
+    label.text = [NSString stringWithFormat: @"%d", d];
+}
+
 - (void)       tableView: (UITableView*) view
  didSelectRowAtIndexPath: (NSIndexPath*) path
 {
@@ -446,10 +568,12 @@ static NSString* const section_titles[] = {
               inSection: CLASS_SECTION];
         break;
     }
+
     case SOURCE_SECTION:
         [self setCheckForTag: reader.sourceType = cell.tag
               inSection: SOURCE_SECTION];
         break;
+
     case CAMODE_SECTION:
         @try {
             reader.cameraMode = cell.tag;
@@ -460,6 +584,7 @@ static NSString* const section_titles[] = {
         [self setCheckForTag: reader.cameraMode
               inSection: CAMODE_SECTION];
         break;
+
     case CONFIG_SECTION: {
         BOOL state;
         NSString *key = cell.textLabel.text;
@@ -482,6 +607,26 @@ static NSString* const section_titles[] = {
             reader.cameraOverlayView = (state) ? nil : overlay;
         break;
     }
+
+    case CUSTOM_SECTION:
+        switch(path.row)
+        {
+        case 0:
+        case 1:
+            [self advanceDensity: cell.detailTextLabel];
+            break;
+        case 2:
+            [self advanceCrop: cell.detailTextLabel];
+            break;
+        case 3:
+            [self setCheck: continuous = !continuous
+                  forCell: cell];
+            break;
+        default:
+            assert(0);
+        }
+        break;
+
     case SYMBOL_SECTION: {
         BOOL state = ![[symbolEnables objectAtIndex: path.row] boolValue];
         [symbolEnables replaceObjectAtIndex: path.row
@@ -539,15 +684,22 @@ static NSString* const section_titles[] = {
     [self performSelector: @selector(presentResult:)
           withObject: bestResult
           afterDelay: .001];
-    [picker dismissModalViewControllerAnimated: YES];
+    if(!continuous)
+        [picker dismissModalViewControllerAnimated: YES];
 }
 
 - (void) presentResult: (ZBarSymbol*) sym
 {
     found = !!sym;
-    typeLabel.text = sym.typeName;
+    NSString *typeName = sym.typeName;
+    typeLabel.text = typeName;
     NSString *data = sym.data;
     dataLabel.text = data;
+
+    if(continuous) {
+        typeOvl.text = typeName;
+        dataOvl.text = data;
+    }
 
     NSLog(@"imagePickerController:didFinishPickingMediaWithInfo:\n");
     NSLog(@"    type=%@ data=%@\n", sym.typeName, data);

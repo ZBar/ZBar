@@ -204,16 +204,6 @@
     [super viewWillDisappear: animated];
 }
 
-- (void) viewDidDisappear: (BOOL) animated
-{
-    [super viewDidDisappear: animated];
-
-    // workaround for rdar://8034533
-    // force view to unload so session is recreated and restarts correctly
-    self.view = nil;
-    [self viewDidUnload];
-}
-
 - (ZBarReaderView*) readerView
 {
     self.view;

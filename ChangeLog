@@ -1,4 +1,5 @@
 current:
+  * enhance iPhone readertest w/more options
   * fix C++ video callback bug
     - add C and C++ processor examples
   * add per-symbology cache consistency

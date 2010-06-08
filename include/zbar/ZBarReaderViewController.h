@@ -59,8 +59,7 @@
 // rectangle before scanning.  the rectangle is normalized to the
 // image size and aspect ratio; useful values will place the rectangle
 // between 0 and 1 on each axis, where the x-axis corresponds to the
-// image major axis.  defaults to the full image (0, 0, 1, 1).  FIXME
-// currently only works for the minor axis
+// image major axis.  defaults to the full image (0, 0, 1, 1).
 @property (nonatomic) CGRect scanCrop;
 
 // provide a custom overlay.  note that this can be used with
