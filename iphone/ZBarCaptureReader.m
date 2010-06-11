@@ -31,7 +31,8 @@
 
 @implementation ZBarCaptureReader
 
-@synthesize captureOutput, captureDelegate, scanner, scanCrop, framesPerSecond;
+@synthesize captureOutput, captureDelegate, scanner, scanCrop, framesPerSecond,
+    enableCache;
 @dynamic size;
 
 - (void) initResult
@@ -48,6 +49,7 @@
         return(nil);
 
     t_fps = t_frame = timer_now();
+    enableCache = YES;
 
     scanner = [_scanner retain];
     scanCrop = CGRectMake(0, 0, 1, 1);
@@ -116,7 +118,7 @@
     if(!OSAtomicCompareAndSwap32Barrier(0, 1, &running))
         return;
     @synchronized(scanner) {
-        scanner.enableCache = YES;
+        scanner.enableCache = enableCache;
     }
 }
 

@@ -39,6 +39,4 @@
 @property (nonatomic, readonly) void *rgbBuffer;
 @property (nonatomic, readonly) NSOperation *conversion;
 
-- (void) convertCVtoRGB;
-
 @end

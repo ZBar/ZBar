@@ -110,4 +110,7 @@
 @property (nonatomic, readonly) AVCaptureSession *session;
 @property (nonatomic, readonly) ZBarCaptureReader *captureReader;
 
+// this flag still works, but its use is deprecated
+@property (nonatomic) BOOL enableCache;
+
 @end

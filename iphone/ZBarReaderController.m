@@ -38,7 +38,7 @@ CGImageRef UIGetScreenImage(void);
 @implementation ZBarReaderController
 
 @synthesize scanner, readerDelegate, cameraMode, scanCrop, maxScanDimension,
-    showsHelpOnFail, takesPicture, enableCache;
+    showsHelpOnFail, takesPicture, enableCache, tracksSymbols;
 @dynamic showsZBarControls;
 
 - (id) init
@@ -47,7 +47,7 @@ CGImageRef UIGetScreenImage(void);
         showsHelpOnFail = YES;
         hasOverlay = showsZBarControls =
             [self respondsToSelector: @selector(cameraOverlayView)];
-        enableCache = YES;
+        enableCache = tracksSymbols = YES;
         scanCrop = CGRectMake(0, 0, 1, 1);
         maxScanDimension = 640;
 
@@ -471,8 +471,9 @@ CGImageRef UIGetScreenImage(void);
           withObject: nil
           afterDelay: 0.001];
 
-    [self updateBox: sym
-          imageSize: size];
+    if(tracksSymbols)
+        [self updateBox: sym
+              imageSize: size];
 }
 
 - (void) captureScreen
@@ -540,8 +541,9 @@ CGImageRef UIGetScreenImage(void);
           withObject: nil
           afterDelay: 0.001];
 
-    [self updateBox: sym
-          imageSize: size];
+    if(tracksSymbols)
+        [self updateBox: sym
+              imageSize: size];
 }
 
 - (void) showHelpWithReason: (NSString*) reason

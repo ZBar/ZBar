@@ -102,6 +102,9 @@ typedef enum {
 // how to use the camera (when sourceType == Camera)
 @property (nonatomic) ZBarReaderControllerCameraMode cameraMode;
 
+// whether to outline symbols with the green tracking box.
+@property (nonatomic) BOOL tracksSymbols;
+
 // whether to automatically take a full picture when a barcode is detected
 // (when cameraMode == Sampling)
 @property (nonatomic) BOOL takesPicture;

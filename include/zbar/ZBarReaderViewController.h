@@ -40,7 +40,7 @@
     UIView *cameraOverlayView;
     CGAffineTransform cameraViewTransform;
     CGRect scanCrop;
-    BOOL showsZBarControls;
+    BOOL showsZBarControls, tracksSymbols, enableCache;
 
     UIView *controls;
     BOOL statusBarHidden;
@@ -54,6 +54,10 @@
 
 // whether to use alternate control set
 @property (nonatomic) BOOL showsZBarControls;
+
+// whether to show the green tracking box.  note that, even when
+// enabled, the box will only be visible when scanning EAN and I2/5.
+@property (nonatomic) BOOL tracksSymbols;
 
 // crop images for scanning.  the image will be cropped to this
 // rectangle before scanning.  the rectangle is normalized to the
@@ -76,6 +80,9 @@
 // direct access to the ZBarReaderView
 @property (nonatomic, readonly) ZBarReaderView *readerView;
 
+// this flag still works, but its use is deprecated
+@property (nonatomic) BOOL enableCache;
+
 // these are present only for backward compatibility.
 // they will error if inappropriate/unsupported values are set
 @property (nonatomic) UIImagePickerControllerSourceType sourceType; // Camera
@@ -85,7 +92,6 @@
 @property (nonatomic) BOOL showsHelpOnFail; // ignored
 @property (nonatomic) ZBarReaderControllerCameraMode cameraMode; // Sampling
 @property (nonatomic) BOOL takesPicture; // NO
-@property (nonatomic) BOOL enableCache; // ignored
 @property (nonatomic) NSInteger maxScanDimension; // ignored
 
 + (BOOL) isSourceTypeAvailable: (UIImagePickerControllerSourceType) sourceType;

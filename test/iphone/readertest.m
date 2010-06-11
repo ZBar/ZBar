@@ -245,8 +245,8 @@ static const NSInteger const density_choices[] = {
               withObject: modes];
 
     static NSString* const configNames[] = {
-        @"showsCameraControls", @"showsZBarControls", @"enableCache",
-        @"showsHelpOnFail", @"takesPicture",
+        @"showsCameraControls", @"showsZBarControls", @"tracksSymbols",
+        @"enableCache", @"showsHelpOnFail", @"takesPicture",
         nil
     };
     NSMutableArray *configs = [NSMutableArray array];

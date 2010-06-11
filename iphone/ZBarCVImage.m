@@ -80,24 +80,13 @@ static const CGDataProviderDirectCallbacks asyncProvider = {
 
 - (UIImage*) UIImageWithOrientation: (UIImageOrientation) orient
 {
-    NSOperationQueue *queue = conversionQueue;
-    if(!queue)
-        queue = conversionQueue = [NSOperationQueue new];
-
-    // start format conversion in separate thread
-    conversion = [[NSInvocationOperation alloc]
-                     initWithTarget: self
-                     selector: @selector(convertCVtoRGB)
-                     object: nil];
-    [queue addOperation: conversion];
-
-    // create UIImage with before converted data is available
+    // create UIImage before converted data is available
     CGSize size = self.size;
     int w = size.width;
     int h = size.height;
 
     CGDataProviderRef datasrc =
-        CGDataProviderCreateDirect(self, 3 * w * h, &asyncProvider);
+        CGDataProviderCreateDirect([self retain], 3 * w * h, &asyncProvider);
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
     CGImageRef cgimg =
         CGImageCreate(w, h, 8, 24, 3 * w, cs,
@@ -111,12 +100,24 @@ static const CGDataProviderDirectCallbacks asyncProvider = {
                  scale: 1
                  orientation: orient];
     CGImageRelease(cgimg);
+
+    NSOperationQueue *queue = conversionQueue;
+    if(!queue)
+        queue = conversionQueue = [NSOperationQueue new];
+
+    // start format conversion in separate thread
+    conversion = [[NSInvocationOperation alloc]
+                     initWithTarget: self
+                     selector: @selector(convertCVtoRGB:)
+                     object: uiimg];
+    [queue addOperation: conversion];
+
     return(uiimg);
 }
 
 // convert video frame to a CGImage compatible RGB format
 // FIXME this is temporary until we can find the native way...
-- (void) convertCVtoRGB
+- (void) convertCVtoRGB: (UIImage*) uiimg
 {
     timer_start;
     unsigned long format = self.format;

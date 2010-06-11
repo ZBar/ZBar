@@ -31,7 +31,7 @@
 
 @synthesize readerDelegate, tracksSymbols, showsFPS, zoom, scanCrop,
     previewTransform, session, captureReader;
-@dynamic scanner, allowsPinchZoom, device;
+@dynamic scanner, allowsPinchZoom, enableCache, device;
 
 - (id) initWithImageScanner: (ZBarImageScanner*) _scanner
 {
@@ -264,6 +264,16 @@
 - (BOOL) allowsPinchZoom
 {
     return(pinch.enabled);
+}
+
+- (BOOL) enableCache
+{
+    return(captureReader.enableCache);
+}
+
+- (void) setEnableCache: (BOOL) enable
+{
+    captureReader.enableCache = enable;
 }
 
 - (void) setAllowsPinchZoom: (BOOL) enabled

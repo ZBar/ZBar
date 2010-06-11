@@ -30,8 +30,8 @@
 
 @implementation ZBarReaderViewController
 
-@synthesize scanner, readerDelegate, showsZBarControls, cameraOverlayView,
-    cameraViewTransform, readerView, scanCrop;
+@synthesize scanner, readerDelegate, showsZBarControls, tracksSymbols,
+    enableCache, cameraOverlayView, cameraViewTransform, readerView, scanCrop;
 @dynamic sourceType, allowsEditing, allowsImageEditing, showsCameraControls,
     showsHelpOnFail, cameraMode, takesPicture, maxScanDimension;
 
@@ -56,7 +56,7 @@
 
     self.wantsFullScreenLayout = YES;
 
-    showsZBarControls = YES;
+    showsZBarControls = tracksSymbols = enableCache = YES;
     scanCrop = CGRectMake(0, 0, 1, 1);
     cameraViewTransform = CGAffineTransformIdentity;
 
@@ -162,6 +162,8 @@
     readerView.readerDelegate = (id<ZBarReaderViewDelegate>)self;
     readerView.scanCrop = scanCrop;
     readerView.previewTransform = cameraViewTransform;
+    readerView.tracksSymbols = tracksSymbols;
+    readerView.enableCache = enableCache;
     [view addSubview: readerView];
 
     [self initControls];
@@ -209,6 +211,20 @@
     self.view;
     assert(readerView);
     return(readerView);
+}
+
+- (void) setTracksSymbols: (BOOL) track
+{
+    tracksSymbols = track;
+    if(readerView)
+        readerView.tracksSymbols = track;
+}
+
+- (void) setEnableCache: (BOOL) enable
+{
+    enableCache = enable;
+    if(readerView)
+        readerView.enableCache = enable;
 }
 
 - (void) setScanCrop: (CGRect) r
@@ -326,7 +342,6 @@ DEPRECATED_PROPERTY(showsCameraControls, setShowsCameraControls, BOOL, NO, NO)
 DEPRECATED_PROPERTY(showsHelpOnFail, setShowsHelpOnFail, BOOL, NO, YES)
 DEPRECATED_PROPERTY(cameraMode, setCameraMode, ZBarReaderControllerCameraMode, ZBarReaderControllerCameraModeSampling, NO)
 DEPRECATED_PROPERTY(takesPicture, setTakesPicture, BOOL, NO, NO)
-DEPRECATED_PROPERTY(enableCache, setEnableCache, BOOL, YES, YES)
 DEPRECATED_PROPERTY(maxScanDimension, setMaxScanDimension, NSInteger, 640, YES)
 
 @end

@@ -50,6 +50,7 @@
     ZBarImageScanner *scanner;
     CGRect scanCrop;
     CGFloat framesPerSecond;
+    BOOL enableCache;
 
     dispatch_queue_t queue;
     ZBarImage *image;
@@ -89,5 +90,7 @@
 // current frame rate (for debug/optimization).
 // only valid when running
 @property (nonatomic, readonly) CGFloat framesPerSecond;
+
+@property (nonatomic) BOOL enableCache;
 
 @end
