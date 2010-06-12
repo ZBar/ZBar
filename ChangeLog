@@ -1,4 +1,5 @@
 current:
+  * add iPhone cache flush, change new libs to weak refs
   * fix iPhone async ref bug
   * enhance iPhone readertest w/more options
   * fix C++ video callback bug

@@ -357,6 +357,11 @@
     started = NO;
 }
 
+- (void) flushCache
+{
+    [captureReader flushCache];
+}
+
 // AVCaptureSession notifications
 
 - (void) onVideoStart: (NSNotification*) note

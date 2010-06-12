@@ -71,6 +71,9 @@
 // this must be called *before* the session is stopped
 - (void) willStopRunning;
 
+// clear the internal result cache
+- (void) flushCache;
+
 // the capture output.  add this to an instance of AVCaptureSession
 @property (nonatomic, readonly) AVCaptureOutput *captureOutput;
 

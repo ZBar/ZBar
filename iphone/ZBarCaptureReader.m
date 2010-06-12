@@ -128,6 +128,13 @@
         return;
 }
 
+- (void) flushCache
+{
+    @synchronized(scanner) {
+        scanner.enableCache = enableCache;
+    }
+}
+
 - (void) setCaptureDelegate: (id<ZBarCaptureDelegate>) delegate
 {
     @synchronized(scanner) {

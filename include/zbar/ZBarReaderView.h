@@ -73,6 +73,9 @@
 // stop the video stream and barcode reader.
 - (void) stop;
 
+// clear the internal result cache
+- (void) flushCache;
+
 // delegate is notified of decode results.
 @property (nonatomic, assign) id<ZBarReaderViewDelegate> readerDelegate;
 

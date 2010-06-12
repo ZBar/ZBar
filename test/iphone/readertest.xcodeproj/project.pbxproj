@@ -19,9 +19,9 @@
 		DCB9118810BC5DB500B907F0 /* libiconv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DCD6E13B10B0AFD4002005CD /* libiconv.dylib */; };
 		DCB9119B10BC5DCB00B907F0 /* libzbar.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DCD6E0E610B0AE16002005CD /* libzbar.a */; };
 		DCD6E0D010B0AD41002005CD /* readertest.m in Sources */ = {isa = PBXBuildFile; fileRef = DCD6E0CF10B0AD41002005CD /* readertest.m */; };
-		DCDC6D9B11ACA23000021380 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCDC6D9A11ACA23000021380 /* CoreVideo.framework */; };
-		DCDC6D9F11ACA23900021380 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCDC6D9E11ACA23900021380 /* CoreMedia.framework */; };
-		DCDC6DEC11ACA5B400021380 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCDC6DEB11ACA5B400021380 /* AVFoundation.framework */; };
+		DCDC6D9B11ACA23000021380 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCDC6D9A11ACA23000021380 /* CoreVideo.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		DCDC6D9F11ACA23900021380 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCDC6D9E11ACA23900021380 /* CoreMedia.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		DCDC6DEC11ACA5B400021380 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCDC6DEB11ACA5B400021380 /* AVFoundation.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
