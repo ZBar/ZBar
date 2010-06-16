@@ -33,13 +33,7 @@ asyncProvider_getBytePointer (void *info)
     // block until data is available
     ZBarCVImage *image = info;
     assert(image);
-    NSOperation *op = image.conversion;
-    // operation will at least have been queued already
-    assert(op);
-    if(!op)
-        return(NULL);
-    if(![op isFinished])
-        [op waitUntilFinished];
+    [image waitUntilConverted];
     assert(image.rgbBuffer);
     return(image.rgbBuffer);
 }
@@ -54,11 +48,11 @@ static const CGDataProviderDirectCallbacks asyncProvider = {
 
 @implementation ZBarCVImage
 
-@synthesize pixelBuffer, rgbBuffer, conversion;
+@synthesize pixelBuffer, rgbBuffer;
 
 - (void) dealloc
 {
-    self.pixelBuffer = nil;
+    self.pixelBuffer = NULL;
     if(rgbBuffer) {
         free(rgbBuffer);
         rgbBuffer = NULL;
@@ -78,8 +72,36 @@ static const CGDataProviderDirectCallbacks asyncProvider = {
         CVPixelBufferRelease(oldbuf);
 }
 
+- (void) waitUntilConverted
+{
+    // operation will at least have been queued already
+    NSOperation *op = [conversion retain];
+    if(!op)
+        return;
+    [op waitUntilFinished];
+    [op release];
+}
+
 - (UIImage*) UIImageWithOrientation: (UIImageOrientation) orient
 {
+    if(!conversion && !rgbBuffer) {
+        // start format conversion in separate thread
+        NSOperationQueue *queue = conversionQueue;
+        if(!queue) {
+            queue = conversionQueue = [NSOperationQueue new];
+            queue.maxConcurrentOperationCount = 1;
+        }
+        else
+            [queue waitUntilAllOperationsAreFinished];
+
+        conversion = [[NSInvocationOperation alloc]
+                         initWithTarget: self
+                         selector: @selector(convertCVtoRGB)
+                         object: nil];
+        [queue addOperation: conversion];
+        [conversion release];
+    }
+
     // create UIImage before converted data is available
     CGSize size = self.size;
     int w = size.width;
@@ -101,23 +123,12 @@ static const CGDataProviderDirectCallbacks asyncProvider = {
                  orientation: orient];
     CGImageRelease(cgimg);
 
-    NSOperationQueue *queue = conversionQueue;
-    if(!queue)
-        queue = conversionQueue = [NSOperationQueue new];
-
-    // start format conversion in separate thread
-    conversion = [[NSInvocationOperation alloc]
-                     initWithTarget: self
-                     selector: @selector(convertCVtoRGB:)
-                     object: uiimg];
-    [queue addOperation: conversion];
-
     return(uiimg);
 }
 
 // convert video frame to a CGImage compatible RGB format
 // FIXME this is temporary until we can find the native way...
-- (void) convertCVtoRGB: (UIImage*) uiimg
+- (void) convertCVtoRGB
 {
     timer_start;
     unsigned long format = self.format;
@@ -174,6 +185,8 @@ error:
 
     // release buffer as soon as conversion is complete
     self.pixelBuffer = NULL;
+
+    conversion = nil;
 }
 
 @end

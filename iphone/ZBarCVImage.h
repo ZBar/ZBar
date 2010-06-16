@@ -35,8 +35,9 @@
     NSInvocationOperation *conversion;
 }
 
+- (void) waitUntilConverted;
+
 @property (nonatomic) CVPixelBufferRef pixelBuffer;
 @property (nonatomic, readonly) void *rgbBuffer;
-@property (nonatomic, readonly) NSOperation *conversion;
 
 @end
