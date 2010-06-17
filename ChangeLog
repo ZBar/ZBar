@@ -1,4 +1,5 @@
 current:
+  * fix documentation of command exit codes (bug #3017322)
   * fix C++ video callback bug
     - add C++ processor example
   * add per-symbology cache consistency
