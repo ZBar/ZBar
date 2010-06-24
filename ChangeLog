@@ -1,4 +1,5 @@
 current:
+  * fix documentation of command exit codes (bug #3017322)
   * fix iPhone circular ref bug
   * add iPhone cache flush, change new libs to weak refs
   * fix iPhone async ref bug
