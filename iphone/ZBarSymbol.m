@@ -33,7 +33,7 @@
     return([NSString stringWithUTF8String: zbar_get_symbol_name(type)]);
 }
 
-- (id) initWithSymbol: (zbar_symbol_t*) sym
+- (id) initWithSymbol: (const zbar_symbol_t*) sym
 {
     if(self = [super init]) {
         symbol = sym;

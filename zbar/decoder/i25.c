@@ -111,7 +111,7 @@ static inline signed char i25_decode_start (zbar_decoder_t *dcode)
      * we require 5.25n for w=2n to 6.75n for w=3n
      * (FIXME should really factor in w:n ratio)
      */
-    unsigned quiet = get_width(dcode, i++);
+    unsigned quiet = get_width(dcode, i);
     if(quiet && quiet < dcode25->s10 * 3 / 8) {
         dprintf(3, "      i25: s=%d enc=%x q=%d [invalid qz]\n",
                 dcode25->s10, enc, quiet);

@@ -461,7 +461,7 @@ static inline void ean_expand_upce (ean_decoder_t *ean,
     ean->buf[8] = 0;
     ean->buf[9] = (decode < 3) ? pass->raw[i++] & 0xf : 0;
     ean->buf[10] = (decode < 4) ? pass->raw[i++] & 0xf : 0;
-    ean->buf[11] = (decode < 5) ? pass->raw[i++] & 0xf : decode;
+    ean->buf[11] = (decode < 5) ? pass->raw[i] & 0xf : decode;
 }
 
 static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,

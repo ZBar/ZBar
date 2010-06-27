@@ -194,18 +194,14 @@ inline void zbar_image_scanner_recycle_image (zbar_image_scanner_t *iscn,
 
     syms = img->syms;
     img->syms = NULL;
-    if(syms && recycle_syms(iscn, syms)) {
+    if(syms && recycle_syms(iscn, syms))
         STAT(img_syms_inuse);
-        syms = iscn->syms;
-    }
     else if(syms) {
         STAT(img_syms_recycle);
 
         /* select one set to resurrect, destroy the other */
-        if(iscn->syms) {
+        if(iscn->syms)
             _zbar_symbol_set_free(syms);
-            syms = iscn->syms;
-        }
         else
             iscn->syms = syms;
     }
