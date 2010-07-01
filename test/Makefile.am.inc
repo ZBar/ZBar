@@ -67,3 +67,14 @@ EXTRA_DIST += test/test_pygtk.py test/test_perl.pl
 CLEANFILES += test/.libs/test_decode test/.libs/test_proc \
     test/.libs/test_convert test/.libs/test_window \
     test/.libs/test_video test/.libs/dbg_scan test/.libs/test_gtk
+
+check-decoder:
+	test/test_decode -q
+
+regress-decoder:
+	test/test_decode -n 100000
+
+check-local: check-decoder check-images
+regress: regress-decoder regress-images
+
+.PHONY: check-decoder check-images regress-decoder regress-images regress

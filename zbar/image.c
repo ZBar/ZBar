@@ -253,8 +253,8 @@ int zbar_image_write (const zbar_image_t *img,
     else
         n = snprintf(filename, len, "%s.%08" PRIx32 ".zimg",
                      filebase, img->format);
-    assert(n < len);
-    filename[len] = '\0';
+    assert(n < len - 1);
+    filename[len - 1] = '\0';
 
     zprintf(1, "dumping %.4s(%08" PRIx32 ") image to %s\n",
             (char*)&img->format, img->format, filename);

@@ -793,7 +793,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
         zbar_symbol_t **symp = &syms->head, *sym;
         while((sym = *symp)) {
             if(sym->type < ZBAR_I25 && sym->type > ZBAR_PARTIAL &&
-               sym->quality < 3) {
+               sym->quality < 4) {
                 /* recycle */
                 *symp = sym->next;
                 syms->nsyms--;

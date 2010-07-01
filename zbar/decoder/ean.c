@@ -122,7 +122,7 @@ static inline signed char aux_end (zbar_decoder_t *dcode,
 
     /* check quiet zone */
     unsigned qz = get_width(dcode, 0);
-    if(!fwd && qz && qz < s * 3 / 4) {
+    if(!fwd && qz && qz <= s * 3 / 4) {
         dprintf(2, " [invalid quiet]");
         return(-1);
     }
@@ -161,15 +161,17 @@ static inline signed char aux_start (zbar_decoder_t *dcode)
     if(get_color(dcode) == ZBAR_BAR) {
         /* check for quiet-zone */
         unsigned qz = get_width(dcode, 7);
-        if(!qz || qz >= dcode->ean.s4 * 3 / 4) {
+        if(!qz || qz > dcode->ean.s4 * 3 / 4) {
             if(!E1) {
                 dprintf(2, " [valid normal]");
                 return(0); /* normal symbol start */
             }
+#if 0
             else if(E1 == 1) {
                 dprintf(2, " [valid add-on]");
                 return(STATE_ADDON); /* add-on symbol start */
             }
+#endif
         }
         dprintf(2, " [invalid start]");
         return(-1);
@@ -178,7 +180,9 @@ static inline signed char aux_start (zbar_decoder_t *dcode)
     if(!E1) {
         /* attempting decode from SPACE => validate center guard */
         unsigned e3 = get_width(dcode, 6) + get_width(dcode, 7);
-        if(!decode_e(e3, dcode->ean.s4, 7)) {
+        unsigned e4 = get_width(dcode, 7) + get_width(dcode, 8);
+        if(!decode_e(e3, dcode->ean.s4, 7) &&
+           !decode_e(e4, dcode->ean.s4, 7)) {
             dprintf(2, " [valid center]");
             return(0); /* start after center guard */
         }
@@ -198,6 +202,9 @@ static inline signed char decode4 (zbar_decoder_t *dcode)
                    : get_width(dcode, 2) + get_width(dcode, 3));
     unsigned e2 = get_width(dcode, 1) + get_width(dcode, 2);
     dprintf(2, "\n        e1=%d e2=%d", e1, e2);
+
+    if(dcode->ean.s4 < 6)
+        return(-1);
 
     /* create compacted encoding for direct lookup */
     code = ((decode_e(e1, dcode->ean.s4, 7) << 2) |
@@ -361,8 +368,10 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
             idx = pass->state & STATE_IDX;
         }
         code = decode4(dcode);
-        if(code < 0)
+        if(code < 0 && idx != 0x10)
             pass->state = -1;
+        else if(code < 0)
+            pass->raw[5] = 0xff;
         else {
             dprintf(2, "\n        raw[%x]=%02x =>", idx >> 2,
                     digits[(unsigned char)code]);
@@ -379,7 +388,7 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
        (idx == 0x18 || idx == 0x19)) {
         zbar_symbol_type_t part = ZBAR_NONE;
         dprintf(2, " fwd=%x", fwd);
-        if(!aux_end(dcode, fwd))
+        if(!aux_end(dcode, fwd) && pass->raw[5] != 0xff)
             part = ean_part_end7(&dcode->ean, pass, fwd);
         if(part)
             dcode->ean.direction = (pass->state & STATE_REV) != 0;
@@ -468,7 +477,7 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
                                                     ean_pass_t *pass,
                                                     zbar_symbol_type_t part)
 {
-    signed char i, j;
+    signed char i, j, right = !!(part & EAN_RIGHT);
     /* copy raw data into holding buffer */
     /* if same partial is not consistent, reset others */
     dprintf(2, " integrate part=%x (%s)", part, dsprintbuf(ean));
@@ -492,7 +501,7 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
             ean->left = ean->right = ean->addon = ZBAR_NONE;
         }
 
-        if(part & EAN_RIGHT) {
+        if(right) {
             part &= ZBAR_SYMBOL;
             j = (part == ZBAR_EAN13) ? 12 : 7;
             for(i = (part == ZBAR_EAN13) ? 6 : 4; i; i--, j--) {
@@ -531,9 +540,14 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
 
     if(((part == ZBAR_EAN13 ||
          part == ZBAR_UPCE) && ean_verify_checksum(ean, 12)) ||
-       (part == ZBAR_EAN8 && ean_verify_checksum(ean, 7)))
-        /* invalid parity */
+       (part == ZBAR_EAN8 && ean_verify_checksum(ean, 7))) {
+        /* invalid checksum */
+        if(right)
+            ean->left = ZBAR_NONE;
+        else
+            ean->right = ZBAR_NONE;
         part = ZBAR_NONE;
+    }
 
     if(part == ZBAR_EAN13) {
         /* special case EAN-13 subsets */

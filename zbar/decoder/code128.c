@@ -444,11 +444,12 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
     dcode128->s6 -= get_width(dcode, 6);
     dcode128->s6 += get_width(dcode, 0);
 
-    if(/* process every 6th element of active symbol */
-       (dcode128->character >= 0 &&
-        (++dcode128->element) != 6) ||
-       /* decode color based on direction */
-       (get_color(dcode) != dcode128->direction))
+    if((dcode128->character < 0)
+       ? get_color(dcode) != ZBAR_SPACE
+       : (/* process every 6th element of active symbol */
+          ++dcode128->element != 6 ||
+          /* decode color based on direction */
+          get_color(dcode) != dcode128->direction))
         return(0);
     dcode128->element = 0;
 
@@ -465,7 +466,7 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
             return(0);
         }
         qz = get_width(dcode, 6);
-        if(qz && qz < (dcode->code128.s6 * 3) / 4) {
+        if(qz && qz < (dcode128->s6 * 3) / 4) {
             dprintf(2, " [invalid qz %d]\n", qz);
             return(0);
         }
@@ -493,6 +494,20 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
         dcode128->character = -1;
         return(0);
     }
+    else {
+        unsigned dw;
+        if(dcode128->width > dcode128->s6)
+            dw = dcode128->width - dcode128->s6;
+        else
+            dw = dcode128->s6 - dcode128->width;
+        dw *= 4;
+        if(dw > dcode128->width) {
+            dprintf(1, " [width var]\n");
+            release_lock(dcode, ZBAR_CODE128);
+            dcode128->character = -1;
+            return(0);
+        }
+    }
 
     zassert(dcode->buf_alloc > dcode128->character, 0,
             "alloc=%x idx=%x c=%02x %s\n",
@@ -500,6 +515,7 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
             _zbar_decoder_buf_dump(dcode->buf, dcode->buf_alloc));
 
     dcode->buf[dcode128->character++] = c;
+    dcode128->width = dcode128->s6;
 
     if(dcode128->character > 2 &&
        ((dcode128->direction)
