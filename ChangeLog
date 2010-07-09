@@ -1,4 +1,5 @@
 current:
+  * enable torch for iPhone 4
   * enhance decoder reliability (EAN, Code 39, Code 128)
     - enhance decoder test
   * fix documentation of command exit codes (bug #3017322)

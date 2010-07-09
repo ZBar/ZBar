@@ -29,7 +29,7 @@
 
 @implementation ZBarReaderView
 
-@synthesize readerDelegate, tracksSymbols, showsFPS, zoom, scanCrop,
+@synthesize readerDelegate, tracksSymbols, torchMode, showsFPS, zoom, scanCrop,
     previewTransform, session, captureReader;
 @dynamic scanner, allowsPinchZoom, enableCache, device;
 
@@ -46,6 +46,7 @@
         UIViewAutoresizingFlexibleHeight;
 
     tracksSymbols = YES;
+    torchMode = AVCaptureTorchModeOn;
     scanCrop = CGRectMake(0, 0, 1, 1);
     previewTransform = CGAffineTransformIdentity;
 
@@ -373,8 +374,12 @@
 
     // lock device and set focus mode
     NSError *error = nil;
-    if([device lockForConfiguration: &error])
-        device.focusMode = AVCaptureFocusModeContinuousAutoFocus;
+    if([device lockForConfiguration: &error]) {
+        if([device isFocusModeSupported: AVCaptureFocusModeContinuousAutoFocus])
+            device.focusMode = AVCaptureFocusModeContinuousAutoFocus;
+        if([device isTorchModeSupported: torchMode])
+            device.torchMode = torchMode;
+    }
     else
         zlog(@"failed to lock device: %@", error);
 }

@@ -53,6 +53,7 @@
     CGAffineTransform previewTransform;
     CGFloat zoom, zoom0;
     BOOL tracksSymbols, showsFPS;
+    NSInteger torchMode;
 
     AVCaptureInput *input;
     ZBarCaptureReader *captureReader;
@@ -89,6 +90,9 @@
 // enable pinch gesture recognition for zooming the preview/decode
 // (default YES).
 @property (nonatomic) BOOL allowsPinchZoom;
+
+// torch mode to set automatically (default On).
+@property (nonatomic) NSInteger torchMode;
 
 // whether to display the frame rate for debug/configuration
 // (default NO).
