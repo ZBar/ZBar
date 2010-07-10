@@ -190,18 +190,35 @@
     [readerView start];
 
     UIApplication *app = [UIApplication sharedApplication];
-    statusBarHidden = app.statusBarHidden;
-    if(self.wantsFullScreenLayout)
+    BOOL willHideStatusBar =
+        !didHideStatusBar && self.wantsFullScreenLayout && !app.statusBarHidden;
+    if(willHideStatusBar)
         [app setStatusBarHidden: YES
              withAnimation: UIStatusBarAnimationFade];
+    didHideStatusBar = didHideStatusBar || willHideStatusBar;
+}
+
+- (void) dismissModalViewControllerAnimated: (BOOL) animated
+{
+    if(didHideStatusBar) {
+        [[UIApplication sharedApplication]
+            setStatusBarHidden: NO
+            withAnimation: UIStatusBarAnimationFade];
+        didHideStatusBar = NO;
+    }
+    [super dismissModalViewControllerAnimated: animated];
 }
 
 - (void) viewWillDisappear: (BOOL) animated
 {
     [readerView stop];
-    [[UIApplication sharedApplication]
-        setStatusBarHidden: statusBarHidden
-        withAnimation: UIStatusBarAnimationFade];
+
+    if(didHideStatusBar) {
+        [[UIApplication sharedApplication]
+            setStatusBarHidden: NO
+            withAnimation: UIStatusBarAnimationFade];
+        didHideStatusBar = NO;
+    }
 
     [super viewWillDisappear: animated];
 }
@@ -258,8 +275,12 @@
 {
     if(!readerDelegate)
         return;
-    [readerDelegate
-        imagePickerControllerDidCancel: (UIImagePickerController*)self];
+    SEL cb = @selector(imagePickerControllerDidCancel:);
+    if([readerDelegate respondsToSelector: cb])
+        [readerDelegate
+            imagePickerControllerDidCancel: (UIImagePickerController*)self];
+    else
+        [self dismissModalViewControllerAnimated: YES];
 }
 
 - (void) info

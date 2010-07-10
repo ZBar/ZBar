@@ -159,9 +159,23 @@ static const NSInteger const density_choices[] = {
                  target: self
                  action: @selector(pause)]
                 autorelease],
+            [[[UIBarButtonItem alloc]
+                 initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
+                 target: nil
+                 action: nil]
+                autorelease],
             nil];
     [overlay addSubview: toolbar];
     [toolbar release];
+
+
+    UIButton *info =
+        [UIButton buttonWithType: UIButtonTypeInfoLight];
+    info.frame = CGRectMake(266, 426, 54, 54);
+    [info addTarget: self
+             action: @selector(info)
+             forControlEvents: UIControlEventTouchUpInside];
+    [overlay addSubview: info];
 }
 
 - (void) setCheck: (BOOL) state
@@ -732,6 +746,11 @@ static const NSInteger const density_choices[] = {
           (retry) ? "YES" : "NO");
     if(!retry)
         [_reader dismissModalViewControllerAnimated: YES];
+}
+
+- (void) info
+{
+    [reader showHelpWithReason: @"INFO"];
 }
 
 @end
