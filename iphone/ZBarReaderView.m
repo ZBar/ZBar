@@ -46,7 +46,7 @@
         UIViewAutoresizingFlexibleHeight;
 
     tracksSymbols = YES;
-    torchMode = AVCaptureTorchModeOn;
+    torchMode = AVCaptureTorchModeAuto;
     scanCrop = CGRectMake(0, 0, 1, 1);
     previewTransform = CGAffineTransformIdentity;
 
@@ -262,11 +262,6 @@
     [self resetTracking];
 }
 
-- (BOOL) allowsPinchZoom
-{
-    return(pinch.enabled);
-}
-
 - (BOOL) enableCache
 {
     return(captureReader.enableCache);
@@ -277,9 +272,24 @@
     captureReader.enableCache = enable;
 }
 
+- (BOOL) allowsPinchZoom
+{
+    return(pinch.enabled);
+}
+
 - (void) setAllowsPinchZoom: (BOOL) enabled
 {
     pinch.enabled = enabled;
+}
+
+- (void) setTorchMode: (NSInteger) mode
+{
+    torchMode = mode;
+    if(running && [device isTorchModeSupported: mode])
+        @try {
+            device.torchMode = mode;
+        }
+        @catch(...) { }
 }
 
 - (void) setShowsFPS: (BOOL) show
