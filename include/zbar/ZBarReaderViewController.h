@@ -43,7 +43,7 @@
     BOOL showsZBarControls, tracksSymbols, enableCache;
 
     UIView *controls;
-    BOOL statusBarHidden;
+    BOOL didHideStatusBar;
 }
 
 // access to configure image scanner
