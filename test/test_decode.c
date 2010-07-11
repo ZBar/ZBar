@@ -44,7 +44,7 @@ int iter = 0;      /* test iteration */
 
 #define zprintf(level, format, ...) do {                                \
         if(verbosity >= (level)) {                                      \
-            fprintf((level) ? stdout : stderr, format , ##__VA_ARGS__); \
+            fprintf(stderr, format , ##__VA_ARGS__); \
         }                                                               \
     } while(0)
 
@@ -409,6 +409,246 @@ static void encode_i25 (char *data,
 }
 
 /*------------------------------------------------------------*/
+/* DataBar encoding */
+
+
+/* character encoder reference algorithm from ISO/IEC 24724:2009 */
+
+struct rss_group {
+    int T_odd, T_even, n_odd, w_max;
+};
+
+static const struct rss_group databar_groups_outside[] = {
+    { 161,   1, 12, 8 },
+    {  80,  10, 10, 6 },
+    {  31,  34,  8, 4 },
+    {  10,  70,  6, 3 },
+    {   1, 126,  4, 1 },
+    {   0, }
+};
+
+static const struct rss_group databar_groups_inside[] = {
+    {  4, 84,  5, 2 },
+    { 20, 35,  7, 4 },
+    { 48, 10,  9, 6 },
+    { 81,  1, 11, 8 },
+    {  0, }
+};
+
+static const uint32_t databar_finders[9] = {
+    0x38211, 0x35511, 0x33711, 0x31911, 0x27411,
+    0x25611, 0x23811, 0x15711, 0x13911,
+};
+
+int combins (int n,
+             int r)
+{
+    int i, j;
+    int maxDenom, minDenom;
+    int val;
+    if(n-r > r) {
+        minDenom = r;
+        maxDenom = n-r;
+    }
+    else {
+        minDenom = n-r;
+        maxDenom = r;
+    }
+    val = 1;
+    j = 1;
+    for(i = n; i > maxDenom; i--) {
+        val *= i;
+        if(j <= minDenom) {
+            val /= j;
+            j++;
+        }
+    }
+    for(; j <= minDenom; j++)
+        val /= j;
+    return(val);
+}
+
+void getRSSWidths (int val,
+                   int n,
+                   int elements,
+                   int maxWidth,
+                   int noNarrow,
+                   int *widths)
+{
+    int narrowMask = 0;
+    int bar;
+    for(bar = 0; bar < elements - 1; bar++) {
+        int elmWidth, subVal;
+        for(elmWidth = 1, narrowMask |= (1<<bar);
+            ;
+            elmWidth++, narrowMask &= ~(1<<bar))
+        {
+            subVal = combins(n-elmWidth-1, elements-bar-2);
+            if((!noNarrow) && !narrowMask &&
+                (n-elmWidth-(elements-bar-1) >= elements-bar-1))
+                subVal -= combins(n-elmWidth-(elements-bar), elements-bar-2);
+            if(elements-bar-1 > 1) {
+                int mxwElement, lessVal = 0;
+                for (mxwElement = n-elmWidth-(elements-bar-2);
+                     mxwElement > maxWidth;
+                     mxwElement--)
+                    lessVal += combins(n-elmWidth-mxwElement-1, elements-bar-3);
+                subVal -= lessVal * (elements-1-bar);
+            }
+            else if (n-elmWidth > maxWidth)
+                subVal--;
+            val -= subVal;
+            if(val < 0)
+                break;
+        }
+        val += subVal;
+        n -= elmWidth;
+        widths[bar] = elmWidth;
+    }
+    widths[bar] = n;
+}
+
+static uint64_t encode_databar_char (unsigned val,
+                                     const struct rss_group *grp,
+                                     int nmodules,
+                                     int nelems,
+                                     int dir)
+{
+    int G_sum = 0;
+    while(1) {
+        assert(grp->T_odd);
+        int sum = G_sum + grp->T_odd * grp->T_even;
+        if(val >= sum)
+            G_sum = sum;
+        else
+            break;
+        grp++;
+    }
+
+    zprintf(3, "char=%d", val);
+
+    int V_grp = val - G_sum;
+    int V_odd, V_even;
+    if(!dir) {
+        V_odd = V_grp / grp->T_even;
+        V_even = V_grp % grp->T_even;
+    }
+    else {
+        V_even = V_grp / grp->T_odd;
+        V_odd = V_grp % grp->T_odd;
+    }
+
+    zprintf(3, " G_sum=%d T_odd=%d T_even=%d n_odd=%d w_max=%d V_grp=%d\n",
+            G_sum, grp->T_odd, grp->T_even, grp->n_odd, grp->w_max, V_grp);
+
+    int odd[16];
+    getRSSWidths(V_odd, grp->n_odd, nelems, grp->w_max, !dir, odd);
+    zprintf(3, "    V_odd=%d odd=%d%d%d%d",
+            V_odd, odd[0], odd[1], odd[2], odd[3]);
+
+    int even[16];
+    getRSSWidths(V_even, nmodules - grp->n_odd, nelems, 9 - grp->w_max,
+                 dir, even);
+    zprintf(3, " V_even=%d even=%d%d%d%d",
+            V_even, even[0], even[1], even[2], even[3]);
+
+    uint64_t units = 0;
+    int i;
+    for(i = 0; i < nelems; i++)
+        units = (units << 8) | (odd[i] << 4) | even[i];
+
+    zprintf(3, " raw=%"PRIx64"\n", units);
+    return(units);
+}
+
+#define SWAP(a, b) do { \
+        uint32_t tmp = (a); \
+        (a) = (b); \
+        (b) = tmp; \
+    } while(0);
+
+static void encode_databar (char *data,
+                            int dir)
+{
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
+
+    zprintf(3, "----------------------------------------------------------\n");
+    zprintf(2, "DataBar: %s\n", data);
+
+    uint32_t v[4] = { 0, };
+    int i, j;
+    for(i = 0; i < 14; i++) {
+        for(j = 0; j < 4; j++)
+            v[j] *= 10;
+        assert(data[i]);
+        v[0] += data[i] - '0';
+        v[1] += v[0] / 1597;
+        v[0] %= 1597;
+        v[2] += v[1] / 2841;
+        v[1] %= 2841;
+        v[3] += v[2] / 1597;
+        v[2] %= 1597;
+        /*printf("    [%d] %c (%d,%d,%d,%d)\n",
+               i, data[i], v[0], v[1], v[2], v[3]);*/
+    }
+    zprintf(3, "chars=(%d,%d,%d,%d)\n", v[3], v[2], v[1], v[0]);
+
+    uint32_t c[4] = {
+        encode_databar_char(v[3], databar_groups_outside, 16, 4, 0),
+        encode_databar_char(v[2], databar_groups_inside, 15, 4, 1),
+        encode_databar_char(v[1], databar_groups_outside, 16, 4, 0),
+        encode_databar_char(v[0], databar_groups_inside, 15, 4, 1),
+    };
+
+    int chk = 0, w = 1;
+    for(i = 0; i < 4; i++, chk %= 79, w %= 79)
+        for(j = 0; j < 8; j++, w *= 3)
+            chk += ((c[i] >> (28 - j * 4)) & 0xf) * w;
+    zprintf(3, "chk=%d\n", chk);
+
+    if(chk >= 8) chk++;
+    if(chk >= 72) chk++;
+    int C_left = chk / 9;
+    int C_right = chk % 9;
+
+    if(dir == REV) {
+        SWAP(C_left, C_right);
+        SWAP(c[0], c[2]);
+        SWAP(c[1], c[3]);
+        SWAP(v[0], v[2]);
+        SWAP(v[1], v[3]);
+    }
+
+    zprintf(3, "    encode start guard:");
+    encode_junk(dir);
+    encode(0x1, FWD);
+
+    zprintf(3, "encode char[0]=%d", v[3]);
+    encode(c[0], REV);
+
+    zprintf(3, "encode left finder=%d", C_left);
+    encode(databar_finders[C_left], REV);
+
+    zprintf(3, "encode char[1]=%d", v[2]);
+    encode(c[1], FWD);
+
+    zprintf(3, "encode char[3]=%d", v[0]);
+    encode(c[3], REV);
+
+    zprintf(3, "encode right finder=%d", C_right);
+    encode(databar_finders[C_right], FWD);
+
+    zprintf(3, "encode char[2]=%d", v[1]);
+    encode(c[2], FWD);
+
+    zprintf(3, "    encode end guard:");
+    encode(0x1, FWD);
+    encode_junk(!dir);
+    zprintf(3, "----------------------------------------------------------\n");
+}
+
+
+/*------------------------------------------------------------*/
 /* EAN/UPC encoding */
 
 static const unsigned int ean_digits[10] = {
@@ -505,8 +745,56 @@ static void encode_ean8 (char *data)
 /*------------------------------------------------------------*/
 /* main test flow */
 
+int test_databar_F_1 ()
+{
+    expect(ZBAR_DATABAR, "24012345678905");
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
+    encode(0x11, 0);
+    encode(0x31111333, 0);
+    encode(0x13911, 0);
+    encode(0x31131231, 0);
+    encode(0x11214222, 0);
+    encode(0x11553, 0);
+    encode(0x21231313, 0);
+    encode(0x1, 0);
+    encode_junk(rnd_size);
+    return(0);
+}
+
+int test_orange ()
+{
+    char data[32] = "000845963000052";
+    expect(ZBAR_DATABAR, data + 1);
+    encode_databar(data, FWD);
+    encode_junk(rnd_size);
+
+    expect(ZBAR_DATABAR, data + 1);
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
+    encode(0x1, 0);
+    encode(0x23212321, 0);   // data[0]
+    encode(0x31911, 0);      // finder[?] = 3
+    encode(0x21121215, 1);   // data[1]
+    encode(0x41111133, 0);   // data[3]
+    encode(0x23811, 1);      // finder[?] = 6
+    encode(0x11215141, 1);   // data[2]
+    encode(0x11, 0);
+    encode_junk(rnd_size);
+
+    return(0);
+}
+
 int test_numeric (char *data)
 {
+    char tmp = data[0];
+    data[0] &= '1';
+    calc_ean_parity(data + 1, 13);
+    expect(ZBAR_DATABAR, data + 1);
+    encode_databar(data, (rand() >> 8) & 1);
+
+    encode_junk(rnd_size);
+
+    data[0] = tmp;
+
     data[strlen(data) & ~1] = 0;
     expect(ZBAR_CODE128, data);
     encode_code128c(data);
@@ -601,7 +889,6 @@ int main (int argc, char **argv)
 
     decoder = zbar_decoder_create();
     zbar_decoder_set_handler(decoder, symbol_handler);
-    zbar_decoder_set_config(decoder, 0, ZBAR_CFG_MIN_LEN, 0);
 
     encode_junk(rnd_size + 1);
 
@@ -659,8 +946,11 @@ int main (int argc, char **argv)
         }
     }
 
-    if(!iter)
+    if(!iter) {
+        test_databar_F_1();
+        test_orange();
         test1();
+    }
 
     /* FIXME "Ran %d iterations in %gs\n\nOK\n" */
 

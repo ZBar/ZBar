@@ -59,9 +59,9 @@
     displayed to the screen.</para>
 
     <para>The underlying library currently supports EAN-13 (including
-    UPC and ISBN subsets), EAN-8, Code 128, Code 39, Interleaved 2 of
-    5 and QR Code symbologies.  The specific type of each detected
-    symbol is printed with the decoded data.</para>
+    UPC and ISBN subsets), EAN-8, DataBar, Code 128, Code 39,
+    Interleaved 2 of 5 and QR Code symbologies.  The specific type of
+    each detected symbol is printed with the decoded data.</para>
 
     <para>Note that "<filename><replaceable>image</replaceable></filename>"
 

@@ -109,6 +109,15 @@ static inline const unsigned char *dsprintbuf(ean_decoder_t *ean)
 }
 #endif
 
+static inline int check_width (unsigned w0,
+                               unsigned w1)
+{
+    unsigned dw0 = w0;
+    w0 *= 8;
+    w1 *= 8;
+    return(w0 - dw0 <= w1 && w1 <= w0 + dw0);
+}
+
 /* evaluate previous N (>= 2) widths as auxiliary pattern,
  * using preceding 4 as character width
  */
@@ -150,6 +159,8 @@ static inline signed char aux_start (zbar_decoder_t *dcode)
     /* FIXME NB add-on has no guard in reverse */
     unsigned e1, e2 = get_width(dcode, 5) + get_width(dcode, 6);
     unsigned char E1;
+    if(dcode->ean.s4 < 6)
+        return(-1);
     if(decode_e(e2, dcode->ean.s4, 7)) {
         dprintf(2, " [invalid any]");
         return(/*FIXME (get_color(dcode) == ZBAR_SPACE) ? STATE_ADDON : */-1);
@@ -357,17 +368,29 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
     }
 
     if(!(idx & 0x03) && idx <= 0x14) {
-        signed char code;
+        signed char code = -1;
+        unsigned w = pass->width;
         if(!dcode->ean.s4)
             return(0);
         /* validate guard bars before decoding first char of symbol */
         if(!pass->state) {
             pass->state = aux_start(dcode);
+            pass->width = dcode->ean.s4;
             if(pass->state < 0)
                 return(0);
             idx = pass->state & STATE_IDX;
         }
-        code = decode4(dcode);
+        else {
+            w = check_width(w, dcode->ean.s4);
+            if(w)
+                pass->width = (pass->width + dcode->ean.s4 * 3) / 4;
+        }
+
+        if(w)
+            code = decode4(dcode);
+        else
+            dprintf(2, " [bad width]");
+
         if(code < 0 && idx != 0x10)
             pass->state = -1;
         else if(code < 0)
@@ -480,7 +503,9 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
     signed char i, j, right = !!(part & EAN_RIGHT);
     /* copy raw data into holding buffer */
     /* if same partial is not consistent, reset others */
-    dprintf(2, " integrate part=%x (%s)", part, dsprintbuf(ean));
+    dprintf(2, " integrate part=%x (%s) w=%d=>%d",
+            part, dsprintbuf(ean), ean->width, pass->width);
+
     if(part & ZBAR_ADDON) {
         /* FIXME TBD */
         for(i = (part == ZBAR_ADDON5) ? 4 : 1; i >= 0; i--) {
@@ -498,6 +523,12 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
            (ean->right && ((part & ZBAR_SYMBOL) != ean->right))) {
             /* partial mismatch - reset collected parts */
             dprintf(2, " rst(type %x %x)", ean->left, ean->right);
+            ean->left = ean->right = ean->addon = ZBAR_NONE;
+        }
+
+        if((ean->left || ean->right || ean->addon) &&
+           !check_width(ean->width, pass->width)) {
+            dprintf(2, " rst(width %d)", pass->width);
             ean->left = ean->right = ean->addon = ZBAR_NONE;
         }
 
@@ -531,6 +562,7 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
         else /* ZBAR_UPCE */
             ean_expand_upce(ean, pass);
     }
+    ean->width = pass->width;
 
     if((part & ZBAR_SYMBOL) != ZBAR_UPCE) {
         part = (ean->left & ean->right);

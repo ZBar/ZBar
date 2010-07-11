@@ -12,10 +12,10 @@ endif
 
 EXTRA_DIST += test/barcodetest.py
 
-check-images:
+check-images: zbarimg/zbarimg
 	$(PYTHON) $(srcdir)/test/barcodetest.py
 
-regress-images:
+regress-images: zbarimg/zbarimg
 	suite='$(ZBAR_TESTS)'; \
 	if test "x$$suite" = "x"; then suite='http://zbar.sf.net/test'; fi ; \
 	$(PYTHON) $(srcdir)/test/barcodetest.py $$suite

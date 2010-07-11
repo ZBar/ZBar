@@ -29,7 +29,7 @@
 #include <zbar.h>
 
 #if defined(DEBUG_DECODER) || defined(DEBUG_EAN) ||             \
-    defined(DEBUG_CODE39) || defined(DEBUG_I25) ||              \
+    defined(DEBUG_CODE39) || defined(DEBUG_I25) || defined(DEBUG_DATABAR) || \
     defined(DEBUG_CODE128) || defined(DEBUG_QR_FINDER) ||       \
     (defined(DEBUG_PDF417) && (DEBUG_PDF417 >= 4))
 # define DEBUG_LEVEL 1
@@ -59,6 +59,12 @@ zbar_decoder_t *zbar_decoder_create ()
     dcode->i25.config = 1 << ZBAR_CFG_ENABLE;
     CFG(dcode->i25, ZBAR_CFG_MIN_LEN) = 6;
 #endif
+#ifdef ENABLE_DATABAR
+    dcode->databar.config = ((1 << ZBAR_CFG_ENABLE) |
+                             (1 << ZBAR_CFG_EMIT_CHECK));
+    dcode->databar.csegs = 4;
+    dcode->databar.segs = calloc(4, sizeof(*dcode->databar.segs));
+#endif
 #ifdef ENABLE_CODE39
     dcode->code39.config = 1 << ZBAR_CFG_ENABLE;
     CFG(dcode->code39, ZBAR_CFG_MIN_LEN) = 1;
@@ -79,6 +85,10 @@ zbar_decoder_t *zbar_decoder_create ()
 
 void zbar_decoder_destroy (zbar_decoder_t *dcode)
 {
+#ifdef ENABLE_DATABAR
+    if(dcode->databar.segs)
+        free(dcode->databar.segs);
+#endif
     if(dcode->buf)
         free(dcode->buf);
     free(dcode);
@@ -92,6 +102,9 @@ void zbar_decoder_reset (zbar_decoder_t *dcode)
 #endif
 #ifdef ENABLE_I25
     i25_reset(&dcode->i25);
+#endif
+#ifdef ENABLE_DATABAR
+    databar_reset(&dcode->databar);
 #endif
 #ifdef ENABLE_CODE39
     code39_reset(&dcode->code39);
@@ -118,6 +131,9 @@ void zbar_decoder_new_scan (zbar_decoder_t *dcode)
 #endif
 #ifdef ENABLE_I25
     i25_reset(&dcode->i25);
+#endif
+#ifdef ENABLE_DATABAR
+    databar_new_scan(&dcode->databar);
 #endif
 #ifdef ENABLE_CODE39
     code39_reset(&dcode->code39);
@@ -208,6 +224,11 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
        (tmp = _zbar_decode_code128(dcode)) > ZBAR_PARTIAL)
         sym = tmp;
 #endif
+#ifdef ENABLE_DATABAR
+    if(TEST_CFG(dcode->databar.config, ZBAR_CFG_ENABLE) &&
+       (tmp = _zbar_decode_databar(dcode)) > ZBAR_PARTIAL)
+        sym = tmp;
+#endif
 #ifdef ENABLE_I25
     if(TEST_CFG(dcode->i25.config, ZBAR_CFG_ENABLE) &&
        (tmp = _zbar_decode_i25(dcode)) > ZBAR_PARTIAL)
@@ -266,6 +287,12 @@ static inline int decoder_set_config_bool (zbar_decoder_t *dcode,
 #ifdef ENABLE_I25
     case ZBAR_I25:
         config = &dcode->i25.config;
+        break;
+#endif
+
+#ifdef ENABLE_DATABAR
+    case ZBAR_DATABAR:
+        config = &dcode->databar.config;
         break;
 #endif
 
@@ -368,6 +395,7 @@ int zbar_decoder_set_config (zbar_decoder_t *dcode,
         zbar_decoder_set_config(dcode, ZBAR_ISBN10, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_ISBN13, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_I25, cfg, val);
+        zbar_decoder_set_config(dcode, ZBAR_DATABAR, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_CODE39, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_CODE128, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_PDF417, cfg, val);

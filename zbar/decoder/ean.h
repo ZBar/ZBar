@@ -29,6 +29,7 @@ typedef struct ean_pass_s {
 #define STATE_REV   0x80        /*   scan direction reversed */
 #define STATE_ADDON 0x40        /*   scanning add-on */
 #define STATE_IDX   0x1f        /*   element offset into symbol */
+    unsigned width;             /* width of last character */
     unsigned char raw[7];       /* decode in process */
 } ean_pass_t;
 
@@ -39,7 +40,7 @@ typedef struct ean_decoder_s {
     zbar_symbol_type_t right;
     zbar_symbol_type_t addon;
     int direction;              /* scan direction */
-    unsigned s4;                /* character width */
+    unsigned s4, width;         /* character width */
     signed char buf[18];        /* holding buffer */
 
     signed char enable;

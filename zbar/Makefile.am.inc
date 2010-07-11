@@ -19,6 +19,9 @@ EXTRA_zbar_libzbar_la_SOURCES = zbar/svg.h zbar/svg.c
 if ENABLE_EAN
 zbar_libzbar_la_SOURCES += zbar/decoder/ean.h zbar/decoder/ean.c
 endif
+if ENABLE_DATABAR
+zbar_libzbar_la_SOURCES += zbar/decoder/databar.h zbar/decoder/databar.c
+endif
 if ENABLE_CODE128
 zbar_libzbar_la_SOURCES += zbar/decoder/code128.h zbar/decoder/code128.c
 endif

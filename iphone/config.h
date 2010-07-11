@@ -1,10 +1,13 @@
-/* include/config.h.in.  Generated from configure.ac by autoheader.  */
+/* manually customized for iPhone platform */
 
 /* whether to build support for Code 128 symbology */
 #define ENABLE_CODE128 1
 
 /* whether to build support for Code 39 symbology */
 #define ENABLE_CODE39 1
+
+/* whether to build support for DataBar symbology */
+#define ENABLE_DATABAR 1
 
 /* whether to build support for EAN symbologies */
 #define ENABLE_EAN 1

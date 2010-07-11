@@ -87,6 +87,8 @@ int zbar_parse_config (const char *cfgstr,
             return(1);
         else if(!strncmp(cfgstr, "code128", len))
             *sym = ZBAR_CODE128;
+        else if(!strncmp(cfgstr, "databar", len))
+            *sym = ZBAR_DATABAR;
         else
             return(1);
         cfgstr = dot + 1;

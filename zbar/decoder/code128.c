@@ -470,27 +470,26 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
             dprintf(2, " [invalid qz %d]\n", qz);
             return(0);
         }
-        /* lock shared resources */
-        if(acquire_lock(dcode, ZBAR_CODE128)) {
-            dcode128->character = -1;
-            return(0);
-        }
         /* decoded valid start/stop */
         /* initialize state */
-        dcode128->character = 0;
+        dcode128->character = 1;
         if(c == STOP_REV) {
             dcode128->direction = ZBAR_BAR;
             dcode128->element = 7;
         }
         else
             dcode128->direction = ZBAR_SPACE;
-        dprintf(2, " dir=%x [valid start]", dcode128->direction);
+        dcode128->start = c;
+        dcode128->width = dcode128->s6;
+        dprintf(2, " dir=%x [valid start]\n", dcode128->direction);
+        return(0);
     }
     else if((c < 0) ||
             ((dcode128->character >= BUFFER_MIN) &&
              size_buf(dcode, dcode128->character + 1))) {
         dprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
-        release_lock(dcode, ZBAR_CODE128);
+        if(dcode128->character > 1)
+            release_lock(dcode, ZBAR_CODE128);
         dcode128->character = -1;
         return(0);
     }
@@ -503,19 +502,29 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
         dw *= 4;
         if(dw > dcode128->width) {
             dprintf(1, " [width var]\n");
-            release_lock(dcode, ZBAR_CODE128);
+            if(dcode128->character > 1)
+                release_lock(dcode, ZBAR_CODE128);
             dcode128->character = -1;
             return(0);
         }
     }
+    dcode128->width = dcode128->s6;
 
     zassert(dcode->buf_alloc > dcode128->character, 0,
             "alloc=%x idx=%x c=%02x %s\n",
             dcode->buf_alloc, dcode128->character, c,
             _zbar_decoder_buf_dump(dcode->buf, dcode->buf_alloc));
 
+    if(dcode128->character == 1) {
+        /* lock shared resources */
+        if(acquire_lock(dcode, ZBAR_CODE128)) {
+            dcode128->character = -1;
+            return(0);
+        }
+        dcode->buf[0] = dcode128->start;
+    }
+
     dcode->buf[dcode128->character++] = c;
-    dcode128->width = dcode128->s6;
 
     if(dcode128->character > 2 &&
        ((dcode128->direction)

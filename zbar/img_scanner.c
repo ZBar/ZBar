@@ -396,11 +396,6 @@ static void symbol_handler (zbar_decoder_t *dcode)
     unsigned datalen;
     zbar_symbol_t *sym;
 
-    /* FIXME assert(type == ZBAR_PARTIAL) */
-    /* FIXME debug flag to save/display all PARTIALs */
-    if(type <= ZBAR_PARTIAL)
-        return;
-
 #ifdef ENABLE_QRCODE
     if(type == ZBAR_QRCODE) {
         qr_handler(iscn);
@@ -409,9 +404,6 @@ static void symbol_handler (zbar_decoder_t *dcode)
 #else
     assert(type != ZBAR_QRCODE);
 #endif
-
-    data = zbar_decoder_get_data(dcode);
-    datalen = zbar_decoder_get_data_length(dcode);
 
     if(TEST_CFG(iscn, ZBAR_CFG_POSITION)) {
         /* tmp position fixup */
@@ -427,12 +419,23 @@ static void symbol_handler (zbar_decoder_t *dcode)
         }
     }
 
+    /* FIXME debug flag to save/display all PARTIALs */
+    if(type <= ZBAR_PARTIAL) {
+        zprintf(256, "partial symbol @(%d,%d)\n", x, y);
+        return;
+    }
+
+    data = zbar_decoder_get_data(dcode);
+    datalen = zbar_decoder_get_data_length(dcode);
+
     /* FIXME need better symbol matching */
     for(sym = iscn->syms->head; sym; sym = sym->next)
         if(sym->type == type &&
            sym->datalen == datalen &&
            !memcmp(sym->data, data, datalen)) {
             sym->quality++;
+            zprintf(224, "dup symbol @(%d,%d): dup %s: %.20s\n",
+                    x, y, zbar_get_symbol_name(type), data);
             if(TEST_CFG(iscn, ZBAR_CFG_POSITION))
                 /* add new point to existing set */
                 /* FIXME should be polygon */
@@ -445,8 +448,11 @@ static void symbol_handler (zbar_decoder_t *dcode)
     memcpy(sym->data, data, datalen + 1);
 
     /* initialize first point */
-    if(TEST_CFG(iscn, ZBAR_CFG_POSITION))
+    if(TEST_CFG(iscn, ZBAR_CFG_POSITION)) {
+        zprintf(192, "new symbol @(%d,%d): %s: %.20s\n",
+                x, y, zbar_get_symbol_name(type), data);
         sym_add_point(sym, x, y);
+    }
 
     dir = zbar_decoder_get_direction(dcode);
     if(dir)
@@ -792,7 +798,8 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
        (density == 1 || CFG(iscn, ZBAR_CFG_Y_DENSITY) == 1)) {
         zbar_symbol_t **symp = &syms->head, *sym;
         while((sym = *symp)) {
-            if(sym->type < ZBAR_I25 && sym->type > ZBAR_PARTIAL &&
+            if(((sym->type < ZBAR_I25 && sym->type > ZBAR_PARTIAL) ||
+                sym->type == ZBAR_DATABAR) &&
                sym->quality < 4) {
                 /* recycle */
                 *symp = sym->next;

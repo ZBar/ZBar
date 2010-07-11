@@ -68,10 +68,10 @@ CLEANFILES += test/.libs/test_decode test/.libs/test_proc \
     test/.libs/test_convert test/.libs/test_window \
     test/.libs/test_video test/.libs/dbg_scan test/.libs/test_gtk
 
-check-decoder:
+check-decoder: test/test_decode
 	test/test_decode -q
 
-regress-decoder:
+regress-decoder: test/test_decode
 	test/test_decode -n 100000
 
 check-local: check-decoder check-images

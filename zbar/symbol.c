@@ -39,6 +39,7 @@ const char *zbar_get_symbol_name (zbar_symbol_type_t sym)
     case ZBAR_EAN13: return("EAN-13");
     case ZBAR_ISBN13: return("ISBN-13");
     case ZBAR_I25: return("I2/5");
+    case ZBAR_DATABAR: return("DataBar");
     case ZBAR_CODE39: return("CODE-39");
     case ZBAR_CODE128: return("CODE-128");
     case ZBAR_PDF417: return("PDF417");

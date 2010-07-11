@@ -36,6 +36,9 @@
 #ifdef ENABLE_I25
 # include "decoder/i25.h"
 #endif
+#ifdef ENABLE_DATABAR
+# include "decoder/databar.h"
+#endif
 #ifdef ENABLE_CODE39
 # include "decoder/code39.h"
 #endif
@@ -95,6 +98,9 @@ struct zbar_decoder_s {
 #endif
 #ifdef ENABLE_I25
     i25_decoder_t i25;                  /* Interleaved 2 of 5 decode state */
+#endif
+#ifdef ENABLE_DATABAR
+    databar_decoder_t databar;          /* DataBar decode state */
 #endif
 #ifdef ENABLE_CODE39
     code39_decoder_t code39;            /* Code 39 decode state */

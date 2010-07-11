@@ -93,6 +93,7 @@ typedef enum zbar_symbol_type_e {
     ZBAR_EAN13       =     13,  /**< EAN-13 */
     ZBAR_ISBN13      =     14,  /**< ISBN-13 (from EAN-13). @since 0.4 */
     ZBAR_I25         =     25,  /**< Interleaved 2 of 5. @since 0.4 */
+    ZBAR_DATABAR     =     34,  /**< GS1 DataBar (RSS). @since 0.11 */
     ZBAR_CODE39      =     39,  /**< Code 39. @since 0.4 */
     ZBAR_PDF417      =     57,  /**< PDF417. @since 0.6 */
     ZBAR_QRCODE      =     64,  /**< QR Code. @since 0.10 */

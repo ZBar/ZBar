@@ -30,6 +30,7 @@ typedef struct i25_decoder_s {
     int character : 12;         /* character position in symbol */
     unsigned s10;               /* current character width */
     unsigned width;             /* last character width */
+    unsigned char buf[4];       /* initial scan buffer */
 
     unsigned config;
     int configs[NUM_CFGS];      /* int valued configurations */
