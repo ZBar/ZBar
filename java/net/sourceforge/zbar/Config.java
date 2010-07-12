@@ -43,6 +43,9 @@ public class Config
     /** Maximum data length for valid decode. */
     public static final int MAX_LEN = 0x21;
 
+    /** Required video consistency frames. */
+    public static final int UNCERTAINTY = 0x40;
+
     /** Enable scanner to collect position data. */
     public static final int POSITION = 0x80;
 

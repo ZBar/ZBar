@@ -49,6 +49,8 @@ public class Symbol
     public static final int ISBN13 = 14;
     /** Interleaved 2 of 5. */
     public static final int I25 = 25;
+    /** DataBar. */
+    public static final int DATABAR = 34;
     /** Code 39. */
     public static final int CODE39 = 39;
     /** PDF417. */

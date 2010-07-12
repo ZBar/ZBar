@@ -1,4 +1,5 @@
 current:
+  * add language bindings for DataBar
   * add preliminary support for GS1 DataBar (RSS-14) symbology
   * enable torch for iPhone 4
   * enhance decoder reliability (EAN, Code 39, Code 128)

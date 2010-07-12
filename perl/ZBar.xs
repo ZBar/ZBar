@@ -278,6 +278,7 @@ BOOT:
         CONSTANT(config, CFG_, ASCII, "ascii");
         CONSTANT(config, CFG_, MIN_LEN, "min-length");
         CONSTANT(config, CFG_, MAX_LEN, "max-length");
+        CONSTANT(config, CFG_, UNCERTAINTY, "uncertainty");
         CONSTANT(config, CFG_, POSITION, "position");
         CONSTANT(config, CFG_, X_DENSITY, "x-density");
         CONSTANT(config, CFG_, Y_DENSITY, "y-density");
@@ -314,6 +315,7 @@ BOOT:
         CONSTANT(symbol_type, , UPCA, zbar_get_symbol_name(ZBAR_UPCA));
         CONSTANT(symbol_type, , EAN13, zbar_get_symbol_name(ZBAR_EAN13));
         CONSTANT(symbol_type, , ISBN13, zbar_get_symbol_name(ZBAR_ISBN13));
+        CONSTANT(symbol_type, , DATABAR, zbar_get_symbol_name(ZBAR_DATABAR));
         CONSTANT(symbol_type, , I25, zbar_get_symbol_name(ZBAR_I25));
         CONSTANT(symbol_type, , CODE39, zbar_get_symbol_name(ZBAR_CODE39));
         CONSTANT(symbol_type, , PDF417, zbar_get_symbol_name(ZBAR_PDF417));

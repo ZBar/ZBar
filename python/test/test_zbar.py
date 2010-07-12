@@ -20,6 +20,9 @@ def load_image():
 encoded_widths = \
     '9 111 212241113121211311141132 11111 311213121312121332111132 111 9'
 
+databar_widths = \
+    '11 31111333 13911 31131231 11214222 11553 21231313 1'
+
 VIDEO_DEVICE = None
 if 'VIDEO_DEVICE' in os.environ:
     VIDEO_DEVICE = os.environ['VIDEO_DEVICE']
@@ -59,6 +62,7 @@ class TestZBarFunctions(ut.TestCase):
                     zbar.Config.ASCII,
                     zbar.Config.MIN_LEN,
                     zbar.Config.MAX_LEN,
+                    zbar.Config.UNCERTAINTY,
                     zbar.Config.POSITION,
                     zbar.Config.X_DENSITY,
                     zbar.Config.Y_DENSITY):
@@ -75,6 +79,7 @@ class TestZBarFunctions(ut.TestCase):
                     zbar.Symbol.UPCA,
                     zbar.Symbol.EAN13,
                     zbar.Symbol.ISBN13,
+                    zbar.Symbol.DATABAR,
                     zbar.Symbol.I25,
                     zbar.Symbol.CODE39,
                     zbar.Symbol.PDF417,
@@ -192,6 +197,20 @@ class TestDecoder(ut.TestCase):
         self.assert_(sym is zbar.Symbol.EAN13)
         self.assert_(inline_sym[0] is zbar.Symbol.EAN13)
         self.assertEqual(explicit_closure, [ 2 ])
+
+    def test_databar(self):
+        self.dcode.set_config(zbar.Symbol.QRCODE, zbar.Config.ENABLE, 0)
+        for (i, width) in enumerate(databar_widths):
+            if width == ' ': continue
+            sym = self.dcode.decode_width(int(width))
+            if i < len(databar_widths) - 1:
+                self.assert_(sym is zbar.Symbol.NONE or
+                             sym is zbar.Symbol.PARTIAL)
+
+        self.assert_(sym is zbar.Symbol.DATABAR)
+        self.assertEqual(self.dcode.data, '24012345678905')
+        self.assert_(self.dcode.color is zbar.BAR)
+        self.assertEqual(self.dcode.direction, 1)
 
     # FIXME test exception during callback
 

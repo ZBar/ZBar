@@ -52,6 +52,7 @@ static const enumdef symbol_defs[] = {
     { "UPCA",    ZBAR_UPCA },
     { "EAN13",   ZBAR_EAN13 },
     { "ISBN13",  ZBAR_ISBN13 },
+    { "DATABAR", ZBAR_DATABAR },
     { "I25",     ZBAR_I25 },
     { "CODE39",  ZBAR_CODE39 },
     { "PDF417",  ZBAR_PDF417 },
@@ -61,15 +62,16 @@ static const enumdef symbol_defs[] = {
 };
 
 static const enumdef config_defs[] = {
-    { "ENABLE",     ZBAR_CFG_ENABLE },
-    { "ADD_CHECK",  ZBAR_CFG_ADD_CHECK },
-    { "EMIT_CHECK", ZBAR_CFG_EMIT_CHECK },
-    { "ASCII",      ZBAR_CFG_ASCII },
-    { "MIN_LEN",    ZBAR_CFG_MIN_LEN },
-    { "MAX_LEN",    ZBAR_CFG_MAX_LEN },
-    { "POSITION",   ZBAR_CFG_POSITION },
-    { "X_DENSITY",  ZBAR_CFG_X_DENSITY },
-    { "Y_DENSITY",  ZBAR_CFG_Y_DENSITY },
+    { "ENABLE",      ZBAR_CFG_ENABLE },
+    { "ADD_CHECK",   ZBAR_CFG_ADD_CHECK },
+    { "EMIT_CHECK",  ZBAR_CFG_EMIT_CHECK },
+    { "ASCII",       ZBAR_CFG_ASCII },
+    { "MIN_LEN",     ZBAR_CFG_MIN_LEN },
+    { "MAX_LEN",     ZBAR_CFG_MAX_LEN },
+    { "UNCERTAINTY", ZBAR_CFG_UNCERTAINTY },
+    { "POSITION",    ZBAR_CFG_POSITION },
+    { "X_DENSITY",   ZBAR_CFG_X_DENSITY },
+    { "Y_DENSITY",   ZBAR_CFG_Y_DENSITY },
     { NULL, }
 };
 

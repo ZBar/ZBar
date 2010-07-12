@@ -74,7 +74,7 @@ databar_postprocess (zbar_decoder_t *dcode,
 {
     databar_decoder_t *db = &dcode->databar;
     int i;
-    unsigned c, chk;
+    unsigned c, chk = 0;
     unsigned char *buf = dcode->buf + 15;
     *--buf = '\0';
     *--buf = '\0';
@@ -570,10 +570,20 @@ alloc_segment (databar_decoder_t *db)
         if(csegs > DATABAR_MAX_SEGMENTS)
             csegs = DATABAR_MAX_SEGMENTS;
         if(csegs != db->csegs) {
+            databar_segment_t *seg;
             db->segs = realloc(db->segs, csegs * sizeof(*db->segs));
             db->csegs = csegs;
-            while(--csegs >= i)
-                db->segs[csegs].finder = -1;
+            seg = db->segs + csegs;
+            while(--seg, --csegs >= i) {
+                seg->finder = -1;
+                seg->ext = 0;
+                seg->color = 0;
+                seg->side = 0;
+                seg->partial = 0;
+                seg->count = 0;
+                seg->epoch = 0;
+                seg->check = 0;
+            }
             return(i);
         }
     }

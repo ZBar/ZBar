@@ -220,11 +220,11 @@ const zbar_symbol_set_t *zbar_image_get_symbols (const zbar_image_t *img)
 void zbar_image_set_symbols (zbar_image_t *img,
                              const zbar_symbol_set_t *syms)
 {
+    if(syms)
+        zbar_symbol_set_ref(syms, 1);
     if(img->syms)
         zbar_symbol_set_ref(img->syms, -1);
     img->syms = (zbar_symbol_set_t*)syms;
-    if(syms)
-        zbar_symbol_set_ref(img->syms, 1);
 }
 
 const zbar_symbol_t *zbar_image_first_symbol (const zbar_image_t *img)

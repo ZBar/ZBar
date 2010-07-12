@@ -97,7 +97,7 @@ void zbar_video_destroy (zbar_video_t *vdo)
         int i;
         for(i = 0; i < ZBAR_VIDEO_IMAGES_MAX; i++)
             if(vdo->images[i])
-                free(vdo->images[i]);
+                _zbar_image_free(vdo->images[i]);
         free(vdo->images);
     }
     while(vdo->shadow_image) {
@@ -233,7 +233,7 @@ static inline int video_init_images (zbar_video_t *vdo)
     if(vdo->iomode != VIDEO_MMAP) {
         assert(!vdo->buf);
         vdo->buflen = vdo->num_images * vdo->datalen;
-        vdo->buf = malloc(vdo->buflen);
+        vdo->buf = calloc(1, vdo->buflen);
         if(!vdo->buf)
             return(err_capture(vdo, SEV_FATAL, ZBAR_ERR_NOMEM, __func__,
                                "unable to allocate image buffers"));
