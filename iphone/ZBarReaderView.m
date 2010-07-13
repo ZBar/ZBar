@@ -82,6 +82,9 @@
     captureReader.captureDelegate = (id<ZBarCaptureDelegate>)self;
     [session addOutput: captureReader.captureOutput];
 
+    if([session canSetSessionPreset: AVCaptureSessionPreset640x480])
+        session.sessionPreset = AVCaptureSessionPreset640x480;
+
     preview = [[AVCaptureVideoPreviewLayer
                    layerWithSession: session]
                   retain];

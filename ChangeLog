@@ -1,4 +1,5 @@
 current:
+  * fix for poor iPhone 4 performance
   * add language bindings for DataBar
   * add preliminary support for GS1 DataBar (RSS-14) symbology
   * enable torch for iPhone 4
