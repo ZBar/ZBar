@@ -25,15 +25,25 @@
 #import "ZBarHelpController.h"
 #import "debug.h"
 
+/* the use of UIGetScreenImage() may no longer be sanctioned, even
+ * though it was previously "allowed".  define this to 0 to rip it out
+ * and fall back to cameraMode=Default (manual capture)
+ */
+#ifndef USE_PRIVATE_APIS
+# define USE_PRIVATE_APIS 1
+#endif
+
 #ifndef MIN_QUALITY
 # define MIN_QUALITY 10
 #endif
 
 NSString* const ZBarReaderControllerResults = @"ZBarReaderControllerResults";
 
+#if USE_PRIVATE_APIS
 // expose undocumented API
 CF_RETURNS_RETAINED
 CGImageRef UIGetScreenImage(void);
+#endif
 
 @implementation ZBarReaderController
 
@@ -62,7 +72,12 @@ CGImageRef UIGetScreenImage(void);
         if([UIImagePickerController
                isSourceTypeAvailable: UIImagePickerControllerSourceTypeCamera])
             self.sourceType = UIImagePickerControllerSourceTypeCamera;
+
+#if USE_PRIVATE_APIS
         cameraMode = ZBarReaderControllerCameraModeSampling;
+#else
+        cameraMode = ZBarReaderControllerCameraModeDefault;
+#endif
     }
     return(self);
 }
@@ -284,6 +299,17 @@ CGImageRef UIGetScreenImage(void);
     return(showsZBarControls);
 }
 
+- (void) setCameraMode: (ZBarReaderControllerCameraMode) mode
+{
+#if !USE_PRIVATE_APIS
+    if(mode == ZBarReaderControllerCameraModeSampling)
+        [NSException raise: NSInvalidArgumentException
+            format: @"ZBarReaderController cannot set cameraMode=Sampling"
+                    @" when USE_PRIVATE_APIS=0"];
+#endif
+    cameraMode = mode;
+}
+
 - (void) setShowsZBarControls: (BOOL) show
 {
     if(show && !hasOverlay)
@@ -428,6 +454,8 @@ CGImageRef UIGetScreenImage(void);
     [CATransaction commit];
 }
 
+#if USE_PRIVATE_APIS
+
 - (void) scanScreen
 {
     if(!sampling)
@@ -479,6 +507,7 @@ CGImageRef UIGetScreenImage(void);
 - (void) captureScreen
 {
     CGImageRef screen = UIGetScreenImage();
+
     CGRect r = CGRectMake(0, 0,
                           CGImageGetWidth(screen), CGImageGetHeight(screen));
     if(r.size.width > r.size.height)
@@ -507,6 +536,8 @@ CGImageRef UIGetScreenImage(void);
           withObject: nil
           afterDelay: 0.001];
 }
+
+#endif /* USE_PRIVATE_APIS */
 
 - (void) scanSequence: (UIImage*) image
 {
