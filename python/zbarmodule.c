@@ -44,43 +44,44 @@ static char *exc_names[] = {
 };
 
 static const enumdef symbol_defs[] = {
-    { "NONE",    ZBAR_NONE },
-    { "PARTIAL", ZBAR_PARTIAL },
-    { "EAN8",    ZBAR_EAN8 },
-    { "UPCE",    ZBAR_UPCE },
-    { "ISBN10",  ZBAR_ISBN10 },
-    { "UPCA",    ZBAR_UPCA },
-    { "EAN13",   ZBAR_EAN13 },
-    { "ISBN13",  ZBAR_ISBN13 },
-    { "DATABAR", ZBAR_DATABAR },
-    { "I25",     ZBAR_I25 },
-    { "CODE39",  ZBAR_CODE39 },
-    { "PDF417",  ZBAR_PDF417 },
-    { "QRCODE",  ZBAR_QRCODE },
-    { "CODE128", ZBAR_CODE128 },
+    { "NONE",           ZBAR_NONE },
+    { "PARTIAL",        ZBAR_PARTIAL },
+    { "EAN8",           ZBAR_EAN8 },
+    { "UPCE",           ZBAR_UPCE },
+    { "ISBN10",         ZBAR_ISBN10 },
+    { "UPCA",           ZBAR_UPCA },
+    { "EAN13",          ZBAR_EAN13 },
+    { "ISBN13",         ZBAR_ISBN13 },
+    { "DATABAR",        ZBAR_DATABAR },
+    { "DATABAR_EXP",    ZBAR_DATABAR_EXP },
+    { "I25",            ZBAR_I25 },
+    { "CODE39",         ZBAR_CODE39 },
+    { "PDF417",         ZBAR_PDF417 },
+    { "QRCODE",         ZBAR_QRCODE },
+    { "CODE128",        ZBAR_CODE128 },
     { NULL, }
 };
 
 static const enumdef config_defs[] = {
-    { "ENABLE",      ZBAR_CFG_ENABLE },
-    { "ADD_CHECK",   ZBAR_CFG_ADD_CHECK },
-    { "EMIT_CHECK",  ZBAR_CFG_EMIT_CHECK },
-    { "ASCII",       ZBAR_CFG_ASCII },
-    { "MIN_LEN",     ZBAR_CFG_MIN_LEN },
-    { "MAX_LEN",     ZBAR_CFG_MAX_LEN },
-    { "UNCERTAINTY", ZBAR_CFG_UNCERTAINTY },
-    { "POSITION",    ZBAR_CFG_POSITION },
-    { "X_DENSITY",   ZBAR_CFG_X_DENSITY },
-    { "Y_DENSITY",   ZBAR_CFG_Y_DENSITY },
+    { "ENABLE",         ZBAR_CFG_ENABLE },
+    { "ADD_CHECK",      ZBAR_CFG_ADD_CHECK },
+    { "EMIT_CHECK",     ZBAR_CFG_EMIT_CHECK },
+    { "ASCII",          ZBAR_CFG_ASCII },
+    { "MIN_LEN",        ZBAR_CFG_MIN_LEN },
+    { "MAX_LEN",        ZBAR_CFG_MAX_LEN },
+    { "UNCERTAINTY",    ZBAR_CFG_UNCERTAINTY },
+    { "POSITION",       ZBAR_CFG_POSITION },
+    { "X_DENSITY",      ZBAR_CFG_X_DENSITY },
+    { "Y_DENSITY",      ZBAR_CFG_Y_DENSITY },
     { NULL, }
 };
 
 static const enumdef orient_defs[] = {
-    { "UNKNOWN", ZBAR_ORIENT_UNKNOWN },
-    { "UP",      ZBAR_ORIENT_UP },
-    { "RIGHT",   ZBAR_ORIENT_RIGHT },
-    { "DOWN",    ZBAR_ORIENT_DOWN },
-    { "LEFT",    ZBAR_ORIENT_LEFT },
+    { "UNKNOWN",        ZBAR_ORIENT_UNKNOWN },
+    { "UP",             ZBAR_ORIENT_UP },
+    { "RIGHT",          ZBAR_ORIENT_RIGHT },
+    { "DOWN",           ZBAR_ORIENT_DOWN },
+    { "LEFT",           ZBAR_ORIENT_LEFT },
     { NULL, }
 };
 

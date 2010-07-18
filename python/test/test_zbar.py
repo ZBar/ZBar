@@ -80,6 +80,7 @@ class TestZBarFunctions(ut.TestCase):
                     zbar.Symbol.EAN13,
                     zbar.Symbol.ISBN13,
                     zbar.Symbol.DATABAR,
+                    zbar.Symbol.DATABAR_EXP,
                     zbar.Symbol.I25,
                     zbar.Symbol.CODE39,
                     zbar.Symbol.PDF417,
@@ -208,7 +209,7 @@ class TestDecoder(ut.TestCase):
                              sym is zbar.Symbol.PARTIAL)
 
         self.assert_(sym is zbar.Symbol.DATABAR)
-        self.assertEqual(self.dcode.data, '24012345678905')
+        self.assertEqual(self.dcode.data, '0124012345678905')
         self.assert_(self.dcode.color is zbar.BAR)
         self.assertEqual(self.dcode.direction, 1)
 

@@ -316,6 +316,8 @@ BOOT:
         CONSTANT(symbol_type, , EAN13, zbar_get_symbol_name(ZBAR_EAN13));
         CONSTANT(symbol_type, , ISBN13, zbar_get_symbol_name(ZBAR_ISBN13));
         CONSTANT(symbol_type, , DATABAR, zbar_get_symbol_name(ZBAR_DATABAR));
+        CONSTANT(symbol_type, , DATABAR_EXP,
+                 zbar_get_symbol_name(ZBAR_DATABAR_EXP));
         CONSTANT(symbol_type, , I25, zbar_get_symbol_name(ZBAR_I25));
         CONSTANT(symbol_type, , CODE39, zbar_get_symbol_name(ZBAR_CODE39));
         CONSTANT(symbol_type, , PDF417, zbar_get_symbol_name(ZBAR_PDF417));

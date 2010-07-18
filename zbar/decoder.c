@@ -62,6 +62,8 @@ zbar_decoder_t *zbar_decoder_create ()
 #ifdef ENABLE_DATABAR
     dcode->databar.config = ((1 << ZBAR_CFG_ENABLE) |
                              (1 << ZBAR_CFG_EMIT_CHECK));
+    dcode->databar.config_exp = ((1 << ZBAR_CFG_ENABLE) |
+                                 (1 << ZBAR_CFG_EMIT_CHECK));
     dcode->databar.csegs = 4;
     dcode->databar.segs = calloc(4, sizeof(*dcode->databar.segs));
 #endif
@@ -225,7 +227,8 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
         sym = tmp;
 #endif
 #ifdef ENABLE_DATABAR
-    if(TEST_CFG(dcode->databar.config, ZBAR_CFG_ENABLE) &&
+    if(TEST_CFG(dcode->databar.config | dcode->databar.config_exp,
+                ZBAR_CFG_ENABLE) &&
        (tmp = _zbar_decode_databar(dcode)) > ZBAR_PARTIAL)
         sym = tmp;
 #endif
@@ -293,6 +296,9 @@ static inline int decoder_set_config_bool (zbar_decoder_t *dcode,
 #ifdef ENABLE_DATABAR
     case ZBAR_DATABAR:
         config = &dcode->databar.config;
+        break;
+    case ZBAR_DATABAR_EXP:
+        config = &dcode->databar.config_exp;
         break;
 #endif
 
@@ -396,6 +402,7 @@ int zbar_decoder_set_config (zbar_decoder_t *dcode,
         zbar_decoder_set_config(dcode, ZBAR_ISBN13, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_I25, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_DATABAR, cfg, val);
+        zbar_decoder_set_config(dcode, ZBAR_DATABAR_EXP, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_CODE39, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_CODE128, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_PDF417, cfg, val);

@@ -31,9 +31,9 @@
 #include <zbar.h>
 
 int zbar_parse_config (const char *cfgstr,
-                        zbar_symbol_type_t *sym,
-                        zbar_config_t *cfg,
-                        int *val)
+                       zbar_symbol_type_t *sym,
+                       zbar_config_t *cfg,
+                       int *val)
 {
     const char *dot, *eq;
     int len;
@@ -50,6 +50,8 @@ int zbar_parse_config (const char *cfgstr,
             return(1);
         else if(!strncmp(cfgstr, "qrcode", len))
             *sym = ZBAR_QRCODE;
+        else if(!strncmp(cfgstr, "db", len))
+            *sym = ZBAR_DATABAR;
         else if(len < 3)
             return(1);
         else if(!strncmp(cfgstr, "upca", len))
@@ -70,6 +72,8 @@ int zbar_parse_config (const char *cfgstr,
             *sym = ZBAR_ISBN13;
         else if(!strncmp(cfgstr, "isbn10", len))
             *sym = ZBAR_ISBN10;
+        else if(!strncmp(cfgstr, "db-exp", len))
+            *sym = ZBAR_DATABAR_EXP;
 #if 0
         /* FIXME addons are configured per-main symbol type */
         else if(!strncmp(cfgstr, "addon2", len))
@@ -89,6 +93,8 @@ int zbar_parse_config (const char *cfgstr,
             *sym = ZBAR_CODE128;
         else if(!strncmp(cfgstr, "databar", len))
             *sym = ZBAR_DATABAR;
+        else if(!strncmp(cfgstr, "databar-exp", len))
+            *sym = ZBAR_DATABAR_EXP;
         else
             return(1);
         cfgstr = dot + 1;
@@ -136,6 +142,8 @@ int zbar_parse_config (const char *cfgstr,
         *cfg = ZBAR_CFG_ADD_CHECK;
     else if(!strncmp(cfgstr, "emit-check", len))
         *cfg = ZBAR_CFG_EMIT_CHECK;
+    else if(!strncmp(cfgstr, "uncertainty", len))
+        *cfg = ZBAR_CFG_UNCERTAINTY;
     else if(!strncmp(cfgstr, "position", len))
         *cfg = ZBAR_CFG_POSITION;
     else 

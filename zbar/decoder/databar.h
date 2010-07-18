@@ -28,7 +28,7 @@
 /* active DataBar (partial) segment entry */
 typedef struct databar_segment_s {
     signed finder : 5;          /* finder pattern */
-    unsigned ext : 1;           /* DataBar extended finder */
+    unsigned exp : 1;           /* DataBar expanded finder */
     unsigned color : 1;         /* finder coloring */
     unsigned side : 1;          /* data character side of finder */
 
@@ -43,6 +43,7 @@ typedef struct databar_segment_s {
 /* DataBar specific decode state */
 typedef struct databar_decoder_s {
     unsigned config;            /* decoder configuration flags */
+    unsigned config_exp;
 
     unsigned csegs : 8;         /* allocated segments */
     unsigned epoch : 8;         /* current scan */

@@ -55,7 +55,8 @@ static void symbol_handler (zbar_decoder_t *decoder)
         return;
     const char *data = zbar_decoder_get_data(decoder);
 
-    int pass = (sym == expect_sym) && !strcmp(data, expect_data);
+    int pass = (sym == expect_sym) && !strcmp(data, expect_data) &&
+        zbar_decoder_get_data_length(decoder) == strlen(data);
     pass *= 3;
 
     zprintf(pass, "decode %s:%s\n", zbar_get_symbol_name(sym), data);
@@ -747,7 +748,7 @@ static void encode_ean8 (char *data)
 
 int test_databar_F_1 ()
 {
-    expect(ZBAR_DATABAR, "24012345678905");
+    expect(ZBAR_DATABAR, "0124012345678905");
     assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
     encode(0x11, 0);
     encode(0x31111333, 0);
@@ -761,14 +762,26 @@ int test_databar_F_1 ()
     return(0);
 }
 
+int test_databar_F_3 ()
+{
+    expect(ZBAR_DATABAR_EXP, "1012A");
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
+    encode(0x11, 0);
+    encode(0x11521151, 0);
+    encode(0x18411, 0);
+    encode(0x13171121, 0);
+    encode(0x11521232, 0);
+    encode(0x11481, 0);
+    encode(0x23171111, 0);
+    encode(0x1, 0);
+    encode_junk(rnd_size);
+    return(0);
+}
+
 int test_orange ()
 {
-    char data[32] = "000845963000052";
-    expect(ZBAR_DATABAR, data + 1);
-    encode_databar(data, FWD);
-    encode_junk(rnd_size);
-
-    expect(ZBAR_DATABAR, data + 1);
+    char data[32] = "0100845963000052";
+    expect(ZBAR_DATABAR, data);
     assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
     encode(0x1, 0);
     encode(0x23212321, 0);   // data[0]
@@ -780,20 +793,24 @@ int test_orange ()
     encode(0x11, 0);
     encode_junk(rnd_size);
 
+    expect(ZBAR_DATABAR, data);
+    data[1] = '0';
+    encode_databar(data + 1, FWD);
+    encode_junk(rnd_size);
     return(0);
 }
 
 int test_numeric (char *data)
 {
-    char tmp = data[0];
-    data[0] &= '1';
-    calc_ean_parity(data + 1, 13);
-    expect(ZBAR_DATABAR, data + 1);
-    encode_databar(data, (rand() >> 8) & 1);
+    char tmp[32] = "01";
+    strncpy(tmp + 2, data + 1, 13);
+    calc_ean_parity(tmp + 2, 13);
+    expect(ZBAR_DATABAR, tmp);
+
+    tmp[1] = data[0] & '1';
+    encode_databar(tmp + 1, (rand() >> 8) & 1);
 
     encode_junk(rnd_size);
-
-    data[0] = tmp;
 
     data[strlen(data) & ~1] = 0;
     expect(ZBAR_CODE128, data);
@@ -948,6 +965,7 @@ int main (int argc, char **argv)
 
     if(!iter) {
         test_databar_F_1();
+        test_databar_F_3();
         test_orange();
         test1();
     }
