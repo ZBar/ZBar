@@ -119,6 +119,8 @@ decode10 (unsigned char *buf,
     }
 }
 
+#define VAR_MAX(l, i) ((((l) * 12 + (i)) * 2 + 6) / 7)
+
 #define FEED_BITS(b)                         \
     while(i < (b) && len) {                  \
         d = (d << 12) | (*(data++) & 0xfff); \
@@ -145,7 +147,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
     unsigned n;
     unsigned char *buf;
     unsigned long d = *(data++);
-    int len = d / 211 + 4;
+    int len = d / 211 + 4, buflen;
 
     /* grok encodation method */
     d = *(data++);
@@ -154,24 +156,30 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
     if(n >= 0x40) {
         i = 10;
         enc = 1;
+        buflen = 2 + 14 + VAR_MAX(len, 10 - 2 - 44 + 6) + 2;
     }
     else if(n >= 0x38) {
         i = 4;
         enc = 6 + (n & 7);
+        buflen = 2 + 14 + 4 + 6 + 2 + 6 + 2;
     }
     else if(n >= 0x30) {
         i = 6;
         enc = 2 + ((n >> 2) & 1);
+        buflen = 2 + 14 + 4 + 3 + VAR_MAX(len, 6 - 2 - 44 - 2 - 10) + 2;
     }
     else if(n >= 0x20) {
         i = 7;
         enc = 4 + ((n >> 3) & 1);
+        buflen = 2 + 14 + 4 + 6;
     }
     else {
         i = 9;
         enc = 0;
+        buflen = VAR_MAX(len, 9 - 2) + 2;
     }
-    dprintf(2, " enc=%d", enc);
+    dprintf(2, " buflen=%d enc=%d", buflen, enc);
+    zassert(buflen > 2, -1, "buflen=%d\n", buflen);
 
     if(enc < 4) {
         /* grok variable length symbol bit field */
@@ -185,7 +193,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
     len -= 2;
     dprintf(2, " [%d+%d]", i, len);
 
-    if(size_buf(dcode, ((i + len * 12) * 2 + 6) / 7 + 8))
+    if(size_buf(dcode, buflen))
         return(-1);
     buf = dcode->buf;
 
