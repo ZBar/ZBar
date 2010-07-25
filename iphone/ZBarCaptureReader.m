@@ -31,9 +31,8 @@
 
 @implementation ZBarCaptureReader
 
-@synthesize captureOutput, captureDelegate, scanner, scanCrop, framesPerSecond,
-    enableCache;
-@dynamic size;
+@synthesize captureOutput, captureDelegate, scanner, scanCrop, size,
+    framesPerSecond, enableCache;
 
 - (void) initResult
 {
@@ -142,13 +141,6 @@
     }
 }
 
-- (CGSize) size
-{
-    @synchronized(scanner) {
-        return(CGSizeMake(width, height));
-    }
-}
-
 - (void) cropUpdate
 {
     @synchronized(scanner) {
@@ -191,9 +183,21 @@
     framesPerSecond = fps;
 }
 
-- (void) setFPS: (NSNumber*) val
+- (void) updateFPS: (NSNumber*) val
 {
     [self setFramesPerSecond: val.doubleValue];
+}
+
+- (void) setSize: (CGSize) _size
+{
+    size = _size;
+}
+
+- (void) updateSize: (CFDictionaryRef) val
+{
+    CGSize _size;
+    if(CGSizeMakeWithDictionaryRepresentation(val, &_size))
+        [self setSize: _size];
 }
 
 - (void)  captureOutput: (AVCaptureOutput*) output
@@ -219,7 +223,7 @@
         dt_frame = dt;
     dt_frame = (dt_frame + dt) / 2;
     if(timer_elapsed(t_fps, now) >= 1) {
-        [self performSelectorOnMainThread: @selector(setFPS:)
+        [self performSelectorOnMainThread: @selector(updateFPS:)
               withObject: [NSNumber numberWithDouble: 1 / dt_frame]
               waitUntilDone: NO];
         t_fps = now;
@@ -264,7 +268,16 @@
             if(width != w || height != h) {
                 width = w;
                 height = h;
-                image.size = CGSizeMake(w, h);
+                CGSize _size = CGSizeMake(w, h);
+                CFDictionaryRef sized =
+                    CGSizeCreateDictionaryRepresentation(_size);
+                if(sized) {
+                    [self performSelectorOnMainThread: @selector(updateSize:)
+                          withObject: (id)sized
+                          waitUntilDone: NO];
+                    CFRelease(sized);
+                }
+                image.size = _size;
                 [self cropUpdate];
             }
 

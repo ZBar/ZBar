@@ -1,4 +1,8 @@
 current:
+  * workaround for iPhone simulator builds
+    - refactor ZBarReaderView for capture/simulator specific implementations
+    - fix tracking calculations
+    - fix captured video frame color conversion
   * add support for GS1 DataBar Expanded (RSS Expanded) symbology
   * fix for poor iPhone 4 performance
   * add language bindings for DataBar

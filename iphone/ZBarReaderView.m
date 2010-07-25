@@ -22,84 +22,47 @@
 //------------------------------------------------------------------------
 
 #import <zbar/ZBarReaderView.h>
-#import <zbar/ZBarCaptureReader.h>
 
 #define MODULE ZBarReaderView
 #import "debug.h"
 
+// silence warning
+@interface ZBarReaderViewImpl : NSObject
+@end
+
 @implementation ZBarReaderView
 
 @synthesize readerDelegate, tracksSymbols, torchMode, showsFPS, zoom, scanCrop,
-    previewTransform, session, captureReader;
-@dynamic scanner, allowsPinchZoom, enableCache, device;
+    previewTransform;
+@dynamic scanner, allowsPinchZoom, enableCache, device, session, captureReader;
 
-- (id) initWithImageScanner: (ZBarImageScanner*) _scanner
++ (id) alloc
 {
-    self = [super initWithFrame: CGRectMake(0, 0, 320, 426)];
-    if(!self)
-        return(nil);
+    if(self == [ZBarReaderView class]) {
+        // this is an abstract wrapper for implementation selected
+        // at compile time.  replace with concrete subclass.
+        return([ZBarReaderViewImpl alloc]);
+    }
+    return([super alloc]);
+}
 
-    self.backgroundColor = [UIColor blackColor];
-    self.contentMode = UIViewContentModeScaleAspectFill;
-    self.autoresizingMask =
-        UIViewAutoresizingFlexibleWidth |
-        UIViewAutoresizingFlexibleHeight;
-
-    tracksSymbols = YES;
-    torchMode = AVCaptureTorchModeAuto;
-    scanCrop = CGRectMake(0, 0, 1, 1);
-    previewTransform = CGAffineTransformIdentity;
-
-    session = [AVCaptureSession new];
-    NSNotificationCenter *notify =
-        [NSNotificationCenter defaultCenter];
-    [notify addObserver: self
-            selector: @selector(onVideoError:)
-            name: AVCaptureSessionRuntimeErrorNotification
-            object: session];
-    [notify addObserver: self
-            selector: @selector(onVideoStart:)
-            name: AVCaptureSessionDidStartRunningNotification
-            object: session];
-    [notify addObserver: self
-            selector: @selector(onVideoStop:)
-            name: AVCaptureSessionDidStopRunningNotification
-            object: session];
-    [notify addObserver: self
-            selector: @selector(onVideoStop:)
-            name: AVCaptureSessionWasInterruptedNotification
-            object: session];
-    [notify addObserver: self
-            selector: @selector(onVideoStart:)
-            name: AVCaptureSessionInterruptionEndedNotification
-            object: session];
-
-    self.device = [AVCaptureDevice
-                      defaultDeviceWithMediaType: AVMediaTypeVideo];
-
-    captureReader = [[ZBarCaptureReader alloc]
-                        initWithImageScanner: _scanner];
-    captureReader.captureDelegate = (id<ZBarCaptureDelegate>)self;
-    [session addOutput: captureReader.captureOutput];
-
-    if([session canSetSessionPreset: AVCaptureSessionPreset640x480])
-        session.sessionPreset = AVCaptureSessionPreset640x480;
-
-    preview = [[AVCaptureVideoPreviewLayer
-                   layerWithSession: session]
-                  retain];
-    preview.frame = self.bounds;
-    preview.videoGravity = AVLayerVideoGravityResizeAspectFill;
-    [self.layer addSublayer: preview];
+- (void) initSubviews
+{
+    assert(preview);
 
     CGRect r = preview.bounds;
+    overlay = [CALayer new];
+    overlay.frame = r;
+    overlay.backgroundColor = [UIColor clearColor].CGColor;
+    [preview addSublayer: overlay];
+
     tracking = [CALayer new];
     tracking.frame = r;
     tracking.opacity = 0;
     tracking.borderWidth = 1;
     tracking.backgroundColor = [UIColor clearColor].CGColor;
     tracking.borderColor = [UIColor greenColor].CGColor;
-    [preview addSublayer: tracking];
+    [overlay addSublayer: tracking];
 
     r.origin.x = 3 * r.size.width / 4;
     r.origin.y = r.size.height - 32;
@@ -125,6 +88,25 @@
     fpsLabel.font = [UIFont systemFontOfSize: 18];
     fpsLabel.textAlignment = UITextAlignmentRight;
     [fpsView addSubview: fpsLabel];
+}
+
+- (id) initWithImageScanner: (ZBarImageScanner*) scanner
+{
+    self = [super initWithFrame: CGRectMake(0, 0, 320, 426)];
+    if(!self)
+        return(nil);
+
+    self.backgroundColor = [UIColor blackColor];
+    self.contentMode = UIViewContentModeScaleAspectFill;
+    self.autoresizingMask =
+        UIViewAutoresizingFlexibleWidth |
+        UIViewAutoresizingFlexibleHeight;
+
+    tracksSymbols = YES;
+    torchMode = 2; // AVCaptureTorchModeAuto
+    scanCrop = zoomCrop = CGRectMake(0, 0, 1, 1);
+    imageScale = 1;
+    previewTransform = CGAffineTransformIdentity;
 
     pinch = [[UIPinchGestureRecognizer alloc]
                 initWithTarget: self
@@ -132,7 +114,6 @@
     [self addGestureRecognizer: pinch];
 
     self.zoom = 1.25;
-
     return(self);
 }
 
@@ -156,52 +137,50 @@
 
 - (void) dealloc
 {
-    [[NSNotificationCenter defaultCenter]
-        removeObserver: self];
-    if(showsFPS) {
-        @try {
-            [captureReader removeObserver: self
-                           forKeyPath: @"framesPerSecond"];
-        }
-        @catch(...) { }
-    }
+    [preview removeFromSuperlayer];
+    [preview release];
+    preview = nil;
+    [overlay release];
+    overlay = nil;
+    [tracking release];
+    tracking = nil;
     [fpsLabel release];
     fpsLabel = nil;
     [fpsView release];
     fpsView = nil;
-    captureReader.captureDelegate = nil;
-    [captureReader release];
-    captureReader = nil;
-    [device release];
-    device = nil;
-    [input release];
-    input = nil;
-    [preview removeFromSuperlayer];
-    [preview release];
-    preview = nil;
-    [session release];
-    session = nil;
-    [tracking release];
-    tracking = nil;
     [pinch release];
     pinch = nil;
     [super dealloc];
 }
 
-- (ZBarImageScanner*) scanner
-{
-    return(captureReader.scanner);
-}
-
 - (void) resetTracking
 {
+    [tracking removeAllAnimations];
+    [CATransaction begin];
+    [CATransaction setDisableActions: YES];
+    CGSize size = overlay.bounds.size;
+    CGRect crop = zoomCrop;
+    tracking.frame = CGRectMake(crop.origin.x * size.width,
+                                crop.origin.y * size.width,
+                                crop.size.width * size.width,
+                                crop.size.height * size.height);
     tracking.opacity = 0;
-    CGSize size = preview.bounds.size;
-    CGRect crop = captureReader.scanCrop;
-    tracking.frame = CGRectMake(crop.origin.y * size.width,
-                                crop.origin.x * size.height,
-                                crop.size.height * size.width,
-                                crop.size.width * size.height);
+    [CATransaction commit];
+}
+
+- (void) setImageSize: (CGSize) size
+{
+    CGSize psize = preview.bounds.size;
+    CGFloat scalex = size.width / psize.width;
+    CGFloat scaley = size.height / psize.height;
+    imageScale = (scalex > scaley) ? scalex : scaley;
+
+    tracking.borderWidth = imageScale / zoom;
+
+    zlog(@"scaling: layer=%@ image=%@ scale=%g %c %g = 1/%g",
+         NSStringFromCGSize(psize), NSStringFromCGSize(size),
+         scalex, (scalex > scaley) ? '>' : '<', scaley, 1 / imageScale);
+    [self resetTracking];
 }
 
 - (void) cropUpdate
@@ -211,7 +190,7 @@
     CGFloat z = 1 / zoom;
     xfrm = CGAffineTransformScale(xfrm, z, z);
     xfrm = CGAffineTransformTranslate(xfrm, -.5, -.5);
-    captureReader.scanCrop = CGRectApplyAffineTransform(scanCrop, xfrm);
+    zoomCrop = CGRectApplyAffineTransform(scanCrop, xfrm);
     [self resetTracking];
 }
 
@@ -223,56 +202,12 @@
     [self cropUpdate];
 }
 
-- (AVCaptureDevice*) device
-{
-    return(device);
-}
-
-- (void) setDevice: (AVCaptureDevice*) newdev
-{
-    id olddev = device;
-    AVCaptureInput *oldinput = input;
-    assert(!olddev == !oldinput);
-
-    NSError *error = nil;
-    device = [newdev retain];
-    if(device) {
-        assert([device hasMediaType: AVMediaTypeVideo]);
-        input = [[AVCaptureDeviceInput alloc]
-                    initWithDevice: newdev
-                    error: &error];
-        assert(input);
-    }
-    else
-        input = nil;
-
-    [session beginConfiguration];
-    if(oldinput)
-        [session removeInput: input];
-    if(input)
-        [session addInput: input];
-    [session commitConfiguration];
-
-    [olddev release];
-    [oldinput release];
-}
-
 - (void) setTracksSymbols: (BOOL) track
 {
     if(track == tracksSymbols)
         return;
     tracksSymbols = track;
     [self resetTracking];
-}
-
-- (BOOL) enableCache
-{
-    return(captureReader.enableCache);
-}
-
-- (void) setEnableCache: (BOOL) enable
-{
-    captureReader.enableCache = enable;
 }
 
 - (BOOL) allowsPinchZoom
@@ -285,32 +220,11 @@
     pinch.enabled = enabled;
 }
 
-- (void) setTorchMode: (NSInteger) mode
-{
-    torchMode = mode;
-    if(running && [device isTorchModeSupported: mode])
-        @try {
-            device.torchMode = mode;
-        }
-        @catch(...) { }
-}
-
 - (void) setShowsFPS: (BOOL) show
 {
     if(show == showsFPS)
         return;
     fpsView.hidden = !show;
-    @try {
-        if(show)
-            [captureReader addObserver: self
-                           forKeyPath: @"framesPerSecond"
-                           options: 0
-                           context: NULL];
-        else
-            [captureReader removeObserver: self
-                           forKeyPath: @"framesPerSecond"];
-    }
-    @catch(...) { }
 }
 
 - (void) setZoom: (CGFloat) z
@@ -330,6 +244,7 @@
             kCAMediaTimingFunctionLinear]];
     [preview setAffineTransform:
         CGAffineTransformScale(previewTransform, z, z)];
+    tracking.borderWidth = imageScale / zoom;
     [CATransaction commit];
 
     [self cropUpdate];
@@ -348,78 +263,25 @@
         return;
     started = YES;
 
+    [self resetTracking];
+    fpsLabel.text = @"--- fps ";
+
     [[UIDevice currentDevice]
         beginGeneratingDeviceOrientationNotifications];
-
-    [self resetTracking];
-    fpsLabel.text = @"";
-
-    [captureReader willStartRunning];
-    [session startRunning];
 }
 
 - (void) stop
 {
     if(!started)
         return;
-
-    [captureReader willStopRunning];
-    [session stopRunning];
+    started = NO;
 
     [[UIDevice currentDevice]
         endGeneratingDeviceOrientationNotifications];
-    started = NO;
 }
 
 - (void) flushCache
 {
-    [captureReader flushCache];
-}
-
-// AVCaptureSession notifications
-
-- (void) onVideoStart: (NSNotification*) note
-{
-    zlog(@"onVideoStart: running=%d %@", running, note);
-    if(running)
-        return;
-    running = YES;
-
-    // lock device and set focus mode
-    NSError *error = nil;
-    if([device lockForConfiguration: &error]) {
-        if([device isFocusModeSupported: AVCaptureFocusModeContinuousAutoFocus])
-            device.focusMode = AVCaptureFocusModeContinuousAutoFocus;
-        if([device isTorchModeSupported: torchMode])
-            device.torchMode = torchMode;
-    }
-    else
-        zlog(@"failed to lock device: %@", error);
-}
-
-- (void) onVideoStop: (NSNotification*) note
-{
-    zlog(@"onVideoStop: %@", note);
-    if(!running)
-        return;
-
-    [device unlockForConfiguration];
-    running = NO;
-}
-
-- (void) onVideoError: (NSNotification*) note
-{
-    zlog(@"onVideoError: %@", note);
-    if(running) {
-        // FIXME does session always stop on error?
-        running = started = NO;
-        [device unlockForConfiguration];
-    }
-    NSError *err =
-        [note.userInfo objectForKey: AVCaptureSessionErrorKey];
-    NSLog(@"ZBarReaderView: ERROR during capture: %@: %@",
-          [err localizedDescription],
-          [err localizedFailureReason]);
 }
 
 // UIGestureRecognizer callback
@@ -433,7 +295,7 @@
 
     if((zoom < 1.5) != (z < 1.5)) {
         int d = (z < 1.5) ? 3 : 2;
-        ZBarImageScanner *scanner = captureReader.scanner;
+        ZBarImageScanner *scanner = self.scanner;
         @synchronized(scanner) {
             [scanner setSymbology: 0
                      config: ZBAR_CFG_X_DENSITY
@@ -445,44 +307,21 @@
     }
 }
 
-// NSKeyValueObserving
-
-- (void) observeValueForKeyPath: (NSString*) path
-                       ofObject: (id) obj
-                         change: (NSDictionary*) info
-                        context: (void*) ctx
-{
-    if(obj == captureReader &&
-       [path isEqualToString: @"framesPerSecond"])
-        fpsLabel.text = [NSString stringWithFormat: @"%.2ffps ",
-                                  captureReader.framesPerSecond];
-}
-
-// ZBarCaptureDelegate
-
 - (void) updateTracking: (CALayer*) trk
              withSymbol: (ZBarSymbol*) sym
 {
     if(!sym)
         return;
 
-    CGRect b = sym.bounds;
-    CGPoint c = CGPointMake(CGRectGetMidX(b), CGRectGetMidY(b));
-    CGSize isize = captureReader.size;
-    CGSize psize = preview.bounds.size;
-    CGPoint p = CGPointMake((isize.height - c.y) * psize.width / isize.height,
-                            c.x * psize.height / isize.width);
-    CGRect r = CGRectMake(0, 0,
-                          b.size.height * psize.width / isize.height,
-                          b.size.width * psize.height / isize.width);
-    if(r.size.width <= 24 && r.size.height <= 24)
+    CGRect r = sym.bounds;
+    if(r.size.width <= 32 && r.size.height <= 32)
         return;
-    r = CGRectInset(r, -16, -16);
+    r = CGRectInset(r, -24, -24);
 
     CALayer *current = trk.presentationLayer;
     CGPoint cp = current.position;
-    p = CGPointMake((p.x * 3 + cp.x) / 4,
-                    (p.y * 3 + cp.y) / 4);
+    CGPoint p = CGPointMake(CGRectGetMidX(r), CGRectGetMidY(r));
+    p = CGPointMake((p.x * 3 + cp.x) / 4, (p.y * 3 + cp.y) / 4);
 
     CGRect cr = current.bounds;
     r.origin = cr.origin;
@@ -519,23 +358,26 @@
     on.fillMode = kCAFillModeForwards;
     on.removedOnCompletion = NO;
 
-    CABasicAnimation *off =
-        [CABasicAnimation animationWithKeyPath: @"opacity"];
-    off.fromValue = [NSNumber numberWithDouble: 1];
-    off.toValue = [NSNumber numberWithDouble: 0];
-    off.beginTime = .5;
-    off.duration = .5;
-    off.timingFunction = linear;
+    CABasicAnimation *off = nil;
+    if(!TARGET_IPHONE_SIMULATOR) {
+        off = [CABasicAnimation animationWithKeyPath: @"opacity"];
+        off.fromValue = [NSNumber numberWithDouble: 1];
+        off.toValue = [NSNumber numberWithDouble: 0];
+        off.beginTime = .5;
+        off.duration = .5;
+        off.timingFunction = linear;
+    }
 
     CAAnimationGroup *group = [CAAnimationGroup animation];
     group.animations = [NSArray arrayWithObjects: resize, move, on, off, nil];
     group.duration = 1;
+    group.fillMode = kCAFillModeForwards;
+    group.removedOnCompletion = !TARGET_IPHONE_SIMULATOR;
     [trk addAnimation: group
          forKey: @"tracking"];
 }
 
-- (void) captureReader: (ZBarCaptureReader*) reader
-       didTrackSymbols: (ZBarSymbolSet*) syms
+- (void) didTrackSymbols: (ZBarSymbolSet*) syms
 {
     if(!tracksSymbols)
         return;
@@ -555,37 +397,6 @@
 
     [self updateTracking: tracking
           withSymbol: sym];
-}
-
-- (void)       captureReader: (ZBarCaptureReader*) reader
-  didReadNewSymbolsFromImage: (ZBarImage*) zimg
-{
-    zlog(@"scanned %d symbols: %@", zimg.symbols.count, zimg);
-    if(!readerDelegate)
-        return;
-
-    UIImageOrientation orient;
-    switch([UIDevice currentDevice].orientation)
-    {
-    case UIDeviceOrientationPortraitUpsideDown:
-        orient = UIImageOrientationLeft;
-        break;
-    case UIDeviceOrientationLandscapeLeft:
-        orient = UIImageOrientationUp;
-        break;
-    case UIDeviceOrientationLandscapeRight:
-        orient = UIImageOrientationDown;
-        break;
-    default:
-        orient = UIImageOrientationRight;
-        break;
-    }
-
-    UIImage *uiimg = [zimg UIImageWithOrientation: orient];
-    [readerDelegate
-        readerView: self
-        didReadSymbols: zimg.symbols
-        fromImage: uiimg];
 }
 
 @end

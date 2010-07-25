@@ -39,13 +39,16 @@
 {
     if(sourceType != UIImagePickerControllerSourceTypeCamera)
         return(NO);
-    return([UIImagePickerController isSourceTypeAvailable: sourceType]);
+    return(TARGET_IPHONE_SIMULATOR ||
+           [UIImagePickerController isSourceTypeAvailable: sourceType]);
 }
 
 - (id) init
 {
-    if(!NSClassFromString(@"AVCaptureSession")) {
+    if(!TARGET_IPHONE_SIMULATOR &&
+       !NSClassFromString(@"AVCaptureSession")) {
         // fallback to old interface
+        zlog(@"Falling back to ZBarReaderController");
         [self release];
         return([ZBarReaderController new]);
     }
@@ -145,6 +148,11 @@
     [self.view addSubview: controls];
 }
 
+- (void) initSimulator
+{
+    // simulator specific hooks
+}
+
 - (void) loadView
 {
     self.view = [[UIView alloc]
@@ -167,6 +175,7 @@
     [view addSubview: readerView];
 
     [self initControls];
+    [self initSimulator];
 
     if(cameraOverlayView) {
         assert(!cameraOverlayView.superview);

@@ -598,7 +598,12 @@ CGImageRef UIGetScreenImage(void);
     scanner.enableCache = NO;
     help.wantsFullScreenLayout = YES;
     help.view.alpha = 0;
-    [[self cameraOverlayView] addSubview: help.view];
+
+    UIView *activeOverlay = [self cameraOverlayView];
+    help.view.frame = [activeOverlay
+                          convertRect: CGRectMake(0, 0, 320, 480)
+                          fromView: nil];
+    [activeOverlay addSubview: help.view];
     [UIView beginAnimations: @"ZBarHelp"
             context: nil];
     help.view.alpha = 1;

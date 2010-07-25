@@ -43,6 +43,7 @@ static const NSInteger const density_choices[] = {
       UINavigationControllerDelegate,
       UITableViewDelegate,
       UITableViewDataSource,
+      UIActionSheetDelegate,
       ZBarReaderDelegate >
 {
     UIWindow *window;
@@ -57,6 +58,7 @@ static const NSInteger const density_choices[] = {
 
     ZBarReaderViewController *reader;
     UIView *overlay;
+    UIBarButtonItem *manualBtn;
     UILabel *typeOvl, *dataOvl;
     NSArray *masks;
 }
@@ -85,22 +87,22 @@ static const NSInteger const density_choices[] = {
 - (void) initOverlay
 {
     overlay = [[UIView alloc]
-                  initWithFrame: CGRectMake(0, 0, 320, 480)];
+                  initWithFrame: CGRectMake(0, 426, 320, 54)];
     overlay.backgroundColor = [UIColor clearColor];
 
     masks = [[NSArray alloc]
                 initWithObjects:
                     [[[UIView alloc]
+                         initWithFrame: CGRectMake(0, -426, 320, 0)]
+                        autorelease],
+                    [[[UIView alloc]
+                         initWithFrame: CGRectMake(0, -426, 0, 426)]
+                        autorelease],
+                    [[[UIView alloc]
                          initWithFrame: CGRectMake(0, 0, 320, 0)]
                         autorelease],
                     [[[UIView alloc]
-                         initWithFrame: CGRectMake(0, 0, 0, 426)]
-                        autorelease],
-                    [[[UIView alloc]
-                         initWithFrame: CGRectMake(0, 426, 320, 0)]
-                        autorelease],
-                    [[[UIView alloc]
-                         initWithFrame: CGRectMake(320, 0, 0, 426)]
+                         initWithFrame: CGRectMake(320, -426, 0, 426)]
                         autorelease],
                 nil];
     for(UIView *mask in masks) {
@@ -111,7 +113,7 @@ static const NSInteger const density_choices[] = {
 
     UILabel *label =
         [[UILabel alloc]
-            initWithFrame: CGRectMake(0, 0, 320, 48)];
+            initWithFrame: CGRectMake(0, -426, 320, 48)];
     label.backgroundColor = [UIColor clearColor];
     label.textColor = [UIColor whiteColor];
     label.font = [UIFont boldSystemFontOfSize: 24];
@@ -120,7 +122,7 @@ static const NSInteger const density_choices[] = {
     [label release];
 
     typeOvl = [[UILabel alloc]
-                  initWithFrame: CGRectMake(0, 48, 80, 24)];
+                  initWithFrame: CGRectMake(0, -378, 80, 24)];
     typeOvl.backgroundColor = [UIColor clearColor];
     typeOvl.textColor = [UIColor whiteColor];
     typeOvl.font = [UIFont systemFontOfSize: 16];
@@ -128,7 +130,7 @@ static const NSInteger const density_choices[] = {
     [overlay addSubview: typeOvl];
 
     dataOvl = [[UILabel alloc]
-                  initWithFrame: CGRectMake(96, 48, 224, 24)];
+                  initWithFrame: CGRectMake(96, -378, 224, 24)];
     dataOvl.backgroundColor = [UIColor clearColor];
     dataOvl.textColor = [UIColor whiteColor];
     dataOvl.font = [UIFont systemFontOfSize: 16];
@@ -136,11 +138,17 @@ static const NSInteger const density_choices[] = {
 
     UIToolbar *toolbar =
         [[UIToolbar alloc]
-            initWithFrame: CGRectMake(0, 426, 320, 54)];
+            initWithFrame: CGRectMake(0, 0, 320, 54)];
     toolbar.tintColor = [UIColor colorWithRed: .5
                                      green: 0
                                      blue: 0
                                      alpha: 1];
+    [manualBtn release];
+    manualBtn = [[UIBarButtonItem alloc]
+                    initWithBarButtonSystemItem: UIBarButtonSystemItemCamera
+                    target: self
+                    action: @selector(manualCapture)];
+
     toolbar.items =
         [NSArray arrayWithObjects:
             [[[UIBarButtonItem alloc]
@@ -149,6 +157,12 @@ static const NSInteger const density_choices[] = {
                  target: self
                  action: @selector(imagePickerControllerDidCancel:)]
                 autorelease],
+            [[[UIBarButtonItem alloc]
+                 initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
+                 target: nil
+                 action: nil]
+                autorelease],
+            manualBtn,
             [[[UIBarButtonItem alloc]
                  initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
                  target: nil
@@ -171,7 +185,7 @@ static const NSInteger const density_choices[] = {
 
     UIButton *info =
         [UIButton buttonWithType: UIButtonTypeInfoLight];
-    info.frame = CGRectMake(266, 426, 54, 54);
+    info.frame = CGRectMake(266, 0, 54, 54);
     [info addTarget: self
              action: @selector(info)
              forControlEvents: UIControlEventTouchUpInside];
@@ -265,10 +279,14 @@ static const NSInteger const density_choices[] = {
     };
     NSMutableArray *configs = [NSMutableArray array];
     for(int i = 0; configNames[i]; i++)
-        [configs addObject:
-            [self cellWithTitle: configNames[i]
-                  tag: i
-                  checked: [[reader valueForKey: configNames[i]] boolValue]]];
+        @try {
+            BOOL checked = [[reader valueForKey: configNames[i]] boolValue];
+            [configs addObject:
+                [self cellWithTitle: configNames[i]
+                      tag: i
+                      checked: checked]];
+        }
+        @catch(...) { }
     [sections replaceObjectAtIndex: CONFIG_SECTION
               withObject: configs];
 
@@ -307,7 +325,7 @@ static const NSInteger const density_choices[] = {
                               cropCell,
                               [self cellWithTitle: @"continuous"
                                     tag: 1
-                                    checked: NO],
+                                    checked: continuous],
                               nil]];
 
     static const int symbolValues[] = {
@@ -390,6 +408,8 @@ static const NSInteger const density_choices[] = {
     sections = nil;
     [symbolEnables release];
     symbolEnables = nil;
+    [manualBtn release];
+    manualBtn = nil;
     [typeLabel release];
     typeLabel = nil;
     [dataLabel release];
@@ -429,6 +449,10 @@ static const NSInteger const density_choices[] = {
     [self.tableView reloadData];
     if([reader respondsToSelector: @selector(readerView)])
         reader.readerView.showsFPS = YES;
+    if(reader.sourceType == UIImagePickerControllerSourceTypeCamera)
+        reader.cameraOverlayView = (reader.showsZBarControls) ? nil : overlay;
+    manualBtn.enabled = TARGET_IPHONE_SIMULATOR ||
+        (reader.cameraMode == ZBarReaderControllerCameraModeDefault);
     [self presentModalViewController: reader
           animated: YES];
 }
@@ -442,6 +466,11 @@ static const NSInteger const density_choices[] = {
         [reader.readerView stop];
     else
         [reader.readerView start];
+}
+
+- (void) manualCapture
+{
+    [(UIImagePickerController*)reader takePicture];
 }
 
 // UINavigationControllerDelegate
@@ -492,7 +521,7 @@ static const NSInteger const density_choices[] = {
 - (NSIndexPath*) tableView: (UITableView*) view
   willSelectRowAtIndexPath: (NSIndexPath*) path
 {
-    if(path.section == RESULT_SECTION)
+    if(path.section == RESULT_SECTION && path.row != 2)
         return(nil);
     return(path);
 }
@@ -529,18 +558,18 @@ static const NSInteger const density_choices[] = {
     r.size.width *= 426;
     r.size.height *= 320;
     UIView *mask = [masks objectAtIndex: 0];
-    mask.frame = CGRectMake(0, 0, 320, r.origin.x);
+    mask.frame = CGRectMake(0, -426, 320, r.origin.x);
     mask = [masks objectAtIndex: 1];
-    mask.frame = CGRectMake(0, r.origin.x, r.origin.y, r.size.width);
+    mask.frame = CGRectMake(0, r.origin.x - 426, r.origin.y, r.size.width);
 
     r.origin.y += r.size.height;
     mask = [masks objectAtIndex: 2];
-    mask.frame = CGRectMake(r.origin.y, r.origin.x,
+    mask.frame = CGRectMake(r.origin.y, r.origin.x - 426,
                             320 - r.origin.y, r.size.width);
 
     r.origin.x += r.size.width;
     mask = [masks objectAtIndex: 3];
-    mask.frame = CGRectMake(0, r.origin.x, 320, 426 - r.origin.x);
+    mask.frame = CGRectMake(0, r.origin.x - 426, 320, 426 - r.origin.x);
 }
 
 - (void) advanceDensity: (UILabel*) label
@@ -611,10 +640,6 @@ static const NSInteger const density_choices[] = {
         state = [[reader valueForKey: key] boolValue];
         [self setCheck: state
               forCell: cell];
-
-        if([key isEqualToString: @"showsZBarControls"] &&
-           reader.sourceType == UIImagePickerControllerSourceTypeCamera)
-            reader.cameraOverlayView = (state) ? nil : overlay;
         break;
     }
 
@@ -649,6 +674,15 @@ static const NSInteger const density_choices[] = {
         break;
     }
     case RESULT_SECTION:
+        if(path.row == 2)
+            [[[[UIActionSheet alloc]
+                  initWithTitle: nil
+                  delegate: self
+                  cancelButtonTitle: @"Cancel"
+                  destructiveButtonTitle: nil
+                  otherButtonTitles: @"Save Image", nil]
+                 autorelease]
+                showInView: self.view];
         break;
     default:
         assert(0);
@@ -668,6 +702,18 @@ static const NSInteger const density_choices[] = {
     default: assert(0);
     }
     return(44);
+}
+
+// UIActionSheetDelegate
+
+- (void)  actionSheet: (UIActionSheet*) sheet
+ clickedButtonAtIndex: (NSInteger) idx
+{
+    if(idx == sheet.cancelButtonIndex)
+        return;
+    idx -= sheet.firstOtherButtonIndex;
+    if(!idx)
+        UIImageWriteToSavedPhotosAlbum(imageView.image, nil, NULL, NULL);
 }
 
 // ZBarReaderDelegate
