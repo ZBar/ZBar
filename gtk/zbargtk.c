@@ -137,10 +137,6 @@ static inline gboolean zbar_gtk_video_open (ZBarGtk *self,
 
     gdk_threads_enter();
 
-    zbar->req_width = DEFAULT_WIDTH;
-    zbar->req_height = DEFAULT_HEIGHT;
-    gtk_widget_queue_resize(GTK_WIDGET(self));
-
     zbar->video_opened = FALSE;
     if(zbar->thread)
         g_object_notify(G_OBJECT(self), "video-opened");
@@ -178,6 +174,10 @@ static inline gboolean zbar_gtk_video_open (ZBarGtk *self,
          * so we hold the lock for this part
          */
         gdk_threads_enter();
+
+        if(zbar->video_width && zbar->video_height)
+            zbar_video_request_size(zbar->video,
+                                    zbar->video_width, zbar->video_height);
 
         video_opened = !zbar_negotiate_format(zbar->video, zbar->window);
 
@@ -555,6 +555,19 @@ gboolean zbar_gtk_get_video_opened (ZBarGtk *self)
     return(zbar->video_opened);
 }
 
+void zbar_gtk_request_video_size (ZBarGtk *self,
+                                  int width,
+                                  int height)
+{
+    if(!self->_private || width < 0 || height < 0)
+        return;
+    ZBarGtkPrivate *zbar = ZBAR_GTK_PRIVATE(self->_private);
+
+    zbar->req_width = zbar->video_width = width;
+    zbar->req_height = zbar->video_height = height;
+    gtk_widget_queue_resize(GTK_WIDGET(self));
+}
+
 static void zbar_gtk_set_property (GObject *object,
                                    guint prop_id,
                                    const GValue *value,
@@ -608,8 +621,8 @@ static void zbar_gtk_init (ZBarGtk *self)
     zbar->window = zbar_window_create();
     g_assert(zbar->window);
 
-    zbar->req_width = DEFAULT_WIDTH;
-    zbar->req_height = DEFAULT_HEIGHT;
+    zbar->req_width = zbar->video_width = DEFAULT_WIDTH;
+    zbar->req_height = zbar->video_width = DEFAULT_HEIGHT;
 
     /* spawn a thread to handle decoding and video */
     zbar->queue = g_async_queue_new();
