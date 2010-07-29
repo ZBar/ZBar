@@ -1,6 +1,10 @@
 current:
   * add video size request to (Py)GTK widget (req #3034522)
     - thanks to Jerome Charaoui for the patch!
+  * workaround for iPhone simulator builds
+    - refactor ZBarReaderView for capture/simulator specific implementations
+    - fix tracking calculations
+    - fix captured video frame color conversion
   * add support for GS1 DataBar Expanded (RSS Expanded) symbology
   * fix for poor iPhone 4 performance
   * add language bindings for DataBar

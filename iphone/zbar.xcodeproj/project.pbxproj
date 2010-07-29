@@ -12,6 +12,8 @@
 		DC26004F118631E000FA987B /* ZBarCaptureReader.h in Headers */ = {isa = PBXBuildFile; fileRef = DC26004D118631E000FA987B /* ZBarCaptureReader.h */; };
 		DC3AAB4E11B71A040021C7B1 /* ZBarCVImage.h in Headers */ = {isa = PBXBuildFile; fileRef = DC3AAB4C11B71A040021C7B1 /* ZBarCVImage.h */; };
 		DC3AAB4F11B71A040021C7B1 /* ZBarCVImage.m in Sources */ = {isa = PBXBuildFile; fileRef = DC3AAB4D11B71A040021C7B1 /* ZBarCVImage.m */; };
+		DC3CE47811FA1622008FAF88 /* ZBarReaderViewImpl_Capture.m in Sources */ = {isa = PBXBuildFile; fileRef = DC3CE47611FA1622008FAF88 /* ZBarReaderViewImpl_Capture.m */; };
+		DC3CE47911FA1622008FAF88 /* ZBarReaderViewImpl_Simulator.m in Sources */ = {isa = PBXBuildFile; fileRef = DC3CE47711FA1622008FAF88 /* ZBarReaderViewImpl_Simulator.m */; };
 		DC3EBB2D119DDB2100107EE9 /* ZBarReaderViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = DC3EBB2C119DDB2100107EE9 /* ZBarReaderViewController.m */; };
 		DC4920EE10A70475000E4D43 /* ZBarImage.m in Sources */ = {isa = PBXBuildFile; fileRef = DC4920EC10A70475000E4D43 /* ZBarImage.m */; };
 		DC4920EF10A70475000E4D43 /* ZBarImageScanner.m in Sources */ = {isa = PBXBuildFile; fileRef = DC4920ED10A70475000E4D43 /* ZBarImageScanner.m */; };
@@ -80,6 +82,8 @@
 		DC26004D118631E000FA987B /* ZBarCaptureReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ZBarCaptureReader.h; path = ../include/zbar/ZBarCaptureReader.h; sourceTree = SOURCE_ROOT; };
 		DC3AAB4C11B71A040021C7B1 /* ZBarCVImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBarCVImage.h; sourceTree = "<group>"; };
 		DC3AAB4D11B71A040021C7B1 /* ZBarCVImage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarCVImage.m; sourceTree = "<group>"; };
+		DC3CE47611FA1622008FAF88 /* ZBarReaderViewImpl_Capture.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarReaderViewImpl_Capture.m; sourceTree = "<group>"; };
+		DC3CE47711FA1622008FAF88 /* ZBarReaderViewImpl_Simulator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarReaderViewImpl_Simulator.m; sourceTree = "<group>"; };
 		DC3EBB2C119DDB2100107EE9 /* ZBarReaderViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarReaderViewController.m; sourceTree = "<group>"; };
 		DC4920EC10A70475000E4D43 /* ZBarImage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarImage.m; sourceTree = "<group>"; };
 		DC4920ED10A70475000E4D43 /* ZBarImageScanner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarImageScanner.m; sourceTree = "<group>"; };
@@ -173,6 +177,8 @@
 				DC3AAB4D11B71A040021C7B1 /* ZBarCVImage.m */,
 				DC26004B118631C200FA987B /* ZBarCaptureReader.m */,
 				DCDC6E2F11ADCA8E00021380 /* ZBarReaderView.m */,
+				DC3CE47611FA1622008FAF88 /* ZBarReaderViewImpl_Capture.m */,
+				DC3CE47711FA1622008FAF88 /* ZBarReaderViewImpl_Simulator.m */,
 				DC67C1BE10A07B6B0033B702 /* ZBarHelpController.m */,
 				DC3EBB2C119DDB2100107EE9 /* ZBarReaderViewController.m */,
 				DC67C1BF10A07B6B0033B702 /* ZBarReaderController.m */,
@@ -390,6 +396,8 @@
 				DCDC6E3011ADCA8E00021380 /* ZBarReaderView.m in Sources */,
 				DC3AAB4F11B71A040021C7B1 /* ZBarCVImage.m in Sources */,
 				DCF5C9AD11EA3AD100E7DC21 /* databar.c in Sources */,
+				DC3CE47811FA1622008FAF88 /* ZBarReaderViewImpl_Capture.m in Sources */,
+				DC3CE47911FA1622008FAF88 /* ZBarReaderViewImpl_Simulator.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -428,6 +436,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				EXCLUDED_SOURCE_FILE_NAMES = "";
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphoneos*][arch=*]" = ZBarReaderViewImpl_Simulator.m;
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphonesimulator*][arch=*]" = (
+					ZBarReaderViewImpl_Capture.m,
+					ZBarCaptureReader.m,
+				);
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG_OBJC=1";
@@ -445,6 +459,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				EXCLUDED_SOURCE_FILE_NAMES = "";
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphoneos*][arch=*]" = ZBarReaderViewImpl_Simulator.m;
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphonesimulator*][arch=*]" = (
+					ZBarReaderViewImpl_Capture.m,
+					ZBarCaptureReader.m,
+				);
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_PREPROCESSOR_DEFINITIONS = "NDEBUG=1";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;

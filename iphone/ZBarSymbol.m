@@ -123,6 +123,10 @@
 
 - (id) initWithSymbolSet: (const zbar_symbol_set_t*) s
 {
+    if(!s) {
+        [self release];
+        return(nil);
+    }
     if(self = [super init]) {
         set = s;
         zbar_symbol_set_ref(s, 1);

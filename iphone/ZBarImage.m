@@ -85,8 +85,10 @@ static void image_cleanup(zbar_image_t *zimg)
 
     unsigned long datalen = w * h;
     uint8_t *raw = malloc(datalen);
-    // FIXME handle OOM
-    assert(raw);
+    if(!raw) {
+        [self release];
+        return(nil);
+    }
 
     zbar_image_set_data(zimg, raw, datalen, zbar_image_free_data);
     zbar_image_set_format(zimg, zbar_fourcc('Y','8','0','0'));
@@ -254,6 +256,8 @@ static void image_cleanup(zbar_image_t *zimg)
         bpp = 16;
         break;
     default:
+        NSLog(@"ERROR: format %.4s(%08x) is unsupported",
+              (char*)&format, format);
         assert(0);
         return(nil);
     };

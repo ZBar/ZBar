@@ -24,8 +24,7 @@
 #import <UIKit/UIKit.h>
 #import <zbar/ZBarImageScanner.h>
 
-@class AVCaptureSession, AVCaptureDevice, AVCaptureInput;
-@class AVCaptureVideoPreviewLayer;
+@class AVCaptureSession, AVCaptureDevice;
 @class CALayer;
 @class ZBarReaderView, ZBarCaptureReader;
 
@@ -47,21 +46,17 @@
     : UIView
 {
     id<ZBarReaderViewDelegate> readerDelegate;
-    AVCaptureSession *session;
-    AVCaptureDevice *device;
-    CGRect scanCrop;
+    CGRect scanCrop, zoomCrop;
     CGAffineTransform previewTransform;
     CGFloat zoom, zoom0;
     BOOL tracksSymbols, showsFPS;
     NSInteger torchMode;
 
-    AVCaptureInput *input;
-    ZBarCaptureReader *captureReader;
-    AVCaptureVideoPreviewLayer *preview;
-    CALayer *tracking;
+    CALayer *preview, *overlay, *tracking;
     UIView *fpsView;
     UILabel *fpsLabel;
     UIPinchGestureRecognizer *pinch;
+    CGFloat imageScale;
     BOOL started, running;
 }
 

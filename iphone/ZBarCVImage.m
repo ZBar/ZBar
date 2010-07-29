@@ -163,7 +163,7 @@ static const CGDataProviderDirectCallbacks asyncProvider = {
             Y1 *= 4769;
             quv += (x & 1) << 1;
             int r = (Y1 + 6537 * Cr + 2048) / 4096;
-            int g = (Y1 + 1604 * Cb + 3329 * Cr + 2048) / 4096;
+            int g = (Y1 - 1604 * Cb - 3329 * Cr + 2048) / 4096;
             int b = (Y1 + 8263 * Cb + 2048) / 4096;
 
             r = (r | -!!(r >> 8)) & -((r >> 8) >= 0);

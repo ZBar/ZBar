@@ -49,6 +49,7 @@
     id<ZBarCaptureDelegate> captureDelegate;
     ZBarImageScanner *scanner;
     CGRect scanCrop;
+    CGSize size;
     CGFloat framesPerSecond;
     BOOL enableCache;
 
