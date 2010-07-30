@@ -30,7 +30,7 @@
  * and fall back to cameraMode=Default (manual capture)
  */
 #ifndef USE_PRIVATE_APIS
-# define USE_PRIVATE_APIS 1
+# define USE_PRIVATE_APIS 0
 #endif
 
 #ifndef MIN_QUALITY
