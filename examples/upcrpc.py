@@ -2,7 +2,7 @@
 from xmlrpclib import ServerProxy
 import sys, re
 
-server = ServerProxy("http://dev.upcdatabase.com/rpc")
+server = ServerProxy("http://www.upcdatabase.com/rpc")
 ean_re = re.compile(r'^(UPC-A:|EAN-13:)?(\d{11,13})$', re.M)
 
 def lookup(decode):
