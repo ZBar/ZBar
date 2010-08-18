@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<!--
+   Copyright 2010 (c) Jeff Brown <spadix@users.sourceforge.net>
+     All Rights Reserved
+
+   icon size = 64
+   grid spacing = 32
+
+   $ java -Xmx2000m -jar batik-rasterizer.jar -w 4096 -h 4864 -d res/ZBarSDK-bg.8x.png res/ZBarSDK-bg.svg
+   $ convert -resize 12.5% res/ZBarSDK-bg.8x.png res/ZBarSDK-bg.png
+-->
+
+<svg version="1.1" id="top"
+  width="512px" height="608px"
+  viewBox="-1,-1 16,19" preserveAspectRatio="xMidYMid" overflow="visible"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <title>ZBar iPhone SDK DMG Folder Background Image</title>
+
+  <defs>
+    <style type="text/css"><![CDATA[
+      path, line { fill: none; stroke-linejoin: round; stroke-linecap: round }
+      #bg { fill: url(#bg-grad) }
+      #grid { fill: none; stroke: white; stroke-opacity: .25 ; stroke-width: .05 }
+      #icons { marker: url(#icon) }
+      #icon *, .text { fill: none; stroke: red; stroke-width: .05 }
+      .section { fill: white; stroke: black; stroke-width: .1 }
+      #drag { stroke: none; fill: url(#drag-grad) }
+      text { text-anchor: middle; font-family: sans-serif; font-size: .78125 }
+      .small { font-size: 66% }
+    ]]></style>
+    <marker id="icon" overflow="visible"><rect x="-1" y="-1" width="2" height="2"/></marker>
+    <linearGradient id="bg-grad" x2="0%" y1="5%" y2="100%">
+      <stop offset="0%" stop-color="#36a"/>
+      <stop offset="100%" stop-color="#112"/>
+    </linearGradient>
+    <linearGradient id="drag-grad" x1="100%" x2="0%">
+      <stop offset="0%" stop-color="#4f8" stop-opacity="0.05"/>
+      <stop offset="72%" stop-color="#4f8" stop-opacity=".9"/>
+      <stop offset="100%" stop-color="#4f8" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+
+  <rect id="bg" x="-1" y="-1" width="16" height="19"/>
+
+  <rect class="section" x="1.5" y="-.25" width="11" height="4" rx=".5" ry=".5"/>
+  <rect class="section" x="1.5" y="4.75" width="11" height="4" rx=".5" ry=".5"/>
+  <rect class="section" x=".5" y="9.75" width="13" height="7.5" rx=".5" ry=".5"/>
+
+  <text y="1.75">
+    <tspan x="8.75" dy=".2344">Read this first</tspan>
+  </text>
+  <text y="6.75">
+    <tspan x="8.75" dy="-.75">Then drag this</tspan>
+    <tspan x="8.75" dy="1">into your</tspan>
+    <tspan x="8.75" dy="1">Xcode project</tspan>
+  </text>
+
+  <path id="drag"
+    d="M3.5,6.125 v1 h-2.75 v.3 l-1.1,-.8 l1.1,-.8 v.3z"/>
+
+<!--
+  <g id="debug">
+    <path id="grid"
+      d="M0,0h14 M0,2h14 M0,4h14 M0,6h14 M0,8h14 M0,10h14 M0,12h14 M0,14h14 M0,16h14 M0,18h14
+         M0,0v17 M2,0v17 M4,0v17 M6,0v17 M8,0v17 M10,0v17 M12,0v17 M14,0v17"/>
+    <path id="icons" d="M3.5,1.5 M3.5,6.5
+                        M3,11.5 M7,11.5 M11,11.5
+                        M3,15 M7,15 M11,15"/>
+    <rect class="text" x="5.5" y=".25" width="6.5" height="3"/>
+    <rect class="text" x="5.5" y="5.25" width="6.5" height="3"/>
+  </g>
+-->
+</svg>
