@@ -1,0 +1,11 @@
+//
+// Prefix header for all source files of the 'ReaderSample' target in the 'ReaderSample' project
+//
+
+#ifdef __OBJC__
+# import <Foundation/Foundation.h>
+# import <UIKit/UIKit.h>
+
+// ADD: barcode reader APIs
+# import "ZBarSDK.h"
+#endif

@@ -21,7 +21,7 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
-#import <zbar/ZBarImageScanner.h>
+#import <ZBarSDK/ZBarImageScanner.h>
 #import "debug.h"
 
 @implementation ZBarImageScanner

@@ -1,36 +1,20 @@
 current:
   * add video size request to (Py)GTK widget (req #3034522)
     - thanks to Jerome Charaoui for the patch!
-  * workaround for iPhone simulator builds
-    - refactor ZBarReaderView for capture/simulator specific implementations
-    - fix tracking calculations
-    - fix captured video frame color conversion
   * add support for GS1 DataBar Expanded (RSS Expanded) symbology
-  * fix for poor iPhone 4 performance
   * add language bindings for DataBar
   * add preliminary support for GS1 DataBar (RSS-14) symbology
-  * enable torch for iPhone 4
   * enhance decoder reliability (EAN, Code 39, Code 128)
     - enhance decoder test
   * fix documentation of command exit codes (bug #3017322)
-  * fix iPhone circular ref bug
-  * add iPhone cache flush, change new libs to weak refs
-  * fix iPhone async ref bug
-  * enhance iPhone readertest w/more options
   * fix C++ video callback bug
     - add C and C++ processor examples
   * add per-symbology cache consistency
     - reliable symbologies decode immediately by default
     - no more need to disable cache with video
     - also fix crop bugs w/video scanning
-  * add iPhone zoom support, integrate with crop
   * add support for scanning partial images (cropping)
     - update c++, python, perl, java bindings and tests
-  * add iPhone OS 4.0 video capture support
-    - replacement view controller for new camera reader
-    - separate view for use without controller
-    - separate capture delegate for use standalone
-    - add continuous autofocus
   * fix couple of leaks
   * remove doc hints about GFDL (bug #3004411)
     - apply LGPL to API docs
@@ -42,29 +26,6 @@ current:
   * adjust Python module README (add examples and note DLL in path)
   * fix QR Code missing from man pages (bug #2969857)
   * cleanup decoder assertions and locking (bug #2966916)
-  * cleanup and expose iphone help display API
-  * fixes to new iphone help display
-  * migrate iphone help display to integrated web page (NB resource updates!)
-    - allows easier customization
-    - local links open directly, external links confirm and jump out to Safari
-    - JavaScript hook for help context customization
-    - also enhanced default help (note this changes the required resources)
-    - fix to disable scanning during help overlay
-    - thanks to iafanasyev and others for detailed suggestions
-  * fix iphone custom overlay response (bug #2959617)
-    - thanks to an anonymous user for the patch!
-  * iphone widget performance tuning enhancements
-    - fix crop calculation bug in ZBarImage
-    - add properties to control pre-scan image cropping and scaling
-    - add property for scanner cache control
-    - enable some scanner density control (FIXME should be property)
-    - fix ifdef for quality control (FIXME should be property)
-    - add "sequence" mode test (not actually so useful)
-  * realtime scanning for iphone widget
-    - uses UIGetScreenImage() (NB private)
-    - ZBarImage from CGImage (instead of UIImage)
-    - add crop to scaling step
-    - expose symbol set unfiltered results
   * add Java interface to library via JNI
     - add Java tools and JNI build tests to configure
     - fix compiler warnings from binary output changes
@@ -80,10 +41,7 @@ current:
     - thanks to jdccdevel for a patch!
     - add fourcc conversion and parse interfaces to zbar.h
   * report QR immediately for video (no inter-frame consistency check)
-  * iphone widget back compat updates, add basic test app
   * add python distutils build infrastructure
-  * add Obj-C wrapper
-  * first pass working iPhone "widget"
 
 version 0.10:
   * hotfix add MinGW import lib to Windows installer
