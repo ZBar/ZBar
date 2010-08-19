@@ -104,7 +104,7 @@ enum { BTN_TRYAGAIN = 1 };
                   action: @selector(dismiss)];
 
     backBtn = [[UIBarButtonItem alloc]
-                  initWithImage: [UIImage imageNamed: @"back.png"]
+                  initWithImage: [UIImage imageNamed: @"zbar-back.png"]
                   style: UIBarButtonItemStylePlain
                   target: webView
                   action: @selector(goBack)];
