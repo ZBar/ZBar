@@ -161,7 +161,7 @@
     CGSize size = overlay.bounds.size;
     CGRect crop = zoomCrop;
     tracking.frame = CGRectMake(crop.origin.x * size.width,
-                                crop.origin.y * size.width,
+                                crop.origin.y * size.height,
                                 crop.size.width * size.width,
                                 crop.size.height * size.height);
     tracking.opacity = 0;
