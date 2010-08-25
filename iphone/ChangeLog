@@ -1,3 +1,6 @@
+current:
+  * workaround iPhone quartz access past image data
+
 version 0.1.1:
   * migrate to binary iPhone SDK distribution (NB backward incompatibilities!)
     - restructure headers

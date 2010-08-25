@@ -34,8 +34,9 @@ asyncProvider_getBytePointer (void *info)
     ZBarCVImage *image = info;
     assert(image);
     [image waitUntilConverted];
-    assert(image.rgbBuffer);
-    return(image.rgbBuffer);
+    void *buf = image.rgbBuffer;
+    assert(buf);
+    return(buf);
 }
 
 static const CGDataProviderDirectCallbacks asyncProvider = {
@@ -147,7 +148,9 @@ static const CGDataProviderDirectCallbacks asyncProvider = {
         goto error;
 
     int datalen = 3 * w * h;
-    uint8_t *pdst = rgbBuffer = malloc(datalen);
+    // Quartz accesses some undocumented amount past allocated data?
+    // ...allocate extra to compensate
+    uint8_t *pdst = rgbBuffer = malloc(datalen + 3 * w);
     if(!pdst)
         goto error;
     [self setData: rgbBuffer
