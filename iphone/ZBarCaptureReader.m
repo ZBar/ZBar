@@ -22,8 +22,11 @@
 //------------------------------------------------------------------------
 
 #import <libkern/OSAtomic.h>
-#import <zbar/ZBarCaptureReader.h>
-#import <zbar/ZBarImageScanner.h>
+#import <AVFoundation/AVFoundation.h>
+#import <CoreMedia/CoreMedia.h>
+#import <CoreVideo/CoreVideo.h>
+#import <ZBarSDK/ZBarCaptureReader.h>
+#import <ZBarSDK/ZBarImageScanner.h>
 #import "ZBarCVImage.h"
 
 #define MODULE ZBarCaptureReader

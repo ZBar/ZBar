@@ -1,0 +1,51 @@
+current:
+  * fix initial zoom crop (performance bug)
+  * workaround iPhone quartz access past image data
+
+version 0.1.1:
+  * migrate to binary iPhone SDK distribution (NB backward incompatibilities!)
+    - restructure headers
+
+version 0.1:
+  * workaround for iPhone simulator builds
+    - refactor ZBarReaderView for capture/simulator specific implementations
+    - fix tracking calculations
+    - fix captured video frame color conversion
+  * fix for poor iPhone 4 performance
+  * enable torch for iPhone 4
+  * fix iPhone circular ref bug
+  * add iPhone cache flush, change new libs to weak refs
+  * fix iPhone async ref bug
+  * enhance iPhone readertest w/more options
+  * add iPhone zoom support, integrate with crop
+  * add iPhone OS 4.0 video capture support
+    - replacement view controller for new camera reader
+    - separate view for use without controller
+    - separate capture delegate for use standalone
+    - add continuous autofocus
+  * cleanup and expose iphone help display API
+  * fixes to new iphone help display
+  * migrate iphone help display to integrated web page (NB resource updates!)
+    - allows easier customization
+    - local links open directly, external links confirm and jump out to Safari
+    - JavaScript hook for help context customization
+    - also enhanced default help (note this changes the required resources)
+    - fix to disable scanning during help overlay
+    - thanks to iafanasyev and others for detailed suggestions
+  * fix iphone custom overlay response (bug #2959617)
+    - thanks to an anonymous user for the patch!
+  * iphone widget performance tuning enhancements
+    - fix crop calculation bug in ZBarImage
+    - add properties to control pre-scan image cropping and scaling
+    - add property for scanner cache control
+    - enable some scanner density control (FIXME should be property)
+    - fix ifdef for quality control (FIXME should be property)
+    - add "sequence" mode test (not actually so useful)
+  * realtime scanning for iphone widget
+    - uses UIGetScreenImage() (NB private)
+    - ZBarImage from CGImage (instead of UIImage)
+    - add crop to scaling step
+    - expose symbol set unfiltered results
+  * iphone widget back compat updates, add basic test app
+  * add Obj-C wrapper
+  * first pass working iPhone "widget"
