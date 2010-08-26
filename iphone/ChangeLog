@@ -1,4 +1,5 @@
 current:
+  * fix missing header dependency
   * doc enhancements
   * force controls to front when showsZBarControls is enabled
   * fix initial zoom crop (performance bug)

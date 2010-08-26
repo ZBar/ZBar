@@ -22,6 +22,7 @@
 //------------------------------------------------------------------------
 
 #import <Foundation/Foundation.h>
+#import <CoreGraphics/CoreGraphics.h>
 #import "zbar.h"
 
 #ifdef __cplusplus
