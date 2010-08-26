@@ -1,4 +1,5 @@
 current:
+  * force controls to front when showsZBarControls is enabled
   * fix initial zoom crop (performance bug)
   * workaround iPhone quartz access past image data
 

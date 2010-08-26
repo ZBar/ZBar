@@ -102,10 +102,16 @@
         [controls release];
         controls = nil;
     }
-    if(!showsZBarControls || controls)
+    if(!showsZBarControls)
         return;
 
     UIView *view = self.view;
+    if(controls) {
+        assert(controls.superview == view);
+        [view bringSubviewToFront: controls];
+        return;
+    }
+
     CGRect r = view.bounds;
     r.origin.y = r.size.height - 54;
     r.size.height = 54;
@@ -145,7 +151,7 @@
              forControlEvents: UIControlEventTouchUpInside];
     [controls addSubview: info];
 
-    [self.view addSubview: controls];
+    [view addSubview: controls];
 }
 
 - (void) initSimulator
@@ -174,14 +180,14 @@
     readerView.enableCache = enableCache;
     [view addSubview: readerView];
 
-    [self initControls];
-    [self initSimulator];
-
     if(cameraOverlayView) {
         assert(!cameraOverlayView.superview);
         [cameraOverlayView removeFromSuperview];
-        [self.view addSubview: cameraOverlayView];
+        [view addSubview: cameraOverlayView];
     }
+
+    [self initControls];
+    [self initSimulator];
 }
 
 - (void) viewDidUnload
