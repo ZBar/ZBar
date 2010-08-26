@@ -25,7 +25,7 @@ static NSString* const section_titles[] = {
 
 static const CGRect const crop_choices[] = {
     { { 0, 0 }, { 1, 1 } },
-    { { .25, 0 }, { .5, 1 } },
+    { { .125, 0 }, { .75, 1 } },
     { { 0, .3 }, { 1, .4 } },
     { { 0, 0 }, { 0, 0 } }
 };

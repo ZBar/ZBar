@@ -75,7 +75,8 @@ measured value may be displayed for debugging purposes by enabling the
 :member:`~ZBarReaderView::showsFPS` property.  The readertest example does
 this and also provides control over many of the available settings, so you can
 quickly test how each setting affects the frame rate.  You should target your
-optimization efforts to achieve a frame rate of at least 12-15fps.
+optimization efforts to achieve a frame rate of at least 8-10fps, although
+12-15fps is preferable.
 
 You can measure the latency of your delegate using :func:`mach_absolute_time`.
 The measured value should be less than about 100ms, the smaller the better, to
@@ -109,19 +110,20 @@ smallest bar or space).  Note that this measure is not an absolute image size
 or even a measure of the physical dimensions represented by a pixel sample, it
 *only* describes the sampled size of the barcode in the image.
 
-As the resolution decreases from optimal, edge fidelity is lost and the bars
-and spaces start to merge together, making it impossible (for this library) to
-scan.  This affects the density (feature size) and maximum size (data
-capacity) of the barcodes that can be detected.  Conversely, as the resolution
-increases, noise can interfere with the edge detection and images will take
-longer to process.
+As the resolution decreases below about two pixels per module, edge fidelity
+is lost and the bars and spaces start to merge together, making it impossible
+(for this library) to scan.  This affects the density (feature size) and
+maximum size (data capacity) of the barcodes that can be detected.
+Conversely, as the resolution increases above about 4 pixels per module, noise
+can interfere with the edge detection and images will take longer to process.
 
 Other quality factors, such as poor focus, bad lighting or even excessive
 noise, can increase (or decrease) the resolution requirement.
 
 When scanning from the camera, the reader defaults to 640x480, which is good
-for most applications.  You can change this using the capture
-:member:`~ZBarReaderView::session` preset.
+for most applications.  On the iPhone 4, you can increase this using a capture
+:member:`~ZBarReaderView::session` preset.  The iPhone 3GS does not have a
+higher resolution option available.
 
 For scanning images, you can use
 :member:`~ZBarReaderController::maxScanDimension` to control the scaled size
@@ -302,43 +304,134 @@ scanning context, etc...
 Examples
 --------
 
-You can try these examples yourself using the readertest.  For each example,
-start with the default settings (by tapping the ZBarReaderViewController
-class) and enable the custom overlay and continuous mode.
+These examples demonstrate several scenarios for scanning from the camera with
+automatic capture using iOS 4.  You can try them yourself using the
+readertest.  For each example, start with the default settings (by tapping the
+``ZBarReaderViewController`` class), then enable continuous mode and the
+custom overlay (by disabling
+:member:`~ZBarReaderViewController::showsZBarControls`).  You should also use
+a release build and avoid running in the debugger.
 
 Frame rates are approximate, measured on an iPhone 3GS running iOS 4.0.1 in a
-room with "average" light level (whatever that means).  Two measurements are
-taken for each case: the rate with the camera pointed at a blank white page
-such that it fills the image, and the rate while decoding the provided
-example.
+well lit room.  Two measurements are taken for each sample: the rate with the
+camera pointed at a blank white page such that it fills the frame, and the
+rate while continuously decoding the provided example.  For best results, it
+is recommended that you print the examples rather than scanning them from the
+screen.
 
-For reference, the base frame rates with default settings are ?/? for [this
-linear symbol] and ?/? for [this QR symbol].
+For reference, the base frame rates with default settings are 12fps for a
+blank white page, 7.5fps for this `basic EAN symbol`_ and 2.2fps for this
+`basic QR symbol`_.
+
+.. _`basic EAN symbol`:
+   http://zbar.sf.net/test/ean13/9876543210128.png
+.. _`basic QR symbol`:
+   http://chart.apis.google.com/chart?cht=qr&chs=512x512&chl=http://zbar.sf.net/iphone
 
 Long Linear Symbols
 ^^^^^^^^^^^^^^^^^^^
 
-To scan the longest symbol possible, we want to maximize resolution and scan
-the longest image axis.  [Here is a barcode] you can use for testing.
+For this example, we will use a relatively `long Code 128 barcode`_.
 
-We can compensate for the reduction this causes in the frame rate by:
+.. _`long Code 128 barcode`:
+   http://zbar.sf.net/test/code128/ALPHA.png
 
-* cropping the image to a long, skinny rectangle
-* disabling scans across the short image axis
-* reducing the density
+While it should be possible to read this symbol with the default settings, you
+may notice that it is not very reliable.  You will have to stretch the symbol
+across the entire screen, and even then the default settings will only give
+you about 1.6 pixels per module, well below the ideal target of 3.  To improve
+these results, we want to maximize scanning resolution for the long image
+axis.
+
+1. Disable the default zoom/crop - zoom all the way out by hitting "Scan" and
+   pinching the preview; the frame rate immediately drops to 8fps / 4.8fps.
+
+We should compensate for this reduction in the frame rate:
+
+2. Crop the image to a long, skinny rectangle - set the
+   :member:`~ZBarReaderViewController::scanCrop` setting to
+   ``{{0, 0.3}, {1, 0.4}}``;  The frame rate jumps up to 18fps / 8.7fps.
+
+3. Disable scans across the short image axis - set the ``CFG_X_DENSITY``
+   setting to 0.  The frame rate goes all the way to 30fps / 13fps.
+
+Since we have plenty of margin with the frame rate, we can minimize the total
+decode latency by performing more scan passes through the symbol:
+
+4. Increase the scan density - set the ``CFG_Y_DENSITY`` setting to 1 (13.5fps
+   / 5fps) or 2 (24fps / 9fps).
+
+You should now be able to quickly and reliably decode long linear symbols.
+
+If have an iPhone 4, you may also try increasing the resolution to support
+even longer symbols (NB there is no readertest setting for resolution).  You
+may have to compensate elsewhere to bring the frame rate back to a reasonable
+level.
 
 High Density QR Symbols
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-In this case we also want to maximize the resolution.
+For this example we will use a `version 29 QR Code symbol`_.
 
-* crop to square
-* reduce density
+.. _`version 29 QR Code symbol`:
+   http://www.qrcomic.com/images/5.png
+
+In this case we still want to maximize the resolution, but we also need to
+increase the scan density to reliably pick up the small finder patterns:
+
+1. Maximize scan density in both directions - set the ``CFG_X_DENSITY`` and
+   ``CFG_Y_DENSITY`` settings both to 1.  You should be able to scan the symbol
+   now, although the frame rate drops to 4.5fps / 1fps
+
+2. Disable the default zoom/crop - zoom all the way out by hitting "Scan" and
+   pinching the preview; the frame rate drops further to 3fps / 0.7fps
+
+We can compensate somewhat for the reduced frame rate:
+
+3. Crop the image to a square - set ``scanCrop`` to ``{{0.125, 0}, {.75, 1}}``.
+   This boosts the frame rate slightly to 3.7fps / 0.75fps.
+
+4. Disable linear symbologies - set the symbologies such that only QR Code is
+   enabled (4fps / 1fps)
+
+Even though the frame rate is still pretty bad, the QR recognition latency
+should be acceptable.
+
+If have an iPhone 4, you may also try increasing the resolution to support
+even denser QR symbols (NB there is no readertest setting for resolution).
+You may have to compensate elsewhere to bring the frame rate back to a
+reasonable level.
 
 Small DataBar Symbols
 ^^^^^^^^^^^^^^^^^^^^^
 
-Again we want high resolution scans, but this time we also want high density
-passes in both directions.
+For this example we will use a `DataBar symbol`_ printed with a small feature
+size, typical of the stickers used to tag produce.  Scale it when printing
+such that the printed dimensions are about 1cm square.  This symbol should
+scan with the default settings, but we will attempt to optimize the scan
+latency for this case.
 
-* zoom/crop, also helps user see barcode
+.. _`DataBar symbol`:
+   http://zbar.sf.net/test/databar/0109876543210128-so.png
+
+As well as high barcode resolution, we also want high density passes in both
+directions to minimize sensitivity to rotation:
+
+1. Maximize scan density in both directions - set the ``CFG_X_DENSITY`` and
+   ``CFG_Y_DENSITY`` settings both to 1.  The frame rate drops to 4.5fps /
+   3fps.
+
+Compensate for the reduction in frame rate by zooming in on the small symbol,
+which crops the scanned image.  Zooming also helps the user see the small
+barcode:
+
+2. Zoom all the way in - hit "Scan" and un-pinch the preview.  The frame rate
+   recovers to 11fps / 6.2fps.
+
+3. Crop the image to a square - set ``scanCrop`` to ``{{0.125, 0}, {0.75, 1}}``
+   (14fps / 7.5fps)
+
+4. Disable all symbologies except DataBar and DataBar Expanded (14.5fps / 9fps)
+
+The reader should now be very sensitive to DataBar, even when scanned at an
+angle.
