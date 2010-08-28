@@ -1,4 +1,4 @@
-current:
+version 0.1.2:
   * fix missing header dependency
   * doc enhancements
   * force controls to front when showsZBarControls is enabled
