@@ -39,7 +39,7 @@
     UILongPressGestureRecognizer *press =
         [[UILongPressGestureRecognizer alloc]
             initWithTarget: self
-            action: @selector(takePicture)];
+            action: @selector(didLongPress:)];
     [self.view addGestureRecognizer: press];
     press.numberOfTouchesRequired = 2;
     [press release];
@@ -54,6 +54,12 @@
     [self presentModalViewController: picker
           animated: YES];
     [picker release];
+}
+
+- (void) didLongPress: (UIGestureRecognizer*) press
+{
+    if(press.state == UIGestureRecognizerStateBegan)
+        [self takePicture];
 }
 
 - (void)  imagePickerController: (UIImagePickerController*) picker
