@@ -45,7 +45,7 @@
  *  how does MagickGetAuthenticImagePixels fit in?)
  * ref http://bugs.gentoo.org/247292
  */
-#if MagickLibVersion < 0x645
+#if MagickLibVersion <= 0x645
 # define MagickExportImagePixels MagickGetImagePixels
 #endif
 
