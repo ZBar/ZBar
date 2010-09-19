@@ -28,7 +28,7 @@
 
 #include <zbar.h>
 
-#if defined(DEBUG_DECODER) || defined(DEBUG_EAN) ||             \
+#if defined(DEBUG_DECODER) || defined(DEBUG_EAN) || defined(DEBUG_CODE93) || \
     defined(DEBUG_CODE39) || defined(DEBUG_I25) || defined(DEBUG_DATABAR) || \
     defined(DEBUG_CODE128) || defined(DEBUG_QR_FINDER) ||       \
     (defined(DEBUG_PDF417) && (DEBUG_PDF417 >= 4))
@@ -71,6 +71,9 @@ zbar_decoder_t *zbar_decoder_create ()
     dcode->code39.config = 1 << ZBAR_CFG_ENABLE;
     CFG(dcode->code39, ZBAR_CFG_MIN_LEN) = 1;
 #endif
+#ifdef ENABLE_CODE93
+    dcode->code93.config = 1 << ZBAR_CFG_ENABLE;
+#endif
 #ifdef ENABLE_CODE128
     dcode->code128.config = 1 << ZBAR_CFG_ENABLE;
 #endif
@@ -111,6 +114,9 @@ void zbar_decoder_reset (zbar_decoder_t *dcode)
 #ifdef ENABLE_CODE39
     code39_reset(&dcode->code39);
 #endif
+#ifdef ENABLE_CODE93
+    code93_reset(&dcode->code93);
+#endif
 #ifdef ENABLE_CODE128
     code128_reset(&dcode->code128);
 #endif
@@ -128,6 +134,7 @@ void zbar_decoder_new_scan (zbar_decoder_t *dcode)
     memset(dcode->w, 0, sizeof(dcode->w));
     dcode->lock = 0;
     dcode->idx = 0;
+    dcode->s6 = 0;
 #ifdef ENABLE_EAN
     ean_new_scan(&dcode->ean);
 #endif
@@ -139,6 +146,9 @@ void zbar_decoder_new_scan (zbar_decoder_t *dcode)
 #endif
 #ifdef ENABLE_CODE39
     code39_reset(&dcode->code39);
+#endif
+#ifdef ENABLE_CODE93
+    code93_reset(&dcode->code93);
 #endif
 #ifdef ENABLE_CODE128
     code128_reset(&dcode->code128);
@@ -205,6 +215,10 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
     dcode->w[dcode->idx & (DECODE_WINDOW - 1)] = w;
     dprintf(1, "    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
 
+    /* update shared character width */
+    dcode->s6 -= get_width(dcode, 7);
+    dcode->s6 += get_width(dcode, 1);
+
     /* each decoder processes width stream in parallel */
 #ifdef ENABLE_EAN
     if((dcode->ean.enable) &&
@@ -219,6 +233,11 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
 #ifdef ENABLE_CODE39
     if(TEST_CFG(dcode->code39.config, ZBAR_CFG_ENABLE) &&
        (tmp = _zbar_decode_code39(dcode)) > ZBAR_PARTIAL)
+        sym = tmp;
+#endif
+#ifdef ENABLE_CODE93
+    if(TEST_CFG(dcode->code93.config, ZBAR_CFG_ENABLE) &&
+       (tmp = _zbar_decode_code93(dcode)) > ZBAR_PARTIAL)
         sym = tmp;
 #endif
 #ifdef ENABLE_CODE128
@@ -308,6 +327,12 @@ static inline int decoder_set_config_bool (zbar_decoder_t *dcode,
         break;
 #endif
 
+#ifdef ENABLE_CODE93
+    case ZBAR_CODE93:
+        config = &dcode->code93.config;
+        break;
+#endif
+
 #ifdef ENABLE_CODE128
     case ZBAR_CODE128:
         config = &dcode->code128.config;
@@ -371,6 +396,11 @@ static inline int decoder_set_config_int (zbar_decoder_t *dcode,
         CFG(dcode->code39, cfg) = val;
         break;
 #endif
+#ifdef ENABLE_CODE93
+    case ZBAR_CODE93:
+        CFG(dcode->code93, cfg) = val;
+        break;
+#endif
 #ifdef ENABLE_CODE128
     case ZBAR_CODE128:
         CFG(dcode->code128, cfg) = val;
@@ -404,6 +434,7 @@ int zbar_decoder_set_config (zbar_decoder_t *dcode,
         zbar_decoder_set_config(dcode, ZBAR_DATABAR, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_DATABAR_EXP, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_CODE39, cfg, val);
+        zbar_decoder_set_config(dcode, ZBAR_CODE93, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_CODE128, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_PDF417, cfg, val);
         zbar_decoder_set_config(dcode, ZBAR_QRCODE, cfg, val);

@@ -67,6 +67,8 @@
 		DC67C1C310A07B6B0033B702 /* ZBarReaderController.m in Sources */ = {isa = PBXBuildFile; fileRef = DC67C1BF10A07B6B0033B702 /* ZBarReaderController.m */; };
 		DC67C1C410A07B6B0033B702 /* ZBarSymbol.m in Sources */ = {isa = PBXBuildFile; fileRef = DC67C1C010A07B6B0033B702 /* ZBarSymbol.m */; };
 		DC67C1CC10A07BEE0033B702 /* svg.h in Headers */ = {isa = PBXBuildFile; fileRef = DC67C1CB10A07BEE0033B702 /* svg.h */; };
+		DCC097631242BFE000C9FAEB /* code93.c in Sources */ = {isa = PBXBuildFile; fileRef = DCC097611242BFE000C9FAEB /* code93.c */; };
+		DCC097641242BFE000C9FAEB /* code93.h in Headers */ = {isa = PBXBuildFile; fileRef = DCC097621242BFE000C9FAEB /* code93.h */; };
 		DCDC6E3011ADCA8E00021380 /* ZBarReaderView.m in Sources */ = {isa = PBXBuildFile; fileRef = DCDC6E2F11ADCA8E00021380 /* ZBarReaderView.m */; };
 		DCDC6E3911ADCB7700021380 /* ZBarReaderView.h in Headers */ = {isa = PBXBuildFile; fileRef = DCDC6E3811ADCB7700021380 /* ZBarReaderView.h */; };
 		DCDC713711B1628200021380 /* ZBarReaderViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = DCDC713611B1628200021380 /* ZBarReaderViewController.h */; };
@@ -138,6 +140,8 @@
 		DC67C1BF10A07B6B0033B702 /* ZBarReaderController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarReaderController.m; sourceTree = "<group>"; };
 		DC67C1C010A07B6B0033B702 /* ZBarSymbol.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarSymbol.m; sourceTree = "<group>"; };
 		DC67C1CB10A07BEE0033B702 /* svg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = svg.h; sourceTree = "<group>"; };
+		DCC097611242BFE000C9FAEB /* code93.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = code93.c; sourceTree = "<group>"; };
+		DCC097621242BFE000C9FAEB /* code93.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = code93.h; sourceTree = "<group>"; };
 		DCDC6E2F11ADCA8E00021380 /* ZBarReaderView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarReaderView.m; sourceTree = "<group>"; };
 		DCDC6E3811ADCB7700021380 /* ZBarReaderView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ZBarReaderView.h; path = ../include/zbar/ZBarReaderView.h; sourceTree = SOURCE_ROOT; };
 		DCDC713611B1628200021380 /* ZBarReaderViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ZBarReaderViewController.h; path = ../include/zbar/ZBarReaderViewController.h; sourceTree = SOURCE_ROOT; };
@@ -248,6 +252,8 @@
 				DCF5C9AC11EA3AD100E7DC21 /* databar.h */,
 				DC67C12310A07AD30033B702 /* code128.c */,
 				DC67C12410A07AD30033B702 /* code128.h */,
+				DCC097611242BFE000C9FAEB /* code93.c */,
+				DCC097621242BFE000C9FAEB /* code93.h */,
 				DC67C12510A07AD30033B702 /* code39.c */,
 				DC67C12610A07AD30033B702 /* code39.h */,
 				DC67C12710A07AD30033B702 /* ean.c */,
@@ -320,6 +326,7 @@
 				DCDC713711B1628200021380 /* ZBarReaderViewController.h in Headers */,
 				DC3AAB4E11B71A040021C7B1 /* ZBarCVImage.h in Headers */,
 				DCF5C9AE11EA3AD100E7DC21 /* databar.h in Headers */,
+				DCC097641242BFE000C9FAEB /* code93.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -398,6 +405,7 @@
 				DCF5C9AD11EA3AD100E7DC21 /* databar.c in Sources */,
 				DC3CE47811FA1622008FAF88 /* ZBarReaderViewImpl_Capture.m in Sources */,
 				DC3CE47911FA1622008FAF88 /* ZBarReaderViewImpl_Simulator.m in Sources */,
+				DCC097631242BFE000C9FAEB /* code93.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -42,6 +42,7 @@ const char *zbar_get_symbol_name (zbar_symbol_type_t sym)
     case ZBAR_DATABAR: return("DataBar");
     case ZBAR_DATABAR_EXP: return("DataBar-Exp");
     case ZBAR_CODE39: return("CODE-39");
+    case ZBAR_CODE93: return("CODE-93");
     case ZBAR_CODE128: return("CODE-128");
     case ZBAR_PDF417: return("PDF417");
     case ZBAR_QRCODE: return("QR-Code");
@@ -67,6 +68,22 @@ const char *zbar_get_orientation_name (zbar_orientation_t orient)
     case ZBAR_ORIENT_LEFT: return("LEFT");
     default: return("UNKNOWN");
     }
+}
+
+int _zbar_get_symbol_hash (zbar_symbol_type_t sym)
+{
+    static const signed char hash[0x20] = {
+        0x00, 0x01, 0x0d, 0x0e,   -1,   -1,   -1, 0x09,
+        0x05, 0x06, 0x08,   -1, 0x04, 0x03, 0x07,   -1,
+          -1,   -1,   -1,   -1,   -1,   -1,   -1, 0x02,
+          -1, 0x00, 0x0f, 0x0c, 0x0b, 0x00, 0x0a, 0x00,
+    };
+    int g0 = hash[sym & 0x1f];
+    int g1 = hash[~(sym >> 4) & 0x1f];
+    assert(g0 >= 0 && g1 >= 0);
+    if(g0 < 0 || g1 < 0)
+        return(0);
+    return((g0 + g1) & 0x1f);
 }
 
 void _zbar_symbol_free (zbar_symbol_t *sym)
@@ -226,8 +243,9 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
                    (data[0] == 0xfe && data[1] == 0xff) ||
                    !strncmp(sym->data, "<?xml", 5));
     for(i = 0; !binary && i < sym->datalen; i++) {
-        char c = sym->data[i];
+        unsigned char c = sym->data[i];
         binary = ((c < 0x20 && ((~0x00002600 >> c) & 1)) ||
+                  (c >= 0x7f && c < 0xa0) ||
                   (c == ']' && i + 2 < sym->datalen &&
                    sym->data[i + 1] == ']' &&
                    sym->data[i + 2] == '>'));

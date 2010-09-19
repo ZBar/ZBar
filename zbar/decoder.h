@@ -42,6 +42,9 @@
 #ifdef ENABLE_CODE39
 # include "decoder/code39.h"
 #endif
+#ifdef ENABLE_CODE93
+# include "decoder/code93.h"
+#endif
 #ifdef ENABLE_CODE128
 # include "decoder/code128.h"
 #endif
@@ -84,6 +87,7 @@ struct zbar_decoder_s {
     zbar_symbol_type_t type;            /* type of last decoded data */
     zbar_symbol_type_t lock;            /* buffer lock */
     int direction;                      /* direction of last decoded data */
+    unsigned s6;                        /* 6-element character width */
 
     /* everything above here is automatically reset */
     unsigned buf_alloc;                 /* dynamic buffer allocation */
@@ -104,6 +108,9 @@ struct zbar_decoder_s {
 #endif
 #ifdef ENABLE_CODE39
     code39_decoder_t code39;            /* Code 39 decode state */
+#endif
+#ifdef ENABLE_CODE93
+    code93_decoder_t code93;            /* Code 93 decode state */
 #endif
 #ifdef ENABLE_CODE128
     code128_decoder_t code128;          /* Code 128 decode state */

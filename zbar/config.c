@@ -83,6 +83,8 @@ int zbar_parse_config (const char *cfgstr,
 #endif
         else if(len < 6)
             return(1);
+        else if(!strncmp(cfgstr, "code93", len))
+            *sym = ZBAR_CODE93;
         else if(!strncmp(cfgstr, "code39", len))
             *sym = ZBAR_CODE39;
         else if(!strncmp(cfgstr, "pdf417", len))

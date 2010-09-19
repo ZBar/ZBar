@@ -3,6 +3,9 @@
 /* whether to build support for Code 128 symbology */
 #define ENABLE_CODE128 1
 
+/* whether to build support for Code 93 symbology */
+#define ENABLE_CODE93 1
+
 /* whether to build support for Code 39 symbology */
 #define ENABLE_CODE39 1
 
