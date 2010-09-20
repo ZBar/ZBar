@@ -1,0 +1,36 @@
+@import url("default.css");
+
+h1, h2, h3, h4, h5, h6 {
+    clear: both;
+}
+
+img.logo {
+    vertical-align: middle;
+}
+
+img.floatright {
+    float: right;
+    clear: both;
+    margin-left: 2em;
+    margin-right: 2em;
+}
+
+dl.docutils dt {
+    font-weight: bold;
+}
+dl.docutils dd {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+table.docutils {
+    margin-left: auto;
+    margin-right: auto;
+}
+table.docutils th, table.docutils td {
+    padding: .25em .5em;
+}
+
+table.docutils.field-list {
+    margin-left: 0;
+}

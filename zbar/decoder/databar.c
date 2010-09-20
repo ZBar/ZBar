@@ -186,7 +186,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
         if((len ^ (d >> (--i))) & 1)
             /* even/odd length mismatch */
             return(-1);
-        if((d >> (--i)) & 1 != (len > 14))
+        if(((d >> (--i)) & 1) != (len > 14))
             /* size group mismatch */
             return(-1);
     }

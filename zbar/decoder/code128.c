@@ -395,13 +395,16 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
             if(code < CODE_C) {
                 if(code == SHIFT)
                     charset |= 0x80;
-                else if(code == FNC2)
-                    /* FIXME FNC2 - message append */;
-                else if(code == FNC3)
-                    /* FIXME FNC3 - initialize */;
+                else if(code == FNC2) {
+                    /* FIXME FNC2 - message append */
+                }
+                else if(code == FNC3) {
+                    /* FIXME FNC3 - initialize */
+                }
             }
-            else if(code == FNC1)
-                /* FIXME FNC1 - Code 128 subsets or ASCII 0x1d */;
+            else if(code == FNC1) {
+                /* FIXME FNC1 - Code 128 subsets or ASCII 0x1d */
+            }
             else if(code >= START_A) {
                 dprintf(1, " [truncated]\n");
                 return(1);
@@ -415,8 +418,9 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
                                                 dcode->code128.character));
                 if(newset != charset)
                     charset = newset;
-                else
-                    /* FIXME FNC4 - extended ASCII */;
+                else {
+                    /* FIXME FNC4 - extended ASCII */
+                }
             }
             if(charset & 0x2)
                 cexp = i + 1;
