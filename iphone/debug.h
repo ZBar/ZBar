@@ -36,7 +36,7 @@
     uint64_t t_start = timer_now();
 
 #else
-# define zlog(...)
+# define zlog(...) while(0)
 # define timer_start
 #endif
 

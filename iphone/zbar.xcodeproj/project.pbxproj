@@ -596,7 +596,14 @@
 			isa = PBXProject;
 			buildConfigurationList = 1DEB922208733DC00010E9CD /* Build configuration list for PBXProject "zbar" */;
 			compatibilityVersion = "Xcode 3.1";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
 			mainGroup = 0867D691FE84028FC02AAC07 /* zbar */;
 			productRefGroup = 034768DFFF38A50411DB9C8B /* Products */;
 			projectDirPath = "";
@@ -800,7 +807,7 @@
 				OTHER_LDFLAGS = "-ObjC";
 				PREBINDING = NO;
 				RUN_CLANG_STATIC_ANALYZER = NO;
-				SDKROOT = iphoneos4.0;
+				SDKROOT = iphoneos4.1;
 				USE_HEADERMAP = NO;
 			};
 			name = Debug;
@@ -823,7 +830,7 @@
 				OTHER_LDFLAGS = "-ObjC";
 				PREBINDING = NO;
 				RUN_CLANG_STATIC_ANALYZER = NO;
-				SDKROOT = iphoneos4.0;
+				SDKROOT = iphoneos4.1;
 				USE_HEADERMAP = NO;
 			};
 			name = Release;
@@ -870,7 +877,6 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = readertest;
-				SDKROOT = iphoneos4.0;
 			};
 			name = Debug;
 		};
@@ -898,7 +904,6 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = readertest;
-				SDKROOT = iphoneos4.0;
 				ZERO_LINK = NO;
 			};
 			name = Release;

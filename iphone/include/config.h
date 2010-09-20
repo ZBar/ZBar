@@ -149,28 +149,28 @@
 #undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
-#undef PACKAGE "zbar"
+#define PACKAGE "zbar"
 
 /* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT "spadix@users.sourceforge.net"
+#define PACKAGE_BUGREPORT "spadix@users.sourceforge.net"
 
 /* Define to the full name of this package. */
-#undef PACKAGE_NAME "zbar"
+#define PACKAGE_NAME "zbar"
 
 /* Define to the full name and version of this package. */
-#undef PACKAGE_STRING "zbar 0.10"
+#define PACKAGE_STRING "zbar 0.10"
 
 /* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME "zbar"
+#define PACKAGE_TARNAME "zbar"
 
 /* Define to the version of this package. */
-#undef PACKAGE_VERSION "0.10"
+#define PACKAGE_VERSION "0.10"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#undef VERSION "0.10"
+#define VERSION "0.10"
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #define X_DISPLAY_MISSING 1

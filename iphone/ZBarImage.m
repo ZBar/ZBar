@@ -256,7 +256,7 @@ static void image_cleanup(zbar_image_t *zimg)
         bpp = 16;
         break;
     default:
-        NSLog(@"ERROR: format %.4s(%08x) is unsupported",
+        NSLog(@"ERROR: format %.4s(%08lx) is unsupported",
               (char*)&format, format);
         assert(0);
         return(nil);

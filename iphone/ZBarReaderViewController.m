@@ -241,7 +241,7 @@
 - (ZBarReaderView*) readerView
 {
     // force view to load
-    self.view;
+    (void)self.view;
     assert(readerView);
     return(readerView);
 }
