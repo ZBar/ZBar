@@ -1,4 +1,4 @@
-current:
+version 1.0:
   * update to SDK 4.1, clean out LLVM warnings
   * fix camera simulation gesture
 
