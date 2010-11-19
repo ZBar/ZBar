@@ -326,7 +326,7 @@ static const NSInteger const density_choices[] = {
                               nil]];
 
     static const int symbolValues[] = {
-        ZBAR_QRCODE, ZBAR_CODE128, ZBAR_CODE39, ZBAR_I25,
+        ZBAR_QRCODE, ZBAR_CODE128, ZBAR_CODE93, ZBAR_CODE39, ZBAR_I25,
         ZBAR_DATABAR, ZBAR_DATABAR_EXP,
         ZBAR_EAN13, ZBAR_EAN8, ZBAR_UPCA, ZBAR_UPCE, ZBAR_ISBN13, ZBAR_ISBN10,
         0

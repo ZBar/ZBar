@@ -108,7 +108,7 @@ struct zbar_image_scanner_s {
     /* configuration settings */
     unsigned config;            /* config flags */
     int configs[NUM_SCN_CFGS];  /* int valued configurations */
-    int sym_configs[1][16];     /* per-symbology configurations */
+    int sym_configs[1][NUM_SYMS]; /* per-symbology configurations */
 
 #ifndef NO_STATS
     int stat_syms_new;
@@ -312,7 +312,7 @@ static inline void cache_sym (zbar_image_scanner_t *iscn,
         dup = (entry->cache_count >= 0);
         if((!dup && !near_thresh) || far_thresh) {
             int type = sym->type;
-            int h = ((type - (type >> 3)) ^ (type >> 5)) & 0xf;
+            int h = _zbar_get_symbol_hash(type);
             entry->cache_count = -iscn->sym_configs[0][h];
         }
         else if(dup || near_thresh)
@@ -486,6 +486,7 @@ zbar_image_scanner_t *zbar_image_scanner_create ()
     zbar_image_scanner_set_config(iscn, 0, ZBAR_CFG_UNCERTAINTY, 2);
     zbar_image_scanner_set_config(iscn, ZBAR_QRCODE, ZBAR_CFG_UNCERTAINTY, 0);
     zbar_image_scanner_set_config(iscn, ZBAR_CODE128, ZBAR_CFG_UNCERTAINTY, 0);
+    zbar_image_scanner_set_config(iscn, ZBAR_CODE93, ZBAR_CFG_UNCERTAINTY, 0);
     zbar_image_scanner_set_config(iscn, ZBAR_CODE39, ZBAR_CFG_UNCERTAINTY, 0);
     return(iscn);
 }
@@ -564,11 +565,11 @@ int zbar_image_scanner_set_config (zbar_image_scanner_t *iscn,
             return(1);
         c = cfg - ZBAR_CFG_UNCERTAINTY;
         if(sym > ZBAR_PARTIAL) {
-            i = ((sym - (sym >> 3)) ^ (sym >> 5)) & 0xf;
+            i = _zbar_get_symbol_hash(sym);
             iscn->sym_configs[c][i] = val;
         }
         else
-            for(i = 0; i < 16; i++)
+            for(i = 0; i < NUM_SYMS; i++)
                 iscn->sym_configs[c][i] = val;
         return(0);
     }

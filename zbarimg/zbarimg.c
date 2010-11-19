@@ -76,8 +76,8 @@ static const char *warning_not_found =
     "  things to check:\n"
     "    - is the barcode type supported?"
     "  currently supported symbologies are:\n"
-    "      EAN/UPC (EAN-13, EAN-8, UPC-A, UPC-E, ISBN-10, ISBN-13),\n"
-    "      Code 128, Code 39, DataBar, DataBar Expanded, and Interleaved 2 of 5\n"
+    "      EAN/UPC (EAN-13, EAN-8, UPC-A, UPC-E, ISBN-10, ISBN-13), Code 128,\n"
+    "      Code 93, Code 39, DataBar, DataBar Expanded, and Interleaved 2 of 5\n"
     "    - is the barcode large enough in the image?\n"
     "    - is the barcode mostly in focus?\n"
     "    - is there sufficient contrast/illumination?\n"
@@ -165,21 +165,14 @@ static int scan_image (const char *filename)
         const zbar_symbol_t *sym = zbar_image_first_symbol(zimage);
         for(; sym; sym = zbar_symbol_next(sym)) {
             zbar_symbol_type_t typ = zbar_symbol_get_type(sym);
+            unsigned len = zbar_symbol_get_data_length(sym);
             if(typ == ZBAR_PARTIAL)
                 continue;
-            else if(!xmllvl) {
-                printf("%s:", zbar_get_symbol_name(typ));
-                if(fwrite(zbar_symbol_get_data(sym),
-                          zbar_symbol_get_data_length(sym),
-                          1, stdout) != 1) {
-                    exit_code = 1;
-                    return(-1);
-                }
-            }
-            else if(xmllvl < 0) {
-                if(fwrite(zbar_symbol_get_data(sym),
-                          zbar_symbol_get_data_length(sym),
-                          1, stdout) != 1) {
+            else if(xmllvl <= 0) {
+                if(!xmllvl)
+                    printf("%s:", zbar_get_symbol_name(typ));
+                if(len &&
+                   fwrite(zbar_symbol_get_data(sym), len, 1, stdout) != 1) {
                     exit_code = 1;
                     return(-1);
                 }

@@ -98,6 +98,7 @@ typedef enum zbar_symbol_type_e {
     ZBAR_CODE39      =     39,  /**< Code 39. @since 0.4 */
     ZBAR_PDF417      =     57,  /**< PDF417. @since 0.6 */
     ZBAR_QRCODE      =     64,  /**< QR Code. @since 0.10 */
+    ZBAR_CODE93      =     93,  /**< Code 93. @since 0.11 */
     ZBAR_CODE128     =    128,  /**< Code 128 */
     ZBAR_SYMBOL      = 0x00ff,  /**< mask for base symbol type */
     ZBAR_ADDON2      = 0x0200,  /**< 2-digit add-on flag */

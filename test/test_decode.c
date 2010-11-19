@@ -48,6 +48,12 @@ int iter = 0;      /* test iteration */
         }                                                               \
     } while(0)
 
+static inline void print_sep (int level)
+{
+    zprintf(level,
+            "----------------------------------------------------------\n");
+}
+
 static void symbol_handler (zbar_decoder_t *decoder)
 {
     zbar_symbol_type_t sym = zbar_decoder_get_type(decoder);
@@ -172,7 +178,7 @@ static const unsigned int code128[107] = {
 static void encode_code128b (char *data)
 {
     assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
     zprintf(2, "CODE-128(B): %s\n", data);
     zprintf(3, "    encode START_B: %02x", START_B);
     encode(code128[START_B], 0);
@@ -187,13 +193,13 @@ static void encode_code128b (char *data)
     encode(code128[chk], 0);
     zprintf(3, "    encode STOP: %02x", STOP);
     encode(code128[STOP], 0);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
 }
 
 static void encode_code128c (char *data)
 {
     assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
     zprintf(2, "CODE-128(C): %s\n", data);
     zprintf(3, "    encode START_C: %02x", START_C);
     encode(code128[START_C], 0);
@@ -211,7 +217,146 @@ static void encode_code128c (char *data)
     encode(code128[chk], 0);
     zprintf(3, "    encode STOP: %02x", STOP);
     encode(code128[STOP], 0);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
+}
+
+/*------------------------------------------------------------*/
+/* Code 93 encoding */
+
+#define CODE93_START_STOP 0x2f
+
+static const unsigned int code93[47 + 1] = {
+    0x131112, 0x111213, 0x111312, 0x111411, /* 00 */
+    0x121113, 0x121212, 0x121311, 0x111114,
+    0x131211, 0x141111, 0x211113, 0x211212, /* 08 */
+    0x211311, 0x221112, 0x221211, 0x231111,
+    0x112113, 0x112212, 0x112311, 0x122112, /* 10 */
+    0x132111, 0x111123, 0x111222, 0x111321,
+    0x121122, 0x131121, 0x212112, 0x212211, /* 18 */
+    0x211122, 0x211221, 0x221121, 0x222111,
+    0x112122, 0x112221, 0x122121, 0x123111, /* 20 */
+    0x121131, 0x311112, 0x311211, 0x321111,
+    0x112131, 0x113121, 0x211131, 0x121221, /* 28 */
+    0x312111, 0x311121, 0x122211,
+    0x111141,                               /* START/STOP (2f) */
+};
+
+#define S1 0x2b00|
+#define S2 0x2c00|
+#define S3 0x2d00|
+#define S4 0x2e00|
+
+static const unsigned short code93_ext[0x80] = {
+    S2'U', S1'A', S1'B', S1'C', S1'D', S1'E', S1'F', S1'G',
+    S1'H', S1'I', S1'J', S1'K', S1'L', S1'M', S1'N', S1'O',
+    S1'P', S1'Q', S1'R', S1'S', S1'T', S1'U', S1'V', S1'W',
+    S1'X', S1'Y', S1'Z', S2'A', S2'B', S2'C', S2'D', S2'E',
+    0x26,  S3'A', S3'B', S3'C', 0x27,  0x2a,  S3'F', S3'G',
+    S3'H', S3'I', S3'J', 0x29,  S3'L', 0x24,  0x25,  0x28,
+    0x00,  0x01,  0x02,  0x03,  0x04,  0x05,  0x06,  0x07,
+    0x08,  0x09,  S3'Z', S2'F', S2'G', S2'H', S2'I', S2'J',
+    S2'V', 0x0a,  0x0b,  0x0c,  0x0d,  0x0e,  0x0f,  0x10,
+    0x11,  0x12,  0x13,  0x14,  0x15,  0x16,  0x17,  0x18,
+    0x19,  0x1a,  0x1b,  0x1c,  0x1d,  0x1e,  0x1f,  0x20,
+    0x21,  0x22,  0x23,  S2'K', S2'L', S2'M', S2'N', S2'O',
+    S2'W', S4'A', S4'B', S4'C', S4'D', S4'E', S4'F', S4'G',
+    S4'H', S4'I', S4'J', S4'K', S4'L', S4'M', S4'N', S4'O',
+    S4'P', S4'Q', S4'R', S4'S', S4'T', S4'U', S4'V', S4'W',
+    S4'X', S4'Y', S4'Z', S2'P', S2'Q', S2'R', S2'S', S2'T',
+};
+
+#undef S1
+#undef S2
+#undef S3
+#undef S4
+
+static void encode_char93 (unsigned char c,
+                           int dir)
+{
+    unsigned ext = code93_ext[c];
+    unsigned shift = ext >> 8;
+    assert(shift < 0x30);
+    c = ext & 0xff;
+    if(shift) {
+        assert(c < 0x80);
+        c = code93_ext[c];
+    }
+    assert(c < 0x30);
+
+    if(shift) {
+        encode(code93[(dir) ? shift : c], dir ^ 1);
+        encode(code93[(dir) ? c : shift], dir ^ 1);
+    }
+    else
+        encode(code93[c], dir ^ 1);
+}
+
+static void encode_code93 (char *data,
+                           int dir)
+{
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
+    print_sep(3);
+
+    /* calculate checksums */
+    int i, j, chk_c = 0, chk_k = 0, n = 0;
+    for(i = 0; data[i]; i++, n++) {
+        unsigned c = data[i], ext;
+        assert(c < 0x80);
+        ext = code93_ext[c];
+        n += ext >> 13;
+    }
+
+    for(i = 0, j = 0; data[i]; i++, j++) {
+        unsigned ext = code93_ext[(unsigned)data[i]];
+        unsigned shift = ext >> 8;
+        unsigned c = ext & 0xff;
+        if(shift) {
+            chk_c += shift * (((n - 1 - j) % 20) + 1);
+            chk_k += shift * (((n - j) % 15) + 1);
+            j++;
+            c = code93_ext[c];
+        }
+        chk_c += c * (((n - 1 - j) % 20) + 1);
+        chk_k += c * (((n - j) % 15) + 1);
+    }
+    chk_c %= 47;
+    chk_k += chk_c;
+    chk_k %= 47;
+
+    zprintf(2, "CODE-93: %s (n=%x C=%02x K=%02x)\n", data, n, chk_c, chk_k);
+    encode(0xa, 0);  /* leading quiet */
+
+    zprintf(3, "    encode %s:", (dir) ? "START" : "STOP");
+    if(!dir)
+        encode(0x1, REV);
+    encode(code93[CODE93_START_STOP], dir ^ 1);
+    if(!dir) {
+        zprintf(3, "    encode checksum (K): %02x", chk_k);
+        encode(code93[chk_k], REV ^ 1);
+        zprintf(3, "    encode checksum (C): %02x", chk_c);
+        encode(code93[chk_c], REV ^ 1);
+    }
+
+    n = strlen(data);
+    for(i = 0; i < n; i++) {
+        unsigned char c = data[(dir) ? i : (n - i - 1)];
+        zprintf(3, "    encode '%c':", c);
+        encode_char93(c, dir);
+    }
+
+    if(dir) {
+        zprintf(3, "    encode checksum (C): %02x", chk_c);
+        encode(code93[chk_c], FWD ^ 1);
+        zprintf(3, "    encode checksum (K): %02x", chk_k);
+        encode(code93[chk_k], FWD ^ 1);
+    }
+    zprintf(3, "    encode %s:", (dir) ? "STOP" : "START");
+    encode(code93[CODE93_START_STOP], dir ^ 1);
+    if(dir)
+        encode(0x1, FWD);
+
+    encode(0xa, 0);  /* trailing quiet */
+    print_sep(3);
 }
 
 /*------------------------------------------------------------*/
@@ -273,7 +418,7 @@ static void encode_char39 (unsigned char c,
 static void encode_code39 (char *data)
 {
     assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
     zprintf(2, "CODE-39: %s\n", data);
     encode(0xa, 0);  /* leading quiet */
     encode_char39('*', 1);
@@ -282,7 +427,7 @@ static void encode_code39 (char *data)
         if(data[i] != '*') /* skip (FIXME) */
             encode_char39(data[i], 1);
     encode_char39('*', 0xa);  /* w/trailing quiet */
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
 }
 
 #if 0
@@ -348,7 +493,7 @@ static void encode_row417 (int r,
 static void encode_pdf417 (char *data)
 {
     assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
     zprintf(2, "PDF417: hello world\n");
     encode(0xa, 0);
 
@@ -358,7 +503,7 @@ static void encode_pdf417 (char *data)
         encode(0xa, 0);
     }
 
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
 }
 #endif
 
@@ -373,7 +518,7 @@ static void encode_i25 (char *data,
                         int dir)
 {
     assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
     zprintf(2, "Interleaved 2 of 5: %s\n", data);
     zprintf(3, "    encode start:");
     encode((dir) ? 0xa1111 : 0xa112, 0);
@@ -406,7 +551,7 @@ static void encode_i25 (char *data,
 
     zprintf(3, "    encode end:");
     encode((dir) ? 0x211a : 0x1111a, 0);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
 }
 
 /*------------------------------------------------------------*/
@@ -573,7 +718,7 @@ static void encode_databar (char *data,
 {
     assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
 
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
     zprintf(2, "DataBar: %s\n", data);
 
     uint32_t v[4] = { 0, };
@@ -645,7 +790,7 @@ static void encode_databar (char *data,
     zprintf(3, "    encode end guard:");
     encode(0x1, FWD);
     encode_junk(!dir);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
 }
 
 
@@ -700,7 +845,7 @@ static void encode_ean13 (char *data)
     unsigned char par = ean_parity_encode[data[0] - '0'];
     assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
 
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
     zprintf(2, "EAN-13: %s (%02x)\n", data, par);
     zprintf(3, "    encode start guard:");
     encode(ean_guard[3], FWD);
@@ -716,14 +861,14 @@ static void encode_ean13 (char *data)
     }
     zprintf(3, "    encode end guard:");
     encode(ean_guard[3], REV);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
 }
 
 static void encode_ean8 (char *data)
 {
     int i;
     assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
     zprintf(2, "EAN-8: %s\n", data);
     zprintf(3, "    encode start guard:");
     encode(ean_guard[3], FWD);
@@ -739,7 +884,7 @@ static void encode_ean8 (char *data)
     }
     zprintf(3, "    encode end guard:");
     encode(ean_guard[3], REV);
-    zprintf(3, "----------------------------------------------------------\n");
+    print_sep(3);
 }
 
 
@@ -852,6 +997,16 @@ int test_alpha (char *data)
 
     encode_junk(rnd_size);
 
+    expect(ZBAR_CODE93, data);
+    encode_code93(data, FWD);
+
+    encode_junk(rnd_size);
+
+    expect(ZBAR_CODE93, data);
+    encode_code93(data, REV);
+
+    encode_junk(rnd_size);
+
     /*encode_code39("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%");*/
     convert_code39(data);
     expect(ZBAR_CODE39, data);
@@ -871,7 +1026,7 @@ int test_alpha (char *data)
 
 int test1 ()
 {
-    zprintf(2, "----------------------------------------------------------\n");
+    print_sep(2);
     if(!seed)
         seed = 0xbabeface;
     zprintf(1, "[%d] SEED=%d\n", iter++, seed);

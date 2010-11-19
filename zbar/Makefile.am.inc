@@ -25,6 +25,9 @@ endif
 if ENABLE_CODE128
 zbar_libzbar_la_SOURCES += zbar/decoder/code128.h zbar/decoder/code128.c
 endif
+if ENABLE_CODE93
+zbar_libzbar_la_SOURCES += zbar/decoder/code93.h zbar/decoder/code93.c
+endif
 if ENABLE_CODE39
 zbar_libzbar_la_SOURCES += zbar/decoder/code39.h zbar/decoder/code39.c
 endif

@@ -85,6 +85,7 @@ class TestZBarFunctions(ut.TestCase):
                     zbar.Symbol.CODE39,
                     zbar.Symbol.PDF417,
                     zbar.Symbol.QRCODE,
+                    zbar.Symbol.CODE93,
                     zbar.Symbol.CODE128):
             self.assert_(isinstance(sym, zbar.EnumItem))
             self.assert_(int(sym) >= 0)

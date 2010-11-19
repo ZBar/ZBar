@@ -128,6 +128,8 @@ Bar code type "symbology" constants:
 
 =item CODE39
 
+=item CODE93
+
 =item CODE128
 
 =item QRCODE

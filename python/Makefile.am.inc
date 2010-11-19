@@ -9,4 +9,5 @@ python_zbar_la_SOURCES = python/zbarmodule.c python/zbarmodule.h \
     python/symboliter.c python/image.c \
     python/processor.c python/imagescanner.c python/decoder.c python/scanner.c
 
-EXTRA_DIST += python/test/barcode.png python/test/test_zbar.py
+EXTRA_DIST += python/test/barcode.png python/test/test_zbar.py \
+    python/examples/processor.py python/examples/read_one.py

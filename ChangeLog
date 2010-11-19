@@ -1,4 +1,5 @@
 current:
+  * add support for Code 93 symbology
   * add video size request to (Py)GTK widget (req #3034522)
     - thanks to Jerome Charaoui for the patch!
   * add support for GS1 DataBar Expanded (RSS Expanded) symbology

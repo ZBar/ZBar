@@ -322,6 +322,7 @@ BOOT:
         CONSTANT(symbol_type, , CODE39, zbar_get_symbol_name(ZBAR_CODE39));
         CONSTANT(symbol_type, , PDF417, zbar_get_symbol_name(ZBAR_PDF417));
         CONSTANT(symbol_type, , QRCODE, zbar_get_symbol_name(ZBAR_QRCODE));
+        CONSTANT(symbol_type, , CODE93, zbar_get_symbol_name(ZBAR_CODE93));
         CONSTANT(symbol_type, , CODE128, zbar_get_symbol_name(ZBAR_CODE128));
     }
 
