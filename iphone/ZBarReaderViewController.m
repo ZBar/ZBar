@@ -23,7 +23,7 @@
 
 #import <ZBarSDK/ZBarReaderViewController.h>
 #import <ZBarSDK/ZBarReaderView.h>
-#import "ZBarHelpController.h"
+#import <ZBarSDK/ZBarHelpController.h>
 
 #define MODULE ZBarReaderViewController
 #import "debug.h"
@@ -308,7 +308,7 @@
     ZBarHelpController *help =
         [[ZBarHelpController alloc]
             initWithReason: reason];
-    help.delegate = self;
+    help.delegate = (id<ZBarHelpDelegate>)self;
     help.wantsFullScreenLayout = YES;
     UIView *helpView = help.view;
     helpView.alpha = 0;
@@ -319,10 +319,9 @@
     [UIView commitAnimations];
 }
 
-// ZBarHelpControllerDelegate (informal)
+// ZBarHelpDelegate
 
-- (void) helpController: (ZBarHelpController*) help
-   clickedButtonAtIndex: (NSInteger) idx
+- (void) helpControllerDidFinish: (ZBarHelpController*) help
 {
     [UIView beginAnimations: @"ZBarHelp"
             context: help];

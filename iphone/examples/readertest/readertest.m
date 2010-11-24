@@ -454,6 +454,21 @@ static const NSInteger const density_choices[] = {
           animated: YES];
 }
 
+- (void) help
+{
+    ZBarHelpController *help =
+        [[ZBarHelpController alloc]
+            initWithReason: @"TEST"];
+    [self presentModalViewController: help
+          animated: YES];
+    [help release];
+}
+
+- (void) info
+{
+    [reader showHelpWithReason: @"INFO"];
+}
+
 - (void) pause
 {
     if(![reader respondsToSelector: @selector(readerView)])
@@ -476,6 +491,13 @@ static const NSInteger const density_choices[] = {
        willShowViewController: (UIViewController*) vc
                      animated: (BOOL) animated
 {
+    self.navigationItem.leftBarButtonItem =
+        [[[UIBarButtonItem alloc]
+             initWithTitle: @"Help"
+             style: UIBarButtonItemStyleDone
+             target: self
+             action: @selector(help)]
+            autorelease];
     self.navigationItem.rightBarButtonItem =
         [[[UIBarButtonItem alloc]
              initWithTitle: @"Scan!"
@@ -785,11 +807,6 @@ static const NSInteger const density_choices[] = {
           (retry) ? "YES" : "NO");
     if(!retry)
         [_reader dismissModalViewControllerAnimated: YES];
-}
-
-- (void) info
-{
-    [reader showHelpWithReason: @"INFO"];
 }
 
 @end

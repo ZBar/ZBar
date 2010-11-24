@@ -21,17 +21,7 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
-#import "ZBarHelpController.h"
-
-@interface NSObject (ZBarHelpControllerDelegate)
-
-- (void) helpController: (ZBarHelpController*) help
-   clickedButtonAtIndex: (NSInteger) index;
-
-@end
-
-
-enum { BTN_TRYAGAIN = 1 };
+#import <ZBarSDK/ZBarHelpController.h>
 
 @implementation ZBarHelpController
 
@@ -39,11 +29,18 @@ enum { BTN_TRYAGAIN = 1 };
 
 - (id) initWithReason: (NSString*) _reason
 {
-    if(self = [super init]) {
-        if(!_reason)
-            _reason = @"INFO";
-        reason = [_reason retain];
-    }
+    self = [super init];
+    if(!self)
+        return(nil);
+
+    if(!_reason)
+        _reason = @"INFO";
+    reason = [_reason retain];
+    orientations = ((1 << UIInterfaceOrientationPortrait) |
+                    (1 << UIInterfaceOrientationPortraitUpsideDown) |
+                    (1 << UIInterfaceOrientationLandscapeLeft) |
+                    (1 << UIInterfaceOrientationLandscapeRight));
+
     return(self);
 }
 
@@ -76,27 +73,38 @@ enum { BTN_TRYAGAIN = 1 };
     [super dealloc];
 }
 
+- (void) layoutSubviewsForOrientation: (UIInterfaceOrientation) orient
+{
+    CGFloat h;
+    if(orient == UIInterfaceOrientationPortrait ||
+       orient == UIInterfaceOrientationPortraitUpsideDown)
+        h = 44;
+    else
+        h = 32;
+    CGRect r = self.view.bounds;
+    r.origin.y += r.size.height - h;
+    r.size.height = h;
+    toolbar.frame = r;
+
+    r = self.view.bounds;
+    r.size.height -= h;
+    webView.frame = r;
+}
+
 - (void) viewDidLoad
 {
     [super viewDidLoad];
 
     UIView *view = self.view;
     view.backgroundColor = [UIColor colorWithWhite: .125f
-                                    alpha: 1 ];
-
-    CGRect r = view.bounds;
-    r.size.height -= 54;
-    webView = [[UIWebView alloc]
-                  initWithFrame: r];
-    webView.delegate = self;
-    webView.backgroundColor = [UIColor colorWithWhite: .125f
-                                       alpha: 1 ];
+                                    alpha: 1];
+    view.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                             UIViewAutoresizingFlexibleHeight);
 
     toolbar = [UIToolbar new];
     toolbar.barStyle = UIBarStyleBlackOpaque;
-    r.origin.y = r.size.height;
-    r.size.height = 54;
-    toolbar.frame = r;
+    toolbar.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                UIViewAutoresizingFlexibleTopMargin);
 
     doneBtn = [[UIBarButtonItem alloc]
                   initWithBarButtonSystemItem: UIBarButtonSystemItemDone
@@ -118,6 +126,20 @@ enum { BTN_TRYAGAIN = 1 };
     toolbar.items = [NSArray arrayWithObjects: space, doneBtn, nil];
 
     [view addSubview: toolbar];
+
+    webView = [UIWebView new];
+    webView.delegate = self;
+    webView.backgroundColor = [UIColor colorWithWhite: .125f
+                                       alpha: 1 ];
+    webView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                UIViewAutoresizingFlexibleHeight);
+
+    UIInterfaceOrientation orient = self.interfaceOrientation;
+    if(!((orientations >> orient) & 1))
+        for(orient = UIInterfaceOrientationPortrait;
+            (orientations >> orient) && !((orientations >> orient) & 1);
+            orient++);
+    [self layoutSubviewsForOrientation: orient];
 
     NSString *path = [[NSBundle mainBundle]
                          pathForResource: @"zbar-help"
@@ -157,10 +179,39 @@ enum { BTN_TRYAGAIN = 1 };
     [super viewWillDisappear: animated];
 }
 
+- (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation) orient
+{
+    return([self isInterfaceOrientationSupported: orient]);
+}
+
+- (void) willAnimateRotationToInterfaceOrientation: (UIInterfaceOrientation) orient
+                                          duration: (NSTimeInterval) duration
+{
+    [self layoutSubviewsForOrientation: orient];
+    [webView reload];
+}
+
+- (BOOL) isInterfaceOrientationSupported: (UIInterfaceOrientation) orient
+{
+    return((orientations >> orient) & 1);
+}
+
+- (void) setInterfaceOrientation: (UIInterfaceOrientation) orient
+                       supported: (BOOL) supported
+{
+    NSUInteger mask = 1 << orient;
+    if(supported)
+        orientations |= mask;
+    else
+        orientations &= ~mask;
+}
+
 - (void) dismiss
 {
-    [delegate helpController: self
-              clickedButtonAtIndex: BTN_TRYAGAIN];
+    if([delegate respondsToSelector: @selector(helpControllerDidFinish:)])
+        [delegate helpControllerDidFinish: self];
+    else
+        [self dismissModalViewControllerAnimated: YES];
 }
 
 - (void) webViewDidFinishLoad: (UIWebView*) view
