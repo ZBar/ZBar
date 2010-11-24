@@ -304,17 +304,9 @@
                         context: (void*) ctx
 {
     if(obj == captureReader &&
-       [path isEqualToString: @"size"]) {
-        // adjust tracking overlay to match image size
-        CGSize size = captureReader.size;
-        overlay.bounds = CGRectMake(0, 0, size.width, size.height);
-
-        CGSize rsize = CGSizeMake(size.height, size.width);
-        [self setImageSize: rsize];
-        CGFloat scale = 1 / imageScale;
-        CATransform3D xform = CATransform3DMakeRotation(M_PI / 2, 0, 0, 1);
-        overlay.transform = CATransform3DScale(xform, scale, scale, 1);
-    }
+       [path isEqualToString: @"size"])
+        // adjust preview to match image size
+        [self setImageSize: captureReader.size];
     else if(obj == captureReader &&
        [path isEqualToString: @"framesPerSecond"])
         fpsLabel.text = [NSString stringWithFormat: @"%.2ffps ",

@@ -91,6 +91,7 @@
 {
     ZBarImageScanner *scanner;
     UIImage *scanImage;
+    CALayer *previewImage;
     BOOL enableCache;
 }
 @end
@@ -130,6 +131,10 @@
     preview.frame = self.bounds;
     [self.layer addSublayer: preview];
 
+    previewImage = [CALayer new];
+    previewImage.frame = self.bounds;
+    [preview addSublayer: previewImage];
+
     [super initSubviews];
 }
 
@@ -137,6 +142,8 @@
 {
     [scanner release];
     scanner = nil;
+    [previewImage release];
+    previewImage = nil;
     [super dealloc];
 }
 
@@ -165,27 +172,25 @@
                 scale: 1.0
                 orientation: UIImageOrientationUp];
 
-    CGSize size = image.size;
-    overlay.bounds = CGRectMake(0, 0, size.width, size.height);
-    [self setImageSize: size];
+    [self setImageSize: image.size];
 
-    preview.contentsScale = imageScale;
-    preview.contentsGravity = kCAGravityCenter;
-    preview.contents = (id)cgimage;
-
-    // match overlay to image
-    CGFloat scale = 1 / imageScale;
-    overlay.transform = CATransform3DMakeScale(scale, scale, 1);
+    [CATransaction begin];
+    [CATransaction setDisableActions: YES];
+    previewImage.contentsScale = imageScale;
+    previewImage.contentsGravity = kCAGravityCenter;
+    previewImage.transform = CATransform3DMakeRotation(M_PI_2, 0, 0, 1);
+    previewImage.contents = (id)cgimage;
+    [CATransaction commit];
 
     ZBarImage *zimg =
         [[ZBarImage alloc]
             initWithCGImage: cgimage];
 
-    size = zimg.size;
-    zimg.crop = CGRectMake(zoomCrop.origin.y * size.width,
-                           zoomCrop.origin.x * size.height,
-                           zoomCrop.size.height * size.width,
-                           zoomCrop.size.width * size.height);
+    CGSize size = zimg.size;
+    zimg.crop = CGRectMake(zoomCrop.origin.x * size.width,
+                           zoomCrop.origin.y * size.height,
+                           zoomCrop.size.width * size.width,
+                           zoomCrop.size.height * size.height);
 
     int nsyms = [scanner scanImage: zimg];
     zlog(@"scan image: %@ crop=%@ nsyms=%d",

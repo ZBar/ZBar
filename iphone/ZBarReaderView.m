@@ -88,6 +88,8 @@
     fpsLabel.font = [UIFont systemFontOfSize: 18];
     fpsLabel.textAlignment = UITextAlignmentRight;
     [fpsView addSubview: fpsLabel];
+
+    self.zoom = 1.25;
 }
 
 - (id) initWithImageScanner: (ZBarImageScanner*) scanner
@@ -113,7 +115,6 @@
                 action: @selector(handlePinch)];
     [self addGestureRecognizer: pinch];
 
-    self.zoom = 1.25;
     return(self);
 }
 
@@ -171,15 +172,20 @@
 - (void) setImageSize: (CGSize) size
 {
     CGSize psize = preview.bounds.size;
-    CGFloat scalex = size.width / psize.width;
-    CGFloat scaley = size.height / psize.height;
+    CGFloat scalex = size.width / psize.height;
+    CGFloat scaley = size.height / psize.width;
     imageScale = (scalex > scaley) ? scalex : scaley;
 
+    // match overlay to preview image
+    overlay.bounds = CGRectMake(0, 0, size.width, size.height);
+    CGFloat scale = 1 / imageScale;
+    CATransform3D xform = CATransform3DMakeRotation(M_PI / 2, 0, 0, 1);
+    overlay.transform = CATransform3DScale(xform, scale, scale, 1);
     tracking.borderWidth = imageScale / zoom;
 
     zlog(@"scaling: layer=%@ image=%@ scale=%g %c %g = 1/%g",
          NSStringFromCGSize(psize), NSStringFromCGSize(size),
-         scalex, (scalex > scaley) ? '>' : '<', scaley, 1 / imageScale);
+         scalex, (scalex > scaley) ? '>' : '<', scaley, scale);
     [self resetTracking];
 }
 

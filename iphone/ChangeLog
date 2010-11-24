@@ -1,4 +1,5 @@
 current:
+  * fix simulated camera image orientation/scaling
   * cleanup and expose ZBarHelpController
   * expose enable for reader capture processing
   * workaround iOS 4.2 hang
