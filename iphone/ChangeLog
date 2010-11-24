@@ -1,3 +1,7 @@
+current:
+  * workaround iOS 4.2 hang
+    - update to use latest SDK
+
 version 1.0:
   * update to SDK 4.1, clean out LLVM warnings
   * fix camera simulation gesture

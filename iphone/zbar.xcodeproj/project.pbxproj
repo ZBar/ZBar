@@ -813,7 +813,7 @@
 				OTHER_LDFLAGS = "-ObjC";
 				PREBINDING = NO;
 				RUN_CLANG_STATIC_ANALYZER = NO;
-				SDKROOT = iphoneos4.1;
+				SDKROOT = iphoneos;
 				USE_HEADERMAP = NO;
 			};
 			name = Debug;
@@ -836,7 +836,7 @@
 				OTHER_LDFLAGS = "-ObjC";
 				PREBINDING = NO;
 				RUN_CLANG_STATIC_ANALYZER = NO;
-				SDKROOT = iphoneos4.1;
+				SDKROOT = iphoneos;
 				USE_HEADERMAP = NO;
 			};
 			name = Release;
