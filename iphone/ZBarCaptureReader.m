@@ -36,6 +36,7 @@
 
 @synthesize captureOutput, captureDelegate, scanner, scanCrop, size,
     framesPerSecond, enableCache;
+@dynamic enableReader;
 
 - (void) initResult
 {
@@ -126,19 +127,29 @@
     [super dealloc];
 }
 
+- (BOOL) enableReader
+{
+    return(!OSAtomicCompareAndSwap32Barrier(0, 0, &running));
+}
+
+- (void) setEnableReader: (BOOL) enable
+{
+    if(!enable)
+        OSAtomicAnd32OrigBarrier(0, (void*)&running);
+    else if(OSAtomicCompareAndSwap32Barrier(0, 1, &running))
+        @synchronized(scanner) {
+            scanner.enableCache = enableCache;
+        }
+}
+
 - (void) willStartRunning
 {
-    if(!OSAtomicCompareAndSwap32Barrier(0, 1, &running))
-        return;
-    @synchronized(scanner) {
-        scanner.enableCache = enableCache;
-    }
+    self.enableReader = YES;
 }
 
 - (void) willStopRunning
 {
-    if(!OSAtomicAnd32OrigBarrier(0, (void*)&running))
-        return;
+    self.enableReader = NO;
 }
 
 - (void) flushCache

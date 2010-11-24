@@ -92,6 +92,10 @@
 // size of video frames.
 @property (nonatomic, readonly) CGSize size;
 
+// (quickly) gate the reader function without interrupting the video
+// stream.  also flushes the cache when enabled.  defaults to *NO*
+@property (nonatomic) BOOL enableReader;
+
 // current frame rate (for debug/optimization).
 // only valid when running
 @property (nonatomic, readonly) CGFloat framesPerSecond;

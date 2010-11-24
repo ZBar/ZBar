@@ -231,8 +231,8 @@
         return;
     [super start];
 
-    [captureReader willStartRunning];
     [session startRunning];
+    captureReader.enableReader = YES;
 }
 
 - (void) stop
@@ -241,7 +241,7 @@
         return;
     [super stop];
 
-    [captureReader willStopRunning];
+    captureReader.enableReader = NO;
     [session stopRunning];
 }
 

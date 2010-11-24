@@ -1,4 +1,5 @@
 current:
+  * expose enable for reader capture processing
   * workaround iOS 4.2 hang
     - update to use latest SDK
 
