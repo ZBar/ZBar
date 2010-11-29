@@ -234,6 +234,7 @@ static inline void code39_postprocess (zbar_decoder_t *dcode)
                          : '?');
     dcode->buflen = i;
     dcode->buf[i] = '\0';
+    dcode->modifiers = 0;
 }
 
 static inline int

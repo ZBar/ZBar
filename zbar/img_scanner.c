@@ -296,6 +296,8 @@ static inline void cache_sym (zbar_image_scanner_t *iscn,
             /* FIXME reuse sym */
             entry = _zbar_image_scanner_alloc_sym(iscn, sym->type,
                                                   sym->datalen + 1);
+            entry->configs = sym->configs;
+            entry->modifiers = sym->modifiers;
             memcpy(entry->data, sym->data, sym->datalen);
             entry->time = sym->time - CACHE_HYSTERESIS;
             entry->cache_count = 0;
@@ -444,6 +446,8 @@ static void symbol_handler (zbar_decoder_t *dcode)
         }
 
     sym = _zbar_image_scanner_alloc_sym(iscn, type, datalen + 1);
+    sym->configs = zbar_decoder_get_configs(dcode, type);
+    sym->modifiers = zbar_decoder_get_modifiers(dcode);
     /* FIXME grab decoder buffer */
     memcpy(sym->data, data, datalen + 1);
 

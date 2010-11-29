@@ -59,6 +59,32 @@ const char *zbar_get_addon_name (zbar_symbol_type_t sym)
     }
 }
 
+const char *zbar_get_config_name (zbar_config_t cfg)
+{
+    switch(cfg) {
+    case ZBAR_CFG_ENABLE: return("ENABLE");
+    case ZBAR_CFG_ADD_CHECK: return("ADD_CHECK");
+    case ZBAR_CFG_EMIT_CHECK: return("EMIT_CHECK");
+    case ZBAR_CFG_ASCII: return("ASCII");
+    case ZBAR_CFG_MIN_LEN: return("MIN_LEN");
+    case ZBAR_CFG_MAX_LEN: return("MAX_LEN");
+    case ZBAR_CFG_UNCERTAINTY: return("UNCERTAINTY");
+    case ZBAR_CFG_POSITION: return("POSITION");
+    case ZBAR_CFG_X_DENSITY: return("X_DENSITY");
+    case ZBAR_CFG_Y_DENSITY: return("Y_DENSITY");
+    default: return("");
+    }
+}
+
+const char *zbar_get_modifier_name (zbar_modifier_t mod)
+{
+    switch(mod) {
+    case ZBAR_MOD_GS1: return("GS1");
+    case ZBAR_MOD_AIM: return("AIM");
+    default: return("");
+    }
+}
+
 const char *zbar_get_orientation_name (zbar_orientation_t orient)
 {
     switch(orient) {
@@ -109,6 +135,16 @@ void zbar_symbol_ref (const zbar_symbol_t *sym,
 zbar_symbol_type_t zbar_symbol_get_type (const zbar_symbol_t *sym)
 {
     return(sym->type);
+}
+
+unsigned int zbar_symbol_get_configs (const zbar_symbol_t *sym)
+{
+    return(sym->configs);
+}
+
+unsigned int zbar_symbol_get_modifiers (const zbar_symbol_t *sym)
+{
+    return(sym->modifiers);
 }
 
 const char *zbar_symbol_get_data (const zbar_symbol_t *sym)
@@ -200,31 +236,35 @@ unsigned base64_encode (char *dst,
     return(dst - start - 1);
 }
 
-static const char *xmlfmt[] = {
-    "<symbol type='%s' quality='%d' orientation='%s'",
-    " count='%d'",
-    "><data",
-    " format='base64' length='%d'",
-    "><![CDATA[",
-    "\n",
-    "]]></data></symbol>",
+enum {
+    TMPL_START,
+    TMPL_MOD_START, TMPL_MOD_ITEM, TMPL_MOD_END,
+    TMPL_COUNT,
+    TMPL_DATA_START, TMPL_FORMAT, TMPL_CDATA,
+    TMPL_NL,
+    TMPL_END,
 };
 
 /* FIXME suspect... */
+#define MAX_STATIC 256
+#define MAX_MOD (5 * ZBAR_MOD_NUM)
+#define MAX_CFG (10 * ZBAR_CFG_NUM)
 #define MAX_INT_DIGITS 10
 
-#define TMPL_COPY(t) do {                        \
-        i = strlen(xmlfmt[(t)]);                 \
-        memcpy(*buf + n, xmlfmt[(t)], i + 1);    \
-        n += i;                                  \
-        assert(n <= maxlen);                     \
+#define TMPL_COPY(t) do {             \
+        static const char *_st = (t); \
+        i = strlen(_st);              \
+        memcpy(*buf + n, _st, i + 1); \
+        n += i;                       \
+        assert(n <= maxlen);          \
     } while(0)
 
-#define TMPL_FMT(t, ...) do {                                         \
-        i = snprintf(*buf + n, maxlen - n, xmlfmt[(t)], __VA_ARGS__); \
-        assert(i > 0);                                                \
-        n += i;                                                       \
-        assert(n <= maxlen);                                          \
+#define TMPL_FMT(t, ...) do {                                 \
+        static const char *_st = (t);                         \
+        i = snprintf(*buf + n, maxlen - n, _st, __VA_ARGS__); \
+        assert(i > 0);                                        \
+        n += i;                                               \
+        assert(n <= maxlen);                                  \
     } while(0)
 
 char *zbar_symbol_xml (const zbar_symbol_t *sym,
@@ -255,12 +295,16 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
     if(binary)
         datalen = (sym->datalen + 2) / 3 * 4 + sym->datalen / 57 + 3;
 
-    maxlen = (strlen(xmlfmt[0]) + strlen(xmlfmt[1]) +
-              strlen(xmlfmt[2]) + strlen(xmlfmt[4]) +
-              strlen(xmlfmt[6]) + strlen(type) + strlen(orient) +
+    maxlen = (MAX_STATIC + strlen(type) + strlen(orient) +
               datalen + MAX_INT_DIGITS + 1);
+    unsigned int mods = sym->modifiers;
+    if(mods)
+        maxlen += MAX_MOD;
+    unsigned int cfgs = sym->configs & ~(1 << ZBAR_CFG_ENABLE);
+    if(cfgs)
+        maxlen += MAX_CFG;
     if(binary)
-        maxlen += (strlen(xmlfmt[3]) + strlen(xmlfmt[5]) + MAX_INT_DIGITS);
+        maxlen += MAX_INT_DIGITS;
 
     if(!*buf || (*len < maxlen)) {
         if(*buf)
@@ -270,27 +314,50 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
         *len = maxlen;
     }
 
-    TMPL_FMT(0, type, sym->quality, orient);
+    TMPL_FMT("<symbol type='%s' quality='%d' orientation='%s'",
+             type, sym->quality, orient);
+
+    if(mods) {
+        int j;
+        TMPL_COPY(" modifiers='");
+        for(j = 0; mods && j < ZBAR_MOD_NUM; j++, mods >>= 1)
+            if(mods & 1)
+                TMPL_FMT("%s ", zbar_get_modifier_name(j));
+        /* cleanup trailing space */
+        n--;
+        TMPL_COPY("'");
+    }
+
+    if(cfgs) {
+        int j;
+        TMPL_COPY(" configs='");
+        for(j = 0; cfgs && j < ZBAR_CFG_NUM; j++, cfgs >>= 1)
+            if(cfgs & 1)
+                TMPL_FMT("%s ", zbar_get_config_name(j));
+        /* cleanup trailing space */
+        n--;
+        TMPL_COPY("'");
+    }
 
     if(sym->cache_count)
-        TMPL_FMT(1, sym->cache_count);
+        TMPL_FMT(" count='%d'", sym->cache_count);
 
-    TMPL_COPY(2);
+    TMPL_COPY("><data");
     if(binary)
-        TMPL_FMT(3, sym->datalen);
-    TMPL_COPY(4);
+        TMPL_FMT(" format='base64' length='%d'", sym->datalen);
+    TMPL_COPY("><![CDATA[");
 
     if(!binary) {
         memcpy(*buf + n, sym->data, sym->datalen + 1);
         n += sym->datalen;
     }
     else {
-        TMPL_COPY(5);
+        TMPL_COPY("\n");
         n += base64_encode(*buf + n, sym->data, sym->datalen);
     }
     assert(n <= maxlen);
 
-    TMPL_COPY(6);
+    TMPL_COPY("]]></data></symbol>");
 
     *len = n;
     return(*buf);

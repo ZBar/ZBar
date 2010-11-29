@@ -139,10 +139,12 @@ image_set_format (zbarImage *self,
         PyErr_SetString(PyExc_TypeError, "cannot delete format attribute");
         return(-1);
     }
-    char *format;
+    char *format = NULL;
     Py_ssize_t len;
     if(PyString_AsStringAndSize(value, &format, &len) ||
        !format || len != 4) {
+        if(!format)
+            format = "(nil)";
         PyErr_Format(PyExc_ValueError,
                      "format '%.50s' is not a valid four character code",
                      format);

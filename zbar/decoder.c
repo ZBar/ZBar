@@ -207,6 +207,11 @@ zbar_symbol_type_t zbar_decoder_get_type (const zbar_decoder_t *dcode)
     return(dcode->type);
 }
 
+unsigned int zbar_decoder_get_modifiers (const zbar_decoder_t *dcode)
+{
+    return(dcode->modifiers);
+}
+
 zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
                                       unsigned w)
 {
@@ -273,12 +278,11 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
     return(sym);
 }
 
-static inline int decoder_set_config_bool (zbar_decoder_t *dcode,
-                                           zbar_symbol_type_t sym,
-                                           zbar_config_t cfg,
-                                           int val)
+static inline const unsigned int*
+decoder_get_configp (const zbar_decoder_t *dcode,
+                     zbar_symbol_type_t sym)
 {
-    unsigned *config = NULL;
+    const unsigned int *config;
     switch(sym) {
 #ifdef ENABLE_EAN
     case ZBAR_EAN13:
@@ -354,8 +358,26 @@ static inline int decoder_set_config_bool (zbar_decoder_t *dcode,
     /* FIXME handle addons */
 
     default:
-        return(1);
+        config = NULL;
     }
+    return(config);
+}
+
+unsigned int zbar_decoder_get_configs (const zbar_decoder_t *dcode,
+                                       zbar_symbol_type_t sym)
+{
+    const unsigned *config = decoder_get_configp(dcode, sym);
+    if(!config)
+        return(0);
+    return(*config);
+}
+
+static inline int decoder_set_config_bool (zbar_decoder_t *dcode,
+                                           zbar_symbol_type_t sym,
+                                           zbar_config_t cfg,
+                                           int val)
+{
+    unsigned *config = (void*)decoder_get_configp(dcode, sym);
     if(!config || cfg >= ZBAR_CFG_NUM)
         return(1);
 

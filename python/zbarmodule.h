@@ -63,6 +63,8 @@ extern int zbarEnum_Add(zbarEnum *self,
                          const char *name);
 extern zbarEnumItem *zbarEnum_LookupValue(zbarEnum *self,
                                           int val);
+extern PyObject *zbarEnum_SetFromMask(zbarEnum *self,
+                                      unsigned int mask);
 
 typedef struct {
     PyObject_HEAD
@@ -146,6 +148,7 @@ extern PyTypeObject zbarScanner_Type;
 
 extern zbarEnumItem *color_enum[2];
 extern zbarEnum *config_enum;
+extern zbarEnum *modifier_enum;
 extern PyObject *symbol_enum;
 extern zbarEnumItem *symbol_NONE;
 extern zbarEnum *orient_enum;

@@ -110,6 +110,12 @@ public class Symbol
 
     private native int getType(long peer);
 
+    /** Retrieve symbology boolean configs settings used during decode. */
+    public native int getConfigMask();
+
+    /** Retrieve symbology characteristics detected during decode. */
+    public native int getModifierMask();
+
     /** Retrieve data decoded from symbol as a String. */
     public native String getData();
 

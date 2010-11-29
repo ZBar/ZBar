@@ -54,6 +54,8 @@ using namespace zbar;
 
 @property (readonly, nonatomic) zbar_symbol_type_t type;
 @property (readonly, nonatomic) NSString *typeName;
+@property (readonly, nonatomic) NSUInteger configMask;
+@property (readonly, nonatomic) NSUInteger modifierMask;
 @property (readonly, nonatomic) NSString *data;
 @property (readonly, nonatomic) int quality;
 @property (readonly, nonatomic) int count;

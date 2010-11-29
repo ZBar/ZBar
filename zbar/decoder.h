@@ -79,6 +79,7 @@
 
 #define CFG(dcode, cfg) ((dcode).configs[(cfg) - ZBAR_CFG_MIN_LEN])
 #define TEST_CFG(config, cfg) (((config) >> (cfg)) & 1)
+#define MOD(mod) (1 << (mod))
 
 /* symbology independent decoder state */
 struct zbar_decoder_s {
@@ -86,6 +87,7 @@ struct zbar_decoder_s {
     unsigned w[DECODE_WINDOW];          /* window of last N bar widths */
     zbar_symbol_type_t type;            /* type of last decoded data */
     zbar_symbol_type_t lock;            /* buffer lock */
+    unsigned modifiers;                 /* symbology modifier */
     int direction;                      /* direction of last decoded data */
     unsigned s6;                        /* 6-element character width */
 
@@ -227,6 +229,6 @@ static inline char size_buf (zbar_decoder_t *dcode,
 }
 
 extern const char *_zbar_decoder_buf_dump (unsigned char *buf,
-                                            unsigned int buflen);
+                                           unsigned int buflen);
 
 #endif

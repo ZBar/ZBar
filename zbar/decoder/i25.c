@@ -189,6 +189,7 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
 
     dcode->buflen = dcode25->character;
     dcode->buf[dcode25->character] = '\0';
+    dcode->modifiers = 0;
     dprintf(2, " [valid end]\n");
     dcode25->character = -1;
     return(ZBAR_I25);

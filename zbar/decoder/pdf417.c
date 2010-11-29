@@ -214,6 +214,7 @@ zbar_symbol_type_t _zbar_decode_pdf417 (zbar_decoder_t *dcode)
         dprintf(1, " [valid stop]");
         /* FIXME check trailing bar and qz */
         dcode->direction = 1 - 2 * dcode417->direction;
+        dcode->modifiers = 0;
         release_lock(dcode, ZBAR_PDF417);
         dcode417->character = -1;
     }

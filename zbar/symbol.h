@@ -42,6 +42,8 @@ struct zbar_symbol_set_s {
 
 struct zbar_symbol_s {
     zbar_symbol_type_t type;    /* symbol type */
+    unsigned int configs;       /* symbology boolean config bitmask */
+    unsigned int modifiers;     /* symbology modifier bitmask */
     unsigned int data_alloc;    /* allocation size of data */
     unsigned int datalen;       /* length of binary symbol data */
     char *data;                 /* symbol data */

@@ -655,6 +655,7 @@ match_segment (zbar_decoder_t *dcode,
         return(ZBAR_PARTIAL);
 
     databar_postprocess(dcode, d);
+    dcode->modifiers = MOD(ZBAR_MOD_GS1);
     dcode->direction = 1 - 2 * (seg->side ^ seg->color ^ 1);
     return(ZBAR_DATABAR);
 }
@@ -823,6 +824,7 @@ match_segment_exp (zbar_decoder_t *dcode,
      * so direction is impossible to determine at this level
      */
     dcode->direction = (1 - 2 * (seg->side ^ seg->color)) * dir;
+    dcode->modifiers = MOD(ZBAR_MOD_GS1);
     return(ZBAR_DATABAR_EXP);
 }
 #undef IDX

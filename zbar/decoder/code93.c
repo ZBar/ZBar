@@ -320,6 +320,7 @@ postprocess (zbar_decoder_t *dcode)
 
     dcode->buflen = j;
     dcode->buf[j] = '\0';
+    dcode->modifiers = 0;
     return(0);
 }
 

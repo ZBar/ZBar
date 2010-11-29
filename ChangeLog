@@ -1,4 +1,9 @@
 current:
+  * fix support for GS1 AIs
+    - thanks to jockusch for a patch!
+    - add decoder/symbol "modifier" flags and config read access
+    - set flags or emit GS appropriately for Code 128 FNC1
+    - add iphone, java, perl, python bindings for modifiers and configs
   * add support for Code 93 symbology
   * add video size request to (Py)GTK widget (req #3034522)
     - thanks to Jerome Charaoui for the patch!

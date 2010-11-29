@@ -659,6 +659,7 @@ static inline void postprocess (zbar_decoder_t *dcode,
     dcode->buflen = j;
     dcode->buf[j] = '\0';
     dcode->direction = 1 - 2 * ean->direction;
+    dcode->modifiers = 0;
 }
 
 zbar_symbol_type_t _zbar_decode_ean (zbar_decoder_t *dcode)

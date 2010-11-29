@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 27;
+use Test::More tests => 29;
 
 #########################
 
@@ -114,12 +114,23 @@ SKIP: {
 
     #########################
 
-    can_ok($sym, qw(get_type get_data get_quality get_count get_loc
-                    get_orientation));
+    can_ok($sym, qw(get_type get_configs get_modifiers get_data get_quality
+                    get_count get_loc get_orientation));
 
     #########################
 
     is($sym->get_type(), Barcode::ZBar::Symbol::EAN13, 'result type');
+
+    #########################
+
+    is_deeply([$sym->get_configs()],
+              [Barcode::ZBar::Config::ENABLE,
+               Barcode::ZBar::Config::EMIT_CHECK],
+              'result configs');
+
+    #########################
+
+    is_deeply([$sym->get_modifiers()], [], 'result modifiers');
 
     #########################
 

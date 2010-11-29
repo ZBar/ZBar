@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 33;
+use Test::More tests => 37;
 
 #########################
 
@@ -46,6 +46,13 @@ test_enum('config',
     [Barcode::ZBar::Config::POSITION,    'position',    128],
     [Barcode::ZBar::Config::X_DENSITY,   'x-density',   256],
     [Barcode::ZBar::Config::Y_DENSITY,   'y-density',   257],
+);
+
+#########################
+
+test_enum('modifier',
+    [Barcode::ZBar::Modifier::GS1, 'GS1', 0],
+    [Barcode::ZBar::Modifier::AIM, 'AIM', 1],
 );
 
 #########################

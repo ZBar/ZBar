@@ -331,6 +331,7 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
     unsigned char code = 0, charset;
     code128_decoder_t *dcode128 = &dcode->code128;
     dprintf(2, "\n    postproc len=%d", dcode128->character);
+    dcode->modifiers = 0;
     dcode->direction = 1 - 2 * dcode128->direction;
     if(dcode128->direction) {
         /* reverse buffer */
@@ -403,7 +404,14 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
                 }
             }
             else if(code == FNC1) {
-                /* FIXME FNC1 - Code 128 subsets or ASCII 0x1d */
+                /* FNC1 - Code 128 subsets or ASCII 0x1d */
+                if(i == 1)
+                    dcode->modifiers |= MOD(ZBAR_MOD_GS1);
+                else if(i == 2)
+                    dcode->modifiers |= MOD(ZBAR_MOD_AIM);
+                else if(i < dcode->code128.character - 3)
+                    dcode->buf[j++] = 0x1d;
+                /*else drop trailing FNC1 */
             }
             else if(code >= START_A) {
                 dprintf(1, " [truncated]\n");
