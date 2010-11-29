@@ -7,7 +7,7 @@
 	<key>CFBundleName</key>
 	<string>ZBarSDK</string>
 	<key>CFBundleVersion</key>
-	<string>1.0</string>
+	<string>1.0.1</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>NSHumanReadableCopyright</key>

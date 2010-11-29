@@ -25,6 +25,14 @@ Properties
       The canonical name used by the library to represent the symbology.
       (read-only)
 
+   .. member:: NSUInteger configMask
+
+      Bitmask of symbology config settings used during decode.
+
+   .. member:: NSUInteger modifierMask
+
+      Bitmask of symbology characteristics detected during decode.
+
    .. member:: NSString *data
 
       The raw decoded barcode data. (read-only)

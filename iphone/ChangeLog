@@ -1,4 +1,7 @@
-current:
+version 1.0.1:
+  * release updates
+    - update docs
+  * fix support for GS1 AIs
   * fix simulated camera image orientation/scaling
   * cleanup and expose ZBarHelpController
   * expose enable for reader capture processing

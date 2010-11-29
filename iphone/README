@@ -4,8 +4,8 @@ ZBar iPhone SDK
 ZBar Bar Code Reader is an open source software suite for reading bar
 codes from various sources, such as video streams, image files and raw
 intensity sensors. It supports EAN-13/UPC-A, UPC-E, EAN-8, DataBar,
-Code 128, Code 39, Interleaved 2 of 5 and QR Code.  These are the
-Objective C wrappers and integrated widget for developing with the
+Code 128, Code 93, Code 39, Interleaved 2 of 5 and QR Code.  These are
+the Objective C wrappers and integrated widget for developing with the
 library on the iPhone platform.
 
 Check the ZBar project home page for the latest release, forums, etc.
