@@ -1,4 +1,5 @@
 version 1.0.1:
+  * hotfix broken ZBarHelpController back button
   * release updates
     - update docs
   * fix support for GS1 AIs

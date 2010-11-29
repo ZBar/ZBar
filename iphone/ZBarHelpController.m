@@ -101,6 +101,13 @@
     view.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
                              UIViewAutoresizingFlexibleHeight);
 
+    webView = [UIWebView new];
+    webView.delegate = self;
+    webView.backgroundColor = [UIColor colorWithWhite: .125f
+                                       alpha: 1 ];
+    webView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                UIViewAutoresizingFlexibleHeight);
+
     toolbar = [UIToolbar new];
     toolbar.barStyle = UIBarStyleBlackOpaque;
     toolbar.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
@@ -126,13 +133,6 @@
     toolbar.items = [NSArray arrayWithObjects: space, doneBtn, nil];
 
     [view addSubview: toolbar];
-
-    webView = [UIWebView new];
-    webView.delegate = self;
-    webView.backgroundColor = [UIColor colorWithWhite: .125f
-                                       alpha: 1 ];
-    webView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
-                                UIViewAutoresizingFlexibleHeight);
 
     UIInterfaceOrientation orient = self.interfaceOrientation;
     if(!((orientations >> orient) & 1))
