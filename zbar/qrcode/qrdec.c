@@ -630,11 +630,12 @@ struct qr_aff{
   int x0;
   int y0;
   int res;
+  int ires;
 };
 
 
 static void qr_aff_init(qr_aff *_aff,
- const qr_point _p0,const qr_point _p1,const qr_point _p2,int _res){
+ const qr_point _p0,const qr_point _p1,const qr_point _p2,int _res,int _ires){
   int det;
   int dx1;
   int dy1;
@@ -650,20 +651,23 @@ static void qr_aff_init(qr_aff *_aff,
   _aff->fwd[0][1]=dx2;
   _aff->fwd[1][0]=dy1;
   _aff->fwd[1][1]=dy2;
-  _aff->inv[0][0]=QR_DIVROUND(dy2<<_res,det);
-  _aff->inv[0][1]=QR_DIVROUND(-dx2<<_res,det);
-  _aff->inv[1][0]=QR_DIVROUND(-dy1<<_res,det);
-  _aff->inv[1][1]=QR_DIVROUND(dx1<<_res,det);
+  _aff->inv[0][0]=QR_DIVROUND(dy2<<_res,det>>_ires);
+  _aff->inv[0][1]=QR_DIVROUND(-dx2<<_res,det>>_ires);
+  _aff->inv[1][0]=QR_DIVROUND(-dy1<<_res,det>>_ires);
+  _aff->inv[1][1]=QR_DIVROUND(dx1<<_res,det>>_ires);
   _aff->x0=_p0[0];
   _aff->y0=_p0[1];
   _aff->res=_res;
+  _aff->ires=_ires;
 }
 
 /*Map from the image (at subpel resolution) into the square domain.*/
 static void qr_aff_unproject(qr_point _q,const qr_aff *_aff,
  int _x,int _y){
-  _q[0]=_aff->inv[0][0]*(_x-_aff->x0)+_aff->inv[0][1]*(_y-_aff->y0);
-  _q[1]=_aff->inv[1][0]*(_x-_aff->x0)+_aff->inv[1][1]*(_y-_aff->y0);
+  _q[0]=_aff->inv[0][0]*(_x-_aff->x0)+_aff->inv[0][1]*(_y-_aff->y0)
+   +(1<<_aff->ires-1)>>_aff->ires;
+  _q[1]=_aff->inv[1][0]*(_x-_aff->x0)+_aff->inv[1][1]*(_y-_aff->y0)
+   +(1<<_aff->ires-1)>>_aff->ires;
 }
 
 /*Map from the square domain into the image (at subpel resolution).*/
@@ -1894,10 +1898,10 @@ static int qr_alignment_pattern_search(qr_point _p,const qr_hom_cell *_cell,
   if(nc[0]){
     dx=QR_DIVROUND(c[0][0],nc[0]);
     dy=QR_DIVROUND(c[0][1],nc[0]);
-    /*But only if it doesn't make things worse.*/
+    /*But only if it doesn't make things too much worse.*/
     match=qr_alignment_pattern_fetch(p,bestx+dx,besty+dy,_img,_width,_height);
     dist=qr_hamming_dist(match,0x1F8D63F,best_dist+1);
-    if(dist<=best_dist){
+    if(dist<=best_dist+1){
       bestx+=dx;
       besty+=dy;
     }
@@ -3629,6 +3633,7 @@ static int qr_reader_try_configuration(qr_reader *_reader,
     qr_finder ur;
     qr_finder dl;
     int       res;
+    int       ires;
     int       ur_version;
     int       dl_version;
     int       fmt_info;
@@ -3641,8 +3646,10 @@ static int qr_reader_try_configuration(qr_reader *_reader,
        estimate it there.
       Although it should be the same along both axes, we keep separate
        estimates to account for any remaining projective distortion.*/
-    res=QR_INT_BITS-2-QR_FINDER_SUBPREC-qr_ilog(QR_MAXI(_width,_height)-1);
-    qr_aff_init(&aff,ul.c->pos,ur.c->pos,dl.c->pos,res);
+    ires=qr_ilog(QR_MAXI(_width,_height)-1)+QR_FINDER_SUBPREC;
+    res=QR_INT_BITS-2-ires;
+    ires-=2;
+    qr_aff_init(&aff,ul.c->pos,ur.c->pos,dl.c->pos,res,ires);
     qr_aff_unproject(ur.o,&aff,ur.c->pos[0],ur.c->pos[1]);
     qr_finder_edge_pts_aff_classify(&ur,&aff);
     if(qr_finder_estimate_module_size_and_version(&ur,1<<res,1<<res)<0)continue;
