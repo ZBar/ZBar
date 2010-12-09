@@ -23,6 +23,8 @@
 
 /* varargs variations on compile time debug spew */
 
+# include <stdio.h>
+
 #ifndef DEBUG_LEVEL
 
 # ifdef __GNUC__
@@ -34,8 +36,6 @@
 # endif
 
 #else
-
-# include <stdio.h>
 
 # ifdef __GNUC__
 #  define dprintf(level, args...) do {  \
