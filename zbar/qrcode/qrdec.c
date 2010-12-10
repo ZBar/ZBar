@@ -667,9 +667,9 @@ static void qr_aff_init(qr_aff *_aff,
 static void qr_aff_unproject(qr_point _q,const qr_aff *_aff,
  int _x,int _y){
   _q[0]=_aff->inv[0][0]*(_x-_aff->x0)+_aff->inv[0][1]*(_y-_aff->y0)
-   +(1<<_aff->ires-1)>>_aff->ires;
+   +(1<<_aff->ires>>1)>>_aff->ires;
   _q[1]=_aff->inv[1][0]*(_x-_aff->x0)+_aff->inv[1][1]*(_y-_aff->y0)
-   +(1<<_aff->ires-1)>>_aff->ires;
+   +(1<<_aff->ires>>1)>>_aff->ires;
 }
 
 /*Map from the square domain into the image (at subpel resolution).*/
