@@ -635,30 +635,32 @@ struct qr_aff{
 
 
 static void qr_aff_init(qr_aff *_aff,
- const qr_point _p0,const qr_point _p1,const qr_point _p2,int _res,int _ires){
+ const qr_point _p0,const qr_point _p1,const qr_point _p2,int _res){
   int det;
+  int ires;
   int dx1;
   int dy1;
   int dx2;
   int dy2;
   /*det is ensured to be positive by our caller.*/
-  det=qr_point_ccw(_p0,_p1,_p2);
   dx1=_p1[0]-_p0[0];
   dx2=_p2[0]-_p0[0];
   dy1=_p1[1]-_p0[1];
   dy2=_p2[1]-_p0[1];
+  det=dx1*dy2-dy1*dx2;
+  ires=QR_MAXI((qr_ilog(abs(det))>>1)-2,0);
   _aff->fwd[0][0]=dx1;
   _aff->fwd[0][1]=dx2;
   _aff->fwd[1][0]=dy1;
   _aff->fwd[1][1]=dy2;
-  _aff->inv[0][0]=QR_DIVROUND(dy2<<_res,det>>_ires);
-  _aff->inv[0][1]=QR_DIVROUND(-dx2<<_res,det>>_ires);
-  _aff->inv[1][0]=QR_DIVROUND(-dy1<<_res,det>>_ires);
-  _aff->inv[1][1]=QR_DIVROUND(dx1<<_res,det>>_ires);
+  _aff->inv[0][0]=QR_DIVROUND(dy2<<_res,det>>ires);
+  _aff->inv[0][1]=QR_DIVROUND(-dx2<<_res,det>>ires);
+  _aff->inv[1][0]=QR_DIVROUND(-dy1<<_res,det>>ires);
+  _aff->inv[1][1]=QR_DIVROUND(dx1<<_res,det>>ires);
   _aff->x0=_p0[0];
   _aff->y0=_p0[1];
   _aff->res=_res;
-  _aff->ires=_ires;
+  _aff->ires=ires;
 }
 
 /*Map from the image (at subpel resolution) into the square domain.*/
@@ -2222,11 +2224,11 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
      _p[2][0],_p[2][1],_p[3][0],_p[3][1]);
     if(qr_alignment_pattern_search(p3,&cell,dim-7,dim-7,4,
      _img,_width,_height)>=0){
-      int c21;
-      int dx21;
-      int dy21;
-      int mask;
-      int w;
+      long long w;
+      long long mask;
+      int       c21;
+      int       dx21;
+      int       dy21;
       /*There's no real need to update the bounding box corner, and in fact we
          actively perform worse if we do.
         Clearly it was good enough for us to find this alignment pattern, so
@@ -2242,10 +2244,11 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
       c21=_p[2][0]*_p[1][1]-_p[2][1]*_p[1][0];
       dx21=_p[2][0]-_p[1][0];
       dy21=_p[2][1]-_p[1][1];
-      w=(dim-7)*c21
-       +(dim-13)*(_p[0][0]*dy21-_p[0][1]*dx21)+6*(p3[0]*dy21-p3[1]*dx21);
+      w=QR_EXTMUL(dim-7,c21,
+       QR_EXTMUL(dim-13,_p[0][0]*dy21-_p[0][1]*dx21,
+       QR_EXTMUL(6,p3[0]*dy21-p3[1]*dx21,0)));
       mask=QR_SIGNMASK(w);
-      w=abs(w);
+      w=w+mask^mask;
       brx=(int)QR_DIVROUND(QR_EXTMUL((dim-7)*_p[0][0],p3[0]*dy21,
        QR_EXTMUL((dim-13)*p3[0],c21-_p[0][1]*dx21,
        QR_EXTMUL(6*_p[0][0],c21-p3[1]*dx21,0)))+mask^mask,w);
@@ -3633,7 +3636,6 @@ static int qr_reader_try_configuration(qr_reader *_reader,
     qr_finder ur;
     qr_finder dl;
     int       res;
-    int       ires;
     int       ur_version;
     int       dl_version;
     int       fmt_info;
@@ -3646,10 +3648,8 @@ static int qr_reader_try_configuration(qr_reader *_reader,
        estimate it there.
       Although it should be the same along both axes, we keep separate
        estimates to account for any remaining projective distortion.*/
-    ires=qr_ilog(QR_MAXI(_width,_height)-1)+QR_FINDER_SUBPREC;
-    res=QR_INT_BITS-2-ires;
-    ires-=2;
-    qr_aff_init(&aff,ul.c->pos,ur.c->pos,dl.c->pos,res,ires);
+    res=QR_INT_BITS-2-QR_FINDER_SUBPREC-qr_ilog(QR_MAXI(_width,_height)-1);
+    qr_aff_init(&aff,ul.c->pos,ur.c->pos,dl.c->pos,res);
     qr_aff_unproject(ur.o,&aff,ur.c->pos[0],ur.c->pos[1]);
     qr_finder_edge_pts_aff_classify(&ur,&aff);
     if(qr_finder_estimate_module_size_and_version(&ur,1<<res,1<<res)<0)continue;
