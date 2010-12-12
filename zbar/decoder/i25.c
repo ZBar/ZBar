@@ -145,6 +145,9 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
           decode_e(get_width(dcode, 4), dcode25->width, 45) > 2))
         return(ZBAR_NONE);
 
+    dcode->buf[0] = dcode25->buf[0];
+    dcode->buf[1] = dcode25->buf[1];
+
     dcode->direction = 1 - 2 * dcode25->direction;
     if(dcode25->direction) {
         /* reverse buffer */
@@ -198,11 +201,17 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
             (dcode25->direction) ? '<' : '>',
             dcode25->character, dcode25->element);
 
-    /* lock shared resources */
-    if(!dcode25->character && get_lock(dcode, ZBAR_I25)) {
-        dcode25->character = -1;
-        dprintf(2, " [locked %d]\n", dcode->lock);
-        return(ZBAR_PARTIAL);
+    unsigned char *buf;
+    if(!dcode25->character)
+        buf = dcode25->buf;
+    else {
+        /* lock shared resources */
+        if(dcode25->character == 2 && get_lock(dcode, ZBAR_I25)) {
+            dcode25->character = -1;
+            dprintf(2, " [locked %d]\n", dcode->lock);
+            return(ZBAR_PARTIAL);
+        }
+        buf = dcode->buf + dcode25->character;
     }
 
     unsigned char c = i25_decode10(dcode, 1);
@@ -216,7 +225,7 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
         dcode25->character = -1;
         return(ZBAR_NONE);
     }
-    dcode->buf[dcode25->character++] = c + '0';
+    *(buf++) = c + '0';
 
     c = i25_decode10(dcode, 0);
     dprintf(2, " c=%x", c);
@@ -228,8 +237,9 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
     }
     else
         dprintf(2, "\n");
+    *buf = c + '0';
 
-    dcode->buf[dcode25->character++] = c + '0';
     dcode25->element = 10;
+    dcode25->character += 2;
     return((dcode25->character == 2) ? ZBAR_PARTIAL : ZBAR_NONE);
 }

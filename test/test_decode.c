@@ -31,16 +31,40 @@
 
 zbar_decoder_t *decoder;
 
+zbar_symbol_type_t expect_sym;
+char *expect_data = NULL;
+
 static void symbol_handler (zbar_decoder_t *decoder)
 {
     zbar_symbol_type_t sym = zbar_decoder_get_type(decoder);
-    if(sym <= ZBAR_PARTIAL)
+    if(sym <= ZBAR_PARTIAL || sym == ZBAR_QRCODE)
         return;
-    printf("%s%s:%s\n",
-           zbar_get_symbol_name(sym),
-           zbar_get_addon_name(sym),
-           zbar_decoder_get_data(decoder));
-    /* FIXME add check! */
+    const char *data = zbar_decoder_get_data(decoder);
+    printf("decode %s:%s\n", zbar_get_symbol_name(sym), data);
+
+    if(!expect_sym) {
+        printf("UNEXPECTED!\n");
+        abort();
+    }
+    printf("expect %s:%s\n", zbar_get_symbol_name(expect_sym), expect_data);
+    if(sym != expect_sym || strcmp(data, expect_data))
+        abort();
+
+    expect_sym = ZBAR_NONE;
+    free(expect_data);
+    expect_data = NULL;
+}
+
+static void expect (zbar_symbol_type_t sym,
+                    const char *data)
+{
+    if(expect_sym) {
+        printf("MISSING %s:%s\n",
+               zbar_get_symbol_name(expect_sym), expect_data);
+        abort();
+    }
+    expect_sym = sym;
+    expect_data = (data) ? strdup(data) : NULL;
 }
 
 static void encode_junk (int n)
@@ -122,8 +146,9 @@ static const unsigned int code128[107] = {
     0x2331112a,                             /* STOP (6a) */
 };
 
-static void encode_code128b (unsigned char *data)
+static void encode_code128b (char *data)
 {
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
     printf("------------------------------------------------------------\n"
            "encode CODE-128(B): %s\n"
            "    encode START_B: %02x", data, START_B);
@@ -142,8 +167,9 @@ static void encode_code128b (unsigned char *data)
     printf("------------------------------------------------------------\n");
 }
 
-static void encode_code128c (unsigned char *data)
+static void encode_code128c (char *data)
 {
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
     printf("------------------------------------------------------------\n"
            "encode CODE-128(C): %s\n"
            "    encode START_C: %02x", data, START_C);
@@ -182,14 +208,29 @@ static const unsigned int code39[91-32] = {
 /* FIXME configurable/randomized ratio, ics */
 /* FIXME check digit option, ASCII escapes */
 
+static void convert_code39 (char *data)
+{
+    char *src, *dst;
+    for(src = data, dst = data; *src; src++) {
+        char c = *src;
+        if(c >= 'a' && c <= 'z')
+            *(dst++) = c - ('a' - 'A');
+        else if(c == ' ' ||
+                c == '$' || c == '%' ||
+                c == '+' || c == '-' ||
+                (c >= '.' && c <= '9') ||
+                (c >= 'A' && c <= 'Z'))
+            *(dst++) = c;
+        else
+            /* skip (FIXME) */;
+    }
+    *dst = 0;
+}
+
 static void encode_char39 (unsigned char c,
                            unsigned ics)
 {
-    if(c >= 'a' && c <= 'z')
-        c -= 'a' - 'A';
-    else if(c < 0x20 || c > 0x5a)
-        return; /* skip (FIXME) */
-
+    assert(0x20 <= c && c <= 0x5a);
     unsigned int raw = code39[c - 0x20];
     if(!raw)
         return; /* skip (FIXME) */
@@ -206,8 +247,9 @@ static void encode_char39 (unsigned char c,
     encode(enc, REV);
 }
 
-static void encode_code39 (unsigned char *data)
+static void encode_code39 (char *data)
 {
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
     printf("------------------------------------------------------------\n"
            "encode CODE-39: %s\n", data);
     encode(0xa, 0);  /* leading quiet */
@@ -280,8 +322,9 @@ static void encode_row417 (int r,
     encode((dir) ? PDF417_START : PDF417_STOP, dir);
 }
 
-static void encode_pdf417 (unsigned char *data)
+static void encode_pdf417 (char *data)
 {
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
     printf("------------------------------------------------------------\n"
            "encode PDF417: hello world\n");
     encode(0xa, 0);
@@ -303,9 +346,10 @@ static const unsigned char i25[10] = {
     0x06, 0x11, 0x09, 0x18, 0x05, 0x14, 0x0c, 0x03, 0x12, 0x0a,
 };
 
-static void encode_i25 (unsigned char *data,
+static void encode_i25 (char *data,
                         int dir)
 {
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
     printf("------------------------------------------------------------\n"
            "encode Interleaved 2 of 5: %s\n"
            "    encode start:", data);
@@ -313,7 +357,7 @@ static void encode_i25 (unsigned char *data,
 
     /* FIXME rev case data reversal */
     int i;
-    for(i = (strlen((char*)data) & 1) ? -1 : 0; i < 0 || data[i]; i += 2) {
+    for(i = (strlen(data) & 1) ? -1 : 0; i < 0 || data[i]; i += 2) {
         /* encode 2 digits */
         unsigned char c0 = (i < 0) ? 0 : data[i] - '0';
         unsigned char c1 = data[i + 1] - '0';
@@ -372,7 +416,20 @@ static const unsigned char ean_parity_encode[] = {
     0x25,       /* ABBABA = 9 */
 };
 
-static void calc_ean_parity (unsigned char *data,
+static const unsigned char addon_parity_encode[] = {
+    0x07,       /* BBAAA = 0 */
+    0x0b,       /* BABAA = 1 */
+    0x0d,       /* BAABA = 2 */
+    0x0e,       /* BAAAB = 3 */
+    0x13,       /* ABBAA = 4 */
+    0x19,       /* AABBA = 5 */
+    0x1c,       /* AAABB = 6 */
+    0x15,       /* ABABA = 7 */
+    0x16,       /* ABAAB = 8 */
+    0x1a,       /* AABAB = 9 */
+};
+
+static void calc_ean_parity (char *data,
                              int n)
 {
     int i, chk = 0;
@@ -387,8 +444,9 @@ static void calc_ean_parity (unsigned char *data,
     data[i] = 0;
 }
 
-static void encode_ean13 (unsigned char *data)
+static void encode_ean13 (char *data)
 {
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
     int i;
     unsigned char par = ean_parity_encode[data[0] - '0'];
 
@@ -399,7 +457,7 @@ static void encode_ean13 (unsigned char *data)
     encode(ean_guard[3], FWD);
     for(i = 1; i < 7; i++, par <<= 1) {
         printf("    encode %x%c:", (par >> 5) & 1, data[i]);
-        encode(ean_digits[data[i] - '0'], REV ^ ((par >> 5) & 1));
+        encode(ean_digits[data[i] - '0'], (par >> 5) & 1);
     }
     printf("    encode center guard:");
     encode(ean_guard[5], FWD);
@@ -412,8 +470,9 @@ static void encode_ean13 (unsigned char *data)
     printf("------------------------------------------------------------\n");
 }
 
-static void encode_ean8 (unsigned char *data)
+static void encode_ean8 (char *data)
 {
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
     int i;
     printf("------------------------------------------------------------\n"
            "encode EAN-8: %s\n"
@@ -433,6 +492,43 @@ static void encode_ean8 (unsigned char *data)
     printf("    encode end guard:");
     encode(ean_guard[3], REV);
     printf("------------------------------------------------------------\n");
+}
+
+static void encode_addon (char *data,
+                          unsigned par,
+                          int n)
+{
+    assert(zbar_decoder_get_color(decoder) == ZBAR_SPACE);
+    printf("------------------------------------------------------------\n"
+           "encode EAN-%d: %s (par=%02x)\n"
+           "    encode start guard:",
+           n, data, par);
+    encode(ean_guard[4], FWD);
+    int i;
+    for(i = 0; i < n; i++, par <<= 1) {
+        printf("    encode %x%c:", (par >> (n - 1)) & 1, data[i]);
+        encode(ean_digits[data[i] - '0'], (par >> (n - 1)) & 1);
+        if(i < n - 1) {
+            printf("    encode delineator:");
+            encode(ean_guard[2], FWD);
+        }
+    }
+    printf("    encode trailing qz:");
+    encode(0x7, FWD);
+    printf("------------------------------------------------------------\n");
+}
+
+static void encode_ean5 (char *data)
+{
+    unsigned chk = ((data[0] - '0' + data[2] - '0' + data[4] - '0') * 3 +
+                    (data[1] - '0' + data[3] - '0') * 9) % 10;
+    encode_addon(data, addon_parity_encode[chk], 5);
+}
+
+static void encode_ean2 (char *data)
+{
+    unsigned par = (~(10 * (data[0] - '0') + data[1] - '0')) & 3;
+    encode_addon(data, par, 2);
 }
 
 
@@ -457,30 +553,48 @@ int main (int argc, char **argv)
 
     encode_junk(rnd_size + 1);
 
-    unsigned char data[32] = { 0 };
+    char data[32] = { 0 };
     for(i = 0; i < 12; i++)
         data[i] = (rand() % 10) + '0';
 
     calc_ean_parity(data, 12);
+    expect(ZBAR_EAN13, data);
     encode_ean13(data);
 
     encode_junk(rnd_size);
 
     data[i] = 0;
+    expect(ZBAR_CODE128, data);
     encode_code128c(data);
 
     encode_junk(rnd_size);
 
+    expect(ZBAR_I25, data);
     encode_i25(data, FWD);
 
     encode_junk(rnd_size);
 
+#if 0 /* FIXME encoding broken*/
     encode_i25(data, REV);
 
     encode_junk(rnd_size);
+#endif
 
     calc_ean_parity(data, 7);
+    expect(ZBAR_EAN8, data);
     encode_ean8(data);
+
+    encode_junk(rnd_size);
+
+    data[5] = 0;
+    expect(ZBAR_EAN5, data);
+    encode_ean5(data);
+
+    encode_junk(rnd_size);
+
+    data[2] = 0;
+    expect(ZBAR_EAN2, data);
+    encode_ean2(data);
 
     encode_junk(rnd_size);
 
@@ -488,15 +602,19 @@ int main (int argc, char **argv)
         data[i] = (rand() % 0x5f) + 0x20;
     data[i] = 0;
 
+    expect(ZBAR_CODE128, data);
     encode_code128b(data);
 
     encode_junk(rnd_size);
 
     /*encode_code39("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%");*/
+    convert_code39(data);
+    expect(ZBAR_CODE39, data);
     encode_code39(data);
 
     encode_junk(rnd_size);
 
+    expect(ZBAR_NONE, NULL);
     encode_pdf417(data);
 
     encode_junk(rnd_size);

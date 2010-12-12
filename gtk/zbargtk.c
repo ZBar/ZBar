@@ -231,7 +231,6 @@ static inline int zbar_gtk_process_image (ZBarGtk *self,
 
                 /* FIXME skip this when unconnected? */
                 gchar *text = g_strconcat(zbar_get_symbol_name(type),
-                                          zbar_get_addon_name(type),
                                           ":",
                                           data,
                                           NULL);

@@ -111,6 +111,7 @@ struct zbar_image_scanner_s {
 
     /* configuration settings */
     unsigned config;            /* config flags */
+    unsigned ean_config;
     int configs[NUM_SCN_CFGS];  /* int valued configurations */
 
 #ifndef NO_STATS
@@ -542,6 +543,12 @@ int zbar_image_scanner_set_config (zbar_image_scanner_t *iscn,
                                    zbar_config_t cfg,
                                    int val)
 {
+    if((sym == 0 || sym == ZBAR_EANUPC) && cfg == ZBAR_CFG_ENABLE) {
+        iscn->ean_config = !!val;
+        if(sym)
+            return(0);
+    }
+
     if(cfg < ZBAR_CFG_POSITION)
         return(zbar_decoder_set_config(iscn->dcode, sym, cfg, val));
 
@@ -549,7 +556,6 @@ int zbar_image_scanner_set_config (zbar_image_scanner_t *iscn,
         return(1);
 
     if(cfg >= ZBAR_CFG_X_DENSITY && cfg <= ZBAR_CFG_Y_DENSITY) {
-
         CFG(iscn, cfg) = val;
         return(0);
     }
@@ -759,20 +765,64 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 #endif
 
     /* FIXME tmp hack to filter bad EAN results */
-    if(syms->nsyms && !iscn->enable_cache &&
-       (density == 1 || CFG(iscn, ZBAR_CFG_Y_DENSITY) == 1)) {
-        zbar_symbol_t **symp = &syms->head, *sym;
-        while((sym = *symp)) {
-            if(sym->type < ZBAR_I25 && sym->type > ZBAR_PARTIAL &&
-               sym->quality < 3) {
-                /* recycle */
-                *symp = sym->next;
-                syms->nsyms--;
-                sym->next = NULL;
-                _zbar_image_scanner_recycle_syms(iscn, sym);
+    /* FIXME tmp hack to merge simple case EAN add-ons */
+    char filter = (!iscn->enable_cache &&
+                   (density == 1 || CFG(iscn, ZBAR_CFG_Y_DENSITY) == 1));
+    int nean = 0, naddon = 0;
+    if(syms->nsyms) {
+        zbar_symbol_t **symp;
+        for(symp = &syms->head; *symp; ) {
+            zbar_symbol_t *sym = *symp;
+            if(sym->type < ZBAR_EANUPC && sym->type > ZBAR_PARTIAL) {
+                if(filter && sym->quality < 3) {
+                    /* recycle */
+                    *symp = sym->next;
+                    syms->nsyms--;
+                    sym->next = NULL;
+                    _zbar_image_scanner_recycle_syms(iscn, sym);
+                    continue;
+                }
+                else if(sym->type > ZBAR_EAN5)
+                    nean++;
+                else
+                    naddon++;
             }
-            else
-                symp = &sym->next;
+            symp = &sym->next;
+        }
+
+        if(nean == 1 && naddon == 1 && iscn->ean_config) {
+            /* create container symbol for composite result */
+            zbar_symbol_t *ean = NULL, *addon = NULL;
+            for(symp = &syms->head; *symp; ) {
+                zbar_symbol_t *sym = *symp;
+                if(sym->type < ZBAR_EANUPC && sym->type > ZBAR_PARTIAL) {
+                    /* move to composite */
+                    *symp = sym->next;
+                    syms->nsyms--;
+                    sym->next = NULL;
+                    if(sym->type <= ZBAR_EAN5)
+                        addon = sym;
+                    else
+                        ean = sym;
+                }
+                else
+                    symp = &sym->next;
+            }
+            assert(ean);
+            assert(addon);
+
+            int datalen = ean->datalen + addon->datalen + 1;
+            zbar_symbol_t *ean_sym =
+                _zbar_image_scanner_alloc_sym(iscn, ZBAR_EANUPC, datalen);
+            ean_sym->orient = ean->orient;
+            ean_sym->syms = _zbar_symbol_set_create();
+            memcpy(ean_sym->data, ean->data, ean->datalen);
+            memcpy(ean_sym->data + ean->datalen,
+                   addon->data, addon->datalen + 1);
+            ean_sym->syms->head = ean;
+            ean->next = addon;
+            ean_sym->syms->nsyms = 2;
+            _zbar_image_scanner_add_sym(iscn, ean_sym);
         }
     }
 

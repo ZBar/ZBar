@@ -25,7 +25,6 @@ symbologies:
   * Code 39, i25 optional features (check digit and ASCII escapes)
   * handle Code 128 function characters (FNC1-4)
   * Code 128 trailing quiet zone checks
-  * finish addon decoding
 
 decoder:
   * start/stop/abort and location detail APIs (PDF417, OMR)

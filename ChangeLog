@@ -1,4 +1,7 @@
 current:
+  * add support for EAN/UPC 2 and 5 digit add-on symbols
+    - deprecate original, unfinished add-on APIs
+    - add self-checking to test_decode
   * add coarse symbol orientation information (patch #2913094)
     - thanks to Anssi for a patch!
     - add decode direction feedback to decoder

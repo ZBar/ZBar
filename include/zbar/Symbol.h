@@ -250,6 +250,7 @@ public:
     }
 
     /// retrieve the string name for any addon.
+    /// @deprecated in 0.11
     const std::string get_addon_name () const
     {
         return(zbar_get_addon_name(_type));
@@ -447,9 +448,7 @@ inline const SymbolIterator SymbolSet::symbol_end () const {
 static inline std::ostream& operator<< (std::ostream& out,
                                         const Symbol& sym)
 {
-    out << sym.get_type_name()
-        << sym.get_addon_name()
-        << ":" << sym.get_data();
+    out << sym.get_type_name() << ":" << sym.get_data();
     return(out);
 }
 

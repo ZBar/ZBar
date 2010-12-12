@@ -198,7 +198,7 @@ static inline signed char code39_decode_start (zbar_decoder_t *dcode)
         dprintf(2, "\n");
         return(ZBAR_NONE);
     }
-    dcode39->direction = (c == 0x19);
+    dcode39->direction ^= (c == 0x19);
 
     /* check leading quiet zone - spec is 10x */
     unsigned quiet = get_width(dcode, 9);
