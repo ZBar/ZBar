@@ -1,3 +1,7 @@
+current:
+  * fix doc typo (bug #3139087)
+    - add modifier bit docs
+
 version 1.0.1:
   * hotfix broken ZBarHelpController back button
   * release updates

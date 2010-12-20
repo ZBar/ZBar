@@ -31,7 +31,8 @@ Properties
 
    .. member:: NSUInteger modifierMask
 
-      Bitmask of symbology characteristics detected during decode.
+      Bitmask of symbology characteristics detected during decode.  See
+      :type:`zbar_modifier_t` for the currently defined modifier bits.
 
    .. member:: NSString *data
 
@@ -164,3 +165,19 @@ Constants
 
    ZBAR_ORIENT_LEFT
       Sideways, read bottom to top
+
+.. type:: zbar_modifier_t
+
+   Decoder symbology modifier flags.
+
+   .. note::
+
+      These are bit indices, use eg, (1 << ZBAR_MOD_GS1) to test the
+      modifierMask property.
+
+   ZBAR_MOD_GS1
+      Barcode tagged as GS1 (EAN.UCC) reserved (eg, FNC1 before first data
+      character).  Data may be parsed as a sequence of GS1 AIs.
+
+   ZBAR_MOD_AIM
+      Barcode tagged as AIM reserved.
