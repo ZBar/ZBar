@@ -29,7 +29,8 @@ from:
 * http://zbar.sourceforge.net/
 
 Windows users please note: the module *will NOT load* unless the ZBar
-library DLL (currently libzbar-0.dll) is available in your PATH!
+library DLL (currently libzbar-0.dll) is available in your Windows system
+PATH!
 
 Examples
 --------

@@ -153,7 +153,7 @@ camera for iOS 4 and fall back to manual or automatic capture for iOS 3.x,
 depending on whether the library was compiled to use private APIs::
 
    if(![ZBarReaderController isSourceTypeAvailable:
-                                 UIImagePickerControllerSoureTypeCamera]) {
+                                 UIImagePickerControllerSourceTypeCamera]) {
        // camera unavailable: display warning and abort
        // or resort to keypad entry, etc...
        return;
@@ -164,7 +164,7 @@ depending on whether the library was compiled to use private APIs::
    // or a ZBarReaderViewController for iOS 4
    
    reader.readerDelegate = self;
-   reader.sourceType = UIImagePickerControllerSoureTypeCamera;
+   reader.sourceType = UIImagePickerControllerSourceTypeCamera;
    reader.showsZBarControls = YES;
    
    if(reader.cameraMode == ZBarReaderControllerCameraModeSampling) {

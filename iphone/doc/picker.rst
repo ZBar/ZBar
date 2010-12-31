@@ -28,8 +28,8 @@ documentation for :class:`UIImagePickerController` for more detais.
    property::
 
       if([ZBarReaderController isSourceTypeAvailable:
-                                   UIImagePickerControllerSoureTypeCamera])
-          reader.sourceType = UIImagePickerControllerSoureTypeCamera;
+                                   UIImagePickerControllerSourceTypeCamera])
+          reader.sourceType = UIImagePickerControllerSourceTypeCamera;
       [reader.scanner setSymbology: ZBAR_I25
                       config: ZBAR_CFG_ENABLE
                       to: 0];
