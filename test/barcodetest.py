@@ -124,6 +124,8 @@ def run_zbarimg(images):
     assert rc in (0, 4), \
            'zbarimg returned error status (%d)\n' % rc + err
 
+    assert not err, err
+
     result = ET.XML(xml)
     assert result.tag == ET.QName(BC, 'barcodes')
     return result

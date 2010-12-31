@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -23,8 +23,11 @@
 
 #include "window.h"
 #include "image.h"
+#include "timer.h"
 #include <time.h>       /* clock_gettime */
-#include <sys/time.h>   /* gettimeofday */
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>   /* gettimeofday */
+#endif
 
 zbar_window_t *zbar_window_create ()
 {
@@ -117,20 +120,11 @@ static inline int window_draw_overlay (zbar_window_t *w)
 
     if(w->overlay >= 2) {
         /* calculate/display frame rate */
-        unsigned long time;
-#if _POSIX_TIMERS > 0
-        struct timespec abstime;
-        clock_gettime(CLOCK_REALTIME, &abstime);
-        time = (abstime.tv_sec * 1000) + ((abstime.tv_nsec / 500000) + 1) / 2;
-#else
-        struct timeval abstime;
-        gettimeofday(&abstime, NULL);
-        time = (abstime.tv_sec * 1000) + ((abstime.tv_usec / 500) + 1) / 2;
-#endif
-        point_t p = { -8, -1 };
-        char text[32];
+        unsigned long time = _zbar_timer_now();
         if(w->time) {
             int avg = w->time_avg = (w->time_avg + time - w->time) / 2;
+            point_t p = { -8, -1 };
+            char text[32];
             sprintf(text, "%d.%01d fps", 1000 / avg, (10000 / avg) % 10);
             _zbar_window_draw_text(w, 3, p, text);
         }
@@ -141,6 +135,8 @@ static inline int window_draw_overlay (zbar_window_t *w)
 
 inline int zbar_window_redraw (zbar_window_t *w)
 {
+    int rc = 0;
+    zbar_image_t *img;
     if(window_lock(w))
         return(-1);
     if(!w->display || _zbar_window_begin(w)) {
@@ -148,8 +144,7 @@ inline int zbar_window_redraw (zbar_window_t *w)
         return(-1);
     }
 
-    int rc = 0;
-    zbar_image_t *img = w->image;
+    img = w->image;
     if(w->init && w->draw_image && img) {
         int format_change = (w->src_format != img->format &&
                              w->format != img->format);
@@ -163,6 +158,7 @@ inline int zbar_window_redraw (zbar_window_t *w)
         }
 
         if(!rc && (format_change || !w->scaled_size.x || !w->dst_width)) {
+            point_t size = { w->width, w->height };
             zprintf(24, "init: src=%.4s(%08x) %dx%d dst=%.4s(%08x) %dx%d\n",
                     (char*)&w->src_format, w->src_format,
                     w->src_width, w->src_height,
@@ -173,7 +169,6 @@ inline int zbar_window_redraw (zbar_window_t *w)
                 w->src_height = img->height;
             }
 
-            point_t size = { w->width, w->height };
             if(size.x > w->max_width)
                 size.x = w->max_width;
             if(size.y > w->max_height)
@@ -226,9 +221,10 @@ inline int zbar_window_redraw (zbar_window_t *w)
         }
 
         if(!rc) {
+            point_t org;
             rc = w->draw_image(w, img);
 
-            point_t org = w->scaled_offset;
+            org = w->scaled_offset;
             if(org.x > 0) {
                 point_t p = { 0, org.y };
                 point_t s = { org.x, w->scaled_size.y };
@@ -300,9 +296,10 @@ void zbar_window_set_overlay (zbar_window_t *w,
 int zbar_window_get_overlay (const zbar_window_t *w)
 {
     zbar_window_t *ncw = (zbar_window_t*)w;
+    int lvl;
     if(window_lock(ncw))
         return(-1);
-    int lvl = w->overlay;
+    lvl = w->overlay;
     (void)window_unlock(ncw);
     return(lvl);
 }

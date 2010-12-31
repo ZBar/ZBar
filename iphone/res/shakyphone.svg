@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<!--
+   Copyright 2009-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
+     All Rights Reserved
+-->
+
+<svg version="1.1" id="top"
+  width="512px" height="512px"
+  viewBox="0,0 1,1" preserveAspectRatio="xMidYMid" overflow="visible"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <title>iPhone shake gesture icon</title>
+
+  <defs>
+    <style type="text/css"><![CDATA[
+      path, line, circle, rect { fill: none; stroke-linejoin: round; stroke-linecap: round }
+      #bg { fill: black }
+      #outline { fill: black; stroke: #4ef; stroke-width: .1 }
+      #screen { fill: #045; stroke: none }
+      #home { fill: #045; stroke: #4ef; stroke-width: .05 }
+      #speaker { stroke: #4ef; stroke-width: .0625 }
+    ]]></style>
+  </defs>
+
+  <!--<rect id="bg" width="1" height="1"/>-->
+
+  <use transform="translate(.5,.5) scale(.2) rotate(-15)"
+    style="opacity: .25"
+    xlink:href="#phone"/>
+
+  <use transform="translate(.5,.5) scale(.2) rotate(-5)"
+    style="opacity: .5"
+    xlink:href="#phone"/>
+
+  <use transform="translate(.5,.5) scale(.2) rotate(5)"
+    style="opacity: .75"
+    xlink:href="#phone"/>
+
+  <g transform="translate(.5,.5) scale(.2) rotate(15)">
+    <g id="phone">
+      <rect id="outline" x="-1.1875" y="-2.21875" width="2.375" height="4.4375" rx=".25" ry=".25"/>
+      <rect id="screen" x="-1" y="-1.5" width="2" height="3"/>
+      <circle id="home" cy="1.84375" r=".21875"/>
+      <line id="speaker" x1="-.25" x2=".25" y1="-1.84375" y2="-1.84375"/>
+    </g>
+  </g>
+</svg>

@@ -81,6 +81,22 @@ symbol_get_type (zbarSymbol *self,
 }
 
 static PyObject*
+symbol_get_configs (zbarSymbol *self,
+                    void *closure)
+{
+    unsigned int mask = zbar_symbol_get_configs(self->zsym);
+    return(zbarEnum_SetFromMask(config_enum, mask));
+}
+
+static PyObject*
+symbol_get_modifiers (zbarSymbol *self,
+                      void *closure)
+{
+    unsigned int mask = zbar_symbol_get_modifiers(self->zsym);
+    return(zbarEnum_SetFromMask(modifier_enum, mask));
+}
+
+static PyObject*
 symbol_get_long (zbarSymbol *self,
                  void *closure)
 {
@@ -138,6 +154,8 @@ symbol_get_orientation (zbarSymbol *self,
 
 static PyGetSetDef symbol_getset[] = {
     { "type",       (getter)symbol_get_type, },
+    { "configs",    (getter)symbol_get_configs, },
+    { "modifiers",  (getter)symbol_get_modifiers, },
     { "quality",    (getter)symbol_get_long, NULL, NULL, (void*)0 },
     { "count",      (getter)symbol_get_long, NULL, NULL, (void*)1 },
     { "data",       (getter)symbol_get_data, },

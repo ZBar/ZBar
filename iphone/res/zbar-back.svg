@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<!--
+   Copyright 2010 (c) Jeff Brown <spadix@users.sourceforge.net>
+     All Rights Reserved
+-->
+
+<svg version="1.1" id="top"
+  width="29px" height="24px"
+  viewBox="-.175,-.175 1.45,1.2" preserveAspectRatio="xMidYMid" overflow="visible"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <title>left pointing arrow toolbar icon</title>
+
+  <defs>
+    <style type="text/css"><![CDATA[
+      path, line { fill: none; stroke-linejoin: round; stroke-linecap: round }
+      #bg { fill: #78a }
+      #arrow { fill: white;; stroke: white; stroke-width: .1 }
+    ]]></style>
+  </defs>
+
+  <!--<rect id="bg" x="-.5" y="-.5" width="2" height="2"/>-->
+
+  <g>
+    <path id="arrow" d="M.1,.5 L.9,.1 .9,.9 z"/>
+  </g>
+</svg>

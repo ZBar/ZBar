@@ -2,6 +2,45 @@ current:
   * add support for EAN/UPC 2 and 5 digit add-on symbols
     - deprecate original, unfinished add-on APIs
     - add self-checking to test_decode
+  * fix support for GS1 AIs
+    - thanks to jockusch for a patch!
+    - add decoder/symbol "modifier" flags and config read access
+    - set flags or emit GS appropriately for Code 128 FNC1
+    - add iphone, java, perl, python bindings for modifiers and configs
+  * add support for Code 93 symbology
+  * add video size request to (Py)GTK widget (req #3034522)
+    - thanks to Jerome Charaoui for the patch!
+  * add support for GS1 DataBar Expanded (RSS Expanded) symbology
+  * add language bindings for DataBar
+  * add preliminary support for GS1 DataBar (RSS-14) symbology
+  * enhance decoder reliability (EAN, Code 39, Code 128)
+    - enhance decoder test
+  * fix documentation of command exit codes (bug #3017322)
+  * fix C++ video callback bug
+    - add C and C++ processor examples
+  * add per-symbology cache consistency
+    - reliable symbologies decode immediately by default
+    - no more need to disable cache with video
+    - also fix crop bugs w/video scanning
+  * add support for scanning partial images (cropping)
+    - update c++, python, perl, java bindings and tests
+  * fix couple of leaks
+  * remove doc hints about GFDL (bug #3004411)
+    - apply LGPL to API docs
+  * relax Code 39 width ratio checks
+  * core library portability improvements
+    - remove some unnecessary C99 syntax
+    - add configure checks for errno
+    - enhance C++ Symbol interface
+  * adjust Python module README (add examples and note DLL in path)
+  * fix QR Code missing from man pages (bug #2969857)
+  * cleanup decoder assertions and locking (bug #2966916)
+  * add Java interface to library via JNI
+    - add Java tools and JNI build tests to configure
+    - fix compiler warnings from binary output changes
+  * fix output of binary data in zbarimg and zbarcam
+    - thanks to fukuchi for a patch!
+    - add base64 format for binary xml output
   * add coarse symbol orientation information (patch #2913094)
     - thanks to Anssi for a patch!
     - add decode direction feedback to decoder
@@ -11,10 +50,7 @@ current:
     - thanks to jdccdevel for a patch!
     - add fourcc conversion and parse interfaces to zbar.h
   * report QR immediately for video (no inter-frame consistency check)
-  * iphone widget back compat updates, add basic test app
   * add python distutils build infrastructure
-  * add Obj-C wrapper
-  * first pass working iPhone "widget"
 
 version 0.10:
   * hotfix add MinGW import lib to Windows installer

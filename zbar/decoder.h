@@ -36,8 +36,14 @@
 #ifdef ENABLE_I25
 # include "decoder/i25.h"
 #endif
+#ifdef ENABLE_DATABAR
+# include "decoder/databar.h"
+#endif
 #ifdef ENABLE_CODE39
 # include "decoder/code39.h"
+#endif
+#ifdef ENABLE_CODE93
+# include "decoder/code93.h"
 #endif
 #ifdef ENABLE_CODE128
 # include "decoder/code128.h"
@@ -73,6 +79,7 @@
 
 #define CFG(dcode, cfg) ((dcode).configs[(cfg) - ZBAR_CFG_MIN_LEN])
 #define TEST_CFG(config, cfg) (((config) >> (cfg)) & 1)
+#define MOD(mod) (1 << (mod))
 
 /* symbology independent decoder state */
 struct zbar_decoder_s {
@@ -80,7 +87,9 @@ struct zbar_decoder_s {
     unsigned w[DECODE_WINDOW];          /* window of last N bar widths */
     zbar_symbol_type_t type;            /* type of last decoded data */
     zbar_symbol_type_t lock;            /* buffer lock */
+    unsigned modifiers;                 /* symbology modifier */
     int direction;                      /* direction of last decoded data */
+    unsigned s6;                        /* 6-element character width */
 
     /* everything above here is automatically reset */
     unsigned buf_alloc;                 /* dynamic buffer allocation */
@@ -96,8 +105,14 @@ struct zbar_decoder_s {
 #ifdef ENABLE_I25
     i25_decoder_t i25;                  /* Interleaved 2 of 5 decode state */
 #endif
+#ifdef ENABLE_DATABAR
+    databar_decoder_t databar;          /* DataBar decode state */
+#endif
 #ifdef ENABLE_CODE39
     code39_decoder_t code39;            /* Code 39 decode state */
+#endif
+#ifdef ENABLE_CODE93
+    code93_decoder_t code93;            /* Code 93 decode state */
 #endif
 #ifdef ENABLE_CODE128
     code128_decoder_t code128;          /* Code 128 decode state */
@@ -169,12 +184,24 @@ static inline int decode_e (unsigned e,
 }
 
 /* acquire shared state lock */
-static inline char get_lock (zbar_decoder_t *dcode,
-                             zbar_symbol_type_t req)
+static inline char acquire_lock (zbar_decoder_t *dcode,
+                                 zbar_symbol_type_t req)
 {
-    if(dcode->lock)
+    if(dcode->lock) {
+        dprintf(2, " [locked %d]\n", dcode->lock);
         return(1);
+    }
     dcode->lock = req;
+    return(0);
+}
+
+/* check and release shared state lock */
+static inline char release_lock (zbar_decoder_t *dcode,
+                                 zbar_symbol_type_t req)
+{
+    zassert(dcode->lock == req, 1, "lock=%d req=%d\n",
+            dcode->lock, req);
+    dcode->lock = 0;
     return(0);
 }
 
@@ -182,6 +209,7 @@ static inline char get_lock (zbar_decoder_t *dcode,
 static inline char size_buf (zbar_decoder_t *dcode,
                              unsigned len)
 {
+    unsigned char *buf;
     if(len < dcode->buf_alloc)
         /* FIXME size reduction heuristic? */
         return(0);
@@ -192,7 +220,7 @@ static inline char size_buf (zbar_decoder_t *dcode,
         if(len > BUFFER_MAX)
             len = BUFFER_MAX;
     }
-    unsigned char *buf = realloc(dcode->buf, len);
+    buf = realloc(dcode->buf, len);
     if(!buf)
         return(1);
     dcode->buf = buf;
@@ -201,6 +229,6 @@ static inline char size_buf (zbar_decoder_t *dcode,
 }
 
 extern const char *_zbar_decoder_buf_dump (unsigned char *buf,
-                                            unsigned int buflen);
+                                           unsigned int buflen);
 
 #endif

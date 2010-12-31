@@ -44,41 +44,51 @@ static char *exc_names[] = {
 };
 
 static const enumdef symbol_defs[] = {
-    { "NONE",    ZBAR_NONE },
-    { "PARTIAL", ZBAR_PARTIAL },
-    { "EAN8",    ZBAR_EAN8 },
-    { "UPCE",    ZBAR_UPCE },
-    { "ISBN10",  ZBAR_ISBN10 },
-    { "UPCA",    ZBAR_UPCA },
-    { "EAN13",   ZBAR_EAN13 },
-    { "ISBN13",  ZBAR_ISBN13 },
-    { "I25",     ZBAR_I25 },
-    { "CODE39",  ZBAR_CODE39 },
-    { "PDF417",  ZBAR_PDF417 },
-    { "QRCODE",  ZBAR_QRCODE },
-    { "CODE128", ZBAR_CODE128 },
+    { "NONE",           ZBAR_NONE },
+    { "PARTIAL",        ZBAR_PARTIAL },
+    { "EAN8",           ZBAR_EAN8 },
+    { "UPCE",           ZBAR_UPCE },
+    { "ISBN10",         ZBAR_ISBN10 },
+    { "UPCA",           ZBAR_UPCA },
+    { "EAN13",          ZBAR_EAN13 },
+    { "ISBN13",         ZBAR_ISBN13 },
+    { "DATABAR",        ZBAR_DATABAR },
+    { "DATABAR_EXP",    ZBAR_DATABAR_EXP },
+    { "I25",            ZBAR_I25 },
+    { "CODE39",         ZBAR_CODE39 },
+    { "PDF417",         ZBAR_PDF417 },
+    { "QRCODE",         ZBAR_QRCODE },
+    { "CODE93",         ZBAR_CODE93 },
+    { "CODE128",        ZBAR_CODE128 },
     { NULL, }
 };
 
 static const enumdef config_defs[] = {
-    { "ENABLE",     ZBAR_CFG_ENABLE },
-    { "ADD_CHECK",  ZBAR_CFG_ADD_CHECK },
-    { "EMIT_CHECK", ZBAR_CFG_EMIT_CHECK },
-    { "ASCII",      ZBAR_CFG_ASCII },
-    { "MIN_LEN",    ZBAR_CFG_MIN_LEN },
-    { "MAX_LEN",    ZBAR_CFG_MAX_LEN },
-    { "POSITION",   ZBAR_CFG_POSITION },
-    { "X_DENSITY",  ZBAR_CFG_X_DENSITY },
-    { "Y_DENSITY",  ZBAR_CFG_Y_DENSITY },
+    { "ENABLE",         ZBAR_CFG_ENABLE },
+    { "ADD_CHECK",      ZBAR_CFG_ADD_CHECK },
+    { "EMIT_CHECK",     ZBAR_CFG_EMIT_CHECK },
+    { "ASCII",          ZBAR_CFG_ASCII },
+    { "MIN_LEN",        ZBAR_CFG_MIN_LEN },
+    { "MAX_LEN",        ZBAR_CFG_MAX_LEN },
+    { "UNCERTAINTY",    ZBAR_CFG_UNCERTAINTY },
+    { "POSITION",       ZBAR_CFG_POSITION },
+    { "X_DENSITY",      ZBAR_CFG_X_DENSITY },
+    { "Y_DENSITY",      ZBAR_CFG_Y_DENSITY },
+    { NULL, }
+};
+
+static const enumdef modifier_defs[] = {
+    { "GS1",            ZBAR_MOD_GS1 },
+    { "AIM",            ZBAR_MOD_AIM },
     { NULL, }
 };
 
 static const enumdef orient_defs[] = {
-    { "UNKNOWN", ZBAR_ORIENT_UNKNOWN },
-    { "UP",      ZBAR_ORIENT_UP },
-    { "RIGHT",   ZBAR_ORIENT_RIGHT },
-    { "DOWN",    ZBAR_ORIENT_DOWN },
-    { "LEFT",    ZBAR_ORIENT_LEFT },
+    { "UNKNOWN",        ZBAR_ORIENT_UNKNOWN },
+    { "UP",             ZBAR_ORIENT_UP },
+    { "RIGHT",          ZBAR_ORIENT_RIGHT },
+    { "DOWN",           ZBAR_ORIENT_DOWN },
+    { "LEFT",           ZBAR_ORIENT_LEFT },
     { NULL, }
 };
 
@@ -96,6 +106,7 @@ object_to_bool (PyObject *obj,
 PyObject *zbar_exc[ZBAR_ERR_NUM];
 zbarEnumItem *color_enum[2];
 zbarEnum *config_enum;
+zbarEnum *modifier_enum;
 PyObject *symbol_enum;
 zbarEnumItem *symbol_NONE;
 zbarEnum *orient_enum;
@@ -169,9 +180,10 @@ initzbar (void)
 
     /* initialize constant containers */
     config_enum = zbarEnum_New();
+    modifier_enum = zbarEnum_New();
     symbol_enum = PyDict_New();
     orient_enum = zbarEnum_New();
-    if(!config_enum || !symbol_enum || !orient_enum)
+    if(!config_enum || !modifier_enum || !symbol_enum || !orient_enum)
         return;
 
     zbar_exc[0] = (PyObject*)&zbarException_Type;
@@ -197,6 +209,7 @@ initzbar (void)
     PyModule_AddObject(mod, "EnumItem", (PyObject*)&zbarEnumItem_Type);
     PyModule_AddObject(mod, "Image", (PyObject*)&zbarImage_Type);
     PyModule_AddObject(mod, "Config", (PyObject*)config_enum);
+    PyModule_AddObject(mod, "Modifier", (PyObject*)modifier_enum);
     PyModule_AddObject(mod, "Orient", (PyObject*)orient_enum);
     PyModule_AddObject(mod, "Symbol", (PyObject*)&zbarSymbol_Type);
     PyModule_AddObject(mod, "SymbolSet", (PyObject*)&zbarSymbolSet_Type);
@@ -220,6 +233,8 @@ initzbar (void)
     const enumdef *item;
     for(item = config_defs; item->strval; item++)
         zbarEnum_Add(config_enum, item->intval, item->strval);
+    for(item = modifier_defs; item->strval; item++)
+        zbarEnum_Add(modifier_enum, item->intval, item->strval);
     for(item = orient_defs; item->strval; item++)
         zbarEnum_Add(orient_enum, item->intval, item->strval);
 

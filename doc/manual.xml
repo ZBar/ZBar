@@ -29,10 +29,10 @@
       <year>2007</year>
       <year>2008</year>
       <year>2009</year>
+      <year>2010</year>
       <holder>Jeff Brown</holder>
     </copyright>
     <legalnotice><para>All Rights Reserved</para></legalnotice>
-    <!-- <legalnotice><para>insert GNU FDL header?</para></legalnotice> -->
   </bookinfo>
 
   <chapter id="intro">
@@ -47,7 +47,4 @@
     &refzbarimg;
 
   </reference>
-
-  <!-- insert GNU FDL? -->
-
 </book>

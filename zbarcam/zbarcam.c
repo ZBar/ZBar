@@ -105,17 +105,27 @@ static void data_handler (zbar_image_t *img, const void *userdata)
         if(type == ZBAR_PARTIAL)
             continue;
 
-        if(!format)
-            printf("%s%s:%s\n",
-                   zbar_get_symbol_name(type), zbar_get_addon_name(type),
-                   zbar_symbol_get_data(sym));
-        else if(format == RAW)
-            printf("%s\n", zbar_symbol_get_data(sym));
+        if(!format) {
+            printf("%s:", zbar_get_symbol_name(type));
+            if(fwrite(zbar_symbol_get_data(sym),
+                      zbar_symbol_get_data_length(sym),
+                      1, stdout) != 1)
+                continue;
+        }
+        else if(format == RAW) {
+            if(fwrite(zbar_symbol_get_data(sym),
+                      zbar_symbol_get_data_length(sym),
+                      1, stdout) != 1)
+                continue;
+        }
         else if(format == XML) {
             if(!n)
                 printf("<index num='%u'>\n", zbar_image_get_sequence(img));
-            printf("%s\n", zbar_symbol_xml(sym, &xml_buf, &xml_len));
+            zbar_symbol_xml(sym, &xml_buf, &xml_len);
+            if(fwrite(xml_buf, xml_len, 1, stdout) != 1)
+                continue;
         }
+        printf("\n");
         n++;
     }
 

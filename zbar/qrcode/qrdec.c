@@ -3,6 +3,7 @@
    GNU Lesser General Public License as published by the Free Software
    Foundation; either version 2.1 of the License, or (at your option) any later
    version.*/
+#include <config.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
@@ -629,40 +630,46 @@ struct qr_aff{
   int x0;
   int y0;
   int res;
+  int ires;
 };
 
 
 static void qr_aff_init(qr_aff *_aff,
  const qr_point _p0,const qr_point _p1,const qr_point _p2,int _res){
   int det;
+  int ires;
   int dx1;
   int dy1;
   int dx2;
   int dy2;
   /*det is ensured to be positive by our caller.*/
-  det=qr_point_ccw(_p0,_p1,_p2);
   dx1=_p1[0]-_p0[0];
   dx2=_p2[0]-_p0[0];
   dy1=_p1[1]-_p0[1];
   dy2=_p2[1]-_p0[1];
+  det=dx1*dy2-dy1*dx2;
+  ires=QR_MAXI((qr_ilog(abs(det))>>1)-2,0);
   _aff->fwd[0][0]=dx1;
   _aff->fwd[0][1]=dx2;
   _aff->fwd[1][0]=dy1;
   _aff->fwd[1][1]=dy2;
-  _aff->inv[0][0]=QR_DIVROUND(dy2<<_res,det);
-  _aff->inv[0][1]=QR_DIVROUND(-dx2<<_res,det);
-  _aff->inv[1][0]=QR_DIVROUND(-dy1<<_res,det);
-  _aff->inv[1][1]=QR_DIVROUND(dx1<<_res,det);
+  _aff->inv[0][0]=QR_DIVROUND(dy2<<_res,det>>ires);
+  _aff->inv[0][1]=QR_DIVROUND(-dx2<<_res,det>>ires);
+  _aff->inv[1][0]=QR_DIVROUND(-dy1<<_res,det>>ires);
+  _aff->inv[1][1]=QR_DIVROUND(dx1<<_res,det>>ires);
   _aff->x0=_p0[0];
   _aff->y0=_p0[1];
   _aff->res=_res;
+  _aff->ires=ires;
 }
 
 /*Map from the image (at subpel resolution) into the square domain.*/
 static void qr_aff_unproject(qr_point _q,const qr_aff *_aff,
  int _x,int _y){
-  _q[0]=_aff->inv[0][0]*(_x-_aff->x0)+_aff->inv[0][1]*(_y-_aff->y0);
-  _q[1]=_aff->inv[1][0]*(_x-_aff->x0)+_aff->inv[1][1]*(_y-_aff->y0);
+  _q[0]=_aff->inv[0][0]*(_x-_aff->x0)+_aff->inv[0][1]*(_y-_aff->y0)
+   +(1<<_aff->ires>>1)>>_aff->ires;
+  _q[1]=_aff->inv[1][0]*(_x-_aff->x0)+_aff->inv[1][1]*(_y-_aff->y0)
+   +(1<<_aff->ires>>1)>>_aff->ires;
 }
 
 /*Map from the square domain into the image (at subpel resolution).*/
@@ -1893,10 +1900,10 @@ static int qr_alignment_pattern_search(qr_point _p,const qr_hom_cell *_cell,
   if(nc[0]){
     dx=QR_DIVROUND(c[0][0],nc[0]);
     dy=QR_DIVROUND(c[0][1],nc[0]);
-    /*But only if it doesn't make things worse.*/
+    /*But only if it doesn't make things too much worse.*/
     match=qr_alignment_pattern_fetch(p,bestx+dx,besty+dy,_img,_width,_height);
     dist=qr_hamming_dist(match,0x1F8D63F,best_dist+1);
-    if(dist<=best_dist){
+    if(dist<=best_dist+1){
       bestx+=dx;
       besty+=dy;
     }
@@ -2217,11 +2224,11 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
      _p[2][0],_p[2][1],_p[3][0],_p[3][1]);
     if(qr_alignment_pattern_search(p3,&cell,dim-7,dim-7,4,
      _img,_width,_height)>=0){
-      int c21;
-      int dx21;
-      int dy21;
-      int mask;
-      int w;
+      long long w;
+      long long mask;
+      int       c21;
+      int       dx21;
+      int       dy21;
       /*There's no real need to update the bounding box corner, and in fact we
          actively perform worse if we do.
         Clearly it was good enough for us to find this alignment pattern, so
@@ -2237,10 +2244,11 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
       c21=_p[2][0]*_p[1][1]-_p[2][1]*_p[1][0];
       dx21=_p[2][0]-_p[1][0];
       dy21=_p[2][1]-_p[1][1];
-      w=(dim-7)*c21
-       +(dim-13)*(_p[0][0]*dy21-_p[0][1]*dx21)+6*(p3[0]*dy21-p3[1]*dx21);
+      w=QR_EXTMUL(dim-7,c21,
+       QR_EXTMUL(dim-13,_p[0][0]*dy21-_p[0][1]*dx21,
+       QR_EXTMUL(6,p3[0]*dy21-p3[1]*dx21,0)));
       mask=QR_SIGNMASK(w);
-      w=abs(w);
+      w=w+mask^mask;
       brx=(int)QR_DIVROUND(QR_EXTMUL((dim-7)*_p[0][0],p3[0]*dy21,
        QR_EXTMUL((dim-13)*p3[0],c21-_p[0][1]*dx21,
        QR_EXTMUL(6*_p[0][0],c21-p3[1]*dx21,0)))+mask^mask,w);
@@ -2577,8 +2585,8 @@ static inline void qr_svg_points(const char *cls,
                                  qr_point *p,
                                  int n)
 {
-    svg_path_start(cls, 1, 0, 0);
     int i;
+    svg_path_start(cls, 1, 0, 0);
     for(i = 0; i < n; i++, p++)
         svg_path_moveto(SVG_ABS, p[0][0], p[0][1]);
     svg_path_end();
@@ -3913,7 +3921,7 @@ int _zbar_qr_decode (qr_reader *reader,
                      zbar_image_scanner_t *iscn,
                      zbar_image_t *img)
 {
-    int nqrdata = 0;
+    int nqrdata = 0, ncenters;
     qr_finder_edge_pt *edge_pts = NULL;
     qr_finder_center *centers = NULL;
 
@@ -3923,7 +3931,7 @@ int _zbar_qr_decode (qr_reader *reader,
 
     svg_group_start("finder", 0, 1. / (1 << QR_FINDER_SUBPREC), 0, 0, 0);
 
-    int ncenters = qr_finder_centers_locate(&centers, &edge_pts, reader, 0, 0);
+    ncenters = qr_finder_centers_locate(&centers, &edge_pts, reader, 0, 0);
 
     zprintf(14, "%dx%d finders, %d centers:\n",
             reader->finder_lines[0].nlines,

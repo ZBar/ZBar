@@ -137,7 +137,7 @@ Jeff Brown, E<lt>spadix@users.sourceforge.netE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2008-2009 (c) Jeff Brown E<lt>spadix@users.sourceforge.netE<gt>
+Copyright 2008-2010 (c) Jeff Brown E<lt>spadix@users.sourceforge.netE<gt>
 
 The ZBar Bar Code Reader is free software; you can redistribute it
 and/or modify it under the terms of the GNU Lesser Public License as

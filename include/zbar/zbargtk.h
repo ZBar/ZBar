@@ -136,7 +136,7 @@ struct _ZBarGtkClass {
 
 GType zbar_gtk_get_type(void) G_GNUC_CONST;
 
-/** 
+/**
  * zbar_gtk_new:
  * create a new barcode reader widget instance.
  * initially has no associated video device or image.
@@ -189,7 +189,17 @@ void zbar_gtk_set_video_enabled(ZBarGtk *zbar,
  */
 gboolean zbar_gtk_get_video_opened(ZBarGtk *zbar);
 
-/** 
+/** set video camera resolution.
+ * @width: width in pixels
+ * @height: height in pixels
+ *
+ * @note this call must be made before video is initialized
+ */
+void zbar_gtk_request_video_size(ZBarGtk *zbar,
+                                 int width,
+                                 int height);
+
+/**
  * utility function to populate a zbar_image_t from a GdkPixbuf.
  * @image: the zbar library image destination to populate
  * @pixbuf: the GdkPixbuf source

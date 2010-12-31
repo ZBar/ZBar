@@ -62,6 +62,8 @@ struct zbar_image_s {
     unsigned width, height;     /* image size */
     const void *data;           /* image sample data */
     unsigned long datalen;      /* allocated/mapped size of data */
+    unsigned crop_x, crop_y;    /* crop rectangle */
+    unsigned crop_w, crop_h;
     void *userdata;             /* user specified data associated w/image */
 
     /* cleanup handler */
@@ -124,6 +126,17 @@ static inline void _zbar_image_swap_symbols (zbar_image_t *a,
     zbar_symbol_set_t *tmp = a->syms;
     a->syms = b->syms;
     b->syms = tmp;
+}
+
+static inline void _zbar_image_copy_size (zbar_image_t *dst,
+                                          const zbar_image_t *src)
+{
+    dst->width = src->width;
+    dst->height = src->height;
+    dst->crop_x = src->crop_x;
+    dst->crop_y = src->crop_y;
+    dst->crop_w = src->crop_w;
+    dst->crop_h = src->crop_h;
 }
 
 #endif

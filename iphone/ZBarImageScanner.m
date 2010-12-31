@@ -21,7 +21,7 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
-#import <zbar/ZBarImageScanner.h>
+#import <ZBarSDK/ZBarImageScanner.h>
 #import "debug.h"
 
 @implementation ZBarImageScanner
@@ -79,14 +79,7 @@
 
 - (NSInteger) scanImage: (ZBarImage*) image
 {
-    timer_start;
-
-    int nsyms = zbar_scan_image(scanner, image.zbarImage);
-
-    zlog(@"ZBarImageScanner: scanned %d symbols in %gs\n",
-         nsyms, timer_elapsed(t_start, timer_now()));
-
-    return(nsyms);
+    return(zbar_scan_image(scanner, image.zbarImage));
 }
 
 @end

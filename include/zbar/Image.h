@@ -67,7 +67,12 @@ public:
         {
             if(userdata) {
                 Image *image = (Image*)zbar_image_get_userdata(zimg);
-                ((Handler*)userdata)->image_callback(*image);
+                if(image)
+                    ((Handler*)userdata)->image_callback(*image);
+                else {
+                    Image tmp(zimg, 1);
+                    ((Handler*)userdata)->image_callback(tmp);
+                }
             }
         }
     };
@@ -110,6 +115,8 @@ public:
 
     ~Image ()
     {
+        set_data(NULL, 0);
+        zbar_image_set_userdata(_img, NULL);
         zbar_image_ref(_img, -1);
     }
 
@@ -178,12 +185,41 @@ public:
         return(zbar_image_get_height(_img));
     }
 
+    /// retrieve both dimensions of the image.
+    /// see zbar_image_get_size()
+    /// @since 0.11
+    void get_size (unsigned &width,
+                   unsigned &height) const
+    {
+        zbar_image_get_size(_img, &width, &height);
+    }
+
     /// specify the pixel size of the image.
     /// see zbar_image_set_size()
     void set_size (unsigned width,
                    unsigned height)
     {
         zbar_image_set_size(_img, width, height);
+    }
+
+    /// retrieve the scan crop rectangle.
+    /// see zbar_image_get_crop()
+    void get_crop (unsigned &x,
+                   unsigned &y,
+                   unsigned &width,
+                   unsigned &height) const
+    {
+        zbar_image_get_crop(_img, &x, &y, &width, &height);
+    }
+
+    /// set the scan crop rectangle.
+    /// see zbar_image_set_crop()
+    void set_crop (unsigned x,
+                   unsigned y,
+                   unsigned width,
+                   unsigned height)
+    {
+        zbar_image_set_crop(_img, x, y, width, height);
     }
 
     /// return the image sample data.

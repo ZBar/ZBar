@@ -27,6 +27,8 @@
 #include <zbar.h>
 #include "refcnt.h"
 
+#define NUM_SYMS  19
+
 typedef struct point_s {
     int x, y;
 } point_t;
@@ -40,6 +42,8 @@ struct zbar_symbol_set_s {
 
 struct zbar_symbol_s {
     zbar_symbol_type_t type;    /* symbol type */
+    unsigned int configs;       /* symbology boolean config bitmask */
+    unsigned int modifiers;     /* symbology modifier bitmask */
     unsigned int data_alloc;    /* allocation size of data */
     unsigned int datalen;       /* length of binary symbol data */
     char *data;                 /* symbol data */
@@ -56,6 +60,8 @@ struct zbar_symbol_s {
     int cache_count;            /* cache state */
     int quality;                /* relative symbol reliability metric */
 };
+
+extern int _zbar_get_symbol_hash(zbar_symbol_type_t);
 
 extern void _zbar_symbol_free(zbar_symbol_t*);
 

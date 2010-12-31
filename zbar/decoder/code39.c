@@ -25,12 +25,12 @@
 #include <string.h>     /* memmove */
 
 #include <zbar.h>
-#include "decoder.h"
 
 #ifdef DEBUG_CODE39
 # define DEBUG_LEVEL (DEBUG_CODE39)
 #endif
 #include "debug.h"
+#include "decoder.h"
 
 #define NUM_CHARS (0x2c)
 
@@ -130,11 +130,11 @@ static inline unsigned char code39_decode1 (unsigned char enc,
                                             unsigned e,
                                             unsigned s)
 {
-    unsigned char E = decode_e(e, s, 36);
-    if(E > 7)
+    unsigned char E = decode_e(e, s, 72);
+    if(E > 18)
         return(0xff);
     enc <<= 1;
-    if(E > 2) {
+    if(E > 6) {
         enc |= 1;
         dprintf(2, "1");
     }
@@ -147,7 +147,6 @@ static inline signed char code39_decode9 (zbar_decoder_t *dcode)
 {
     code39_decoder_t *dcode39 = &dcode->code39;
 
-    dprintf(2, " s=%d ", dcode39->s9);
     if(dcode39->s9 < 9)
         return(-1);
 
@@ -192,6 +191,7 @@ static inline signed char code39_decode9 (zbar_decoder_t *dcode)
 static inline signed char code39_decode_start (zbar_decoder_t *dcode)
 {
     code39_decoder_t *dcode39 = &dcode->code39;
+    dprintf(2, " s=%d ", dcode39->s9);
 
     signed char c = code39_decode9(dcode);
     if(c != 0x19 && c != 0x2b) {
@@ -234,6 +234,17 @@ static inline void code39_postprocess (zbar_decoder_t *dcode)
                          : '?');
     dcode->buflen = i;
     dcode->buf[i] = '\0';
+    dcode->modifiers = 0;
+}
+
+static inline int
+check_width (unsigned ref,
+             unsigned w)
+{
+    unsigned dref = ref;
+    ref *= 4;
+    w *= 4;
+    return(ref - dref <= w && w <= ref + dref);
 }
 
 zbar_symbol_type_t _zbar_decode_code39 (zbar_decoder_t *dcode)
@@ -284,17 +295,27 @@ zbar_symbol_type_t _zbar_decode_code39 (zbar_decoder_t *dcode)
             }
             dcode39->character = -1;
             if(!sym)
-                dcode->lock = 0;
+                release_lock(dcode, ZBAR_CODE39);
             return(sym);
         }
         if(space > dcode39->width / 2) {
             /* inter-character space check failure */
-            dcode->lock = 0;
-            dcode39->character = -1;
             dprintf(2, " ics>%d [invalid ics]", dcode39->width);
+            if(dcode39->character)
+                release_lock(dcode, ZBAR_CODE39);
+            dcode39->character = -1;
         }
         dcode39->element = 0;
         dprintf(2, "\n");
+        return(ZBAR_NONE);
+    }
+
+    dprintf(2, " s=%d ", dcode39->s9);
+    if(!check_width(dcode39->width, dcode39->s9)) {
+        dprintf(2, " [width]\n");
+        if(dcode39->character)
+            release_lock(dcode, ZBAR_CODE39);
+        dcode39->character = -1;
         return(ZBAR_NONE);
     }
 
@@ -302,9 +323,8 @@ zbar_symbol_type_t _zbar_decode_code39 (zbar_decoder_t *dcode)
     dprintf(2, " c=%d", c);
 
     /* lock shared resources */
-    if(!dcode39->character && get_lock(dcode, ZBAR_CODE39)) {
+    if(!dcode39->character && acquire_lock(dcode, ZBAR_CODE39)) {
         dcode39->character = -1;
-        dprintf(1, " [locked %d]\n", dcode->lock);
         return(ZBAR_PARTIAL);
     }
 
@@ -312,7 +332,7 @@ zbar_symbol_type_t _zbar_decode_code39 (zbar_decoder_t *dcode)
        ((dcode39->character >= BUFFER_MIN) &&
         size_buf(dcode, dcode39->character + 1))) {
         dprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
-        dcode->lock = 0;
+        release_lock(dcode, ZBAR_CODE39);
         dcode39->character = -1;
         return(ZBAR_NONE);
     }

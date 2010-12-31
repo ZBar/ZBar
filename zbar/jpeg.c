@@ -195,10 +195,16 @@ void _zbar_convert_jpeg_to_y (zbar_image_t *dst,
     jpeg_start_decompress(cinfo);
 
     /* adjust dst image parameters to match(?) decompressor */
-    if(dst->width < cinfo->output_width)
+    if(dst->width < cinfo->output_width) {
         dst->width = cinfo->output_width;
-    if(dst->height < cinfo->output_height)
+        if(dst->crop_x + dst->crop_w > dst->width)
+            dst->crop_w = dst->width - dst->crop_x;
+    }
+    if(dst->height < cinfo->output_height) {
         dst->height = cinfo->output_height;
+        if(dst->crop_y + dst->crop_h > dst->height)
+            dst->crop_h = dst->height - dst->crop_y;
+    }
     unsigned long datalen = (cinfo->output_width *
                              cinfo->output_height *
                              cinfo->out_color_components);

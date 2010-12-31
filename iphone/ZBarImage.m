@@ -21,8 +21,8 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
-#import <zbar/ZBarImage.h>
 #import <UIKit/UIKit.h>
+#import <ZBarSDK/ZBarImage.h>
 #import "debug.h"
 
 static void image_cleanup(zbar_image_t *zimg)
@@ -33,7 +33,8 @@ static void image_cleanup(zbar_image_t *zimg)
 
 @implementation ZBarImage
 
-@dynamic format, sequence, size, data, dataLength, zbarImage;
+@dynamic format, sequence, size, crop, data, dataLength, symbols, zbarImage,
+    UIImage;
 
 + (unsigned long) fourcc: (NSString*) format
 {
@@ -71,25 +72,38 @@ static void image_cleanup(zbar_image_t *zimg)
     [super dealloc];
 }
 
-- (id) initWithUIImage: (UIImage*) image
+- (id) initWithCGImage: (CGImageRef) image
+                  crop: (CGRect) crop
                   size: (CGSize) size
 {
     if(!(self = [self init]))
         return(nil);
-
-    timer_start;
+    uint64_t t_start = timer_now();
 
     unsigned int w = size.width + 0.5;
     unsigned int h = size.height + 0.5;
 
     unsigned long datalen = w * h;
     uint8_t *raw = malloc(datalen);
-    // FIXME handle OOM
-    assert(raw);
+    if(!raw) {
+        [self release];
+        return(nil);
+    }
 
     zbar_image_set_data(zimg, raw, datalen, zbar_image_free_data);
     zbar_image_set_format(zimg, zbar_fourcc('Y','8','0','0'));
     zbar_image_set_size(zimg, w, h);
+
+    // scale and crop simultaneously
+    CGFloat scale = size.width / crop.size.width;
+    crop.origin.x *= -scale;
+    crop.size.width = scale * (CGFloat)CGImageGetWidth(image);
+    scale = size.height / crop.size.height;
+    CGFloat height = CGImageGetHeight(image);
+    // compensate for wacky origin
+    crop.origin.y = height - crop.origin.y - crop.size.height;
+    crop.origin.y *= -scale;
+    crop.size.height = scale * height;
 
     // generate grayscale image data
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceGray();
@@ -97,20 +111,47 @@ static void image_cleanup(zbar_image_t *zimg)
         CGBitmapContextCreate(raw, w, h, 8, w, cs, kCGImageAlphaNone);
     CGColorSpaceRelease(cs);
     CGContextSetAllowsAntialiasing(ctx, 0);
-    CGContextDrawImage(ctx, CGRectMake(0, 0, w, h), image.CGImage);
+
+    CGContextDrawImage(ctx, crop, image);
+
+#if 0
+    zlog(@"convert image %dx%d: crop %g,%g %gx%g size %gx%g (%dx%d)",
+         CGImageGetWidth(image), CGImageGetHeight(image),
+         crop.origin.x, crop.origin.y, crop.size.width, crop.size.height,
+         size.width, size.height, w, h);
+    CGImageRef cgdump = CGBitmapContextCreateImage(ctx);
+    UIImage *uidump = [[UIImage alloc]
+                          initWithCGImage: cgdump];
+    CGImageRelease(cgdump);
+    UIImageWriteToSavedPhotosAlbum(uidump, nil, nil, NULL);
+    [uidump release];
+#endif
+
     CGContextRelease(ctx);
 
-    zlog(@"ZBarImage: converted UIImage %gx%g to %dx%d Y800 in %gs\n",
-         image.size.width, image.size.height, w, h,
-         timer_elapsed(t_start, timer_now()));
-
+    t_convert = timer_elapsed(t_start, timer_now());
     return(self);
 }
 
-- (id) initWithUIImage: (UIImage*) image
+- (id) initWithCGImage: (CGImageRef) image
+                  size: (CGSize) size
 {
-    return([self initWithUIImage: image
-                 size: image.size]);
+    CGRect crop = CGRectMake(0, 0,
+                             CGImageGetWidth(image),
+                             CGImageGetHeight(image));
+    return([self initWithCGImage: image
+                 crop: crop
+                 size: size]);
+}
+
+- (id) initWithCGImage: (CGImageRef) image
+{
+    CGRect crop = CGRectMake(0, 0,
+                             CGImageGetWidth(image),
+                             CGImageGetHeight(image));
+    return([self initWithCGImage: image
+                 crop: crop
+                 size: crop.size]);
 }
 
 - (zbar_image_t*) image
@@ -140,13 +181,27 @@ static void image_cleanup(zbar_image_t *zimg)
 
 - (CGSize) size
 {
-    return(CGSizeMake(zbar_image_get_width(zimg),
-                      zbar_image_get_height(zimg)));
+    unsigned w, h;
+    zbar_image_get_size(zimg, &w, &h);
+    return(CGSizeMake(w, h));
 }
 
 - (void) setSize: (CGSize) size
 {
     zbar_image_set_size(zimg, size.width + .5, size.height + .5);
+}
+
+- (CGRect) crop
+{
+    unsigned x, y, w, h;
+    zbar_image_get_crop(zimg, &x, &y, &w, &h);
+    return(CGRectMake(x, y, w, h));
+}
+
+- (void) setCrop: (CGRect) crop
+{
+    zbar_image_set_crop(zimg, crop.origin.x + .5, crop.origin.y + .5,
+                        crop.size.width + .5, crop.size.height + .5);
 }
 
 - (ZBarSymbolSet*) symbols
@@ -180,6 +235,59 @@ static void image_cleanup(zbar_image_t *zimg)
 - (zbar_image_t*) zbarImage
 {
     return(zimg);
+}
+
+- (UIImage*) UIImageWithOrientation: (UIImageOrientation) orient
+{
+    unsigned long format = self.format;
+    size_t bpc, bpp;
+    switch(format)
+    {
+    case zbar_fourcc('R','G','B','3'):
+        bpc = 8;
+        bpp = 24;
+        break;
+    case zbar_fourcc('R','G','B','4'):
+        bpc = 8;
+        bpp = 32;
+        break;
+    case zbar_fourcc('R','G','B','Q'):
+        bpc = 5;
+        bpp = 16;
+        break;
+    default:
+        NSLog(@"ERROR: format %.4s(%08lx) is unsupported",
+              (char*)&format, format);
+        assert(0);
+        return(nil);
+    };
+
+    unsigned w = zbar_image_get_width(zimg);
+    unsigned h = zbar_image_get_height(zimg);
+    const void *data = zbar_image_get_data(zimg);
+    size_t datalen = zbar_image_get_data_length(zimg);
+    CGDataProviderRef datasrc =
+        CGDataProviderCreateWithData(self, data, datalen, (void*)CFRelease);
+    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+    CGImageRef cgimg =
+        CGImageCreate(w, h, bpc, bpp, ((bpp + 7) >> 3) * w, cs,
+                      kCGBitmapByteOrderDefault |
+                      kCGImageAlphaNoneSkipFirst,
+                      datasrc, NULL, YES, kCGRenderingIntentDefault);
+    CGColorSpaceRelease(cs);
+    CGDataProviderRelease(datasrc);
+
+    UIImage *uiimg =
+        [UIImage imageWithCGImage: cgimg
+                 scale: 1
+                 orientation: orient];
+    CGImageRelease(cgimg);
+    return(uiimg);
+}
+
+- (UIImage*) UIImage
+{
+    return([self UIImageWithOrientation: UIImageOrientationUp]);
 }
 
 - (void) cleanup

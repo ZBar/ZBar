@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 31;
+use Test::More tests => 37;
 
 #########################
 
@@ -36,15 +36,23 @@ sub test_enum {
 }
 
 test_enum('config',
-    [Barcode::ZBar::Config::ENABLE,     'enable',     0],
-    [Barcode::ZBar::Config::ADD_CHECK,  'add-check',  1],
-    [Barcode::ZBar::Config::EMIT_CHECK, 'emit-check', 2],
-    [Barcode::ZBar::Config::ASCII,      'ascii',      3],
-    [Barcode::ZBar::Config::MIN_LEN,    'min-length', 32],
-    [Barcode::ZBar::Config::MAX_LEN,    'max-length', 33],
-    [Barcode::ZBar::Config::POSITION,   'position',   128],
-    [Barcode::ZBar::Config::X_DENSITY,  'x-density',  256],
-    [Barcode::ZBar::Config::Y_DENSITY,  'y-density',  257],
+    [Barcode::ZBar::Config::ENABLE,      'enable',        0],
+    [Barcode::ZBar::Config::ADD_CHECK,   'add-check',     1],
+    [Barcode::ZBar::Config::EMIT_CHECK,  'emit-check',    2],
+    [Barcode::ZBar::Config::ASCII,       'ascii',         3],
+    [Barcode::ZBar::Config::MIN_LEN,     'min-length',   32],
+    [Barcode::ZBar::Config::MAX_LEN,     'max-length',   33],
+    [Barcode::ZBar::Config::UNCERTAINTY, 'uncertainty',  64],
+    [Barcode::ZBar::Config::POSITION,    'position',    128],
+    [Barcode::ZBar::Config::X_DENSITY,   'x-density',   256],
+    [Barcode::ZBar::Config::Y_DENSITY,   'y-density',   257],
+);
+
+#########################
+
+test_enum('modifier',
+    [Barcode::ZBar::Modifier::GS1, 'GS1', 0],
+    [Barcode::ZBar::Modifier::AIM, 'AIM', 1],
 );
 
 #########################

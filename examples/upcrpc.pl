@@ -3,7 +3,7 @@ use warnings;
 use strict;
 use Frontier::Client;
 use Data::Dumper;
-my $s = Frontier::Client->new('url' => 'http://dev.upcdatabase.com/rpc');
+my $s = Frontier::Client->new('url' => 'http://www.upcdatabase.com/rpc');
 
 $| = 1; # autoflush
 

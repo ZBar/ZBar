@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -36,7 +36,7 @@ static const char * const mod_str[] = {
 };
 #define MOD_MAX (strlen(mod_str[ZBAR_MOD_IMAGE_SCANNER]))
 
-static const char const * err_str[] = {
+static const char * const err_str[] = {
     "no error",                 /* OK */
     "out of memory",            /* NOMEM */
     "internal library error",   /* INTERNAL */
@@ -99,32 +99,32 @@ zbar_error_t _zbar_get_error_code (const void *container)
 const char *_zbar_error_string (const void *container,
                                 int verbosity)
 {
+    static const char basefmt[] = "%s: zbar %s in %s():\n    %s: ";
     errinfo_t *err = (errinfo_t*)container;
+    const char *sev, *mod, *func, *type;
+    int len;
+
     assert(err->magic == ERRINFO_MAGIC);
 
-    const char *sev;
     if(err->sev >= SEV_FATAL && err->sev <= SEV_NOTE)
         sev = sev_str[err->sev + 2];
     else
         sev = sev_str[1];
 
-    const char *mod;
     if(err->module >= ZBAR_MOD_PROCESSOR &&
        err->module < ZBAR_MOD_UNKNOWN)
         mod = mod_str[err->module];
     else
         mod = mod_str[ZBAR_MOD_UNKNOWN];
 
-    const char *func = (err->func) ? err->func : "<unknown>";
+    func = (err->func) ? err->func : "<unknown>";
 
-    const char *type;
     if(err->type >= 0 && err->type < ZBAR_ERR_NUM)
         type = err_str[err->type];
     else
         type = err_str[ZBAR_ERR_NUM];
 
-    char basefmt[] = "%s: zbar %s in %s():\n    %s: ";
-    int len = SEV_MAX + MOD_MAX + ERR_MAX + strlen(func) + sizeof(basefmt);
+    len = SEV_MAX + MOD_MAX + ERR_MAX + strlen(func) + sizeof(basefmt);
     err->buf = realloc(err->buf, len);
     len = sprintf(err->buf, basefmt, sev, mod, func, type);
     if(len <= 0)
@@ -150,12 +150,14 @@ const char *_zbar_error_string (const void *container,
             return("<unknown>");
     }
 
+#ifdef HAVE_ERRNO_H
     if(err->type == ZBAR_ERR_SYSTEM) {
-        char sysfmt[] = ": %s (%d)\n";
+        static const char sysfmt[] = ": %s (%d)\n";
         const char *syserr = strerror(err->errnum);
         err->buf = realloc(err->buf, len + strlen(sysfmt) + strlen(syserr));
         len += sprintf(err->buf + len, sysfmt, syserr, err->errnum);
     }
+#endif
 #ifdef _WIN32
     else if(err->type == ZBAR_ERR_WINAPI) {
         char *syserr = NULL;

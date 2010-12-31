@@ -161,6 +161,16 @@ Decoder configuration constants:
 
 =back
 
+Symbology modifier constants:
+
+=over 4
+
+=item Modifier::GS1
+
+=item Modifier::AIM
+
+=back
+
 Symbol orientation constants:
 
 =over 4

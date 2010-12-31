@@ -45,7 +45,7 @@
  *  how does MagickGetAuthenticImagePixels fit in?)
  * ref http://bugs.gentoo.org/247292
  */
-#if MagickLibVersion < 0x645
+#if MagickLibVersion <= 0x645
 # define MagickExportImagePixels MagickGetImagePixels
 #endif
 
@@ -76,8 +76,9 @@ static const char *warning_not_found =
     "  things to check:\n"
     "    - is the barcode type supported?"
     "  currently supported symbologies are:\n"
-    "      EAN/UPC (EAN-13, EAN-8, UPC-A, UPC-E, ISBN-10, ISBN-13),\n"
-    "      Code 128, Code 39 and Interleaved 2 of 5\n"
+    "      EAN/UPC (EAN-13, EAN-8, EAN-2, EAN-5, UPC-A, UPC-E,\n"
+    "      ISBN-10, ISBN-13), Code 128, Code 93, Code 39, DataBar,\n"
+    "      DataBar Expanded, and Interleaved 2 of 5\n"
     "    - is the barcode large enough in the image?\n"
     "    - is the barcode mostly in focus?\n"
     "    - is there sufficient contrast/illumination?\n"
@@ -165,23 +166,30 @@ static int scan_image (const char *filename)
         const zbar_symbol_t *sym = zbar_image_first_symbol(zimage);
         for(; sym; sym = zbar_symbol_next(sym)) {
             zbar_symbol_type_t typ = zbar_symbol_get_type(sym);
+            unsigned len = zbar_symbol_get_data_length(sym);
             if(typ == ZBAR_PARTIAL)
                 continue;
-            else if(!xmllvl)
-                printf("%s%s:%s\n",
-                       zbar_get_symbol_name(typ),
-                       zbar_get_addon_name(typ),
-                       zbar_symbol_get_data(sym));
-            else if(xmllvl < 0)
-                printf("%s\n", zbar_symbol_get_data(sym));
+            else if(xmllvl <= 0) {
+                if(!xmllvl)
+                    printf("%s:", zbar_get_symbol_name(typ));
+                if(len &&
+                   fwrite(zbar_symbol_get_data(sym), len, 1, stdout) != 1) {
+                    exit_code = 1;
+                    return(-1);
+                }
+            }
             else {
                 if(xmllvl < 3) {
                     xmllvl++;
                     printf("<index num='%u'>\n", seq);
                 }
                 zbar_symbol_xml(sym, &xmlbuf, &xmlbuflen);
-                printf("%s\n", xmlbuf);
+                if(fwrite(xmlbuf, xmlbuflen, 1, stdout) != 1) {
+                    exit_code = 1;
+                    return(-1);
+                }
             }
+            printf("\n");
             found++;
             num_symbols++;
         }
