@@ -54,25 +54,25 @@ zbar_symbol_type_t _zbar_find_qr (zbar_decoder_t *dcode)
     if(get_color(dcode) != ZBAR_SPACE || s < 7)
         return(0);
 
-    dprintf(2, "    qrf: s=%d", s);
+    dbprintf(2, "    qrf: s=%d", s);
 
     ei = decode_e(pair_width(dcode, 1), s, 7);
-    dprintf(2, " %d", ei);
+    dbprintf(2, " %d", ei);
     if(ei)
         goto invalid;
 
     ei = decode_e(pair_width(dcode, 2), s, 7);
-    dprintf(2, "%d", ei);
+    dbprintf(2, "%d", ei);
     if(ei != 2)
         goto invalid;
 
     ei = decode_e(pair_width(dcode, 3), s, 7);
-    dprintf(2, "%d", ei);
+    dbprintf(2, "%d", ei);
     if(ei != 2)
         goto invalid;
 
     ei = decode_e(pair_width(dcode, 4), s, 7);
-    dprintf(2, "%d", ei);
+    dbprintf(2, "%d", ei);
     if(ei)
         goto invalid;
 
@@ -88,15 +88,15 @@ zbar_symbol_type_t _zbar_find_qr (zbar_decoder_t *dcode)
     w = get_width(dcode, 5);
     qrf->line.boffs = qrf->line.pos[0] + get_width(dcode, 4) + (w + 1) / 2;
 
-    dprintf(2, " boff=%d pos=%d len=%d eoff=%d [valid]\n",
-            qrf->line.boffs, qrf->line.pos[0], qrf->line.len,
-            qrf->line.eoffs);
+    dbprintf(2, " boff=%d pos=%d len=%d eoff=%d [valid]\n",
+             qrf->line.boffs, qrf->line.pos[0], qrf->line.len,
+             qrf->line.eoffs);
 
     dcode->direction = 0;
     dcode->buflen = 0;
     return(ZBAR_QRCODE);
 
 invalid:
-    dprintf(2, " [invalid]\n");
+    dbprintf(2, " [invalid]\n");
     return(0);
 }

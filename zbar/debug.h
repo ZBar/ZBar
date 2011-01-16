@@ -29,21 +29,21 @@
 
 # ifdef __GNUC__
     /* older versions of gcc (< 2.95) require a named varargs parameter */
-#  define dprintf(args...) while(0)
+#  define dbprintf(args...) while(0)
 # else
     /* unfortunately named vararg parameter is a gcc-specific extension */
-#  define dprintf(...) while(0)
+#  define dbprintf(...) while(0)
 # endif
 
 #else
 
 # ifdef __GNUC__
-#  define dprintf(level, args...) do {  \
+#  define dbprintf(level, args...) do { \
         if((level) <= DEBUG_LEVEL)      \
             fprintf(stderr, args);      \
     } while(0)
 # else
-#  define dprintf(level, ...) do {          \
+#  define dbprintf(level, ...) do {         \
         if((level) <= DEBUG_LEVEL)          \
             fprintf(stderr, __VA_ARGS__);   \
     } while(0)

@@ -132,22 +132,22 @@ static inline signed char aux_end (zbar_decoder_t *dcode,
     /* check quiet zone */
     unsigned qz = get_width(dcode, 0);
     if(!fwd && qz && qz <= s * 3 / 4) {
-        dprintf(2, " [invalid quiet]");
+        dbprintf(2, " [invalid quiet]");
         return(-1);
     }
 
-    dprintf(2, " (");
+    dbprintf(2, " (");
     code = 0;
     for(i = 1 - fwd; i < 3 + fwd; i++) {
         unsigned e = get_width(dcode, i) + get_width(dcode, i + 1);
-        dprintf(2, " %d", e);
+        dbprintf(2, " %d", e);
         code = (code << 2) | decode_e(e, s, 7);
         if(code < 0) {
-            dprintf(2, " [invalid end guard]");
+            dbprintf(2, " [invalid end guard]");
             return(-1);
         }
     }
-    dprintf(2, ") s=%d aux=%x", s, code);
+    dbprintf(2, ") s=%d aux=%x", s, code);
     return(code);
 }
 
@@ -163,7 +163,7 @@ static inline signed char aux_start (zbar_decoder_t *dcode)
         return(-1);
 
     if(decode_e(e2, dcode->ean.s4, 7)) {
-        dprintf(2, " [invalid any]");
+        dbprintf(2, " [invalid any]");
         return(-1);
     }
 
@@ -175,15 +175,15 @@ static inline signed char aux_start (zbar_decoder_t *dcode)
         unsigned qz = get_width(dcode, 7);
         if(!qz || qz > dcode->ean.s4 * 3 / 4) {
             if(!E1) {
-                dprintf(2, " [valid normal]");
+                dbprintf(2, " [valid normal]");
                 return(0); /* normal symbol start */
             }
             else if(E1 == 1) {
-                dprintf(2, " [valid add-on]");
+                dbprintf(2, " [valid add-on]");
                 return(STATE_ADDON); /* add-on symbol start */
             }
         }
-        dprintf(2, " [invalid start]");
+        dbprintf(2, " [invalid start]");
         return(-1);
     }
 
@@ -193,11 +193,11 @@ static inline signed char aux_start (zbar_decoder_t *dcode)
         unsigned e4 = get_width(dcode, 7) + get_width(dcode, 8);
         if(!decode_e(e3, dcode->ean.s4, 7) &&
            !decode_e(e4, dcode->ean.s4, 7)) {
-            dprintf(2, " [valid center]");
+            dbprintf(2, " [valid center]");
             return(0); /* start after center guard */
         }
     }
-    dprintf(2, " [invalid center]");
+    dbprintf(2, " [invalid center]");
     return(-1);
 }
 
@@ -219,7 +219,7 @@ static inline signed char decode4 (zbar_decoder_t *dcode)
                    ? get_width(dcode, 0) + get_width(dcode, 1)
                    : get_width(dcode, 2) + get_width(dcode, 3));
     unsigned e2 = get_width(dcode, 1) + get_width(dcode, 2);
-    dprintf(2, "\n        e1=%d e2=%d", e1, e2);
+    dbprintf(2, "\n        e1=%d e2=%d", e1, e2);
 
     if(dcode->ean.s4 < 6)
         return(-1);
@@ -229,7 +229,7 @@ static inline signed char decode4 (zbar_decoder_t *dcode)
              decode_e(e2, dcode->ean.s4, 7));
     if(code < 0)
         return(-1);
-    dprintf(2, " code=%x", code);
+    dbprintf(2, " code=%x", code);
 
     /* 4 combinations require additional determinant (D2)
        E1E2 == 34 (0110)
@@ -250,9 +250,9 @@ static inline signed char decode4 (zbar_decoder_t *dcode)
         alt = d2 > (mid * dcode->ean.s4);
         if(alt)
             code = ((code >> 1) & 3) | 0x10; /* compress code space */
-        dprintf(2, " (d2=%d(%d) alt=%d)", d2, mid * dcode->ean.s4, alt);
+        dbprintf(2, " (d2=%d(%d) alt=%d)", d2, mid * dcode->ean.s4, alt);
     }
-    dprintf(2, " char=%02x", digits[(unsigned char)code]);
+    dbprintf(2, " char=%02x", digits[(unsigned char)code]);
     zassert(code < 0x14, -1, "code=%02x e1=%x e2=%x s4=%x color=%x\n",
             code, e1, e2, dcode->ean.s4, get_color(dcode));
     return(code);
@@ -266,13 +266,13 @@ static inline char ean_part_end2 (ean_pass_t *pass)
     /* calculate "checksum" */
     unsigned char chk = ~((pass->raw[1] & 0xf) * 10 +
                           (pass->raw[2] & 0xf)) & 0x3;
-    dprintf(2, " par=%x chk=%x", par, chk);
+    dbprintf(2, " par=%x chk=%x", par, chk);
     if(par != chk)
         return(ZBAR_NONE);
 
-    dprintf(2, "\n");
-    dprintf(1, "decode2=%x%x\n",
-            pass->raw[1] & 0xf, pass->raw[2] & 0xf);
+    dbprintf(2, "\n");
+    dbprintf(1, "decode2=%x%x\n",
+             pass->raw[1] & 0xf, pass->raw[2] & 0xf);
     return(ZBAR_EAN2);
 }
 
@@ -285,7 +285,7 @@ static inline zbar_symbol_type_t ean_part_end4 (ean_pass_t *pass,
                          (pass->raw[3] & 0x10) >> 3 |
                          (pass->raw[4] & 0x10) >> 4);
 
-    dprintf(2, " par=%x", par);
+    dbprintf(2, " par=%x", par);
     if(par && par != 0xf)
         /* invalid parity combination */
         return(ZBAR_NONE);
@@ -301,10 +301,10 @@ static inline zbar_symbol_type_t ean_part_end4 (ean_pass_t *pass,
         pass->raw[3] = tmp;
     }
 
-    dprintf(2, "\n");
-    dprintf(1, "decode4=%x%x%x%x\n",
-            pass->raw[1] & 0xf, pass->raw[2] & 0xf,
-            pass->raw[3] & 0xf, pass->raw[4] & 0xf);
+    dbprintf(2, "\n");
+    dbprintf(1, "decode4=%x%x%x%x\n",
+             pass->raw[1] & 0xf, pass->raw[2] & 0xf,
+             pass->raw[3] & 0xf, pass->raw[4] & 0xf);
     if(!par)
         return(ZBAR_EAN8 | EAN_RIGHT);
     return(ZBAR_EAN8 | EAN_LEFT);
@@ -329,15 +329,15 @@ static inline char ean_part_end5 (ean_pass_t *pass)
     if(par & 1)
         parchk >>= 4;
     parchk &= 0xf;
-    dprintf(2, " par=%x(%d) chk=%d", par, parchk, chk);
+    dbprintf(2, " par=%x(%d) chk=%d", par, parchk, chk);
     if(parchk != chk)
         return(ZBAR_NONE);
 
-    dprintf(2, "\n");
-    dprintf(1, "decode5=%x%x%x%x%x\n",
-            pass->raw[1] & 0xf, pass->raw[2] & 0xf,
-            pass->raw[3] & 0xf, pass->raw[4] & 0xf,
-            pass->raw[5] & 0xf);
+    dbprintf(2, "\n");
+    dbprintf(1, "decode5=%x%x%x%x%x\n",
+             pass->raw[1] & 0xf, pass->raw[2] & 0xf,
+             pass->raw[3] & 0xf, pass->raw[4] & 0xf,
+             pass->raw[5] & 0xf);
 
     return(ZBAR_EAN5);
 }
@@ -366,7 +366,7 @@ static inline zbar_symbol_type_t ean_part_end7 (ean_decoder_t *ean,
     if(par & 1)
         pass->raw[0] >>= 4;
     pass->raw[0] &= 0xf;
-    dprintf(2, " par=%02x(%x)", par, pass->raw[0]);
+    dbprintf(2, " par=%02x(%x)", par, pass->raw[0]);
 
     if(pass->raw[0] == 0xf)
         /* invalid parity combination */
@@ -383,12 +383,12 @@ static inline zbar_symbol_type_t ean_part_end7 (ean_decoder_t *ean,
         }
     }
 
-    dprintf(2, "\n");
-    dprintf(1, "decode=%x%x%x%x%x%x%x(%02x)\n",
-            pass->raw[0] & 0xf, pass->raw[1] & 0xf,
-            pass->raw[2] & 0xf, pass->raw[3] & 0xf,
-            pass->raw[4] & 0xf, pass->raw[5] & 0xf,
-            pass->raw[6] & 0xf, par);
+    dbprintf(2, "\n");
+    dbprintf(1, "decode=%x%x%x%x%x%x%x(%02x)\n",
+             pass->raw[0] & 0xf, pass->raw[1] & 0xf,
+             pass->raw[2] & 0xf, pass->raw[3] & 0xf,
+             pass->raw[4] & 0xf, pass->raw[5] & 0xf,
+             pass->raw[6] & 0xf, par);
 
     if(TEST_CFG(ean->ean13_config, ZBAR_CFG_ENABLE)) {
         if(!par)
@@ -413,7 +413,7 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
 
     if(get_color(dcode) == ZBAR_SPACE) {
         if(pass->state & STATE_ADDON) {
-            dprintf(2, " i=%d", idx);
+            dbprintf(2, " i=%d", idx);
             if(idx == 0x09 || idx == 0x21) {
                 unsigned qz = get_width(dcode, 0);
                 unsigned s = calc_s(dcode, 1, 4);
@@ -430,7 +430,7 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
                 }
             }
             if((idx & 7) == 1) {
-                dprintf(2, " +");
+                dbprintf(2, " +");
                 pass->state += 2;
                 idx += 2;
             }
@@ -438,7 +438,7 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
         else if((idx == 0x10 || idx == 0x11) &&
                 TEST_CFG(dcode->ean.ean8_config, ZBAR_CFG_ENABLE) &&
                 !aux_end(dcode, fwd)) {
-            dprintf(2, " fwd=%x", fwd);
+            dbprintf(2, " fwd=%x", fwd);
             zbar_symbol_type_t part = ean_part_end4(pass, fwd);
             if(part)
                 dcode->ean.direction = (pass->state & STATE_REV) != 0;
@@ -447,7 +447,7 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
         }
 	else if((idx == 0x18 || idx == 0x19)) {
 	  zbar_symbol_type_t part = ZBAR_NONE;
-	  dprintf(2, " fwd=%x", fwd);
+	  dbprintf(2, " fwd=%x", fwd);
 	  if(!aux_end(dcode, fwd) && pass->raw[5] != 0xff)
 	    part = ean_part_end7(&dcode->ean, pass, fwd);
 	  if(part)
@@ -482,7 +482,7 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
         if(w)
             code = decode4(dcode);
         else
-            dprintf(2, " [bad width]");
+            dbprintf(2, " [bad width]");
 
         if((code < 0 && idx != 0x10) || 
            (idx > 0 && (pass->state & STATE_ADDON) && aux_mid(dcode)))
@@ -490,14 +490,14 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
         else if(code < 0)
             pass->raw[5] = 0xff;
         else {
-            dprintf(2, "\n        raw[%x]=%02x =>", idx >> 2,
-                    digits[(unsigned char)code]);
+            dbprintf(2, "\n        raw[%x]=%02x =>", idx >> 2,
+                     digits[(unsigned char)code]);
             pass->raw[(idx >> 2) + 1] = digits[(unsigned char)code];
-            dprintf(2, " raw=%d%d%d%d%d%d%d",
-                    pass->raw[0] & 0xf, pass->raw[1] & 0xf,
-                    pass->raw[2] & 0xf, pass->raw[3] & 0xf,
-                    pass->raw[4] & 0xf, pass->raw[5] & 0xf,
-                    pass->raw[6] & 0xf);
+            dbprintf(2, " raw=%d%d%d%d%d%d%d",
+                     pass->raw[0] & 0xf, pass->raw[1] & 0xf,
+                     pass->raw[2] & 0xf, pass->raw[3] & 0xf,
+                     pass->raw[4] & 0xf, pass->raw[5] & 0xf,
+                     pass->raw[6] & 0xf);
         }
     }
     return(0);
@@ -529,8 +529,8 @@ static inline signed char ean_verify_checksum (ean_decoder_t *ean,
     zassert(d < 10, -1, "n=%x d=%x chk=%x %s\n", n, d, chk,
             _zbar_decoder_buf_dump((void*)ean->buf, 18));
     if(chk != d) {
-        dprintf(1, "\nchecksum mismatch %d != %d (%s)\n",
-                chk, d, dsprintbuf(ean));
+        dbprintf(1, "\nchecksum mismatch %d != %d (%s)\n",
+                 chk, d, dsprintbuf(ean));
         return(-1);
     }
     return(0);
@@ -584,19 +584,19 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
 {
     /* copy raw data into holding buffer */
     /* if same partial is not consistent, reset others */
-    dprintf(2, " integrate part=%x (%s)", part, dsprintbuf(ean));
+    dbprintf(2, " integrate part=%x (%s)", part, dsprintbuf(ean));
     signed char i, j;
 
     if((ean->left && ((part & ZBAR_SYMBOL) != ean->left)) ||
        (ean->right && ((part & ZBAR_SYMBOL) != ean->right))) {
         /* partial mismatch - reset collected parts */
-        dprintf(2, " rst(type %x %x)", ean->left, ean->right);
+        dbprintf(2, " rst(type %x %x)", ean->left, ean->right);
         ean->left = ean->right = ZBAR_NONE;
     }
 
     if((ean->left || ean->right) &&
        !check_width(ean->width, pass->width)) {
-      dprintf(2, " rst(width %d)", pass->width);
+      dbprintf(2, " rst(width %d)", pass->width);
       ean->left = ean->right = ZBAR_NONE;
     }
 
@@ -608,7 +608,7 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
             unsigned char digit = pass->raw[i] & 0xf;
             if(ean->right && ean->buf[j] != digit) {
                 /* partial mismatch - reset collected parts */
-                dprintf(2, " rst(right)");
+                dbprintf(2, " rst(right)");
                 ean->left = ean->right = ZBAR_NONE;
             }
             ean->buf[j] = digit;
@@ -622,7 +622,7 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
             unsigned char digit = pass->raw[i] & 0xf;
             if(ean->left && ean->buf[j] != digit) {
                 /* partial mismatch - reset collected parts */
-                dprintf(2, " rst(left)");
+                dbprintf(2, " rst(left)");
                 ean->left = ean->right = ZBAR_NONE;
             }
             ean->buf[j] = digit;
@@ -687,8 +687,8 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
             part = ZBAR_NONE;
     }
 
-    dprintf(2, " dir=%d %x/%x=%x",
-            ean->direction, ean->left, ean->right, part);
+    dbprintf(2, " dir=%d %x/%x=%x",
+             ean->direction, ean->left, ean->right, part);
     return(part);
 }
 
@@ -728,7 +728,7 @@ static inline void postprocess (zbar_decoder_t *dcode,
     dcode->buf[j] = '\0';
     dcode->direction = 1 - 2 * ean->direction;
     dcode->modifiers = 0;
-    dprintf(2, " base=%d j=%d (%s)", base, j, dcode->buf);
+    dbprintf(2, " base=%d j=%d (%s)", base, j, dcode->buf);
 }
 
 zbar_symbol_type_t _zbar_decode_ean (zbar_decoder_t *dcode)
@@ -748,28 +748,28 @@ zbar_symbol_type_t _zbar_decode_ean (zbar_decoder_t *dcode)
            i == pass_idx)
         {
             zbar_symbol_type_t part;
-            dprintf(2, "      ean[%x/%x]: idx=%x st=%d s=%d",
-                    i, pass_idx, dcode->idx, pass->state, dcode->ean.s4);
+            dbprintf(2, "      ean[%x/%x]: idx=%x st=%d s=%d",
+                     i, pass_idx, dcode->idx, pass->state, dcode->ean.s4);
             part = decode_pass(dcode, pass);
             if(part) {
                 /* update accumulated data from new partial decode */
                 sym = integrate_partial(&dcode->ean, pass, part);
                 if(sym) {
                     /* this pass valid => _reset_ all passes */
-                    dprintf(2, " sym=%x", sym);
+                    dbprintf(2, " sym=%x", sym);
                     dcode->ean.pass[0].state = dcode->ean.pass[1].state = -1;
                     dcode->ean.pass[2].state = dcode->ean.pass[3].state = -1;
                     if(sym > ZBAR_PARTIAL) {
                         if(!acquire_lock(dcode, sym))
                             postprocess(dcode, sym);
                         else {
-                            dprintf(1, " [locked %d]", dcode->lock);
+                            dbprintf(1, " [locked %d]", dcode->lock);
                             sym = ZBAR_PARTIAL;
                         }
                     }
                 }
             }
-            dprintf(2, "\n");
+            dbprintf(2, "\n");
         }
     }
     return(sym);

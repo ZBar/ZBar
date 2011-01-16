@@ -129,7 +129,7 @@ static inline unsigned calc_thresh (zbar_scanner_t *scn)
     unsigned dx, thresh = scn->y1_thresh;
     unsigned long t;
     if((thresh <= scn->y1_min_thresh) || !scn->width) {
-        dprintf(1, " tmin=%d", scn->y1_min_thresh);
+        dbprintf(1, " tmin=%d", scn->y1_min_thresh);
         return(scn->y1_min_thresh);
     }
     /* slowly return threshold to min */
@@ -137,9 +137,9 @@ static inline unsigned calc_thresh (zbar_scanner_t *scn)
     t = thresh * dx;
     t /= scn->width;
     t /= ZBAR_SCANNER_THRESH_FADE;
-    dprintf(1, " thr=%d t=%ld x=%d last=%d.%d (%d)",
-            thresh, t, scn->x, scn->last_edge >> ZBAR_FIXED,
-            scn->last_edge & ((1 << ZBAR_FIXED) - 1), dx);
+    dbprintf(1, " thr=%d t=%ld x=%d last=%d.%d (%d)",
+             thresh, t, scn->x, scn->last_edge >> ZBAR_FIXED,
+             scn->last_edge & ((1 << ZBAR_FIXED) - 1), dx);
     if(thresh > t) {
         thresh -= t;
         if(thresh > scn->y1_min_thresh)
@@ -158,10 +158,10 @@ static inline zbar_symbol_type_t process_edge (zbar_scanner_t *scn,
         scn->last_edge = scn->cur_edge;
 
     scn->width = scn->cur_edge - scn->last_edge;
-    dprintf(1, " sgn=%d cur=%d.%d w=%d (%s)\n",
-            scn->y1_sign, scn->cur_edge >> ZBAR_FIXED,
-            scn->cur_edge & ((1 << ZBAR_FIXED) - 1), scn->width,
-            ((y1 > 0) ? "SPACE" : "BAR"));
+    dbprintf(1, " sgn=%d cur=%d.%d w=%d (%s)\n",
+             scn->y1_sign, scn->cur_edge >> ZBAR_FIXED,
+             scn->cur_edge & ((1 << ZBAR_FIXED) - 1), scn->width,
+             ((y1 > 0) ? "SPACE" : "BAR"));
     scn->last_edge = scn->cur_edge;
 
 #if DEBUG_SVG > 1
@@ -184,7 +184,7 @@ inline zbar_symbol_type_t zbar_scanner_flush (zbar_scanner_t *scn)
 
     if(scn->cur_edge != x || scn->y1_sign > 0) {
         zbar_symbol_type_t edge = process_edge(scn, -scn->y1_sign);
-        dprintf(1, "flush0:");
+        dbprintf(1, "flush0:");
         scn->cur_edge = x;
         scn->y1_sign = -scn->y1_sign;
         return(edge);
@@ -245,8 +245,8 @@ zbar_symbol_type_t zbar_scan_y (zbar_scanner_t *scn,
     y2_1 = y0_0 - (y0_1 * 2) + y0_2;
     y2_2 = y0_1 - (y0_2 * 2) + y0_3;
 
-    dprintf(1, "scan: x=%d y=%d y0=%d y1=%d y2=%d",
-            x, y, y0_1, y1_1, y2_1);
+    dbprintf(1, "scan: x=%d y=%d y0=%d y1=%d y2=%d",
+             x, y, y0_1, y1_1, y2_1);
 
     edge = ZBAR_NONE;
     /* 2nd zero-crossing is 1st local min/max - could be edge */
@@ -267,7 +267,7 @@ zbar_symbol_type_t zbar_scan_y (zbar_scanner_t *scn,
             /* adaptive thresholding */
             /* start at multiple of new min/max */
             scn->y1_thresh = (abs(y1_1) * THRESH_INIT + ROUND) >> ZBAR_FIXED;
-            dprintf(1, "\tthr=%d", scn->y1_thresh);
+            dbprintf(1, "\tthr=%d", scn->y1_thresh);
             if(scn->y1_thresh < scn->y1_min_thresh)
                 scn->y1_thresh = scn->y1_min_thresh;
 
@@ -280,11 +280,11 @@ zbar_symbol_type_t zbar_scan_y (zbar_scanner_t *scn,
                 /* interpolate zero crossing */
                 scn->cur_edge -= ((y2_1 << ZBAR_FIXED) + 1) / d;
             scn->cur_edge += x << ZBAR_FIXED;
-            dprintf(1, "\n");
+            dbprintf(1, "\n");
         }
     }
     else
-        dprintf(1, "\n");
+        dbprintf(1, "\n");
     /* FIXME add fall-thru pass to decoder after heuristic "idle" period
        (eg, 6-8 * last width) */
     scn->x = x + 1;
@@ -313,5 +313,5 @@ void zbar_scanner_get_state (const zbar_scanner_t *scn,
     /* NB not quite accurate (uses updated x) */
     mut_scn = (zbar_scanner_t*)scn;
     if(y1_thresh) *y1_thresh = calc_thresh(mut_scn);
-    dprintf(1, "\n");
+    dbprintf(1, "\n");
 }

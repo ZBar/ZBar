@@ -220,7 +220,7 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
     zbar_symbol_type_t tmp, sym = ZBAR_NONE;
 
     dcode->w[dcode->idx & (DECODE_WINDOW - 1)] = w;
-    dprintf(1, "    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
+    dbprintf(1, "    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
 
     /* update shared character width */
     dcode->s6 -= get_width(dcode, 7);

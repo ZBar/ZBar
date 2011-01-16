@@ -49,7 +49,7 @@ static inline unsigned char i25_decode10 (zbar_decoder_t *dcode,
                                           unsigned char offset)
 {
     i25_decoder_t *dcode25 = &dcode->i25;
-    dprintf(2, " s=%d", dcode25->s10);
+    dbprintf(2, " s=%d", dcode25->s10);
     if(dcode25->s10 < 10)
         return(0xff);
 
@@ -65,11 +65,11 @@ static inline unsigned char i25_decode10 (zbar_decoder_t *dcode,
             par++;
     }
 
-    dprintf(2, " enc=%02x par=%x", enc, par);
+    dbprintf(2, " enc=%02x par=%x", enc, par);
 
     /* parity check */
     if(par != 2) {
-        dprintf(2, " [bad parity]");
+        dbprintf(2, " [bad parity]");
         return(0xff);
     }
 
@@ -79,12 +79,12 @@ static inline unsigned char i25_decode10 (zbar_decoder_t *dcode,
         if(enc == 12)
             enc = 0;
         else if(--enc > 9) {
-            dprintf(2, " [invalid encoding]");
+            dbprintf(2, " [invalid encoding]");
             return(0xff);
         }
     }
 
-    dprintf(2, " => %x", enc);
+    dbprintf(2, " => %x", enc);
     return(enc);
 }
 
@@ -103,7 +103,7 @@ static inline signed char i25_decode_start (zbar_decoder_t *dcode)
     if((get_color(dcode) == ZBAR_BAR)
        ? enc != 4
        : (enc = i25_decode1(enc, get_width(dcode, i++), dcode25->s10))) {
-        dprintf(4, "      i25: s=%d enc=%x [invalid]\n", dcode25->s10, enc);
+        dbprintf(4, "      i25: s=%d enc=%x [invalid]\n", dcode25->s10, enc);
         return(ZBAR_NONE);
     }
 
@@ -113,8 +113,8 @@ static inline signed char i25_decode_start (zbar_decoder_t *dcode)
      */
     unsigned quiet = get_width(dcode, i);
     if(quiet && quiet < dcode25->s10 * 3 / 8) {
-        dprintf(3, "      i25: s=%d enc=%x q=%d [invalid qz]\n",
-                dcode25->s10, enc, quiet);
+        dbprintf(3, "      i25: s=%d enc=%x q=%d [invalid qz]\n",
+                 dcode25->s10, enc, quiet);
         return(ZBAR_NONE);
     }
 
@@ -148,8 +148,8 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
     if((quiet && quiet < dcode25->width * 3 / 8) ||
        decode_e(get_width(dcode, 1), dcode25->width, 45) > 2 ||
        decode_e(get_width(dcode, 2), dcode25->width, 45) > 2) {
-        dprintf(3, "      i25: s=%d q=%d [invalid qz]\n",
-                dcode25->width, quiet);
+        dbprintf(3, "      i25: s=%d q=%d [invalid qz]\n",
+                 dcode25->width, quiet);
         return(ZBAR_NONE);
     }
 
@@ -168,7 +168,7 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
     dcode->direction = 1 - 2 * dcode25->direction;
     if(dcode25->direction) {
         /* reverse buffer */
-        dprintf(2, " (rev)");
+        dbprintf(2, " (rev)");
         int i;
         for(i = 0; i < dcode25->character / 2; i++) {
             unsigned j = dcode25->character - 1 - i;
@@ -181,7 +181,7 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
     if(dcode25->character < CFG(*dcode25, ZBAR_CFG_MIN_LEN) ||
        (CFG(*dcode25, ZBAR_CFG_MAX_LEN) > 0 &&
         dcode25->character > CFG(*dcode25, ZBAR_CFG_MAX_LEN))) {
-        dprintf(2, " [invalid len]\n");
+        dbprintf(2, " [invalid len]\n");
         release_lock(dcode, ZBAR_I25);
         dcode25->character = -1;
         return(ZBAR_NONE);
@@ -190,7 +190,7 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
     dcode->buflen = dcode25->character;
     dcode->buf[dcode25->character] = '\0';
     dcode->modifiers = 0;
-    dprintf(2, " [valid end]\n");
+    dbprintf(2, " [valid end]\n");
     dcode25->character = -1;
     return(ZBAR_I25);
 }
@@ -215,23 +215,23 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
     /* FIXME check current character width against previous */
     dcode25->width = dcode25->s10;
 
-    dprintf(2, "      i25[%c%02d+%x]",
-            (dcode25->direction) ? '<' : '>',
-            dcode25->character, dcode25->element);
+    dbprintf(2, "      i25[%c%02d+%x]",
+             (dcode25->direction) ? '<' : '>',
+             dcode25->character, dcode25->element);
 
     if(dcode25->character == 4 && i25_acquire_lock(dcode))
         return(ZBAR_PARTIAL);
 
     unsigned char c = i25_decode10(dcode, 1);
-    dprintf(2, " c=%x", c);
+    dbprintf(2, " c=%x", c);
     if(c > 9) {
-        dprintf(2, " [aborted]\n");
+        dbprintf(2, " [aborted]\n");
         goto reset;
     }
 
     if((dcode25->character >= BUFFER_MIN) &&
        size_buf(dcode, dcode25->character + 2)) {
-        dprintf(2, " [overflow]\n");
+        dbprintf(2, " [overflow]\n");
         goto reset;
     }
 
@@ -243,13 +243,13 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
     buf[dcode25->character++] = c + '0';
 
     c = i25_decode10(dcode, 0);
-    dprintf(2, " c=%x", c);
+    dbprintf(2, " c=%x", c);
     if(c > 9) {
-        dprintf(2, " [aborted]\n");
+        dbprintf(2, " [aborted]\n");
         goto reset;
     }
     else
-        dprintf(2, "\n");
+        dbprintf(2, "\n");
 
     buf[dcode25->character++] = c + '0';
     dcode25->element = 10;
