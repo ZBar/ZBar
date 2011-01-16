@@ -49,6 +49,7 @@
     CGRect scanCrop, zoomCrop;
     CGAffineTransform previewTransform;
     CGFloat zoom, zoom0;
+    UIColor *trackingColor;
     BOOL tracksSymbols, showsFPS;
     NSInteger torchMode;
 
@@ -81,6 +82,9 @@
 // whether to display the tracking annotation for uncertain barcodes
 // (default YES).
 @property (nonatomic) BOOL tracksSymbols;
+
+// color of the tracking box (default green)
+@property (nonatomic, retain) UIColor *trackingColor;
 
 // enable pinch gesture recognition for zooming the preview/decode
 // (default YES).

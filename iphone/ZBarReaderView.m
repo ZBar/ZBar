@@ -32,8 +32,8 @@
 
 @implementation ZBarReaderView
 
-@synthesize readerDelegate, tracksSymbols, torchMode, showsFPS, zoom, scanCrop,
-    previewTransform;
+@synthesize readerDelegate, tracksSymbols, trackingColor, torchMode, showsFPS,
+    zoom, scanCrop, previewTransform;
 @dynamic scanner, allowsPinchZoom, enableCache, device, session, captureReader;
 
 + (id) alloc
@@ -61,8 +61,11 @@
     tracking.opacity = 0;
     tracking.borderWidth = 1;
     tracking.backgroundColor = [UIColor clearColor].CGColor;
-    tracking.borderColor = [UIColor greenColor].CGColor;
     [overlay addSublayer: tracking];
+
+    trackingColor = [[UIColor greenColor]
+                        retain];
+    tracking.borderColor = trackingColor.CGColor;
 
     r.origin.x = 3 * r.size.width / 4;
     r.origin.y = r.size.height - 32;
@@ -145,6 +148,8 @@
     overlay = nil;
     [tracking release];
     tracking = nil;
+    [trackingColor release];
+    trackingColor = nil;
     [fpsLabel release];
     fpsLabel = nil;
     [fpsView release];
@@ -224,6 +229,16 @@
 - (void) setAllowsPinchZoom: (BOOL) enabled
 {
     pinch.enabled = enabled;
+}
+
+- (void) setTrackingColor: (UIColor*) color
+{
+    if(!color)
+        return;
+    [color retain];
+    [trackingColor release];
+    trackingColor = color;
+    tracking.borderColor = color.CGColor;
 }
 
 - (void) setShowsFPS: (BOOL) show

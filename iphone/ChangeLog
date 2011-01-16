@@ -1,3 +1,6 @@
+current:
+  * expose tracking box color
+
 version 1.1:
   * fix doc typo (bug #3139087)
     - add modifier bit docs

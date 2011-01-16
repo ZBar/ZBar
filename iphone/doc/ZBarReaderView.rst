@@ -27,6 +27,10 @@ Properties
 
       Whether to display the tracking annotation (default ``YES``).
 
+   .. member:: UIColor *trackingColor
+
+      The color of the tracking annotation (default green).
+
    .. member:: BOOL allowsPinchZoom
 
       Enable pinch gesture recognition for manually zooming the preview/decode
