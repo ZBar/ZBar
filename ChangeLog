@@ -1,4 +1,6 @@
 current:
+  * fix jpeg decoder skip handling
+    - thanks to jarekczek for the patch!
   * rename dprintf macro to avoid conflicts (patch #3128538)
     - thanks to maurochehab for the patch!
   * add support for EAN/UPC 2 and 5 digit add-on symbols
