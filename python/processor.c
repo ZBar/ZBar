@@ -147,12 +147,35 @@ processor_get_results (zbarProcessor *self,
     return(zbarSymbolSet_FromSymbolSet(zsyms));
 }
 
+static int
+processor_set_request_size (zbarProcessor *self,
+                            PyObject *value,
+                            void *closure)
+{
+    if(!value) {
+        zbar_processor_request_size(self->zproc, 0, 0);
+        return(0);
+    }
+
+    int dims[2];
+    if(parse_dimensions(value, dims, 2) ||
+       dims[0] < 0 || dims[1] < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "request_size must be a sequence of two positive ints");
+        return(-1);
+    }
+
+    zbar_processor_request_size(self->zproc, dims[0], dims[1]);
+    return(0);
+}
+
 static PyGetSetDef processor_getset[] = {
     { "visible",  (getter)processor_get_bool, (setter)processor_set_bool,
       NULL, (void*)0 },
     { "active",   NULL,                       (setter)processor_set_bool,
       NULL, (void*)1 },
     { "results",  (getter)processor_get_results, },
+    { "request_size", NULL, (setter)processor_set_request_size, },
     { NULL, },
 };
 

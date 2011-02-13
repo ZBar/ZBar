@@ -449,6 +449,15 @@ class TestProcessor(ut.TestCase):
         self.assertRaises(ValueError, self.proc.set_config, -1)
         self.proc.set_config()
 
+    def test_request_size(self):
+        def set_size(sz):
+            self.proc.request_size = sz
+        self.assertRaises(ValueError, set_size, (1,))
+        self.assertRaises(ValueError, set_size, 1)
+        self.proc.request_size = (12, 6)
+        self.assertRaises(ValueError, set_size, (1, 2, 3))
+        self.assertRaises(ValueError, set_size, "foo")
+
     def test_processing(self):
         self.proc.init(VIDEO_DEVICE)
         self.assert_(self.proc.visible is False)

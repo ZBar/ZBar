@@ -153,7 +153,10 @@ extern PyObject *symbol_enum;
 extern zbarEnumItem *symbol_NONE;
 extern zbarEnum *orient_enum;
 
-int object_to_bool(PyObject *obj,
-                   int *val);
+extern int object_to_bool(PyObject *obj,
+                          int *val);
+extern int parse_dimensions(PyObject *seq,
+                            int *dims,
+                            int n);
 
 #endif

@@ -103,6 +103,28 @@ object_to_bool (PyObject *obj,
     return(1);
 }
 
+int
+parse_dimensions (PyObject *seq,
+                  int *dims,
+                  int n)
+{
+    if(!PySequence_Check(seq) ||
+       PySequence_Size(seq) != n)
+        return(-1);
+
+    int i;
+    for(i = 0; i < n; i++, dims++) {
+        PyObject *dim = PySequence_GetItem(seq, i);
+        if(!dim)
+            return(-1);
+        *dims = PyInt_AsSsize_t(dim);
+        Py_DECREF(dim);
+        if(*dims == -1 && PyErr_Occurred())
+            return(-1);
+    }
+    return(0);
+}
+
 PyObject *zbar_exc[ZBAR_ERR_NUM];
 zbarEnumItem *color_enum[2];
 zbarEnum *config_enum;

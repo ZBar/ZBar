@@ -172,28 +172,17 @@ image_set_size (zbarImage *self,
         PyErr_SetString(PyExc_TypeError, "cannot delete size attribute");
         return(-1);
     }
-    int rc = -1, i, dims[2];
-    if(!PySequence_Check(value) ||
-       PySequence_Size(value) != 2)
-        goto error;
-    for(i = 0; i < 2; i++) {
-        PyObject *dim = PySequence_GetItem(value, i);
-        if(!dim)
-            goto error;
-        dims[i] = PyInt_AsSsize_t(dim);
-        Py_DECREF(dim);
-        if(dims[i] < 0)
-            goto error;
+
+    int dims[2];
+    if(parse_dimensions(value, dims, 2) ||
+       dims[0] < 0 || dims[1] < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "size must be a sequence of two positive ints");
+        return(-1);
     }
 
     zbar_image_set_size(self->zimg, dims[0], dims[1]);
-    rc = 0;
-
-error:
-    if(rc)
-        PyErr_SetString(PyExc_ValueError,
-                        "size must be a sequence of two positive ints");
-    return(rc);
+    return(0);
 }
 
 static PyObject*
@@ -217,21 +206,15 @@ image_set_crop (zbarImage *self,
         zbar_image_set_crop(self->zimg, 0, 0, w, h);
         return(0);
     }
-    int rc = -1, i, dims[4];
-    if(!PySequence_Check(value) ||
-       PySequence_Size(value) != 4)
-        goto error;
-    for(i = 0; i < 4; i++) {
-        PyObject *dim = PySequence_GetItem(value, i);
-        if(!dim)
-            goto error;
-        dims[i] = PyInt_AsSsize_t(dim);
-        Py_DECREF(dim);
-        if(dims[i] == -1 && PyErr_Occurred())
-            goto error;
+
+    int dims[4];
+    if(parse_dimensions(value, dims, 4) ||
+       dims[2] < 0 || dims[3] < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "crop must be a sequence of four positive ints");
+        return(-1);
     }
-    if(dims[2] < 0 || dims[3] < 0)
-        goto error;
+
     if(dims[0] < 0) {
         dims[2] += dims[0];
         dims[0] = 0;
@@ -242,13 +225,7 @@ image_set_crop (zbarImage *self,
     }
 
     zbar_image_set_crop(self->zimg, dims[0], dims[1], dims[2], dims[3]);
-    rc = 0;
-
-error:
-    if(rc)
-        PyErr_SetString(PyExc_ValueError,
-                        "crop must be a sequence of four positive ints");
-    return(rc);
+    return(0);
 }
 
 static PyObject*

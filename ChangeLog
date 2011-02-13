@@ -1,4 +1,5 @@
 current:
+  * add Python Processor support for request_size interface
   * fix Python Processor support for GIL, allowing asynchronous scanning
   * fix jpeg decoder skip handling
     - thanks to jarekczek for the patch!
