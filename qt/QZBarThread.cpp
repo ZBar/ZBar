@@ -167,7 +167,7 @@ void QZBarThread::scanImageEvent (ScanImageEvent *e)
 
 bool QZBarThread::event (QEvent *e)
 {
-    switch(e->type()) {
+    switch((EventType)e->type()) {
     case VideoDevice:
         videoDeviceEvent((VideoDeviceEvent*)e);
         break;

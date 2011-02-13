@@ -1,4 +1,6 @@
 current:
+  * fix Qt 4.6.3 compilation error (patch #3178244)
+    - thanks to hrhristov for the patch!
   * add Python Processor support for request_size interface
   * fix Python Processor support for GIL, allowing asynchronous scanning
   * fix jpeg decoder skip handling
