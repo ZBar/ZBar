@@ -255,7 +255,7 @@ int main (int argc, const char *argv[])
     int i, j;
     for(i = 1; i < argc; i++) {
         const char *arg = argv[i];
-        if(arg[0] != '-')
+        if(arg[0] != '-' || !arg[1])
             // first pass, skip images
             num_images++;
         else if(arg[1] != '-')
@@ -326,7 +326,7 @@ int main (int argc, const char *argv[])
         if(!arg)
             continue;
 
-        if(arg[0] != '-') {
+        if(arg[0] != '-' || !arg[1]) {
             if(scan_image(arg))
                 return(exit_code);
         }
