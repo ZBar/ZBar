@@ -1,4 +1,5 @@
 current:
+  * fix EAN addon enables
   * fix zbarimg to accept autodetected stdin (lone dash)
   * fix Qt 4.6.3 compilation error (patch #3178244)
     - thanks to hrhristov for the patch!

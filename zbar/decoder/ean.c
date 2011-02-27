@@ -258,8 +258,12 @@ static inline signed char decode4 (zbar_decoder_t *dcode)
     return(code);
 }
 
-static inline char ean_part_end2 (ean_pass_t *pass)
+static inline char ean_part_end2 (ean_decoder_t *ean,
+                                  ean_pass_t *pass)
 {
+    if(!TEST_CFG(ean->ean2_config, ZBAR_CFG_ENABLE))
+        return(ZBAR_NONE);
+
     /* extract parity bits */
     unsigned char par = ((pass->raw[1] & 0x10) >> 3 |
                          (pass->raw[2] & 0x10) >> 4);
@@ -310,8 +314,12 @@ static inline zbar_symbol_type_t ean_part_end4 (ean_pass_t *pass,
     return(ZBAR_EAN8 | EAN_LEFT);
 }
 
-static inline char ean_part_end5 (ean_pass_t *pass)
+static inline char ean_part_end5 (ean_decoder_t *ean,
+                                  ean_pass_t *pass)
 {
+    if(!TEST_CFG(ean->ean5_config, ZBAR_CFG_ENABLE))
+        return(ZBAR_NONE);
+
     /* extract parity bits */
     unsigned char par = ((pass->raw[1] & 0x10) |
                          (pass->raw[2] & 0x10) >> 1 |
@@ -419,9 +427,9 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
                 unsigned s = calc_s(dcode, 1, 4);
                 zbar_symbol_type_t part = !qz || (qz >= s * 3 / 4);
                 if(part && idx == 0x09)
-                    part = ean_part_end2(pass);
+                    part = ean_part_end2(&dcode->ean, pass);
                 else if(part)
-                    part = ean_part_end5(pass);
+                    part = ean_part_end5(&dcode->ean, pass);
 
                 if(part || idx == 0x21) {
                     dcode->ean.direction = 0;
