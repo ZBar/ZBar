@@ -53,14 +53,16 @@ public class Symbol
     public static final int DATABAR = 34;
     /** DataBar Expanded. */
     public static final int DATABAR_EXP = 35;
-    /** Code 93. */
-    public static final int CODE93 = 93;
+    /** Codabar. */
+    public static final int CODABAR = 38;
     /** Code 39. */
     public static final int CODE39 = 39;
     /** PDF417. */
     public static final int PDF417 = 57;
     /** QR Code. */
     public static final int QRCODE = 64;
+    /** Code 93. */
+    public static final int CODE93 = 93;
     /** Code 128. */
     public static final int CODE128 = 128;
 

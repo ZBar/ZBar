@@ -1,4 +1,6 @@
 current:
+  * finish Codabar support for python, perl, java and iPhone interfaces
+    - reduce Codabar uncertainty to minimum
   * add core support for Codabar symbology
     - TBD: python, perl, java and iPhone interfaces
   * fix EAN addon enables
