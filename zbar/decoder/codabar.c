@@ -78,20 +78,42 @@ codabar_decode7 (zbar_decoder_t *dcode)
     unsigned wbmax = get_width(dcode, ibar & 0xf);
     unsigned wbmin = get_width(dcode, ibar >> 12);
     if(8 * wbmin < wbmax ||
-       8 * wbmin > 5 * wbmax)
+       3 * wbmin > 2 * wbmax)
     {
-        dbprintf(2, " [bar ratio]");
+        dbprintf(2, " [bar outer ratio]");
         return(-1);
     }
 
-    if(8 * get_width(dcode, (ibar >> 4) & 0xf) < 5 * wbmax)
-        // single wide bar combinations
+    unsigned wb1 = get_width(dcode, (ibar >> 8) & 0xf);
+    unsigned wb2 = get_width(dcode, (ibar >> 4) & 0xf);
+    unsigned long b0b3 = wbmin * wbmax;
+    unsigned long b1b2 = wb1 * wb2;
+    if(b1b2 + b1b2 / 8 < b0b3) {
+        /* single wide bar combinations */
+        if(8 * wbmin < 5 * wb1 ||
+           8 * wb1 < 5 * wb2 ||
+           4 * wb2 > 3 * wbmax ||
+           wb2 * wb2 >= wb1 * wbmax)
+        {
+            dbprintf(2, " [1bar inner ratios]");
+            return(-1);
+        }
         ibar = (ibar >> 1) & 0x3;
-    else if(8 * get_width(dcode, (ibar >> 8) & 0xf) >= 5 * wbmax)
-        // three wide bars, no wide spaces
+    }
+    else if(b1b2 > b0b3 + b0b3 / 8) {
+        /* three wide bars, no wide spaces */
+        if(4 * wbmin > 3 * wb1 ||
+           8 * wb1 < 5 * wb2 ||
+           8 * wb2 < 5 * wbmax ||
+           wbmin * wb2 >= wb1 * wb1)
+        {
+            dbprintf(2, " [3bar inner ratios]");
+            return(-1);
+        }
         ibar = (ibar >> 13) + 4;
+    }
     else {
-        dbprintf(2, " [bar comb]");
+        dbprintf(2, " [bar inner ratios]");
         return(-1);
     }
 
@@ -102,9 +124,12 @@ codabar_decode7 (zbar_decoder_t *dcode)
     unsigned wsmid = get_width(dcode, (ispc >> 4) & 0xf);
     unsigned wsmin = get_width(dcode, (ispc >> 8) & 0xf);
     if(ibar >> 2) {
-        // verify no wide spaces
-        if(wsmin * 8 < wsmax * 3) {
-            dbprintf(2, " [space comb0]");
+        /* verify no wide spaces */
+        if(8 * wsmin < wsmax ||
+           8 * wsmin < 5 * wsmid ||
+           8 * wsmid < 5 * wsmax)
+        {
+            dbprintf(2, " [0space inner ratios]");
             return(-1);
         }
         ibar &= 0x3;
@@ -114,12 +139,23 @@ codabar_decode7 (zbar_decoder_t *dcode)
         dbprintf(2, " ex[%d]=%x", ibar, c);
         return(c);
     }
-    else if(8 * wsmin > 5 * wsmax) {
-        dbprintf(2, " [space comb1]");
+    else if(8 * wsmin < wsmax ||
+            3 * wsmin > 2 * wsmax)
+    {
+        dbprintf(2, " [space outer ratio]");
         return(-1);
     }
-    else if(8 * wsmid < 5 * wsmax) {
-        // single wide space
+
+    unsigned long s0s2 = wsmin * wsmax;
+    unsigned long s1s1 = wsmid * wsmid;
+    if(s1s1 + s1s1 / 8 < s0s2) {
+        /* single wide space */
+        if(8 * wsmin < 5 * wsmid ||
+           4 * wsmid > 3 * wsmax)
+        {
+            dbprintf(2, " [1space inner ratios]");
+            return(-1);
+        }
         ispc = ((ispc & 0xf) >> 1) - 1;
         unsigned ic = (ispc << 2) | ibar;
         if(codabar->direction)
@@ -128,8 +164,14 @@ codabar_decode7 (zbar_decoder_t *dcode)
         dbprintf(2, "(%d) lo[%d]=%x", ispc, ic, c);
         return(c);
     }
-    else if(8 * wsmin < 5 * wsmid) {
-        // two wide spaces, check start/stop
+    else if(s1s1 > s0s2 + s0s2 / 8) {
+        /* two wide spaces, check start/stop */
+        if(4 * wsmin > 3 * wsmid ||
+           8 * wsmid < 5 * wsmax)
+        {
+            dbprintf(2, " [2space inner ratios]");
+            return(-1);
+        }
         ispc >>= 10;
         dbprintf(2, "(%d)", ispc);
         unsigned ic = ispc * 4 + ibar;
@@ -144,7 +186,7 @@ codabar_decode7 (zbar_decoder_t *dcode)
         return(c);
     }
     else {
-        dbprintf(2, " [space ratio]");
+        dbprintf(2, " [space inner ratios]");
         return(-1);
     }
 }
@@ -177,11 +219,13 @@ codabar_decode_start (zbar_decoder_t *dcode)
 
     /* require 2 wide and 1 narrow spaces */
     unsigned wsmax = get_width(dcode, ispc & 0xf);
-    unsigned wsmid = get_width(dcode, (ispc >> 4) & 0xf);
     unsigned wsmin = get_width(dcode, ispc >> 8);
+    unsigned wsmid = get_width(dcode, (ispc >> 4) & 0xf);
     if(8 * wsmin < wsmax ||
-       8 * wsmin > 5 * wsmax ||
-       8 * wsmid < 5 * wsmax)
+       3 * wsmin > 2 * wsmax ||
+       4 * wsmin > 3 * wsmid ||
+       8 * wsmid < 5 * wsmax ||
+       wsmid * wsmid <= wsmax * wsmin)
     {
         dbprintf(2, " [space ratio]\n");
         return(ZBAR_NONE);
@@ -193,18 +237,25 @@ codabar_decode_start (zbar_decoder_t *dcode)
     unsigned ibar = decode_sortn(dcode, 4, 1);
     dbprintf(2, " bar=%04x", ibar);
 
-    /* require 1 wide & 3 narrow bars */
     unsigned wbmax = get_width(dcode, ibar & 0xf);
     unsigned wbmin = get_width(dcode, ibar >> 12);
     if(8 * wbmin < wbmax ||
-       8 * wbmin > 5 * wbmax)
+       3 * wbmin > 2 * wbmax)
     {
-        dbprintf(2, " [bar0 ratio]\n");
+        dbprintf(2, " [bar outer ratio]\n");
         return(ZBAR_NONE);
     }
-    unsigned wbmid = get_width(dcode, (ibar >> 4) & 0xf);
-    if(8 * wbmid > 5 * wbmax) {
-        dbprintf(2, " [bar2 ratio]\n");
+
+    /* require 1 wide & 3 narrow bars */
+    unsigned wb1 = get_width(dcode, (ibar >> 8) & 0xf);
+    unsigned wb2 = get_width(dcode, (ibar >> 4) & 0xf);
+    if(8 * wbmin < 5 * wb1 ||
+       8 * wb1 < 5 * wb2 ||
+       4 * wb2 > 3 * wbmax ||
+       wb1 * wb2 >= wbmin * wbmax ||
+       wb2 * wb2 >= wb1 * wbmax)
+    {
+        dbprintf(2, " [bar inner ratios]\n");
         return(ZBAR_NONE);
     }
     ibar = ((ibar & 0xf) - 1) >> 1;
