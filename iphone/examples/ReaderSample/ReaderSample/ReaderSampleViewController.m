@@ -2,7 +2,7 @@
 //  ReaderSampleViewController.m
 //  ReaderSample
 //
-//  Created by spadix on 8/4/10.
+//  Created by spadix on 4/14/11.
 //
 
 #import "ReaderSampleViewController.h"
@@ -22,12 +22,12 @@
 
     // EXAMPLE: disable rarely used I2/5 to improve performance
     [scanner setSymbology: ZBAR_I25
-             config: ZBAR_CFG_ENABLE
-             to: 0];
+                   config: ZBAR_CFG_ENABLE
+                       to: 0];
 
     // present and release the controller
     [self presentModalViewController: reader
-          animated: YES];
+                            animated: YES];
     [reader release];
 }
 
@@ -36,7 +36,7 @@
 {
     // ADD: get the decode results
     id<NSFastEnumeration> results =
-        [info objectForKey: ZBarReaderControllerResults];
+    [info objectForKey: ZBarReaderControllerResults];
     ZBarSymbol *symbol = nil;
     for(symbol in results)
         // EXAMPLE: just grab the first barcode
@@ -47,19 +47,13 @@
 
     // EXAMPLE: do something useful with the barcode image
     resultImage.image =
-        [info objectForKey: UIImagePickerControllerOriginalImage];
+    [info objectForKey: UIImagePickerControllerOriginalImage];
 
     // ADD: dismiss the controller (NB dismiss from the *reader*!)
     [reader dismissModalViewControllerAnimated: YES];
 }
 
-- (void)didReceiveMemoryWarning {
-    // Releases the view if it doesn't have a superview.
-    [super didReceiveMemoryWarning];
-    // Release any cached data, images, etc that aren't in use.
-}
-
-- (void)dealloc {
+- (void) dealloc {
     self.resultImage = nil;
     self.resultText = nil;
     [super dealloc];

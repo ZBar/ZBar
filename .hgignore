@@ -23,4 +23,6 @@ python/MANIFEST
 build
 *.xcodeproj/*.mode1v3
 *.xcodeproj/*.pbxuser
+xcuserdata
+contents.xcworkspacedata
 .DS_Store
