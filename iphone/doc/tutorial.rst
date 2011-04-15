@@ -97,9 +97,8 @@ Now for the exciting part - let's add a barcode reader!
 3. Drag the :file:`ZBarSDK` folder into your Xcode project.  Make sure that
    the "Copy Items into destination group's folder" checkbox is checked.
 
-4. Right-click the ``Frameworks`` group in your project.  Select
-   ``Add -> Existing Frameworks...``  Make sure "All" are listed and add each
-   of these from the ``Device`` list (NB hold down command for multiple
+4. Open the target build settings and find ``Link Binary With Libraries``.
+   Click the ``+`` and add each of these (NB hold down command for multiple
    selection):
 
    * AVFoundation.framework
@@ -109,7 +108,7 @@ Now for the exciting part - let's add a barcode reader!
    * libiconv.dylib
 
 5. Import the SDK header.  You will usually want to prefix it, so add it to
-   :file:`ReaderSample_prefix.pch`::
+   :file:`ReaderSample-prefix.pch`::
 
       // ADD: import barcode reader APIs
       #import "ZBarSDK.h"
@@ -179,7 +178,7 @@ Testing
 
 1. Save everything (don't forget to save MyAppViewController.xib).
 
-2. Select "Build and Run".
+2. Build and Run the project.
 
 3. Tap the Scan button.
 

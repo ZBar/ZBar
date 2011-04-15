@@ -2,13 +2,14 @@
 //  main.m
 //  ReaderSample
 //
-//  Created by spadix on 8/4/10.
+//  Created by spadix on 4/14/11.
 //
 
 #import <UIKit/UIKit.h>
 
-int main(int argc, char *argv[]) {
-    NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
+int main(int argc, char *argv[])
+{
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     int retVal = UIApplicationMain(argc, argv, nil, nil);
     [pool release];
     return retVal;
