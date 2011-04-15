@@ -1,4 +1,5 @@
 current:
+  * enhance readertest to support default/demo pre-config and distribution
   * updates for Xcode 4
   * expose tracking box color
 

@@ -775,6 +775,7 @@
 				);
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = zbar;
+				SKIP_INSTALL = YES;
 			};
 			name = Debug;
 		};
@@ -793,6 +794,7 @@
 				);
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = zbar;
+				SKIP_INSTALL = YES;
 			};
 			name = Release;
 		};
@@ -813,7 +815,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
-				OTHER_LDFLAGS = "-ObjC";
+				OTHER_LDFLAGS = "-all_load";
 				PREBINDING = NO;
 				PROVISIONING_PROFILE = "";
 				RUN_CLANG_STATIC_ANALYZER = NO;
@@ -826,6 +828,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				EXCLUDED_SOURCE_FILE_NAMES = "";
 				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphoneos*][arch=*]" = ZBarReaderViewImpl_Simulator.m;
 				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphonesimulator*][arch=*]" = (
@@ -837,8 +840,9 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
-				OTHER_LDFLAGS = "-ObjC";
+				OTHER_LDFLAGS = "-all_load";
 				PREBINDING = NO;
+				PROVISIONING_PROFILE = "";
 				RUN_CLANG_STATIC_ANALYZER = NO;
 				SDKROOT = iphoneos;
 				USE_HEADERMAP = NO;
@@ -867,7 +871,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -879,12 +882,6 @@
 				);
 				INFOPLIST_FILE = examples/readertest/readertest.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
-				OTHER_LDFLAGS = (
-					"-framework",
-					Foundation,
-					"-framework",
-					UIKit,
-				);
 				PREBINDING = NO;
 				PRODUCT_NAME = readertest;
 			};
@@ -894,7 +891,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
@@ -906,17 +902,97 @@
 				);
 				INFOPLIST_FILE = examples/readertest/readertest.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
-				OTHER_LDFLAGS = (
-					"-framework",
-					Foundation,
-					"-framework",
-					UIKit,
-				);
 				PREBINDING = NO;
 				PRODUCT_NAME = readertest;
 				ZERO_LINK = NO;
 			};
 			name = Release;
+		};
+		DC3748D71357BC69004E69D6 /* Distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CODE_SIGN_IDENTITY = "iPhone Distribution";
+				EXCLUDED_SOURCE_FILE_NAMES = "";
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphoneos*][arch=*]" = ZBarReaderViewImpl_Simulator.m;
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphonesimulator*][arch=*]" = (
+					ZBarReaderViewImpl_Capture.m,
+					ZBarCaptureReader.m,
+				);
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_PREPROCESSOR_DEFINITIONS = "NDEBUG=1";
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				OTHER_LDFLAGS = "-all_load";
+				PREBINDING = NO;
+				PROVISIONING_PROFILE = "";
+				RUN_CLANG_STATIC_ANALYZER = NO;
+				SDKROOT = iphoneos;
+				USE_HEADERMAP = NO;
+			};
+			name = Distribution;
+		};
+		DC3748D81357BC69004E69D6 /* Distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = include/prefix.pch;
+				HEADER_SEARCH_PATHS = (
+					include,
+					../include,
+					../zbar,
+				);
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = zbar;
+				SKIP_INSTALL = YES;
+			};
+			name = Distribution;
+		};
+		DC3748D91357BC69004E69D6 /* Distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				PRODUCT_NAME = ZBarSDK;
+				TARGET_BUILD_DIR = "$(TARGET_BUILD_DIR)/$(PRODUCT_NAME)";
+				ZERO_LINK = NO;
+			};
+			name = Distribution;
+		};
+		DC3748DA1357BC69004E69D6 /* Distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				PRODUCT_NAME = ZBarSDK.dmg;
+				TARGET_BUILD_DIR = "$(TARGET_BUILD_DIR)/$(PRODUCT_NAME)";
+			};
+			name = Distribution;
+		};
+		DC3748DB1357BC69004E69D6 /* Distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = examples/readertest/prefix.pch;
+				HEADER_SEARCH_PATHS = (
+					include/ZBarSDK,
+					../include,
+				);
+				INFOPLIST_FILE = examples/readertest/readertest.plist;
+				INSTALL_PATH = "$(HOME)/Applications";
+				PREBINDING = NO;
+				PRODUCT_NAME = readertest;
+				ZERO_LINK = NO;
+			};
+			name = Distribution;
 		};
 		DC3CEE831215C7EF00D7A786 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -949,45 +1025,50 @@
 			buildConfigurations = (
 				1DEB921F08733DC00010E9CD /* Debug */,
 				1DEB922008733DC00010E9CD /* Release */,
+				DC3748D81357BC69004E69D6 /* Distribution */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Distribution;
 		};
 		1DEB922208733DC00010E9CD /* Build configuration list for PBXProject "zbar" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1DEB922308733DC00010E9CD /* Debug */,
 				1DEB922408733DC00010E9CD /* Release */,
+				DC3748D71357BC69004E69D6 /* Distribution */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Distribution;
 		};
 		DC1A4A5311FF5D3D00BCDA30 /* Build configuration list for PBXAggregateTarget "ZBarSDK.dmg" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				DC1A4A4F11FF5D0500BCDA30 /* Debug */,
 				DC1A4A5011FF5D0500BCDA30 /* Release */,
+				DC3748DA1357BC69004E69D6 /* Distribution */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Distribution;
 		};
 		DC299A9A1208B5D5006A023C /* Build configuration list for PBXNativeTarget "readertest" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				DC299A981208B5D5006A023C /* Debug */,
 				DC299A991208B5D5006A023C /* Release */,
+				DC3748DB1357BC69004E69D6 /* Distribution */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Distribution;
 		};
 		DC3CEE851215C83500D7A786 /* Build configuration list for PBXAggregateTarget "ZBarSDK" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				DC3CEE831215C7EF00D7A786 /* Debug */,
 				DC3CEE841215C7EF00D7A786 /* Release */,
+				DC3748D91357BC69004E69D6 /* Distribution */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Distribution;
 		};
 /* End XCConfigurationList section */
 	};

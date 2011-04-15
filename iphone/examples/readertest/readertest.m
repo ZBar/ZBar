@@ -1,7 +1,3 @@
-#if 0
-# define VALGRIND "/usr/local/bin/valgrind"
-#endif
-
 enum {
     CLASS_SECTION = 0,
     SOURCE_SECTION,
@@ -46,7 +42,11 @@ static const NSInteger const density_choices[] = {
     UIWindow *window;
     UINavigationController *nav;
 
+    NSSet *defaultSymbologies;
+    CGFloat defaultZoom;
+
     NSMutableArray *sections, *symbolEnables;
+    NSInteger xDensity, yDensity;
 
     BOOL found, paused, continuous;
     NSInteger dataHeight;
@@ -67,18 +67,49 @@ static const NSInteger const density_choices[] = {
 
 - (id) init
 {
-    // force these classes to load
-    [ZBarReaderViewController class];
-    [ZBarReaderController class];
-
     return([super initWithStyle: UITableViewStyleGrouped]);
 }
 
 - (void) initReader: (NSString*) clsName
 {
     [reader release];
-    reader = [NSClassFromString(clsName) new];
+    Class cls = [[NSBundle mainBundle]
+                    classNamed: clsName];
+    assert(cls);
+    reader = [cls new];
+    assert(reader);
     reader.readerDelegate = self;
+    xDensity = yDensity = 3;
+
+#if 0
+    // apply defaults for demo
+    ZBarImageScanner *scanner = reader.scanner;
+    continuous = NO;
+    defaultZoom = 1;
+    reader.showsZBarControls = NO;
+    reader.scanCrop = CGRectMake(0, .35, 1, .3);
+
+    [defaultSymbologies release];
+    defaultSymbologies =
+        [[NSSet alloc]
+            initWithObjects:
+                [NSNumber numberWithInteger: ZBAR_CODE128],
+                nil];
+    [scanner setSymbology: 0
+             config: ZBAR_CFG_ENABLE
+             to: 0];
+    for(NSNumber *sym in defaultSymbologies)
+        [scanner setSymbology: sym.integerValue
+                 config: ZBAR_CFG_ENABLE
+                 to: 1];
+
+    [scanner setSymbology: 0
+             config: ZBAR_CFG_X_DENSITY
+             to: (xDensity = 0)];
+    [scanner setSymbology: 0
+             config: ZBAR_CFG_Y_DENSITY
+             to: (yDensity = 1)];
+#endif
 }
 
 - (void) initOverlay
@@ -189,6 +220,28 @@ static const NSInteger const density_choices[] = {
     [overlay addSubview: info];
 }
 
+- (void) updateCropMask
+{
+    CGRect r = reader.scanCrop;
+    r.origin.x *= 426;
+    r.origin.y *= 320;
+    r.size.width *= 426;
+    r.size.height *= 320;
+    UIView *mask = [masks objectAtIndex: 0];
+    mask.frame = CGRectMake(0, -426, 320, r.origin.x);
+    mask = [masks objectAtIndex: 1];
+    mask.frame = CGRectMake(0, r.origin.x - 426, r.origin.y, r.size.width);
+
+    r.origin.y += r.size.height;
+    mask = [masks objectAtIndex: 2];
+    mask.frame = CGRectMake(r.origin.y, r.origin.x - 426,
+                            320 - r.origin.y, r.size.width);
+
+    r.origin.x += r.size.width;
+    mask = [masks objectAtIndex: 3];
+    mask.frame = CGRectMake(0, r.origin.x - 426, 320, 426 - r.origin.x);
+}
+
 - (void) setCheck: (BOOL) state
           forCell: (UITableViewCell*) cell
 {
@@ -293,7 +346,7 @@ static const NSInteger const density_choices[] = {
              reuseIdentifier: nil]
             autorelease];
     cropCell.textLabel.text = @"scanCrop";
-    cropCell.detailTextLabel.text = NSStringFromCGRect(crop_choices[0]);
+    cropCell.detailTextLabel.text = NSStringFromCGRect(reader.scanCrop);
 
     UITableViewCell *xDensityCell =
         [[[UITableViewCell alloc]
@@ -303,7 +356,7 @@ static const NSInteger const density_choices[] = {
     xDensityCell.textLabel.text = @"CFG_X_DENSITY";
     xDensityCell.detailTextLabel.tag = ZBAR_CFG_X_DENSITY;
     xDensityCell.detailTextLabel.text =
-        [NSString stringWithFormat: @"%d", density_choices[0]];
+        [NSString stringWithFormat: @"%d", xDensity];
 
     UITableViewCell *yDensityCell =
         [[[UITableViewCell alloc]
@@ -313,7 +366,7 @@ static const NSInteger const density_choices[] = {
     yDensityCell.textLabel.text = @"CFG_Y_DENSITY";
     yDensityCell.detailTextLabel.tag = ZBAR_CFG_Y_DENSITY;
     yDensityCell.detailTextLabel.text =
-        [NSString stringWithFormat: @"%d", density_choices[0]];
+        [NSString stringWithFormat: @"%d", yDensity];
 
     [sections replaceObjectAtIndex: CUSTOM_SECTION
               withObject: [NSArray arrayWithObjects:
@@ -325,25 +378,30 @@ static const NSInteger const density_choices[] = {
                                     checked: continuous],
                               nil]];
 
-    static const int symbolValues[] = {
+    static const zbar_symbol_type_t allSymbologies[] = {
         ZBAR_QRCODE, ZBAR_CODE128, ZBAR_CODE93, ZBAR_CODE39, ZBAR_I25,
         ZBAR_DATABAR, ZBAR_DATABAR_EXP,
         ZBAR_EAN13, ZBAR_EAN8, 
-	ZBAR_EAN2, ZBAR_EAN5, ZBAR_COMPOSITE,
-	ZBAR_UPCA, ZBAR_UPCE,
-	ZBAR_ISBN13, ZBAR_ISBN10,
+        ZBAR_EAN2, ZBAR_EAN5, ZBAR_COMPOSITE,
+        ZBAR_UPCA, ZBAR_UPCE,
+        ZBAR_ISBN13, ZBAR_ISBN10,
         0
     };
     NSMutableArray *symbols = [NSMutableArray array];
     [symbolEnables release];
-    symbolEnables = [[NSMutableArray alloc] init];
+    symbolEnables = [NSMutableArray new];
     BOOL en = YES;
-    for(int i = 0; symbolValues[i]; i++) {
-        /* symbologies after ZBAR_EAN5 are disabled by default */
-        en = en && (symbolValues[i] != ZBAR_COMPOSITE);
+    for(int i = 0; allSymbologies[i]; i++) {
+        zbar_symbol_type_t sym = allSymbologies[i];
+        if(defaultSymbologies)
+            en = !![defaultSymbologies member:
+                       [NSNumber numberWithInteger: sym]];
+        else
+            /* symbologies after ZBAR_EAN5 are disabled by default */
+            en = en && (sym != ZBAR_COMPOSITE);
         [symbols addObject:
-            [self cellWithTitle: [ZBarSymbol nameForType: symbolValues[i]]
-                  tag: symbolValues[i]
+            [self cellWithTitle: [ZBarSymbol nameForType: sym]
+                  tag: sym
                   checked: en]];
         [symbolEnables addObject: [NSNumber numberWithBool: en]];
     }
@@ -362,6 +420,7 @@ static const NSInteger const density_choices[] = {
     view.dataSource = self;
 
     [self initOverlay];
+    [self updateCropMask];
 
     sections = [[NSMutableArray alloc]
                    initWithCapacity: NUM_SECTIONS];
@@ -448,8 +507,11 @@ static const NSInteger const density_choices[] = {
     typeOvl.text = nil;
     dataOvl.text = nil;
     [self.tableView reloadData];
-    if([reader respondsToSelector: @selector(readerView)])
+    if([reader respondsToSelector: @selector(readerView)]) {
         reader.readerView.showsFPS = YES;
+        if(defaultZoom)
+            reader.readerView.zoom = defaultZoom;
+    }
     if(reader.sourceType == UIImagePickerControllerSourceTypeCamera)
         reader.cameraOverlayView = (reader.showsZBarControls) ? nil : overlay;
     manualBtn.enabled = TARGET_IPHONE_SIMULATOR ||
@@ -576,35 +638,20 @@ static const NSInteger const density_choices[] = {
     reader.scanCrop = r;
     label.text = NSStringFromCGRect(r);
 
-    r.origin.x *= 426;
-    r.origin.y *= 320;
-    r.size.width *= 426;
-    r.size.height *= 320;
-    UIView *mask = [masks objectAtIndex: 0];
-    mask.frame = CGRectMake(0, -426, 320, r.origin.x);
-    mask = [masks objectAtIndex: 1];
-    mask.frame = CGRectMake(0, r.origin.x - 426, r.origin.y, r.size.width);
-
-    r.origin.y += r.size.height;
-    mask = [masks objectAtIndex: 2];
-    mask.frame = CGRectMake(r.origin.y, r.origin.x - 426,
-                            320 - r.origin.y, r.size.width);
-
-    r.origin.x += r.size.width;
-    mask = [masks objectAtIndex: 3];
-    mask.frame = CGRectMake(0, r.origin.x - 426, 320, 426 - r.origin.x);
+    [self updateCropMask];
 }
 
 - (void) advanceDensity: (UILabel*) label
+                  value: (NSInteger*) value
 {
-    NSInteger d = [label.text integerValue];
+    NSInteger d = *value;
     int i;
     for(i = 0; density_choices[i] >= 0;)
         if(d == density_choices[i++])
             break;
     if(density_choices[i] < 0)
         i = 0;
-    d = density_choices[i];
+    *value = d = density_choices[i];
     assert(d >= 0);
     [reader.scanner setSymbology: 0
            config: label.tag
@@ -625,6 +672,7 @@ static const NSInteger const density_choices[] = {
     case CLASS_SECTION: {
         NSString *name = cell.textLabel.text;
         [self initReader: name];
+        [self updateCropMask];
         [self initControlCells];
         [self setCheckForName: name
               inSection: CLASS_SECTION];
@@ -670,8 +718,12 @@ static const NSInteger const density_choices[] = {
         switch(path.row)
         {
         case 0:
+            [self advanceDensity: cell.detailTextLabel
+                  value: &xDensity];
+            break;
         case 1:
-            [self advanceDensity: cell.detailTextLabel];
+            [self advanceDensity: cell.detailTextLabel
+                  value: &yDensity];
             break;
         case 2:
             [self advanceCrop: cell.detailTextLabel];
@@ -818,14 +870,6 @@ static const NSInteger const density_choices[] = {
 
 int main (int argc, char *argv[])
 {
-#ifdef VALGRIND
-    if(argc < 2 || (argc >= 2 && strcmp(argv[1], "-valgrind")))
-        execl(VALGRIND, VALGRIND,
-              "--log-file=/tmp/memcheck.log", "--leak-check=full",
-              argv[0], "-valgrind",
-              NULL);
-#endif
-
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
     int rc = UIApplicationMain(argc, argv, nil, @"AppDelegate");
     [pool release];
