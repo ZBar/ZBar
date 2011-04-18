@@ -493,7 +493,7 @@ zbar_image_scanner_t *zbar_image_scanner_create ()
     zbar_image_scanner_set_config(iscn, ZBAR_CODE128, ZBAR_CFG_UNCERTAINTY, 0);
     zbar_image_scanner_set_config(iscn, ZBAR_CODE93, ZBAR_CFG_UNCERTAINTY, 0);
     zbar_image_scanner_set_config(iscn, ZBAR_CODE39, ZBAR_CFG_UNCERTAINTY, 0);
-    zbar_image_scanner_set_config(iscn, ZBAR_CODABAR, ZBAR_CFG_UNCERTAINTY, 0);
+    zbar_image_scanner_set_config(iscn, ZBAR_CODABAR, ZBAR_CFG_UNCERTAINTY, 1);
     zbar_image_scanner_set_config(iscn, ZBAR_COMPOSITE, ZBAR_CFG_UNCERTAINTY, 0);
     return(iscn);
 }
@@ -816,8 +816,11 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
         for(symp = &syms->head; *symp; ) {
             zbar_symbol_t *sym = *symp;
             if((sym->type < ZBAR_COMPOSITE && sym->type > ZBAR_PARTIAL) ||
-	       (sym->type == ZBAR_DATABAR || sym->type == ZBAR_DATABAR_EXP)) {
-	        if(filter && sym->quality < 4) {
+               sym->type == ZBAR_DATABAR ||
+               sym->type == ZBAR_DATABAR_EXP ||
+               sym->type == ZBAR_CODABAR)
+            {
+	        if((sym->type == ZBAR_CODABAR || filter) && sym->quality < 4) {
                     /* recycle */
                     *symp = sym->next;
                     syms->nsyms--;
@@ -825,10 +828,12 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
                     _zbar_image_scanner_recycle_syms(iscn, sym);
                     continue;
                 }
-                else if(sym->type > ZBAR_EAN5)
-                    nean++;
-                else
-                    naddon++;
+                else if(sym->type < ZBAR_COMPOSITE) {
+                    if(sym->type > ZBAR_EAN5)
+                        nean++;
+                    else
+                        naddon++;
+                }
             }
             symp = &sym->next;
         }

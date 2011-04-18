@@ -1,4 +1,8 @@
 current:
+  * Codabar reliability enhancements
+    - fix missing check
+    - require minimum quality
+    - bump default uncertainty
   * tweak Codabar bar/space ratio validation
   * finish Codabar support for python, perl, java and iPhone interfaces
     - reduce Codabar uncertainty to minimum

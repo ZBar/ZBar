@@ -172,6 +172,10 @@ codabar_decode7 (zbar_decoder_t *dcode)
             dbprintf(2, " [2space inner ratios]");
             return(-1);
         }
+        if((ispc >> 8) == 4) {
+            dbprintf(2, " [space comb]");
+            return(-1);
+        }
         ispc >>= 10;
         dbprintf(2, "(%d)", ispc);
         unsigned ic = ispc * 4 + ibar;
