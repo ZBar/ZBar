@@ -44,6 +44,7 @@ const char *zbar_get_symbol_name (zbar_symbol_type_t sym)
     case ZBAR_I25: return("I2/5");
     case ZBAR_DATABAR: return("DataBar");
     case ZBAR_DATABAR_EXP: return("DataBar-Exp");
+    case ZBAR_CODABAR: return("Codabar");
     case ZBAR_CODE39: return("CODE-39");
     case ZBAR_CODE93: return("CODE-93");
     case ZBAR_CODE128: return("CODE-128");
@@ -98,7 +99,7 @@ const char *zbar_get_orientation_name (zbar_orientation_t orient)
 int _zbar_get_symbol_hash (zbar_symbol_type_t sym)
 {
     static const signed char hash[0x20] = {
-        0x00, 0x01, 0x10, 0x11,   -1, 0x11,   -1, 0x0c,
+        0x00, 0x01, 0x10, 0x11,   -1, 0x11, 0x16, 0x0c,
 	0x05, 0x06, 0x08,   -1, 0x04, 0x03, 0x07, 0x12,
 	  -1,   -1,   -1,   -1,   -1,   -1,   -1, 0x02,
 	  -1, 0x00, 0x12, 0x0c, 0x0b, 0x1d, 0x0a, 0x00,

@@ -89,6 +89,7 @@ class TestZBarFunctions(ut.TestCase):
                     zbar.Symbol.DATABAR,
                     zbar.Symbol.DATABAR_EXP,
                     zbar.Symbol.I25,
+                    zbar.Symbol.CODABAR,
                     zbar.Symbol.CODE39,
                     zbar.Symbol.PDF417,
                     zbar.Symbol.QRCODE,

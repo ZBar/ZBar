@@ -1,4 +1,14 @@
 current:
+  * fix image scanner min quality filtering
+  * Codabar reliability enhancements
+    - fix missing check
+    - require minimum quality
+    - bump default uncertainty
+  * tweak Codabar bar/space ratio validation
+  * finish Codabar support for python, perl, java and iPhone interfaces
+    - reduce Codabar uncertainty to minimum
+  * add core support for Codabar symbology
+    - TBD: python, perl, java and iPhone interfaces
   * fix EAN addon enables
   * fix zbarimg to accept autodetected stdin (lone dash)
   * fix Qt 4.6.3 compilation error (patch #3178244)
