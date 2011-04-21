@@ -23,6 +23,7 @@
 
 #import <ZBarSDK/ZBarReaderViewController.h>
 #import <ZBarSDK/ZBarReaderView.h>
+#import <ZBarSDK/ZBarCaptureReader.h>
 #import <ZBarSDK/ZBarHelpController.h>
 
 #define MODULE ZBarReaderViewController
@@ -125,6 +126,12 @@
     toolbar.frame = r;
     toolbar.barStyle = UIBarStyleBlackOpaque;
 
+    UIButton *info =
+        [UIButton buttonWithType: UIButtonTypeInfoLight];
+    [info addTarget: self
+          action: @selector(info)
+          forControlEvents: UIControlEventTouchUpInside];
+
     toolbar.items =
         [NSArray arrayWithObjects:
             [[[UIBarButtonItem alloc]
@@ -137,19 +144,12 @@
                  target: nil
                  action: nil]
                 autorelease],
+            [[[UIBarButtonItem alloc]
+                 initWithCustomView: info]
+                autorelease],
             nil];
     [controls addSubview: toolbar];
     [toolbar release];
-
-    UIButton *info =
-        [UIButton buttonWithType: UIButtonTypeInfoLight];
-    r.origin.x = r.size.width - 54;
-    r.size.width = 54;
-    info.frame = r;
-    [info addTarget: self
-             action: @selector(info)
-             forControlEvents: UIControlEventTouchUpInside];
-    [controls addSubview: info];
 
     [view addSubview: controls];
 }
@@ -317,6 +317,12 @@
             context: nil];
     help.view.alpha = 1;
     [UIView commitAnimations];
+}
+
+- (void) takePicture
+{
+    if(readerView)
+        [readerView.captureReader captureFrame];
 }
 
 // ZBarHelpDelegate

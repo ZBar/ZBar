@@ -32,6 +32,13 @@
 #define MODULE ZBarCaptureReader
 #import "debug.h"
 
+enum {
+    STOPPED = 0,
+    RUNNING = 1,
+    PAUSED = 2,
+    CAPTURE = 4,
+};
+
 @implementation ZBarCaptureReader
 
 @synthesize captureOutput, captureDelegate, scanner, scanCrop, size,
@@ -129,17 +136,19 @@
 
 - (BOOL) enableReader
 {
-    return(!OSAtomicCompareAndSwap32Barrier(0, 0, &running));
+    return(OSAtomicOr32Barrier(0, &state) & RUNNING);
 }
 
 - (void) setEnableReader: (BOOL) enable
 {
     if(!enable)
-        OSAtomicAnd32OrigBarrier(0, (void*)&running);
-    else if(OSAtomicCompareAndSwap32Barrier(0, 1, &running))
+        OSAtomicAnd32Barrier(STOPPED, &state);
+    else if(!(OSAtomicOr32OrigBarrier(RUNNING, &state) & RUNNING)) {
+        OSAtomicAnd32Barrier(~PAUSED, &state);
         @synchronized(scanner) {
             scanner.enableCache = enableCache;
         }
+    }
 }
 
 - (void) willStartRunning
@@ -157,6 +166,11 @@
     @synchronized(scanner) {
         scanner.enableCache = enableCache;
     }
+}
+
+- (void) captureFrame
+{
+    OSAtomicOr32(CAPTURE, &state);
 }
 
 - (void) setCaptureDelegate: (id<ZBarCaptureDelegate>) delegate
@@ -197,7 +211,7 @@
     [captureDelegate
         captureReader: self
         didReadNewSymbolsFromImage: img];
-    OSAtomicCompareAndSwap32Barrier(2, 1, &running);
+    OSAtomicAnd32Barrier(~PAUSED, &state);
     zlog(@"latency: delegate=%gs total=%gs",
          timer_elapsed(t_start, timer_now()),
          timer_elapsed(t_scan, timer_now()));
@@ -231,7 +245,8 @@
 {
     // queue is apparently not flushed when stopping;
     // only process when running
-    if(!OSAtomicCompareAndSwap32Barrier(1, 1, &running))
+    uint32_t _state = OSAtomicOr32Barrier(0, &state);
+    if((_state & (PAUSED | RUNNING)) != RUNNING)
         return;
 
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
@@ -317,17 +332,17 @@
             // return unfiltered results for tracking feedback
             syms.filterSymbols = NO;
             int nraw = syms.count;
-            if(nraw > 0)
-                zlog(@"scan image: %dx%d crop=%@ ngood=%d nraw=%d",
-                     w, h, NSStringFromCGRect(image.crop), ngood, nraw);
+            if(nraw > 0 || (_state & CAPTURE))
+                zlog(@"scan image: %dx%d crop=%@ ngood=%d nraw=%d st=%d",
+                     w, h, NSStringFromCGRect(image.crop), ngood, nraw, _state);
 
-            if(ngood) {
+            if(ngood || (_state & CAPTURE)) {
                 // copy image data so we can release the buffer
                 result.size = CGSizeMake(w, h);
                 result.pixelBuffer = buf;
                 result.symbols = syms;
                 t_scan = now;
-                OSAtomicCompareAndSwap32Barrier(1, 2, &running);
+                OSAtomicXor32Barrier((_state & CAPTURE) | PAUSED, &state);
                 [self performSelectorOnMainThread:
                           @selector(didReadNewSymbolsFromImage:)
                       withObject: result

@@ -78,6 +78,9 @@
 // the onZBarHelp() javascript function.
 - (void) showHelpWithReason: (NSString*) reason;
 
+// capture the next frame and send it over the usual delegate path.
+- (void) takePicture;
+
 // direct access to the ZBarReaderView
 @property (nonatomic, readonly) ZBarReaderView *readerView;
 

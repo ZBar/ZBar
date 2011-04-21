@@ -1,4 +1,6 @@
 current:
+  * add manual frame capture
+    - readertest save as PNG
   * enhance readertest to support default/demo pre-config and distribution
   * updates for Xcode 4
   * expose tracking box color

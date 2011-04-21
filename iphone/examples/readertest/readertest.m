@@ -177,6 +177,13 @@ static const NSInteger const density_choices[] = {
                     target: self
                     action: @selector(manualCapture)];
 
+
+    UIButton *info =
+        [UIButton buttonWithType: UIButtonTypeInfoLight];
+    [info addTarget: self
+          action: @selector(info)
+          forControlEvents: UIControlEventTouchUpInside];
+
     toolbar.items =
         [NSArray arrayWithObjects:
             [[[UIBarButtonItem alloc]
@@ -206,18 +213,12 @@ static const NSInteger const density_choices[] = {
                  target: nil
                  action: nil]
                 autorelease],
+            [[[UIBarButtonItem alloc]
+                 initWithCustomView: info]
+                autorelease],
             nil];
     [overlay addSubview: toolbar];
     [toolbar release];
-
-
-    UIButton *info =
-        [UIButton buttonWithType: UIButtonTypeInfoLight];
-    info.frame = CGRectMake(266, 0, 54, 54);
-    [info addTarget: self
-             action: @selector(info)
-             forControlEvents: UIControlEventTouchUpInside];
-    [overlay addSubview: info];
 }
 
 - (void) updateCropMask
@@ -515,7 +516,8 @@ static const NSInteger const density_choices[] = {
     if(reader.sourceType == UIImagePickerControllerSourceTypeCamera)
         reader.cameraOverlayView = (reader.showsZBarControls) ? nil : overlay;
     manualBtn.enabled = TARGET_IPHONE_SIMULATOR ||
-        (reader.cameraMode == ZBarReaderControllerCameraModeDefault);
+        (reader.cameraMode == ZBarReaderControllerCameraModeDefault) ||
+        [reader isKindOfClass: [ZBarReaderViewController class]];
     [self presentModalViewController: reader
           animated: YES];
 }
@@ -787,8 +789,12 @@ static const NSInteger const density_choices[] = {
     if(idx == sheet.cancelButtonIndex)
         return;
     idx -= sheet.firstOtherButtonIndex;
-    if(!idx)
-        UIImageWriteToSavedPhotosAlbum(imageView.image, nil, NULL, NULL);
+    if(!idx) {
+        UIImage *img =
+            [UIImage imageWithData:
+                         UIImagePNGRepresentation(imageView.image)];
+        UIImageWriteToSavedPhotosAlbum(img, nil, NULL, NULL);
+    }
 }
 
 // ZBarReaderDelegate
@@ -810,7 +816,6 @@ static const NSInteger const density_choices[] = {
     for(ZBarSymbol *sym in results)
         if(sym.quality > quality)
             bestResult = sym;
-    assert(!!bestResult);
 
     [self performSelector: @selector(presentResult:)
           withObject: bestResult
@@ -821,10 +826,14 @@ static const NSInteger const density_choices[] = {
 
 - (void) presentResult: (ZBarSymbol*) sym
 {
-    found = !!sym;
-    NSString *typeName = sym.typeName;
+    found = sym || imageView.image;
+    NSString *typeName = @"NONE";
+    NSString *data = @"";
+    if(sym) {
+        typeName = sym.typeName;
+        data = sym.data;
+    }
     typeLabel.text = typeName;
-    NSString *data = sym.data;
     dataLabel.text = data;
 
     if(continuous) {
@@ -833,7 +842,7 @@ static const NSInteger const density_choices[] = {
     }
 
     NSLog(@"imagePickerController:didFinishPickingMediaWithInfo:\n");
-    NSLog(@"    type=%@ data=%@\n", sym.typeName, data);
+    NSLog(@"    type=%@ data=%@\n", typeName, data);
 
     CGSize size = [data sizeWithFont: [UIFont systemFontOfSize: 17]
                         constrainedToSize: CGSizeMake(288, 2000)
