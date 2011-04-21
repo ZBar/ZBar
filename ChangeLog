@@ -1,4 +1,5 @@
 current:
+  * fix image scanner min quality filtering
   * Codabar reliability enhancements
     - fix missing check
     - require minimum quality
