@@ -187,6 +187,9 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
         return(ZBAR_NONE);
     }
 
+    zassert(dcode25->character < dcode->buf_alloc, ZBAR_NONE, "i=%02x %s\n",
+            dcode25->character,
+            _zbar_decoder_buf_dump(dcode->buf, dcode25->character));
     dcode->buflen = dcode25->character;
     dcode->buf[dcode25->character] = '\0';
     dcode->modifiers = 0;
@@ -229,8 +232,7 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
         goto reset;
     }
 
-    if((dcode25->character >= BUFFER_MIN) &&
-       size_buf(dcode, dcode25->character + 2)) {
+    if(size_buf(dcode, dcode25->character + 3)) {
         dbprintf(2, " [overflow]\n");
         goto reset;
     }

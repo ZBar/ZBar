@@ -420,8 +420,11 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
         /* FIXME check pad? */
     }
 
-    *buf = 0;
     i = buf - dcode->buf;
+    zassert(i < dcode->buf_alloc, -1, "i=%02x %s\n", i,
+            _zbar_decoder_buf_dump(dcode->buf, i));
+
+    *buf = 0;
     dcode->buflen = i;
     if(i && *--buf == GS) {
         *buf = 0;

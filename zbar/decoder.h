@@ -210,6 +210,8 @@ static inline char size_buf (zbar_decoder_t *dcode,
                              unsigned len)
 {
     unsigned char *buf;
+    if(len <= BUFFER_MIN)
+        return(0);
     if(len < dcode->buf_alloc)
         /* FIXME size reduction heuristic? */
         return(0);
