@@ -1,4 +1,5 @@
 current:
+  * fix image scanner min quality filtering
   * fix i25 buffer overrun corner case
   * fix EAN addon enables
   * fix zbarimg to accept autodetected stdin (lone dash)
