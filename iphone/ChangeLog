@@ -1,4 +1,6 @@
 current:
+  * fix readertest max quality result filtering
+    - thanks to John Boydon for finding this!
   * improve support for resizing, rotating and embedding the reader
   * add readertest fixed zoom stops
   * add manual frame capture

@@ -844,9 +844,13 @@ static const CGFloat const zoom_choices[] = {
 
     int quality = 0;
     ZBarSymbol *bestResult = nil;
-    for(ZBarSymbol *sym in results)
-        if(sym.quality > quality)
+    for(ZBarSymbol *sym in results) {
+        int q = sym.quality;
+        if(quality < q) {
+            quality = q;
             bestResult = sym;
+        }
+    }
 
     [self performSelector: @selector(presentResult:)
           withObject: bestResult
