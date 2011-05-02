@@ -84,6 +84,7 @@ static const CGFloat const zoom_choices[] = {
     assert(reader);
     reader.readerDelegate = self;
     xDensity = yDensity = 3;
+    reader.supportedOrientationsMask = ZBarOrientationMaskAll;
 
 #if 0
     // apply defaults for demo

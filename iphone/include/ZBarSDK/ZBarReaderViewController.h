@@ -24,6 +24,14 @@
 #import <UIKit/UIKit.h>
 #import "ZBarReaderController.h"
 
+// orientation set support
+#define ZBarOrientationMask(orient) (1 << orient)
+#define ZBarOrientationMaskAll \
+    (ZBarOrientationMask(UIInterfaceOrientationPortrait) | \
+     ZBarOrientationMask(UIInterfaceOrientationPortraitUpsideDown) | \
+     ZBarOrientationMask(UIInterfaceOrientationLandscapeLeft) | \
+     ZBarOrientationMask(UIInterfaceOrientationLandscapeRight))
+
 @class ZBarReaderView;
 
 // drop in video scanning replacement for ZBarReaderController.
@@ -41,10 +49,13 @@
     UIView *cameraOverlayView;
     CGAffineTransform cameraViewTransform;
     CGRect scanCrop;
+    NSUInteger supportedOrientationsMask;
     BOOL showsZBarControls, tracksSymbols, enableCache;
 
+    ZBarHelpController *helpController;
     UIView *controls;
     BOOL didHideStatusBar;
+    UIPopoverController *simPopover;
 }
 
 // access to configure image scanner
@@ -59,6 +70,10 @@
 // whether to show the green tracking box.  note that, even when
 // enabled, the box will only be visible when scanning EAN and I2/5.
 @property (nonatomic) BOOL tracksSymbols;
+
+// interface orientation support.  bit-mask of accepted orientations.
+// see eg ZBarOrientationMask() and ZBarOrientationMaskAll
+@property (nonatomic) NSUInteger supportedOrientationsMask;
 
 // crop images for scanning.  the image will be cropped to this
 // rectangle before scanning.  the rectangle is normalized to the

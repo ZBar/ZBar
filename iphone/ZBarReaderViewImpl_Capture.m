@@ -32,8 +32,9 @@
 
 // protected APIs
 @interface ZBarReaderView()
+- (void) _initWithImageScanner: (ZBarImageScanner*) _scanner;
 - (void) initSubviews;
-- (void) cropUpdate;
+- (void) updateCrop;
 - (void) setImageSize: (CGSize) size;
 - (void) didTrackSymbols: (ZBarSymbolSet*) syms;
 @end
@@ -53,11 +54,9 @@
 
 @synthesize device, session, captureReader;
 
-- (id) initWithImageScanner: (ZBarImageScanner*) scanner
+- (void) _initWithImageScanner: (ZBarImageScanner*) scanner
 {
-    self = [super initWithImageScanner: scanner];
-    if(!self)
-        return(nil);
+    [super _initWithImageScanner: scanner];
 
     session = [AVCaptureSession new];
     NSNotificationCenter *notify =
@@ -100,8 +99,6 @@
                    context: NULL];
 
     [self initSubviews];
-    [self cropUpdate];
-    return(self);
 }
 
 - (void) initSubviews
@@ -116,9 +113,6 @@
     [self.layer addSublayer: preview];
 
     [super initSubviews];
-
-    // camera image is rotated
-    overlay.transform = CATransform3DMakeRotation(M_PI / 2, 0, 0, 1);
 }
 
 - (void) dealloc
@@ -149,10 +143,10 @@
     [super dealloc];
 }
 
-- (void) cropUpdate
+- (void) updateCrop
 {
-    [super cropUpdate];
-    captureReader.scanCrop = zoomCrop;
+    [super updateCrop];
+    captureReader.scanCrop = effectiveCrop;
 }
 
 - (ZBarImageScanner*) scanner
@@ -180,7 +174,7 @@
 
     [session beginConfiguration];
     if(oldinput)
-        [session removeInput: input];
+        [session removeInput: oldinput];
     if(input)
         [session addInput: input];
     [session commitConfiguration];

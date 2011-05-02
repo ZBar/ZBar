@@ -51,8 +51,17 @@
         [UIImagePickerController new];
     picker.delegate = (id<UINavigationControllerDelegate,
                           UIImagePickerControllerDelegate>)self;
-    [self presentModalViewController: picker
-          animated: YES];
+    if(UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        simPopover = [[UIPopoverController alloc]
+                         initWithContentViewController: picker];
+        [simPopover presentPopoverFromRect: CGRectZero
+                    inView: self.view
+                    permittedArrowDirections: UIPopoverArrowDirectionAny
+                    animated: YES];
+    }
+    else
+        [self presentModalViewController: picker
+              animated: YES];
     [picker release];
 }
 
@@ -66,7 +75,15 @@
   didFinishPickingMediaWithInfo: (NSDictionary*) info
 {
     UIImage *image = [info objectForKey: UIImagePickerControllerOriginalImage];
-    [picker dismissModalViewControllerAnimated: YES];
+
+    if(UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        [simPopover dismissPopoverAnimated: YES];
+        [simPopover release];
+        simPopover = nil;
+    }
+    else
+        [picker dismissModalViewControllerAnimated: YES];
+
     [readerView performSelector: @selector(scanImage:)
                 withObject: image
                 afterDelay: .1];
@@ -77,10 +94,17 @@
     [picker dismissModalViewControllerAnimated: YES];
 }
 
+- (void) popoverControllerDidDismissPopover: (UIPopoverController*) popover
+{
+    [simPopover release];
+    simPopover = nil;
+}
+
 @end
 
 // protected APIs
 @interface ZBarReaderView()
+- (void) _initWithImageScanner: (ZBarImageScanner*) _scanner;
 - (void) initSubviews;
 - (void) setImageSize: (CGSize) size;
 - (void) didTrackSymbols: (ZBarSymbolSet*) syms;
@@ -90,6 +114,7 @@
     : ZBarReaderView
 {
     ZBarImageScanner *scanner;
+    UILabel *simLabel;
     UIImage *scanImage;
     CALayer *previewImage;
     BOOL enableCache;
@@ -100,39 +125,33 @@
 
 @synthesize scanner, enableCache;
 
-- (id) initWithImageScanner: (ZBarImageScanner*) _scanner
+- (void) _initWithImageScanner: (ZBarImageScanner*) _scanner
 {
-    self = [super initWithImageScanner: _scanner];
-    if(!self)
-        return(nil);
-
+    [super _initWithImageScanner: _scanner];
     scanner = [_scanner retain];
 
     [self initSubviews];
-    return(self);
 }
 
 - (void) initSubviews
 {
-    UILabel *label =
-        [[UILabel alloc]
-            initWithFrame: CGRectMake(16, 165, 288, 96)];
-    label.backgroundColor = [UIColor clearColor];
-    label.textColor = [UIColor whiteColor];
-    label.font = [UIFont boldSystemFontOfSize: 20];
-    label.numberOfLines = 4;
-    label.textAlignment = UITextAlignmentCenter;
-    label.text = @"Camera Simulation\n\n"
+    simLabel = [UILabel new];
+    simLabel.backgroundColor = [UIColor clearColor];
+    simLabel.textColor = [UIColor whiteColor];
+    simLabel.font = [UIFont boldSystemFontOfSize: 20];
+    simLabel.numberOfLines = 4;
+    simLabel.textAlignment = UITextAlignmentCenter;
+    simLabel.text = @"Camera Simulation\n\n"
         @"Tap and hold with two \"fingers\" to select image";
-    [self addSubview: label];
-    [label release];
+    simLabel.autoresizingMask =
+        UIViewAutoresizingFlexibleWidth |
+        UIViewAutoresizingFlexibleHeight;
+    [self addSubview: simLabel];
 
     preview = [CALayer new];
-    preview.frame = self.bounds;
     [self.layer addSublayer: preview];
 
     previewImage = [CALayer new];
-    previewImage.frame = self.bounds;
     [preview addSublayer: previewImage];
 
     [super initSubviews];
@@ -142,9 +161,20 @@
 {
     [scanner release];
     scanner = nil;
+    [simLabel release];
+    simLabel = nil;
     [previewImage release];
     previewImage = nil;
     [super dealloc];
+}
+
+- (void) updateCrop
+{
+    previewImage.frame = preview.bounds;
+    CGRect bounds = self.bounds;
+    simLabel.frame = CGRectInset(bounds,
+                                 bounds.size.width * .05,
+                                 bounds.size.height * .05);
 }
 
 - (void) start
@@ -173,11 +203,11 @@
                 orientation: UIImageOrientationUp];
 
     [self setImageSize: image.size];
+    [self layoutIfNeeded];
 
     [CATransaction begin];
     [CATransaction setDisableActions: YES];
-    previewImage.contentsScale = imageScale;
-    previewImage.contentsGravity = kCAGravityCenter;
+    previewImage.contentsGravity = kCAGravityResizeAspectFill;
     previewImage.transform = CATransform3DMakeRotation(M_PI_2, 0, 0, 1);
     previewImage.contents = (id)cgimage;
     [CATransaction commit];
@@ -187,10 +217,10 @@
             initWithCGImage: cgimage];
 
     CGSize size = zimg.size;
-    zimg.crop = CGRectMake(zoomCrop.origin.x * size.width,
-                           zoomCrop.origin.y * size.height,
-                           zoomCrop.size.width * size.width,
-                           zoomCrop.size.height * size.height);
+    zimg.crop = CGRectMake(effectiveCrop.origin.x * size.width,
+                           effectiveCrop.origin.y * size.height,
+                           effectiveCrop.size.width * size.width,
+                           effectiveCrop.size.height * size.height);
 
     int nsyms = [scanner scanImage: zimg];
     zlog(@"scan image: %@ crop=%@ nsyms=%d",

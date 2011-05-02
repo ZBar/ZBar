@@ -23,6 +23,9 @@
 
 #import <ZBarSDK/ZBarHelpController.h>
 
+#define MODULE ZBarHelpController
+#import "debug.h"
+
 @implementation ZBarHelpController
 
 @synthesize delegate;
@@ -36,11 +39,6 @@
     if(!_reason)
         _reason = @"INFO";
     reason = [_reason retain];
-    orientations = ((1 << UIInterfaceOrientationPortrait) |
-                    (1 << UIInterfaceOrientationPortraitUpsideDown) |
-                    (1 << UIInterfaceOrientationLandscapeLeft) |
-                    (1 << UIInterfaceOrientationLandscapeRight));
-
     return(self);
 }
 
@@ -73,44 +71,38 @@
     [super dealloc];
 }
 
-- (void) layoutSubviewsForOrientation: (UIInterfaceOrientation) orient
-{
-    CGFloat h;
-    if(orient == UIInterfaceOrientationPortrait ||
-       orient == UIInterfaceOrientationPortraitUpsideDown)
-        h = 44;
-    else
-        h = 32;
-    CGRect r = self.view.bounds;
-    r.origin.y += r.size.height - h;
-    r.size.height = h;
-    toolbar.frame = r;
-
-    r = self.view.bounds;
-    r.size.height -= h;
-    webView.frame = r;
-}
-
 - (void) viewDidLoad
 {
     [super viewDidLoad];
 
     UIView *view = self.view;
+    CGRect bounds = self.view.bounds;
+    if(!bounds.size.width || !bounds.size.height)
+        view.frame = bounds = CGRectMake(0, 0, 320, 480);
     view.backgroundColor = [UIColor colorWithWhite: .125f
                                     alpha: 1];
     view.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
                              UIViewAutoresizingFlexibleHeight);
 
-    webView = [UIWebView new];
+    webView = [[UIWebView alloc]
+                  initWithFrame: CGRectMake(0, 0,
+                                            bounds.size.width,
+                                            bounds.size.height - 44)];
     webView.delegate = self;
     webView.backgroundColor = [UIColor colorWithWhite: .125f
-                                       alpha: 1 ];
+                                       alpha: 1];
     webView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
-                                UIViewAutoresizingFlexibleHeight);
+                                UIViewAutoresizingFlexibleHeight |
+                                UIViewAutoresizingFlexibleBottomMargin);
+    webView.hidden = YES;
+    [view addSubview: webView];
 
-    toolbar = [UIToolbar new];
+    toolbar = [[UIToolbar alloc]
+                  initWithFrame: CGRectMake(0, bounds.size.height - 44,
+                                            bounds.size.width, 44)];
     toolbar.barStyle = UIBarStyleBlackOpaque;
     toolbar.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                UIViewAutoresizingFlexibleHeight |
                                 UIViewAutoresizingFlexibleTopMargin);
 
     doneBtn = [[UIBarButtonItem alloc]
@@ -133,13 +125,6 @@
     toolbar.items = [NSArray arrayWithObjects: space, doneBtn, nil];
 
     [view addSubview: toolbar];
-
-    UIInterfaceOrientation orient = self.interfaceOrientation;
-    if(!((orientations >> orient) & 1))
-        for(orient = UIInterfaceOrientationPortrait;
-            (orientations >> orient) && !((orientations >> orient) & 1);
-            orient++);
-    [self layoutSubviewsForOrientation: orient];
 
     NSString *path = [[NSBundle mainBundle]
                          pathForResource: @"zbar-help"
@@ -168,7 +153,8 @@
 {
     assert(webView);
     if(webView.loading)
-        [webView removeFromSuperview];
+        webView.hidden = YES;
+    webView.delegate = self;
     [super viewWillAppear: animated];
 }
 
@@ -187,12 +173,22 @@
 - (void) willAnimateRotationToInterfaceOrientation: (UIInterfaceOrientation) orient
                                           duration: (NSTimeInterval) duration
 {
-    [self layoutSubviewsForOrientation: orient];
     [webView reload];
+}
+
+- (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation) orient
+{
+    zlog(@"frame=%@ webView.frame=%@ toolbar.frame=%@",
+         NSStringFromCGRect(self.view.frame),
+         NSStringFromCGRect(webView.frame),
+         NSStringFromCGRect(toolbar.frame));
 }
 
 - (BOOL) isInterfaceOrientationSupported: (UIInterfaceOrientation) orient
 {
+    UIViewController *parent = self.parentViewController;
+    if(parent && !orientations)
+        return([parent shouldAutorotateToInterfaceOrientation: orient]);
     return((orientations >> orient) & 1);
 }
 
@@ -216,13 +212,13 @@
 
 - (void) webViewDidFinishLoad: (UIWebView*) view
 {
-    if(!view.superview) {
+    if(view.hidden) {
         [view stringByEvaluatingJavaScriptFromString:
             [NSString stringWithFormat:
                 @"onZBarHelp({reason:\"%@\"});", reason]];
         [UIView beginAnimations: @"ZBarHelp"
                 context: nil];
-        [self.view addSubview: webView];
+        view.hidden = NO;
         [UIView commitAnimations];
     }
 

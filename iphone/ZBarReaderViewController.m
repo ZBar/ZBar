@@ -31,8 +31,9 @@
 
 @implementation ZBarReaderViewController
 
-@synthesize scanner, readerDelegate, showsZBarControls, tracksSymbols,
-    enableCache, cameraOverlayView, cameraViewTransform, readerView, scanCrop;
+@synthesize scanner, readerDelegate, showsZBarControls,
+    supportedOrientationsMask, tracksSymbols, enableCache, cameraOverlayView,
+    cameraViewTransform, readerView, scanCrop;
 @dynamic sourceType, allowsEditing, allowsImageEditing, showsCameraControls,
     showsHelpOnFail, cameraMode, takesPicture, maxScanDimension;
 
@@ -60,6 +61,8 @@
 
     self.wantsFullScreenLayout = YES;
 
+    supportedOrientationsMask =
+        ZBarOrientationMask(UIInterfaceOrientationPortrait);
     showsZBarControls = tracksSymbols = enableCache = YES;
     scanCrop = CGRectMake(0, 0, 1, 1);
     cameraViewTransform = CGAffineTransformIdentity;
@@ -118,6 +121,10 @@
     r.size.height = 54;
     controls = [[UIView alloc]
                    initWithFrame: r];
+    controls.autoresizingMask =
+        UIViewAutoresizingFlexibleWidth |
+        UIViewAutoresizingFlexibleHeight |
+        UIViewAutoresizingFlexibleTopMargin;
     controls.backgroundColor = [UIColor blackColor];
 
     UIToolbar *toolbar =
@@ -125,6 +132,9 @@
     r.origin.y = 0;
     toolbar.frame = r;
     toolbar.barStyle = UIBarStyleBlackOpaque;
+    toolbar.autoresizingMask =
+        UIViewAutoresizingFlexibleWidth |
+        UIViewAutoresizingFlexibleHeight;
 
     UIButton *info =
         [UIButton buttonWithType: UIButtonTypeInfoLight];
@@ -170,9 +180,20 @@
     [super viewDidLoad];
     UIView *view = self.view;
     view.backgroundColor = [UIColor blackColor];
+    view.autoresizingMask =
+        UIViewAutoresizingFlexibleWidth |
+        UIViewAutoresizingFlexibleHeight;
 
     readerView = [[ZBarReaderView alloc]
                      initWithImageScanner: scanner];
+    CGRect bounds = view.bounds;
+    readerView.frame = CGRectMake(0, 0,
+                                  bounds.size.width,
+                                  bounds.size.height - 54);
+    readerView.autoresizingMask =
+        UIViewAutoresizingFlexibleWidth |
+        UIViewAutoresizingFlexibleHeight |
+        UIViewAutoresizingFlexibleBottomMargin;
     readerView.readerDelegate = (id<ZBarReaderViewDelegate>)self;
     readerView.scanCrop = scanCrop;
     readerView.previewTransform = cameraViewTransform;
@@ -183,6 +204,7 @@
     if(cameraOverlayView) {
         assert(!cameraOverlayView.superview);
         [cameraOverlayView removeFromSuperview];
+        cameraOverlayView.frame = readerView.frame;
         [view addSubview: cameraOverlayView];
     }
 
@@ -236,6 +258,26 @@
     }
 
     [super viewWillDisappear: animated];
+}
+
+- (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation) orient
+{
+    return((supportedOrientationsMask >> orient) & 1);
+}
+
+- (void) willRotateToInterfaceOrientation: (UIInterfaceOrientation) orient
+                                 duration: (NSTimeInterval) duration
+{
+    [readerView willRotateToInterfaceOrientation: orient
+                duration: duration];
+}
+
+- (void) willAnimateRotationToInterfaceOrientation: (UIInterfaceOrientation) orient
+                                          duration: (NSTimeInterval) duration
+{
+    if(helpController)
+        [helpController willAnimateRotationToInterfaceOrientation: orient
+                        duration: duration];
 }
 
 - (ZBarReaderView*) readerView
@@ -305,17 +347,20 @@
 
 - (void) showHelpWithReason: (NSString*) reason
 {
-    ZBarHelpController *help =
-        [[ZBarHelpController alloc]
-            initWithReason: reason];
-    help.delegate = (id<ZBarHelpDelegate>)self;
-    help.wantsFullScreenLayout = YES;
-    UIView *helpView = help.view;
+    if(helpController)
+        return;
+    helpController = [[ZBarHelpController alloc]
+                         initWithReason: reason];
+    helpController.delegate = (id<ZBarHelpDelegate>)self;
+    helpController.wantsFullScreenLayout = YES;
+    UIView *helpView = helpController.view;
     helpView.alpha = 0;
+    helpView.frame = self.view.bounds;
+    [helpController viewWillAppear: YES];
     [self.view addSubview: helpView];
     [UIView beginAnimations: @"ZBarHelp"
             context: nil];
-    help.view.alpha = 1;
+    helpController.view.alpha = 1;
     [UIView commitAnimations];
 }
 
@@ -329,22 +374,24 @@
 
 - (void) helpControllerDidFinish: (ZBarHelpController*) help
 {
+    assert(help == helpController);
+    [help viewWillDisappear: YES];
     [UIView beginAnimations: @"ZBarHelp"
-            context: help];
+            context: NULL];
     [UIView setAnimationDelegate: self];
     [UIView setAnimationDidStopSelector: @selector(removeHelp:done:context:)];
     help.view.alpha = 0;
     [UIView commitAnimations];
 }
 
-- (void) removeHelp: (NSString*) id
+- (void) removeHelp: (NSString*) tag
                done: (NSNumber*) done
             context: (void*) ctx
 {
-    if([id isEqualToString: @"ZBarHelp"]) {
-        ZBarHelpController *help = ctx;
-        [help.view removeFromSuperview];
-        [help release];
+    if([tag isEqualToString: @"ZBarHelp"] && helpController) {
+        [helpController.view removeFromSuperview];
+        [helpController release];
+        helpController = nil;
     }
 }
 
