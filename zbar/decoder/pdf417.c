@@ -199,9 +199,7 @@ zbar_symbol_type_t _zbar_decode_pdf417 (zbar_decoder_t *dcode)
     }
 
     signed short c = pdf417_decode8(dcode);
-    if((c < 0) ||
-       ((dcode417->character >= BUFFER_MIN) &&
-        size_buf(dcode, dcode417->character + 1))) {
+    if(c < 0 || size_buf(dcode, dcode417->character + 1)) {
         dbprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
         release_lock(dcode, ZBAR_PDF417);
         dcode417->character = -1;

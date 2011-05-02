@@ -318,6 +318,9 @@ postprocess (zbar_decoder_t *dcode)
         dcode->buf[j++] = d;
     }
 
+    zassert(j < dcode->buf_alloc, 1,
+            "j=%02x %s\n", j,
+            _zbar_decoder_buf_dump(dcode->buf, dcode->code93.character));
     dcode->buflen = j;
     dcode->buf[j] = '\0';
     dcode->modifiers = 0;
@@ -374,8 +377,7 @@ _zbar_decode_code93 (zbar_decoder_t *dcode)
         return(ZBAR_CODE93);
     }
 
-    if(dcode93->character >= BUFFER_MIN &&
-       size_buf(dcode, dcode93->character + 1))
+    if(size_buf(dcode, dcode93->character + 1))
         return(decode_abort(dcode, "overflow"));
 
     dcode93->width = dcode->s6;

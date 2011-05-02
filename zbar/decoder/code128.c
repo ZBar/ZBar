@@ -441,6 +441,8 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
                                         dcode->code128.character));
         j += postprocess_c(dcode, cexp, i, j) * 2;
     }
+    zassert(j < dcode->buf_alloc, 1, "j=%02x %s\n", j,
+            _zbar_decoder_buf_dump(dcode->buf, dcode->code128.character));
     dcode->buflen = j;
     dcode->buf[j] = '\0';
     dcode->code128.character = j;
@@ -496,9 +498,7 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
         dbprintf(2, " dir=%x [valid start]\n", dcode128->direction);
         return(0);
     }
-    else if((c < 0) ||
-            ((dcode128->character >= BUFFER_MIN) &&
-             size_buf(dcode, dcode128->character + 1))) {
+    else if(c < 0 || size_buf(dcode, dcode128->character + 1)) {
         dbprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
         if(dcode128->character > 1)
             release_lock(dcode, ZBAR_CODE128);

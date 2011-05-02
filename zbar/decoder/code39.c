@@ -213,7 +213,7 @@ static inline signed char code39_decode_start (zbar_decoder_t *dcode)
     return(ZBAR_PARTIAL);
 }
 
-static inline void code39_postprocess (zbar_decoder_t *dcode)
+static inline int code39_postprocess (zbar_decoder_t *dcode)
 {
     code39_decoder_t *dcode39 = &dcode->code39;
     dcode->direction = 1 - 2 * dcode39->direction;
@@ -232,9 +232,12 @@ static inline void code39_postprocess (zbar_decoder_t *dcode)
         dcode->buf[i] = ((dcode->buf[i] < 0x2b)
                          ? code39_characters[(unsigned)dcode->buf[i]]
                          : '?');
+    zassert(i < dcode->buf_alloc, -1, "i=%02x %s\n", i,
+            _zbar_decoder_buf_dump(dcode->buf, dcode39->character));
     dcode->buflen = i;
     dcode->buf[i] = '\0';
     dcode->modifiers = 0;
+    return(0);
 }
 
 static inline int
@@ -275,23 +278,19 @@ zbar_symbol_type_t _zbar_decode_code39 (zbar_decoder_t *dcode)
            dcode->buf[dcode39->character - 1] == 0x2b) {  /* STOP */
             /* trim STOP character */
             dcode39->character--;
-            zbar_symbol_type_t sym = ZBAR_CODE39;
+            zbar_symbol_type_t sym = ZBAR_NONE;
 
             /* trailing quiet zone check */
-            if(space && space < dcode39->width / 2) {
+            if(space && space < dcode39->width / 2)
                 dbprintf(2, " [invalid qz]\n");
-                sym = ZBAR_NONE;
-            }
             else if(dcode39->character < CFG(*dcode39, ZBAR_CFG_MIN_LEN) ||
                     (CFG(*dcode39, ZBAR_CFG_MAX_LEN) > 0 &&
-                     dcode39->character > CFG(*dcode39, ZBAR_CFG_MAX_LEN))) {
+                     dcode39->character > CFG(*dcode39, ZBAR_CFG_MAX_LEN)))
                 dbprintf(2, " [invalid len]\n");
-                sym = ZBAR_NONE;
-            }
-            else {
-                /* FIXME checksum (needs config enable) */
-                code39_postprocess(dcode);
+            else if(!code39_postprocess(dcode)) {
+                /* FIXME checksum */
                 dbprintf(2, " [valid end]\n");
+                sym = ZBAR_CODE39;
             }
             dcode39->character = -1;
             if(!sym)
@@ -328,9 +327,7 @@ zbar_symbol_type_t _zbar_decode_code39 (zbar_decoder_t *dcode)
         return(ZBAR_PARTIAL);
     }
 
-    if(c < 0 ||
-       ((dcode39->character >= BUFFER_MIN) &&
-        size_buf(dcode, dcode39->character + 1))) {
+    if(c < 0 || size_buf(dcode, dcode39->character + 1)) {
         dbprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
         release_lock(dcode, ZBAR_CODE39);
         dcode39->character = -1;
