@@ -244,6 +244,7 @@
     [captureReader flushCache];
 }
 
+
 // AVCaptureSession notifications
 
 - (void) onVideoStart: (NSNotification*) note

@@ -24,7 +24,7 @@ done
 # prepare examples for distribution
 for example in $(find $TARGET_BUILD_DIR/Examples -depth 1)
 do
-    rm -rf $example/{*.xcodeproj/*.{mode1v3,pbxuser},ZBarSDK}
+    rm -rf $example/{build,*.xcodeproj/{*.{mode1v3,pbxuser},project.xcworkspace,xcuserdata},ZBarSDK}
     cp -af $BUILT_PRODUCTS_DIR/ZBarSDK $example/
 done
 

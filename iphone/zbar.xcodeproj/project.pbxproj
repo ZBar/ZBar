@@ -91,6 +91,8 @@
 		DC48C5A8121B1F910047193B /* Documentation.html in Copy SDK */ = {isa = PBXBuildFile; fileRef = DC48C5A7121B1F840047193B /* Documentation.html */; };
 		DC4920EE10A70475000E4D43 /* ZBarImage.m in Sources */ = {isa = PBXBuildFile; fileRef = DC4920EC10A70475000E4D43 /* ZBarImage.m */; };
 		DC4920EF10A70475000E4D43 /* ZBarImageScanner.m in Sources */ = {isa = PBXBuildFile; fileRef = DC4920ED10A70475000E4D43 /* ZBarImageScanner.m */; };
+		DC5D76C3136FA8C40069AEF5 /* ZBarCameraSimulator.m in Sources */ = {isa = PBXBuildFile; fileRef = DC5D76C2136FA8C40069AEF5 /* ZBarCameraSimulator.m */; };
+		DC5D76C6136FA94B0069AEF5 /* ZBarCameraSimulator.h in Copy Headers */ = {isa = PBXBuildFile; fileRef = DC5D76C5136FA8F20069AEF5 /* ZBarCameraSimulator.h */; };
 		DC67C17110A07AD30033B702 /* config.c in Sources */ = {isa = PBXBuildFile; fileRef = DC67C11F10A07AD30033B702 /* config.c */; };
 		DC67C17410A07AD30033B702 /* code128.c in Sources */ = {isa = PBXBuildFile; fileRef = DC67C12310A07AD30033B702 /* code128.c */; };
 		DC67C17610A07AD30033B702 /* code39.c in Sources */ = {isa = PBXBuildFile; fileRef = DC67C12510A07AD30033B702 /* code39.c */; };
@@ -151,6 +153,7 @@
 			dstPath = Headers/ZBarSDK;
 			dstSubfolderSpec = 1;
 			files = (
+				DC5D76C6136FA94B0069AEF5 /* ZBarCameraSimulator.h in Copy Headers */,
 				DC3CEFB51216349700D7A786 /* ZBarCaptureReader.h in Copy Headers */,
 				DCB3789B12A43CAC0059B07B /* ZBarHelpController.h in Copy Headers */,
 				DC3CEFB61216349700D7A786 /* ZBarImage.h in Copy Headers */,
@@ -278,6 +281,8 @@
 		DC50467B12034D60009FF359 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		DC50467C12034D71009FF359 /* COPYING */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = COPYING; path = ../COPYING; sourceTree = SOURCE_ROOT; };
 		DC50467D12034D71009FF359 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = SOURCE_ROOT; };
+		DC5D76C2136FA8C40069AEF5 /* ZBarCameraSimulator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarCameraSimulator.m; sourceTree = "<group>"; };
+		DC5D76C5136FA8F20069AEF5 /* ZBarCameraSimulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ZBarCameraSimulator.h; path = include/ZBarSDK/ZBarCameraSimulator.h; sourceTree = "<group>"; };
 		DC67C08210A079BE0033B702 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		DC67C11710A07A810033B702 /* zbar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zbar.h; path = ../include/zbar.h; sourceTree = SOURCE_ROOT; usesTabs = 0; };
 		DC67C11F10A07AD30033B702 /* config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = config.c; sourceTree = "<group>"; usesTabs = 0; };
@@ -410,6 +415,7 @@
 		DC299BE41208FE09006A023C /* ZBarSDK */ = {
 			isa = PBXGroup;
 			children = (
+				DC5D76C5136FA8F20069AEF5 /* ZBarCameraSimulator.h */,
 				DC3CEFA51216347100D7A786 /* ZBarCaptureReader.h */,
 				DCB3789A12A43C7E0059B07B /* ZBarHelpController.h */,
 				DC3CEFA61216347100D7A786 /* ZBarImage.h */,
@@ -436,6 +442,7 @@
 				DCDC6E2F11ADCA8E00021380 /* ZBarReaderView.m */,
 				DC3CE47611FA1622008FAF88 /* ZBarReaderViewImpl_Capture.m */,
 				DC3CE47711FA1622008FAF88 /* ZBarReaderViewImpl_Simulator.m */,
+				DC5D76C2136FA8C40069AEF5 /* ZBarCameraSimulator.m */,
 				DC67C1BE10A07B6B0033B702 /* ZBarHelpController.m */,
 				DC3EBB2C119DDB2100107EE9 /* ZBarReaderViewController.m */,
 				DC67C1BF10A07B6B0033B702 /* ZBarReaderController.m */,
@@ -724,6 +731,7 @@
 				DC3CE47811FA1622008FAF88 /* ZBarReaderViewImpl_Capture.m in Sources */,
 				DC3CE47911FA1622008FAF88 /* ZBarReaderViewImpl_Simulator.m in Sources */,
 				DCE9900D129719F100D2655C /* code93.c in Sources */,
+				DC5D76C3136FA8C40069AEF5 /* ZBarCameraSimulator.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,4 +1,6 @@
 current:
+  * add embedded reader sample
+    - factor out camera simulation logic
   * fix readertest max quality result filtering
     - thanks to John Boydon for finding this!
   * improve support for resizing, rotating and embedding the reader

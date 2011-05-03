@@ -25,6 +25,7 @@
 #import <ZBarSDK/ZBarReaderView.h>
 #import <ZBarSDK/ZBarCaptureReader.h>
 #import <ZBarSDK/ZBarHelpController.h>
+#import <ZBarSDK/ZBarCameraSimulator.h>
 
 #define MODULE ZBarReaderViewController
 #import "debug.h"
@@ -82,6 +83,9 @@
 
 - (void) cleanup
 {
+    cameraSim.readerView = nil;
+    [cameraSim release];
+    cameraSim = nil;
     readerView.readerDelegate = nil;
     [readerView release];
     readerView = nil;
@@ -164,11 +168,6 @@
     [view addSubview: controls];
 }
 
-- (void) initSimulator
-{
-    // simulator specific hooks
-}
-
 - (void) loadView
 {
     self.view = [[UIView alloc]
@@ -209,7 +208,12 @@
     }
 
     [self initControls];
-    [self initSimulator];
+
+    if(TARGET_IPHONE_SIMULATOR) {
+        cameraSim = [[ZBarCameraSimulator alloc]
+                        initWithViewController: self];
+        cameraSim.readerView = readerView;
+    }
 }
 
 - (void) viewDidUnload
@@ -366,7 +370,11 @@
 
 - (void) takePicture
 {
-    if(readerView)
+    if(TARGET_IPHONE_SIMULATOR) {
+        [cameraSim takePicture];
+        // FIXME return selected image
+    }
+    else if(readerView)
         [readerView.captureReader captureFrame];
 }
 

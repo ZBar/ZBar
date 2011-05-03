@@ -32,7 +32,7 @@
      ZBarOrientationMask(UIInterfaceOrientationLandscapeLeft) | \
      ZBarOrientationMask(UIInterfaceOrientationLandscapeRight))
 
-@class ZBarReaderView;
+@class ZBarReaderView, ZBarCameraSimulator;
 
 // drop in video scanning replacement for ZBarReaderController.
 // this is a thin controller around a ZBarReaderView that adds the UI
@@ -55,7 +55,7 @@
     ZBarHelpController *helpController;
     UIView *controls;
     BOOL didHideStatusBar;
-    UIPopoverController *simPopover;
+    ZBarCameraSimulator *cameraSim;
 }
 
 // access to configure image scanner
