@@ -84,7 +84,6 @@ static const CGFloat const zoom_choices[] = {
     assert(reader);
     reader.readerDelegate = self;
     xDensity = yDensity = 3;
-    reader.supportedOrientationsMask = ZBarOrientationMaskAll;
 
 #if 0
     // apply defaults for demo
@@ -533,6 +532,9 @@ static const CGFloat const zoom_choices[] = {
     manualBtn.enabled = TARGET_IPHONE_SIMULATOR ||
         (reader.cameraMode == ZBarReaderControllerCameraModeDefault) ||
         [reader isKindOfClass: [ZBarReaderViewController class]];
+    reader.supportedOrientationsMask = (reader.showsZBarControls)
+        ? ZBarOrientationMaskAll
+        : ZBarOrientationMask(UIInterfaceOrientationPortrait); // tmp disable
     [self presentModalViewController: reader
           animated: YES];
 }
