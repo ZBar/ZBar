@@ -1,0 +1,416 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		DC52DED31370F5340048DADA /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC52DECE1370F5340048DADA /* AVFoundation.framework */; };
+		DC52DED41370F5340048DADA /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC52DECF1370F5340048DADA /* CoreMedia.framework */; };
+		DC52DED51370F5340048DADA /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC52DED01370F5340048DADA /* CoreVideo.framework */; };
+		DC52DED61370F5340048DADA /* libiconv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DC52DED11370F5340048DADA /* libiconv.dylib */; };
+		DC52DED71370F5340048DADA /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC52DED21370F5340048DADA /* QuartzCore.framework */; };
+		DC5D76D71370EE8F0069AEF5 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC5D76D61370EE8F0069AEF5 /* UIKit.framework */; };
+		DC5D76D91370EE8F0069AEF5 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC5D76D81370EE8F0069AEF5 /* Foundation.framework */; };
+		DC5D76DB1370EE8F0069AEF5 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC5D76DA1370EE8F0069AEF5 /* CoreGraphics.framework */; };
+		DC5D76E11370EE8F0069AEF5 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = DC5D76DF1370EE8F0069AEF5 /* InfoPlist.strings */; };
+		DC5D76E41370EE8F0069AEF5 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = DC5D76E31370EE8F0069AEF5 /* main.m */; };
+		DC5D76E71370EE8F0069AEF5 /* TabReaderAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DC5D76E61370EE8F0069AEF5 /* TabReaderAppDelegate.m */; };
+		DC5D76EA1370EE8F0069AEF5 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = DC5D76E81370EE8F0069AEF5 /* MainWindow.xib */; };
+		DC5D76F01370EE8F0069AEF5 /* ResultsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = DC5D76EF1370EE8F0069AEF5 /* ResultsViewController.m */; };
+		DC5D76F61370EE8F0069AEF5 /* ResultsView.xib in Resources */ = {isa = PBXBuildFile; fileRef = DC5D76F41370EE8F0069AEF5 /* ResultsView.xib */; };
+		DC5D771A1370F0E30069AEF5 /* libzbar.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DC5D77141370F0E30069AEF5 /* libzbar.a */; };
+		DC5D771B1370F0E30069AEF5 /* zbar-back.png in Resources */ = {isa = PBXBuildFile; fileRef = DC5D77161370F0E30069AEF5 /* zbar-back.png */; };
+		DC5D771C1370F0E30069AEF5 /* zbar-help.html in Resources */ = {isa = PBXBuildFile; fileRef = DC5D77171370F0E30069AEF5 /* zbar-help.html */; };
+		DC5D771D1370F0E30069AEF5 /* zbar-helpicons.png in Resources */ = {isa = PBXBuildFile; fileRef = DC5D77181370F0E30069AEF5 /* zbar-helpicons.png */; };
+		DC5D771E1370F0E30069AEF5 /* zbar-samples.png in Resources */ = {isa = PBXBuildFile; fileRef = DC5D77191370F0E30069AEF5 /* zbar-samples.png */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		DC52DECE1370F5340048DADA /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		DC52DECF1370F5340048DADA /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		DC52DED01370F5340048DADA /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		DC52DED11370F5340048DADA /* libiconv.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libiconv.dylib; path = usr/lib/libiconv.dylib; sourceTree = SDKROOT; };
+		DC52DED21370F5340048DADA /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		DC5D76D21370EE8F0069AEF5 /* TabReader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TabReader.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC5D76D61370EE8F0069AEF5 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		DC5D76D81370EE8F0069AEF5 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		DC5D76DA1370EE8F0069AEF5 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		DC5D76DE1370EE8F0069AEF5 /* TabReader-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "TabReader-Info.plist"; sourceTree = "<group>"; };
+		DC5D76E01370EE8F0069AEF5 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		DC5D76E21370EE8F0069AEF5 /* TabReader-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TabReader-Prefix.pch"; sourceTree = "<group>"; };
+		DC5D76E31370EE8F0069AEF5 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		DC5D76E51370EE8F0069AEF5 /* TabReaderAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TabReaderAppDelegate.h; sourceTree = "<group>"; };
+		DC5D76E61370EE8F0069AEF5 /* TabReaderAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TabReaderAppDelegate.m; sourceTree = "<group>"; };
+		DC5D76E91370EE8F0069AEF5 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainWindow.xib; sourceTree = "<group>"; };
+		DC5D76EE1370EE8F0069AEF5 /* ResultsViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ResultsViewController.h; sourceTree = "<group>"; };
+		DC5D76EF1370EE8F0069AEF5 /* ResultsViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ResultsViewController.m; sourceTree = "<group>"; };
+		DC5D76F51370EE8F0069AEF5 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/ResultsView.xib; sourceTree = "<group>"; };
+		DC5D77001370F0E30069AEF5 /* Decoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Decoder.h; sourceTree = "<group>"; };
+		DC5D77011370F0E30069AEF5 /* Exception.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Exception.h; sourceTree = "<group>"; };
+		DC5D77021370F0E30069AEF5 /* Image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Image.h; sourceTree = "<group>"; };
+		DC5D77031370F0E30069AEF5 /* ImageScanner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImageScanner.h; sourceTree = "<group>"; };
+		DC5D77041370F0E30069AEF5 /* Processor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Processor.h; sourceTree = "<group>"; };
+		DC5D77051370F0E30069AEF5 /* Scanner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Scanner.h; sourceTree = "<group>"; };
+		DC5D77061370F0E30069AEF5 /* Symbol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Symbol.h; sourceTree = "<group>"; };
+		DC5D77071370F0E30069AEF5 /* Video.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Video.h; sourceTree = "<group>"; };
+		DC5D77081370F0E30069AEF5 /* Window.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Window.h; sourceTree = "<group>"; };
+		DC5D77091370F0E30069AEF5 /* zbar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zbar.h; sourceTree = "<group>"; };
+		DC5D770A1370F0E30069AEF5 /* ZBarCameraSimulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBarCameraSimulator.h; sourceTree = "<group>"; };
+		DC5D770B1370F0E30069AEF5 /* ZBarCaptureReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBarCaptureReader.h; sourceTree = "<group>"; };
+		DC5D770C1370F0E30069AEF5 /* ZBarHelpController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBarHelpController.h; sourceTree = "<group>"; };
+		DC5D770D1370F0E30069AEF5 /* ZBarImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBarImage.h; sourceTree = "<group>"; };
+		DC5D770E1370F0E30069AEF5 /* ZBarImageScanner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBarImageScanner.h; sourceTree = "<group>"; };
+		DC5D770F1370F0E30069AEF5 /* ZBarReaderController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBarReaderController.h; sourceTree = "<group>"; };
+		DC5D77101370F0E30069AEF5 /* ZBarReaderView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBarReaderView.h; sourceTree = "<group>"; };
+		DC5D77111370F0E30069AEF5 /* ZBarReaderViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBarReaderViewController.h; sourceTree = "<group>"; };
+		DC5D77121370F0E30069AEF5 /* ZBarSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBarSDK.h; sourceTree = "<group>"; };
+		DC5D77131370F0E30069AEF5 /* ZBarSymbol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZBarSymbol.h; sourceTree = "<group>"; };
+		DC5D77141370F0E30069AEF5 /* libzbar.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libzbar.a; sourceTree = "<group>"; };
+		DC5D77161370F0E30069AEF5 /* zbar-back.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "zbar-back.png"; sourceTree = "<group>"; };
+		DC5D77171370F0E30069AEF5 /* zbar-help.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "zbar-help.html"; sourceTree = "<group>"; };
+		DC5D77181370F0E30069AEF5 /* zbar-helpicons.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "zbar-helpicons.png"; sourceTree = "<group>"; };
+		DC5D77191370F0E30069AEF5 /* zbar-samples.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "zbar-samples.png"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		DC5D76CF1370EE8F0069AEF5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DC52DED31370F5340048DADA /* AVFoundation.framework in Frameworks */,
+				DC52DED41370F5340048DADA /* CoreMedia.framework in Frameworks */,
+				DC52DED51370F5340048DADA /* CoreVideo.framework in Frameworks */,
+				DC52DED61370F5340048DADA /* libiconv.dylib in Frameworks */,
+				DC52DED71370F5340048DADA /* QuartzCore.framework in Frameworks */,
+				DC5D76D71370EE8F0069AEF5 /* UIKit.framework in Frameworks */,
+				DC5D76D91370EE8F0069AEF5 /* Foundation.framework in Frameworks */,
+				DC5D76DB1370EE8F0069AEF5 /* CoreGraphics.framework in Frameworks */,
+				DC5D771A1370F0E30069AEF5 /* libzbar.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		DC5D76C71370EE8D0069AEF5 = {
+			isa = PBXGroup;
+			children = (
+				DC5D76DC1370EE8F0069AEF5 /* TabReader */,
+				DC5D76FC1370F0E30069AEF5 /* ZBarSDK */,
+				DC5D76D51370EE8F0069AEF5 /* Frameworks */,
+				DC5D76D31370EE8F0069AEF5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		DC5D76D31370EE8F0069AEF5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DC5D76D21370EE8F0069AEF5 /* TabReader.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DC5D76D51370EE8F0069AEF5 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				DC5D76D61370EE8F0069AEF5 /* UIKit.framework */,
+				DC5D76D81370EE8F0069AEF5 /* Foundation.framework */,
+				DC5D76DA1370EE8F0069AEF5 /* CoreGraphics.framework */,
+				DC52DECE1370F5340048DADA /* AVFoundation.framework */,
+				DC52DECF1370F5340048DADA /* CoreMedia.framework */,
+				DC52DED01370F5340048DADA /* CoreVideo.framework */,
+				DC52DED11370F5340048DADA /* libiconv.dylib */,
+				DC52DED21370F5340048DADA /* QuartzCore.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		DC5D76DC1370EE8F0069AEF5 /* TabReader */ = {
+			isa = PBXGroup;
+			children = (
+				DC5D76E51370EE8F0069AEF5 /* TabReaderAppDelegate.h */,
+				DC5D76E61370EE8F0069AEF5 /* TabReaderAppDelegate.m */,
+				DC5D76E81370EE8F0069AEF5 /* MainWindow.xib */,
+				DC5D76EE1370EE8F0069AEF5 /* ResultsViewController.h */,
+				DC5D76EF1370EE8F0069AEF5 /* ResultsViewController.m */,
+				DC5D76F41370EE8F0069AEF5 /* ResultsView.xib */,
+				DC5D76DD1370EE8F0069AEF5 /* Supporting Files */,
+			);
+			path = TabReader;
+			sourceTree = "<group>";
+		};
+		DC5D76DD1370EE8F0069AEF5 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				DC5D76DE1370EE8F0069AEF5 /* TabReader-Info.plist */,
+				DC5D76DF1370EE8F0069AEF5 /* InfoPlist.strings */,
+				DC5D76E21370EE8F0069AEF5 /* TabReader-Prefix.pch */,
+				DC5D76E31370EE8F0069AEF5 /* main.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		DC5D76FC1370F0E30069AEF5 /* ZBarSDK */ = {
+			isa = PBXGroup;
+			children = (
+				DC5D76FD1370F0E30069AEF5 /* Headers */,
+				DC5D77141370F0E30069AEF5 /* libzbar.a */,
+				DC5D77151370F0E30069AEF5 /* Resources */,
+			);
+			path = ZBarSDK;
+			sourceTree = "<group>";
+		};
+		DC5D76FD1370F0E30069AEF5 /* Headers */ = {
+			isa = PBXGroup;
+			children = (
+				DC5D76FE1370F0E30069AEF5 /* ZBarSDK */,
+			);
+			path = Headers;
+			sourceTree = "<group>";
+		};
+		DC5D76FE1370F0E30069AEF5 /* ZBarSDK */ = {
+			isa = PBXGroup;
+			children = (
+				DC5D76FF1370F0E30069AEF5 /* zbar */,
+				DC5D77091370F0E30069AEF5 /* zbar.h */,
+				DC5D770A1370F0E30069AEF5 /* ZBarCameraSimulator.h */,
+				DC5D770B1370F0E30069AEF5 /* ZBarCaptureReader.h */,
+				DC5D770C1370F0E30069AEF5 /* ZBarHelpController.h */,
+				DC5D770D1370F0E30069AEF5 /* ZBarImage.h */,
+				DC5D770E1370F0E30069AEF5 /* ZBarImageScanner.h */,
+				DC5D770F1370F0E30069AEF5 /* ZBarReaderController.h */,
+				DC5D77101370F0E30069AEF5 /* ZBarReaderView.h */,
+				DC5D77111370F0E30069AEF5 /* ZBarReaderViewController.h */,
+				DC5D77121370F0E30069AEF5 /* ZBarSDK.h */,
+				DC5D77131370F0E30069AEF5 /* ZBarSymbol.h */,
+			);
+			path = ZBarSDK;
+			sourceTree = "<group>";
+		};
+		DC5D76FF1370F0E30069AEF5 /* zbar */ = {
+			isa = PBXGroup;
+			children = (
+				DC5D77001370F0E30069AEF5 /* Decoder.h */,
+				DC5D77011370F0E30069AEF5 /* Exception.h */,
+				DC5D77021370F0E30069AEF5 /* Image.h */,
+				DC5D77031370F0E30069AEF5 /* ImageScanner.h */,
+				DC5D77041370F0E30069AEF5 /* Processor.h */,
+				DC5D77051370F0E30069AEF5 /* Scanner.h */,
+				DC5D77061370F0E30069AEF5 /* Symbol.h */,
+				DC5D77071370F0E30069AEF5 /* Video.h */,
+				DC5D77081370F0E30069AEF5 /* Window.h */,
+			);
+			path = zbar;
+			sourceTree = "<group>";
+		};
+		DC5D77151370F0E30069AEF5 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				DC5D77161370F0E30069AEF5 /* zbar-back.png */,
+				DC5D77171370F0E30069AEF5 /* zbar-help.html */,
+				DC5D77181370F0E30069AEF5 /* zbar-helpicons.png */,
+				DC5D77191370F0E30069AEF5 /* zbar-samples.png */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		DC5D76D11370EE8F0069AEF5 /* TabReader */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DC5D76F91370EE900069AEF5 /* Build configuration list for PBXNativeTarget "TabReader" */;
+			buildPhases = (
+				DC5D76CE1370EE8F0069AEF5 /* Sources */,
+				DC5D76CF1370EE8F0069AEF5 /* Frameworks */,
+				DC5D76D01370EE8F0069AEF5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TabReader;
+			productName = TabReader;
+			productReference = DC5D76D21370EE8F0069AEF5 /* TabReader.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DC5D76C91370EE8D0069AEF5 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = DC5D76CC1370EE8D0069AEF5 /* Build configuration list for PBXProject "TabReader" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = DC5D76C71370EE8D0069AEF5;
+			productRefGroup = DC5D76D31370EE8F0069AEF5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DC5D76D11370EE8F0069AEF5 /* TabReader */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DC5D76D01370EE8F0069AEF5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DC5D76E11370EE8F0069AEF5 /* InfoPlist.strings in Resources */,
+				DC5D76EA1370EE8F0069AEF5 /* MainWindow.xib in Resources */,
+				DC5D76F61370EE8F0069AEF5 /* ResultsView.xib in Resources */,
+				DC5D771B1370F0E30069AEF5 /* zbar-back.png in Resources */,
+				DC5D771C1370F0E30069AEF5 /* zbar-help.html in Resources */,
+				DC5D771D1370F0E30069AEF5 /* zbar-helpicons.png in Resources */,
+				DC5D771E1370F0E30069AEF5 /* zbar-samples.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		DC5D76CE1370EE8F0069AEF5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DC5D76E41370EE8F0069AEF5 /* main.m in Sources */,
+				DC5D76E71370EE8F0069AEF5 /* TabReaderAppDelegate.m in Sources */,
+				DC5D76F01370EE8F0069AEF5 /* ResultsViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		DC5D76DF1370EE8F0069AEF5 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				DC5D76E01370EE8F0069AEF5 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		DC5D76E81370EE8F0069AEF5 /* MainWindow.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				DC5D76E91370EE8F0069AEF5 /* en */,
+			);
+			name = MainWindow.xib;
+			sourceTree = "<group>";
+		};
+		DC5D76F41370EE8F0069AEF5 /* ResultsView.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				DC5D76F51370EE8F0069AEF5 /* en */,
+			);
+			name = ResultsView.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		DC5D76F71370EE900069AEF5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = DEBUG;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		DC5D76F81370EE900069AEF5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				SDKROOT = iphoneos;
+			};
+			name = Release;
+		};
+		DC5D76FA1370EE900069AEF5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "TabReader/TabReader-Prefix.pch";
+				INFOPLIST_FILE = "TabReader/TabReader-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 4.0;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/ZBarSDK\"",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		DC5D76FB1370EE900069AEF5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "TabReader/TabReader-Prefix.pch";
+				INFOPLIST_FILE = "TabReader/TabReader-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 4.0;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/ZBarSDK\"",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		DC5D76CC1370EE8D0069AEF5 /* Build configuration list for PBXProject "TabReader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DC5D76F71370EE900069AEF5 /* Debug */,
+				DC5D76F81370EE900069AEF5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DC5D76F91370EE900069AEF5 /* Build configuration list for PBXNativeTarget "TabReader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DC5D76FA1370EE900069AEF5 /* Debug */,
+				DC5D76FB1370EE900069AEF5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DC5D76C91370EE8D0069AEF5 /* Project object */;
+}

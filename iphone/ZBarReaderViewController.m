@@ -46,22 +46,8 @@
            [UIImagePickerController isSourceTypeAvailable: sourceType]);
 }
 
-- (id) init
+- (void) _init
 {
-    if(!TARGET_IPHONE_SIMULATOR &&
-       !NSClassFromString(@"AVCaptureSession")) {
-        // fallback to old interface
-        zlog(@"Falling back to ZBarReaderController");
-        [self release];
-        return([ZBarReaderController new]);
-    }
-
-    self = [super init];
-    if(!self)
-        return(nil);
-
-    self.wantsFullScreenLayout = YES;
-
     supportedOrientationsMask =
         ZBarOrientationMask(UIInterfaceOrientationPortrait);
     showsZBarControls = tracksSymbols = enableCache = YES;
@@ -77,7 +63,34 @@
     [scanner setSymbology: 0
              config: ZBAR_CFG_Y_DENSITY
              to: 3];
+}
 
+- (id) init
+{
+    if(!TARGET_IPHONE_SIMULATOR &&
+       !NSClassFromString(@"AVCaptureSession")) {
+        // fallback to old interface
+        zlog(@"Falling back to ZBarReaderController");
+        [self release];
+        return([ZBarReaderController new]);
+    }
+
+    self = [super init];
+    if(!self)
+        return(nil);
+
+    self.wantsFullScreenLayout = YES;
+    [self _init];
+    return(self);
+}
+
+- (id) initWithCoder: (NSCoder*) decoder
+{
+    self = [super initWithCoder: decoder];
+    if(!self)
+        return(nil);
+
+    [self _init];
     return(self);
 }
 
@@ -186,13 +199,20 @@
     readerView = [[ZBarReaderView alloc]
                      initWithImageScanner: scanner];
     CGRect bounds = view.bounds;
-    readerView.frame = CGRectMake(0, 0,
-                                  bounds.size.width,
-                                  bounds.size.height - 54);
-    readerView.autoresizingMask =
+    CGRect r = bounds;
+    NSUInteger autoresize =
         UIViewAutoresizingFlexibleWidth |
-        UIViewAutoresizingFlexibleHeight |
-        UIViewAutoresizingFlexibleBottomMargin;
+        UIViewAutoresizingFlexibleHeight;
+
+    if(!showsZBarControls &&
+       self.parentViewController.modalViewController != self)
+    {
+        autoresize |= UIViewAutoresizingFlexibleBottomMargin;
+        bounds.size.height -= 54;
+    }
+    readerView.frame = r;
+    readerView.autoresizingMask = autoresize;
+
     readerView.readerDelegate = (id<ZBarReaderViewDelegate>)self;
     readerView.scanCrop = scanCrop;
     readerView.previewTransform = cameraViewTransform;

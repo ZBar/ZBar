@@ -1,4 +1,6 @@
 current:
+  * add IB support to ZBarReaderViewController
+    - add tabbed reader sample
   * add embedded reader sample
     - factor out camera simulation logic
   * fix readertest max quality result filtering
