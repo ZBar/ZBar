@@ -48,10 +48,10 @@ Xcode project:
    checking the box.  The target that you want to link with the library should
    also be selected in the target list.
 
-4. Link the following additional frameworks to any targets that link with the
+3. Link the following additional frameworks to any targets that link with the
    ZBarSDK.  You should set the first three to use weak references and
    configure an appropriate deployment target if you still need to support
-   iOS 3.1:
+   iOS 3:
 
    * :file:`AVFoundation.framework` (weak)
    * :file:`CoreMedia.framework` (weak)
@@ -60,9 +60,14 @@ Xcode project:
    * :file:`libiconv.dylib`
 
    If you check "Link Binary With Libraries" for the target(s), you should see
-   all of these frameworks along with :file:`libzbar.a`.
+   all of these frameworks followed by :file:`libzbar.a`.
 
-5. Import the SDK header from your prefix header to make the barcode reader
+   .. note::
+
+      Link order may be important for some versions of Xcode; the referenced
+      libraries should be listed *before* :file:`libzbar.a` in the link order.
+
+4. Import the SDK header from your prefix header to make the barcode reader
    APIs available::
 
       #import "ZBarSDK.h"

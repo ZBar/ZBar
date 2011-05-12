@@ -107,6 +107,12 @@ Now for the exciting part - let's add a barcode reader!
    * QuartzCore.framework
    * libiconv.dylib
 
+   .. warning::
+
+      Link order may be important for some versions of Xcode; the libraries
+      referenced above should be listed *before* :file:`libzbar.a` in the
+      link order.
+
 5. Import the SDK header.  You will usually want to prefix it, so add it to
    :file:`ReaderSample-prefix.pch`::
 
