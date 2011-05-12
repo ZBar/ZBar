@@ -1,4 +1,5 @@
 current:
+  * add missing references to new samples
   * add IB support to ZBarReaderViewController
     - add tabbed reader sample
   * add embedded reader sample
