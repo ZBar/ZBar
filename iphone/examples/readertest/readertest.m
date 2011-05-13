@@ -513,6 +513,11 @@ static const CGFloat const zoom_choices[] = {
     [super dealloc];
 }
 
+- (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation) orient
+{
+    return(YES);
+}
+
 - (void) scan
 {
     found = paused = NO;
@@ -526,15 +531,15 @@ static const CGFloat const zoom_choices[] = {
         reader.readerView.showsFPS = YES;
         if(zoom)
             reader.readerView.zoom = zoom;
+        reader.supportedOrientationsMask = (reader.showsZBarControls)
+            ? ZBarOrientationMaskAll
+            : ZBarOrientationMask(UIInterfaceOrientationPortrait); // tmp disable
     }
     if(reader.sourceType == UIImagePickerControllerSourceTypeCamera)
         reader.cameraOverlayView = (reader.showsZBarControls) ? nil : overlay;
     manualBtn.enabled = TARGET_IPHONE_SIMULATOR ||
         (reader.cameraMode == ZBarReaderControllerCameraModeDefault) ||
         [reader isKindOfClass: [ZBarReaderViewController class]];
-    reader.supportedOrientationsMask = (reader.showsZBarControls)
-        ? ZBarOrientationMaskAll
-        : ZBarOrientationMask(UIInterfaceOrientationPortrait); // tmp disable
     [self presentModalViewController: reader
           animated: YES];
 }

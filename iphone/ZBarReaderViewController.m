@@ -204,11 +204,11 @@
         UIViewAutoresizingFlexibleWidth |
         UIViewAutoresizingFlexibleHeight;
 
-    if(!showsZBarControls &&
-       self.parentViewController.modalViewController != self)
+    if(showsZBarControls ||
+       self.parentViewController.modalViewController == self)
     {
         autoresize |= UIViewAutoresizingFlexibleBottomMargin;
-        bounds.size.height -= 54;
+        r.size.height -= 54;
     }
     readerView.frame = r;
     readerView.autoresizingMask = autoresize;
@@ -245,6 +245,7 @@
 
 - (void) viewWillAppear: (BOOL) animated
 {
+    zlog(@"willAppear: anim=%d", animated);
     [self initControls];
     [super viewWillAppear: animated];
 
@@ -292,16 +293,26 @@
 - (void) willRotateToInterfaceOrientation: (UIInterfaceOrientation) orient
                                  duration: (NSTimeInterval) duration
 {
-    [readerView willRotateToInterfaceOrientation: orient
-                duration: duration];
+    zlog(@"willRotate: orient=%d #%g", orient, duration);
+    if(readerView)
+        [readerView willRotateToInterfaceOrientation: orient
+                    duration: duration];
 }
 
 - (void) willAnimateRotationToInterfaceOrientation: (UIInterfaceOrientation) orient
                                           duration: (NSTimeInterval) duration
 {
+    zlog(@"willAnimateRotation: orient=%d #%g", orient, duration);
     if(helpController)
         [helpController willAnimateRotationToInterfaceOrientation: orient
                         duration: duration];
+    if(readerView)
+        [readerView setNeedsLayout];
+}
+
+- (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation) orient
+{
+    zlog(@"didRotate: orient=%d", orient);
 }
 
 - (ZBarReaderView*) readerView

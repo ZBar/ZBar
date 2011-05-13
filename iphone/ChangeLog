@@ -1,4 +1,7 @@
 current:
+  * fix camera preview stale rotation corner
+    - fix ZBarReaderViewController toolbar layout accomodation
+    - switch pre-release samples to use debug library
   * update docs to note possible link order dependency
   * add missing references to new samples
   * add IB support to ZBarReaderViewController
