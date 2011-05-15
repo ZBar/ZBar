@@ -46,6 +46,7 @@
     : UIView
 {
     id<ZBarReaderViewDelegate> readerDelegate;
+    ZBarCaptureReader *captureReader;
     CGRect scanCrop, effectiveCrop;
     CGAffineTransform previewTransform;
     CGFloat zoom, zoom0;

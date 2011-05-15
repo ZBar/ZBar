@@ -45,14 +45,13 @@
     AVCaptureSession *session;
     AVCaptureDevice *device;
     AVCaptureInput *input;
-    ZBarCaptureReader *captureReader;
 }
 
 @end
 
 @implementation ZBarReaderViewImpl
 
-@synthesize device, session, captureReader;
+@synthesize device, session;
 
 - (void) _initWithImageScanner: (ZBarImageScanner*) scanner
 {

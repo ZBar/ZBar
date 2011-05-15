@@ -33,8 +33,8 @@
 @implementation ZBarReaderView
 
 @synthesize readerDelegate, tracksSymbols, trackingColor, torchMode, showsFPS,
-    zoom, scanCrop, previewTransform;
-@dynamic scanner, allowsPinchZoom, enableCache, device, session, captureReader;
+    zoom, scanCrop, previewTransform, captureReader;
+@dynamic scanner, allowsPinchZoom, enableCache, device, session;
 
 + (id) alloc
 {

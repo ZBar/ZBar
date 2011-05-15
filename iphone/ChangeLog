@@ -1,4 +1,5 @@
 current:
+  * fix captureReader not exposed to simulator
   * fix camera preview stale rotation corner
     - fix ZBarReaderViewController toolbar layout accomodation
     - switch pre-release samples to use debug library
