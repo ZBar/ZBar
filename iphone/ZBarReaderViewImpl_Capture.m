@@ -322,8 +322,15 @@
     if(!readerDelegate)
         return;
 
-    UIImageOrientation orient;
-    switch([UIDevice currentDevice].orientation)
+    UIImageOrientation orient = [UIDevice currentDevice].orientation;
+    if(!UIDeviceOrientationIsValidInterfaceOrientation(orient)) {
+        orient = interfaceOrientation;
+        if(orient == UIInterfaceOrientationLandscapeLeft)
+            orient = UIDeviceOrientationLandscapeLeft;
+        else if(orient == UIInterfaceOrientationLandscapeRight)
+            orient = UIDeviceOrientationLandscapeRight;
+    }
+    switch(orient)
     {
     case UIDeviceOrientationPortraitUpsideDown:
         orient = UIImageOrientationLeft;
