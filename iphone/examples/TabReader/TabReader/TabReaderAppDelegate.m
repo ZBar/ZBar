@@ -26,6 +26,7 @@
         [self.tabBarController.viewControllers objectAtIndex: 0];
     reader.readerDelegate = self;
     reader.showsZBarControls = NO;
+    reader.supportedOrientationsMask = ZBarOrientationMaskAll;
 
     return(YES);
 }

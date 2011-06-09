@@ -1,4 +1,6 @@
 current:
+  * workaround orientation bugs in parent controllers
+    - enable orientation and iPad support for all examples
   * add orientation detection fall back
   * fix captureReader not exposed to simulator
   * fix camera preview stale rotation corner

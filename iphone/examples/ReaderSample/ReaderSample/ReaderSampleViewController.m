@@ -16,6 +16,7 @@
     // ADD: present a barcode reader that scans from the camera feed
     ZBarReaderViewController *reader = [ZBarReaderViewController new];
     reader.readerDelegate = self;
+    reader.supportedOrientationsMask = ZBarOrientationMaskAll;
 
     ZBarImageScanner *scanner = reader.scanner;
     // TODO: (optional) additional reader configuration here
@@ -51,6 +52,11 @@
 
     // ADD: dismiss the controller (NB dismiss from the *reader*!)
     [reader dismissModalViewControllerAnimated: YES];
+}
+
+- (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation) orient
+{
+    return(YES);
 }
 
 - (void) dealloc {

@@ -294,6 +294,7 @@
                                  duration: (NSTimeInterval) duration
 {
     zlog(@"willRotate: orient=%d #%g", orient, duration);
+    rotating = YES;
     if(readerView)
         [readerView willRotateToInterfaceOrientation: orient
                     duration: duration];
@@ -312,7 +313,15 @@
 
 - (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation) orient
 {
-    zlog(@"didRotate: orient=%d", orient);
+    zlog(@"didRotate(%d): orient=%d", rotating, orient);
+    if(!rotating && readerView) {
+        // work around UITabBarController bug: willRotate is not called
+        // for non-portrait initial interface orientation
+        [readerView willRotateToInterfaceOrientation: self.interfaceOrientation
+                    duration: 0];
+        [readerView setNeedsLayout];
+    }
+    rotating = NO;
 }
 
 - (ZBarReaderView*) readerView
