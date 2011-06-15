@@ -1,4 +1,5 @@
 current:
+  * add emulation for UI camera device and flash mode properties
   * workaround orientation bugs in parent controllers
     - enable orientation and iPad support for all examples
   * add orientation detection fall back

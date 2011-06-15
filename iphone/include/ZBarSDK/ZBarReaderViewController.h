@@ -50,6 +50,8 @@
     CGAffineTransform cameraViewTransform;
     CGRect scanCrop;
     NSUInteger supportedOrientationsMask;
+    UIImagePickerControllerCameraDevice cameraDevice;
+    UIImagePickerControllerCameraFlashMode cameraFlashMode;
     BOOL showsZBarControls, tracksSymbols, enableCache;
 
     ZBarHelpController *helpController;
@@ -95,6 +97,14 @@
 
 // capture the next frame and send it over the usual delegate path.
 - (void) takePicture;
+
+// these attempt to emulate UIImagePickerController
++ (BOOL) isCameraDeviceAvailable: (UIImagePickerControllerCameraDevice) cameraDevice;
++ (BOOL) isFlashAvailableForCameraDevice: (UIImagePickerControllerCameraDevice) cameraDevice;
++ (NSArray*) availableCaptureModesForCameraDevice: (UIImagePickerControllerCameraDevice) cameraDevice;
+@property(nonatomic) UIImagePickerControllerCameraDevice cameraDevice;
+@property(nonatomic) UIImagePickerControllerCameraFlashMode cameraFlashMode;
+@property(nonatomic) UIImagePickerControllerCameraCaptureMode cameraCaptureMode;
 
 // direct access to the ZBarReaderView
 @property (nonatomic, readonly) ZBarReaderView *readerView;
