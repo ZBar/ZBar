@@ -1,4 +1,5 @@
 current:
+  * disable addons by default until synchronization with main symbol is working
   * fix image scanner min quality filtering
   * fix i25 buffer overrun corner case
   * fix EAN addon enables

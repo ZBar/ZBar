@@ -444,7 +444,7 @@ static const CGFloat const zoom_choices[] = {
                        [NSNumber numberWithInteger: sym]];
         else
             /* symbologies after ZBAR_EAN5 are disabled by default */
-            en = en && (sym != ZBAR_COMPOSITE);
+            en = en && (sym != ZBAR_EAN2);
         [symbols addObject:
             [self cellWithTitle: [ZBarSymbol nameForType: sym]
                   tag: sym

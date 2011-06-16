@@ -54,8 +54,10 @@ zbar_decoder_t *zbar_decoder_create ()
     dcode->ean.upce_config = 1 << ZBAR_CFG_EMIT_CHECK;
     dcode->ean.isbn10_config = 1 << ZBAR_CFG_EMIT_CHECK;
     dcode->ean.isbn13_config = 1 << ZBAR_CFG_EMIT_CHECK;
+# ifdef FIXME_ADDON_SYNC
     dcode->ean.ean2_config = 1 << ZBAR_CFG_ENABLE;
     dcode->ean.ean5_config = 1 << ZBAR_CFG_ENABLE;
+# endif
 #endif
 #ifdef ENABLE_I25
     dcode->i25.config = 1 << ZBAR_CFG_ENABLE;
