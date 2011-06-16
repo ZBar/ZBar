@@ -93,10 +93,10 @@ Upgrading a Pre-SDK Integration
 -------------------------------
 
 If your project was using the library directly from the Mercurial repository,
-before the SDK was introduced, there are a few incompatibilities that
-you must resolve in order to upgrade.  Don't worry - all of you source stays
-the same, you just need to update how the library is included in the project
-and how the headers are imported.
+before the SDK was introduced, there are a few incompatibilities that you must
+resolve in order to upgrade.  Don't worry - all of your source stays the same,
+you just need to update how the library is included in the project and how the
+headers are imported.
 
 Switching to the Binary Distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

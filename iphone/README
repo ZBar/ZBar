@@ -37,6 +37,11 @@ See Documentation.html for complete SDK documentation.
 Examples
 --------
 
+You should be able to open and build the examples directly from the
+disk image (ignore warnings about the read-only volume).  If you have
+problems with this, please copy the examples to your local drive
+instead and build from there.
+
 A tutorial that walks through installing and using the SDK is
 available in the documentation.  The SDK disk image also contains the
 resulting Xcode project at Examples/ReaderSample.
@@ -44,9 +49,11 @@ resulting Xcode project at Examples/ReaderSample.
 Examples/readertest demonstrates most of the configuration options
 available for the reader.
 
-You should be able to open and build the examples directly from the
-disk image.  If not, please copy them to your local drive and build
-from there.
+Examples/TabReader shows how you can use Interface Builder to add the
+reader as a tab in a UITabBarController.
+
+Examples/EmbedReader shows how a ZBarReaderView may be embedded
+directly in the application view hierarchy.
 
 Copyright and License
 ---------------------
@@ -54,6 +61,6 @@ Copyright and License
 Licensed under the GNU Lesser General Public License, version 2.1.
 http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
 
-Copyright 2008-2010 © Jeff Brown <spadix@users.sourceforge.net> et al
+Copyright 2008-2011 © Jeff Brown <spadix@users.sourceforge.net> et al
 
 See the included files COPYING and LICENSE for details
