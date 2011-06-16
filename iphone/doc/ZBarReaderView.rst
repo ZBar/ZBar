@@ -106,3 +106,16 @@ Instance Methods
 
       Flush the inter-frame consistency cache.  Any barcodes in the frame will
       be re-recognized in subsequent frames.
+
+   .. _`setZoom:animated:`:
+   .. describe:: - (void) setZoom:(CGFloat)zoom animated:(BOOL)animated
+
+      Set the zoom property with optional animation.
+
+   .. _`willRotateTointerfaceOrientation:duration:`:
+   .. describe:: - (void) willRotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation duration:(NSTimeInterval)duration
+
+      Compensate for device / camera / interface orientation.  Must be called
+      by containing view controller that supports any non-portrait orientation
+      to restore the camera preview to the correct orientation.  Call from
+      view controller method of the same name for correct animation.

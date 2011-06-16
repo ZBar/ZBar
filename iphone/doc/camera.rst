@@ -9,8 +9,8 @@ There are three levels that you may choose to integrate at, from least complex
 
 * Use the fully integrated view controller - this is very easy to implement
   and is the recommended approach.
-* Use the reader view with your own controller - this is not recommended, it
-  does not give you much more flexibility than using the full controller.
+* Use the reader view with your own controller - this more advanced approach
+  allows you to embed the view directly in your view hierarchy.
 * Use the capture component with your own AVCapture session - this is not
   supported and only provided for advanced developers with special needs who
   are already familiar with AVCapture.
@@ -111,9 +111,11 @@ Using a ZBarReaderView
 ----------------------
 
 :class:`ZBarReaderViewController` is a relatively thin wrapper around a
-:class:`ZBarReaderView`; it is possible to use the view directly.  You will
-lose the automatic fallback for iOS 3.1 and some of the simulator hooks, so
-this approach is not currently recommended (or well tested).
+:class:`ZBarReaderView`; it is possible to use the view directly, even from
+Interface Builder.  You will lose the automatic fallback for iOS 3.1 and some
+of the simulator and rotation hooks.  The documentation is also less complete,
+so you need to be able to UTSL.  See the :file:`EmbedReader` sample for a
+working example.
 
 
 Using the ZBarCaptureReader

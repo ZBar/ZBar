@@ -72,10 +72,16 @@ Create the App
           NSLog(@"TBD: scan barcode here...");
       }
       
-      - (void) dealloc {
+      - (void) dealloc
+      {
           self.resultImage = nil;
           self.resultText = nil;
           [super dealloc];
+      }
+      
+      - (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation) interfaceOrientation
+      {
+          return(YES);
       }
 
    This stub for scanButtonTapped is temporary, we'll fix it in a minute...
@@ -136,6 +142,7 @@ Now for the exciting part - let's add a barcode reader!
           // ADD: present a barcode reader that scans from the camera feed
           ZBarReaderViewController *reader = [ZBarReaderViewController new];
           reader.readerDelegate = self;
+          reader.supportedOrientationsMask = ZBarOrientationMaskAll;
       
           ZBarImageScanner *scanner = reader.scanner;
           // TODO: (optional) additional reader configuration here
