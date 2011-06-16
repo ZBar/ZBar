@@ -98,6 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				DC8F289913579EFF005B8862 /* ReaderSample */,
+				DC8F28B31357A29D005B8862 /* ZBarSDK */,
 				DC8F289213579EFF005B8862 /* Frameworks */,
 				DC8F289013579EFF005B8862 /* Products */,
 			);
@@ -136,7 +137,6 @@
 				DC8F28A913579EFF005B8862 /* ReaderSampleViewController.m */,
 				DC8F28AB13579EFF005B8862 /* ReaderSampleViewController.xib */,
 				DC8F289A13579EFF005B8862 /* Supporting Files */,
-				DC8F28B31357A29D005B8862 /* ZBarSDK */,
 			);
 			path = ReaderSample;
 			sourceTree = "<group>";
@@ -159,8 +159,7 @@
 				DC8F28CA1357A29D005B8862 /* libzbar.a */,
 				DC8F28CB1357A29D005B8862 /* Resources */,
 			);
-			name = ZBarSDK;
-			path = "../../../build/Release-iphoneos/ZBarSDK";
+			path = ZBarSDK;
 			sourceTree = "<group>";
 		};
 		DC8F28B41357A29D005B8862 /* Headers */ = {
@@ -362,7 +361,7 @@
 				INFOPLIST_FILE = "ReaderSample/ReaderSample-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../build/Release-iphoneos/ZBarSDK\"",
+					"\"$(SRCROOT)/ZBarSDK\"",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -380,7 +379,7 @@
 				INFOPLIST_FILE = "ReaderSample/ReaderSample-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../build/Release-iphoneos/ZBarSDK\"",
+					"\"$(SRCROOT)/ZBarSDK\"",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
