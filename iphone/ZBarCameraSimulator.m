@@ -65,10 +65,16 @@
     UILongPressGestureRecognizer *gesture =
         [[UILongPressGestureRecognizer alloc]
             initWithTarget: self
-            action: @selector(takePicture)];
+            action: @selector(didLongPress:)];
     gesture.numberOfTouchesRequired = 2;
     [view addGestureRecognizer: gesture];
     [gesture release];
+}
+
+- (void) didLongPress: (UILongPressGestureRecognizer*) gesture
+{
+    if(gesture.state == UIGestureRecognizerStateBegan)
+        [self takePicture];
 }
 
 - (void) takePicture

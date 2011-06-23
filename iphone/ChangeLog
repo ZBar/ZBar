@@ -1,3 +1,9 @@
+version 1.1.2:
+  * fix several simulator-related bugs
+    - fix device property missing from simulated ZBarReaderView
+    - fix AVCaptureDevice referenced from ZBarReaderViewController
+    - fix simulated camera gesture multiple recognition
+
 version 1.1.1:
   * fix ReaderSample project path to ZBarSDK
   * README document new examples

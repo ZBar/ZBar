@@ -62,12 +62,14 @@ AVDeviceForUICamera (UIImagePickerControllerCameraDevice camera)
     if(position < 0)
         return(nil);
 
+#if !TARGET_IPHONE_SIMULATOR
     NSArray *allDevices =
         [AVCaptureDevice devicesWithMediaType: AVMediaTypeVideo];
     for(AVCaptureDevice *device in allDevices)
         // FIXME how to quantify "best" of several (theoretical) possibilities
         if(device.position == position)
             return(device);
+#endif
     return(nil);
 }
 
@@ -134,8 +136,10 @@ AVTorchModeForUIFlashMode (UIImagePickerControllerCameraFlashMode mode)
     cameraViewTransform = CGAffineTransformIdentity;
 
     cameraFlashMode = UIImagePickerControllerCameraFlashModeAuto;
-    AVCaptureDevice *device =
-        [AVCaptureDevice defaultDeviceWithMediaType: AVMediaTypeVideo];
+    AVCaptureDevice *device = nil;
+#if !TARGET_IPHONE_SIMULATOR
+    device = [AVCaptureDevice defaultDeviceWithMediaType: AVMediaTypeVideo];
+#endif
     if(device)
         cameraDevice = UICameraForAVPosition(device.position);
     else

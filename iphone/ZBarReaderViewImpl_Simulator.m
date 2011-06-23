@@ -95,6 +95,16 @@
     [super dealloc];
 }
 
+- (AVCaptureDevice*) device
+{
+    return(nil);
+}
+
+- (void) setDevice: (AVCaptureDevice*) device
+{
+    // simulated camera does nothing with this
+}
+
 - (void) updateCrop
 {
     previewImage.frame = preview.bounds;
