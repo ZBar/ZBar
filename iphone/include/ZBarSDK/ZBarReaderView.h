@@ -49,7 +49,7 @@
     ZBarCaptureReader *captureReader;
     CGRect scanCrop, effectiveCrop;
     CGAffineTransform previewTransform;
-    CGFloat zoom, zoom0;
+    CGFloat zoom, zoom0, maxZoom;
     UIColor *trackingColor;
     BOOL tracksSymbols, showsFPS;
     NSInteger torchMode;
@@ -106,11 +106,14 @@
 @property (nonatomic) BOOL showsFPS;
 
 // zoom scale factor applied to video preview *and* scanCrop.
-// also updated by pinch-zoom gesture.  clipped to range [1,2],
+// also updated by pinch-zoom gesture.  clipped to range [1,maxZoom],
 // defaults to 1.25
 @property (nonatomic) CGFloat zoom;
 - (void) setZoom: (CGFloat) zoom
         animated: (BOOL) animated;
+
+// maximum settable zoom factor.
+@property (nonatomic) CGFloat maxZoom;
 
 // the region of the image that will be scanned.  normalized coordinates.
 @property (nonatomic) CGRect scanCrop;

@@ -33,7 +33,7 @@
 @implementation ZBarReaderView
 
 @synthesize readerDelegate, tracksSymbols, trackingColor, torchMode, showsFPS,
-    zoom, scanCrop, previewTransform, captureReader;
+    zoom, maxZoom, scanCrop, previewTransform, captureReader;
 @dynamic scanner, allowsPinchZoom, enableCache, device, session;
 
 + (id) alloc
@@ -111,6 +111,7 @@
     scanCrop = effectiveCrop = CGRectMake(0, 0, 1, 1);
     imageScale = 1;
     previewTransform = CGAffineTransformIdentity;
+    maxZoom = 2;
 
     pinch = [[UIPinchGestureRecognizer alloc]
                 initWithTarget: self
@@ -232,19 +233,23 @@ static inline CGFloat rotationForInterfaceOrientation (int orient)
 
 - (void) layoutSubviews
 {
+    CGRect bounds = self.bounds;
+    if(!bounds.size.width || !bounds.size.height)
+        return;
+
+    [CATransaction begin];
     if(animationDuration) {
-        [CATransaction begin];
         [CATransaction setAnimationDuration: animationDuration];
         [CATransaction setAnimationTimingFunction:
             [CAMediaTimingFunction functionWithName:
                 kCAMediaTimingFunctionEaseInEaseOut]];
     }
+    else
+        [CATransaction setDisableActions: YES];
+
     [super layoutSubviews];
-    CGRect bounds = self.bounds;
     fpsView.frame = CGRectMake(bounds.size.width - 80, bounds.size.height - 32,
                                80 + 12, 32 + 12);
-    if(!bounds.size.width || !bounds.size.height)
-        return;
 
     // orient view bounds to match camera image
     CGSize psize;
@@ -320,6 +325,7 @@ static inline CGFloat rotationForInterfaceOrientation (int orient)
     tracking.borderWidth = imageScale;
 
 #ifndef NDEBUG
+    preview.backgroundColor = [UIColor yellowColor].CGColor;
     overlay.borderWidth = 2 * imageScale;
     cropLayer.borderWidth = 2 * imageScale;
     cropLayer.frame = CGRectMake(effectiveCrop.origin.x * imageSize.width,
@@ -339,15 +345,18 @@ static inline CGFloat rotationForInterfaceOrientation (int orient)
     [self resetTracking];
     [self updateCrop];
 
-    if(animationDuration) {
-        [CATransaction commit];
-        animationDuration = 0;
-    }
+    [CATransaction commit];
+    animationDuration = 0;
 }
 
 - (void) setImageSize: (CGSize) size
 {
+    zlog(@"imageSize=%@", NSStringFromCGSize(size));
     imageSize = size;
+
+    // FIXME bug in AVCaptureVideoPreviewLayer fails to update preview location
+    preview.bounds = CGRectMake(0, 0, size.width, size.height);
+
     [self setNeedsLayout];
 }
 
@@ -406,8 +415,8 @@ static inline CGFloat rotationForInterfaceOrientation (int orient)
 {
     if(z < 1.0)
         z = 1.0;
-    if(z > 2.0)
-        z = 2.0;
+    if(z > maxZoom)
+        z = maxZoom;
     if(z == zoom)
         return;
     zoom = z;
@@ -419,10 +428,14 @@ static inline CGFloat rotationForInterfaceOrientation (int orient)
         animated: (BOOL) animated
 {
     [CATransaction begin];
-    [CATransaction setAnimationDuration: .1];
-    [CATransaction setAnimationTimingFunction:
-        [CAMediaTimingFunction functionWithName:
-            kCAMediaTimingFunctionLinear]];
+    if(animated) {
+        [CATransaction setAnimationDuration: .1];
+        [CATransaction setAnimationTimingFunction:
+            [CAMediaTimingFunction functionWithName:
+                kCAMediaTimingFunctionLinear]];
+    }
+    else
+        [CATransaction setDisableActions: YES];
     // FIXME animate from current value
     self.zoom = z;
     [self layoutIfNeeded];
