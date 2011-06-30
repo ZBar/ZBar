@@ -12,6 +12,7 @@
 #include "qrdec.h"
 #include "util.h"
 #include "image.h"
+#include "decoder.h"
 #include "error.h"
 #include "img_scanner.h"
 
@@ -74,6 +75,8 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
     size_t                    sa_ntext;
     size_t                    sa_ctext;
     int                       fnc1;
+    int                       fnc1_2ai;
+    int                       has_kanji;
     int                       eci;
     int                       err;
     int                       j;
@@ -106,6 +109,8 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
 
     sa_ctext=0;
     fnc1=0;
+    fnc1_2ai=0;
+    has_kanji=0;
     /*Step 1: Detect FNC1 markers and estimate the required buffer size.*/
     for(j=0;j<sa_size;j++)if(sa[j]>=0){
       qrdataj=qrdata+sa[j];
@@ -115,13 +120,20 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
         shift=0;
         switch(entry->mode){
           /*FNC1 applies to the entire code and ignores subsequent markers.*/
-          case QR_MODE_FNC1_1ST:
-          case QR_MODE_FNC1_2ND:fnc1=1;break;
-          /*2 SJIS bytes will be at most 4 UTF-8 bytes.*/
-          case QR_MODE_KANJI:shift++;
+          case QR_MODE_FNC1_1ST:{
+            if(!fnc1)fnc1=MOD(ZBAR_MOD_GS1);
+          }break;
+          case QR_MODE_FNC1_2ND:{
+            if(!fnc1){
+              fnc1=MOD(ZBAR_MOD_AIM);
+              fnc1_2ai=entry->payload.ai;
+              sa_ctext+=2;
+            }
+          }break;
           /*We assume at most 4 UTF-8 bytes per input byte.
             I believe this is true for all the encodings we actually use.*/
-          case QR_MODE_BYTE:shift++;
+          case QR_MODE_KANJI:has_kanji=1;
+          case QR_MODE_BYTE:shift=2;
           default:{
             /*The remaining two modes are already valid UTF-8.*/
             if(QR_MODE_HAS_DATA(entry->mode)){
@@ -135,6 +147,18 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
     /*Step 2: Convert the entries.*/
     sa_text=(char *)malloc((sa_ctext+1)*sizeof(*sa_text));
     sa_ntext=0;
+    /*Add the encoded Application Indicator for FNC1 in the second position.*/
+    if(fnc1==MOD(ZBAR_MOD_AIM)){
+      if(fnc1_2ai<100){
+        /*The Application Indicator is a 2-digit number.*/
+        sa_text[sa_ntext++]='0'+fnc1_2ai/10;
+        sa_text[sa_ntext++]='0'+fnc1_2ai%10;
+      }
+      /*The Application Indicator is a single letter.
+        We already checked that it lies in one of the ranges A...Z, a...z
+         when we decoded it.*/
+      else sa_text[sa_ntext++]=(char)(fnc1_2ai-100);
+    }
     eci=-1;
     enc_list[0]=sjis_cd;
     enc_list[1]=latin1_cd;
@@ -230,7 +254,8 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
             Does such a thing occur?
             Is it allowed?
             It requires copying buffers around to handle correctly.*/
-          case QR_MODE_BYTE:{
+          case QR_MODE_BYTE:
+          case QR_MODE_KANJI:{
             in=(char *)entry->payload.data.buf;
             inleft=entry->payload.data.len;
             out=sa_text+sa_ntext;
@@ -238,8 +263,12 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
             /*If we have no specified encoding, attempt to auto-detect it.*/
             if(eci<0){
               int ei;
-              /*First check for the UTF-8 BOM.*/
-              if(inleft>=3&&
+              /*If there was data encoded in kanji mode, assume it's SJIS.*/
+              if(has_kanji)enc_list_mtf(enc_list,sjis_cd);
+              /*Otherwise check for the UTF-8 BOM.
+                There's no way to specify UTF-8 using ECI, so this is the
+                 only way for encoders to reliably indicate it.*/
+              else if(inleft>=3&&
                in[0]==(char)0xEF&&in[1]==(char)0xBB&&in[2]==(char)0xBF){
                 in+=3;
                 inleft-=3;
@@ -256,15 +285,17 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
                 out=sa_text+sa_ntext;
                 outleft=sa_ctext-sa_ntext;
               }
-              /*If the text is 8-bit clean, prefer UTF-8 over SJIS, since SJIS
-                 will corrupt the backslashes used for DoCoMo formats.*/
+              /*If the text is 8-bit clean, prefer UTF-8 over SJIS, since
+                 SJIS will corrupt the backslashes used for DoCoMo formats.*/
               else if(text_is_ascii((unsigned char *)in,inleft)){
                 enc_list_mtf(enc_list,utf8_cd);
               }
               /*Try our list of encodings.*/
               for(ei=0;ei<3;ei++)if(enc_list[ei]!=(iconv_t)-1){
-                /*According to the standard, ISO/IEC 8859-1 (one hyphen) is
-                   supposed to be used, but reality is not always so.
+                /*According to the 2005 version of the standard,
+                   ISO/IEC 8859-1 (one hyphen) is supposed to be used, but
+                   reality is not always so (and in the 2000 version of the
+                   standard, it was JIS8/SJIS that was the default).
                   It's got an invalid range that is used often with SJIS
                    and UTF-8, though, which makes detection easier.
                   However, iconv() does not properly reject characters in
@@ -290,22 +321,15 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
                 outleft=sa_ctext-sa_ntext;
               }
             }
-            /*We were actually given a character set; use it.*/
+            /*We were actually given a character set; use it.
+              The spec says that in this case, data should be treated as if it
+               came from the given character set even when encoded in kanji
+               mode.*/
             else{
               err=eci_cd==(iconv_t)-1||
                iconv(eci_cd,&in,&inleft,&out,&outleft)==(size_t)-1;
               if(!err)sa_ntext=out-sa_text;
             }
-          }break;
-          /*Kanji mode always uses SJIS.*/
-          case QR_MODE_KANJI:{
-            in=(char *)entry->payload.data.buf;
-            inleft=entry->payload.data.len;
-            out=sa_text+sa_ntext;
-            outleft=sa_ctext-sa_ntext;
-            err=sjis_cd==(iconv_t)-1||
-             iconv(sjis_cd,&in,&inleft,&out,&outleft)==(size_t)-1;
-            if(!err)sa_ntext=out-sa_text;
           }break;
           /*Check to see if a character set was specified.*/
           case QR_MODE_ECI:{
@@ -323,6 +347,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
               else enc="CP437";
             }
             else if(cur_eci==QR_ECI_SJIS)enc="SJIS";
+            else if(cur_eci==QR_ECI_UTF8)enc="UTF-8";
             /*Don't know what this ECI code specifies, but not an encoding that
                we recognize.*/
             else continue;
@@ -389,6 +414,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
       sa_sym->data = sa_text;
       sa_sym->data_alloc = sa_ntext;
       sa_sym->datalen = sa_ntext - 1;
+      sa_sym->modifiers = fnc1;
 
       _zbar_image_scanner_add_sym(iscn, sa_sym);
     }

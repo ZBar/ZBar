@@ -2103,7 +2103,7 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
             rlastfit=nr;
           }
         }
-        else nrempty=0;
+        nrempty=0;
       }
       else nrempty++;
       ru+=dru;
@@ -2247,6 +2247,8 @@ static int qr_hom_fit(qr_hom *_hom,qr_finder *_ul,qr_finder *_ur,
       w=QR_EXTMUL(dim-7,c21,
        QR_EXTMUL(dim-13,_p[0][0]*dy21-_p[0][1]*dx21,
        QR_EXTMUL(6,p3[0]*dy21-p3[1]*dx21,0)));
+      /*The projection failed: invalid geometry.*/
+      if(w==0)return -1;
       mask=QR_SIGNMASK(w);
       w=w+mask^mask;
       brx=(int)QR_DIVROUND(QR_EXTMUL((dim-7)*_p[0][0],p3[0]*dy21,
@@ -2364,11 +2366,10 @@ static int qr_finder_version_decode(qr_finder *_f,const qr_hom *_hom,
     w0+=dwi;
   }
   ret=bch18_6_correct(&v);
-  /*TODO: I'd certainly hope the order the version bits is accessed in is
-     well-defined, but I seem to have images for two different codes with the
-     same version using two different orders?
-    Maybe the other one is a model 1 code?
-    Even if I parse the version here, I can't decode the rest of the code.
+  /*TODO: I seem to have an image with the version bits in a different order
+     (the transpose of the standard order).
+    Even if I change the order here so I can parse the version on this image,
+     I can't decode the rest of the code.
     If this is really needed, we should just re-order the bits.*/
 #if 0
   if(ret<0){
@@ -2486,16 +2487,9 @@ static int qr_finder_fmt_info_decode(qr_finder *_ul,qr_finder *_ur,
     y+=dy;
     w+=dw;
   }
-  /*For the 8th bit we have 3 samples... use the majority value.
-    TODO: The DL bit appears to be wrong as much as right? Guess it's not
-     really a third copy after all, but doesn't appear to be used for data.
-  i=((lo[0]>>7&1)+(lo[1]>>7&1)+(hi[1]>>7&1)>>1)<<7;
-  lo[0]=lo[0]&~0x80|i;
-  lo[1]=lo[1]&~0x80|i;
-  hi[1]&=~0x80;*/
-  /*For the remaining bits we have two samples... try them in all
-     combinations and pick the most popular valid code, breaking ties using
-     the number of bit errors.*/
+  /*For each group of bits we have two samples... try them in all combinations
+     and pick the most popular valid code, breaking ties using the number of
+     bit errors.*/
   imax=2<<(hi[0]!=hi[1]);
   di=1+(lo[0]==lo[1]);
   nfmt_info=0;
@@ -3192,6 +3186,7 @@ static const unsigned char QR_ALNUM_TABLE[45]={
 static int qr_code_data_parse(qr_code_data *_qrdata,int _version,
  const unsigned char *_data,int _ndata){
   qr_pack_buf qpb;
+  unsigned    self_parity;
   int         centries;
   int         len_bits_idx;
   /*Entries are stored directly in the struct during parsing.
@@ -3199,6 +3194,7 @@ static int qr_code_data_parse(qr_code_data *_qrdata,int _version,
   _qrdata->entries=NULL;
   _qrdata->nentries=0;
   _qrdata->sa_size=0;
+  self_parity=0;
   centries=0;
   /*The versions are divided into 3 ranges that each use a different number of
      bits for length fields.*/
@@ -3217,9 +3213,10 @@ static int qr_code_data_parse(qr_code_data *_qrdata,int _version,
        centries*sizeof(*_qrdata->entries));
     }
     entry=_qrdata->entries+_qrdata->nentries++;
-    /*Set the mode to an invalid value until we allocate a buffer for it.
-      This ensures we don't try to free it on clean-up until then.*/
-    entry->mode=-1;
+    entry->mode=mode;
+    /*Set the buffer to NULL, because if parsing fails, we might try to free it
+       on clean-up.*/
+    entry->payload.data.buf=NULL;
     switch(mode){
       /*The number of bits used to encode the character count for each version
          range and each data mode.*/
@@ -3231,6 +3228,7 @@ static int qr_code_data_parse(qr_code_data *_qrdata,int _version,
       case QR_MODE_NUM:{
         unsigned char *buf;
         unsigned       bits;
+        unsigned       c;
         int            len;
         int            count;
         int            rem;
@@ -3241,35 +3239,47 @@ static int qr_code_data_parse(qr_code_data *_qrdata,int _version,
         count=len/3;
         rem=len%3;
         if(qr_pack_buf_avail(&qpb)<10*count+7*(rem>>1&1)+4*(rem&1))return -1;
-        entry->mode=mode;
         entry->payload.data.buf=buf=(unsigned char *)malloc(len*sizeof(*buf));
         entry->payload.data.len=len;
         /*Read groups of 3 digits encoded in 10 bits.*/
         while(count-->0){
           bits=qr_pack_buf_read(&qpb,10);
           if(bits>=1000)return -1;
-          *buf++=(unsigned char)('0'+bits/100);
+          c='0'+bits/100;
+          self_parity^=c;
+          *buf++=(unsigned char)c;
           bits%=100;
-          *buf++=(unsigned char)('0'+bits/10);
-          *buf++=(unsigned char)('0'+bits%10);
+          c='0'+bits/10;
+          self_parity^=c;
+          *buf++=(unsigned char)c;
+          c='0'+bits%10;
+          self_parity^=c;
+          *buf++=(unsigned char)c;
         }
         /*Read the last two digits encoded in 7 bits.*/
         if(rem>1){
           bits=qr_pack_buf_read(&qpb,7);
           if(bits>=100)return -1;
-          *buf++=(unsigned char)('0'+bits/10);
-          *buf++=(unsigned char)('0'+bits%10);
+          c='0'+bits/10;
+          self_parity^=c;
+          *buf++=(unsigned char)c;
+          c='0'+bits%10;
+          self_parity^=c;
+          *buf++=(unsigned char)c;
         }
         /*Or the last one digit encoded in 4 bits.*/
         else if(rem){
           bits=qr_pack_buf_read(&qpb,4);
           if(bits>=10)return -1;
-          *buf++=(unsigned char)('0'+bits);
+          c='0'+bits;
+          self_parity^=c;
+          *buf++=(unsigned char)c;
         }
       }break;
       case QR_MODE_ALNUM:{
         unsigned char *buf;
         unsigned       bits;
+        unsigned       c;
         int            len;
         int            count;
         int            rem;
@@ -3280,56 +3290,67 @@ static int qr_code_data_parse(qr_code_data *_qrdata,int _version,
         count=len>>1;
         rem=len&1;
         if(qr_pack_buf_avail(&qpb)<11*count+6*rem)return -1;
-        entry->mode=mode;
         entry->payload.data.buf=buf=(unsigned char *)malloc(len*sizeof(*buf));
         entry->payload.data.len=len;
         /*Read groups of two characters encoded in 11 bits.*/
         while(count-->0){
           bits=qr_pack_buf_read(&qpb,11);
           if(bits>=2025)return -1;
-          *buf++=QR_ALNUM_TABLE[bits/45];
-          *buf++=QR_ALNUM_TABLE[bits%45];
+          c=QR_ALNUM_TABLE[bits/45];
+          self_parity^=c;
+          *buf++=(unsigned char)c;
+          c=QR_ALNUM_TABLE[bits%45];
+          self_parity^=c;
+          *buf++=(unsigned char)c;
           len-=2;
         }
         /*Read the last character encoded in 6 bits.*/
         if(rem){
           bits=qr_pack_buf_read(&qpb,6);
           if(bits>=45)return -1;
-          *buf++=QR_ALNUM_TABLE[bits];
+          c=QR_ALNUM_TABLE[bits];
+          self_parity^=c;
+          *buf++=(unsigned char)c;
         }
       }break;
       /*Structured-append header.*/
       case QR_MODE_STRUCT:{
         int bits;
-        entry->mode=mode;
         bits=qr_pack_buf_read(&qpb,16);
         if(bits<0)return -1;
-        /*We also save a copy of the data in _qrdata for easy reference when
+        /*We save a copy of the data in _qrdata for easy reference when
            grouping structured-append codes.
-          If for some reason the code has multiple S-A headers, last one wins
-           (TODO: should we return an error instead?).*/
-        _qrdata->sa_index=entry->payload.sa.sa_index=
-         (unsigned char)(bits>>12&0xF);
-        _qrdata->sa_size=entry->payload.sa.sa_size=
-         (unsigned char)((bits>>8&0xF)+1);
-        _qrdata->sa_parity=entry->payload.sa.sa_parity=
-         (unsigned char)(bits&0xFF);
+          If for some reason the code has multiple S-A headers, first one wins,
+           since it is supposed to come before everything else (TODO: should we
+           return an error instead?).*/
+        if(_qrdata->sa_size==0){
+          _qrdata->sa_index=entry->payload.sa.sa_index=
+           (unsigned char)(bits>>12&0xF);
+          _qrdata->sa_size=entry->payload.sa.sa_size=
+           (unsigned char)((bits>>8&0xF)+1);
+          _qrdata->sa_parity=entry->payload.sa.sa_parity=
+           (unsigned char)(bits&0xFF);
+        }
       }break;
       case QR_MODE_BYTE:{
         unsigned char *buf;
+        unsigned       c;
         int            len;
         len=qr_pack_buf_read(&qpb,LEN_BITS[len_bits_idx][2]);
         if(len<0)return -1;
         /*Check to see if there are enough bits left now, so we don't have to
            in the decode loop.*/
         if(qr_pack_buf_avail(&qpb)<len<<3)return -1;
-        entry->mode=mode;
         entry->payload.data.buf=buf=(unsigned char *)malloc(len*sizeof(*buf));
         entry->payload.data.len=len;
-        while(len-->0)*buf++=(unsigned char)qr_pack_buf_read(&qpb,8);
+        while(len-->0){
+          c=qr_pack_buf_read(&qpb,8);
+          self_parity^=c;
+          *buf++=(unsigned char)c;
+        }
       }break;
       /*FNC1 first position marker.*/
-      case QR_MODE_FNC1_1ST:entry->mode=mode;break;
+      case QR_MODE_FNC1_1ST:break;
       /*Extended Channel Interpretation data.*/
       case QR_MODE_ECI:{
         unsigned val;
@@ -3357,7 +3378,6 @@ static int qr_code_data_parse(qr_code_data *_qrdata,int _version,
         }
         /*Invalid lead byte.*/
         else return -1;
-        entry->mode=mode;
         entry->payload.eci=val;
       }break;
       case QR_MODE_KANJI:{
@@ -3369,7 +3389,6 @@ static int qr_code_data_parse(qr_code_data *_qrdata,int _version,
         /*Check to see if there are enough bits left now, so we don't have to
            in the decode loop.*/
         if(qr_pack_buf_avail(&qpb)<13*len)return -1;
-        entry->mode=mode;
         entry->payload.data.buf=buf=(unsigned char *)malloc(2*len*sizeof(*buf));
         entry->payload.data.len=2*len;
         /*Decode 2-byte SJIS characters encoded in 13 bits.*/
@@ -3377,14 +3396,28 @@ static int qr_code_data_parse(qr_code_data *_qrdata,int _version,
           bits=qr_pack_buf_read(&qpb,13);
           bits=(bits/0xC0<<8|bits%0xC0)+0x8140;
           if(bits>=0xA000)bits+=0x4000;
-          /*Are values 0xXX7F, 0xXXFD...0xXXFF always invalid?
+          /*TODO: Are values 0xXX7F, 0xXXFD...0xXXFF always invalid?
             Should we reject them here?*/
+          self_parity^=bits;
           *buf++=(unsigned char)(bits>>8);
           *buf++=(unsigned char)(bits&0xFF);
         }
       }break;
       /*FNC1 second position marker.*/
-      case QR_MODE_FNC1_2ND:entry->mode=mode;break;
+      case QR_MODE_FNC1_2ND:{
+        int bits;
+        /*FNC1 in the 2nd position encodes an Application Indicator in one
+           byte, which is either a letter (A...Z or a...z) or a 2-digit number.
+          The letters are encoded with their ASCII value plus 100, the numbers
+           are encoded directly with their numeric value.
+          Values 100...164, 191...196, and 223...255 are invalid, so we reject
+           them here.*/
+        bits=qr_pack_buf_read(&qpb,8);
+        if(!(bits>=0&&bits<100||bits>=165&&bits<191||bits>=197&&bits<223)){
+          return -1;
+        }
+        entry->payload.ai=bits;
+      }break;
       /*Unknown mode number:*/
       default:{
         /*Unfortunately, because we have to understand the format of a mode to
@@ -3394,9 +3427,11 @@ static int qr_code_data_parse(qr_code_data *_qrdata,int _version,
       }break;
     }
   }
-  /*TODO: If there was a S-A header, we should compute the parity of this
-     code; how are non-data modes handled (ECI, FNC1)?*/
-  _qrdata->self_parity=0;
+  /*Store the parity of the data from this code, for S-A.
+    The final parity is the 8-bit XOR of all the decoded bytes of literal data.
+    We don't combine the 2-byte kanji codes into one byte in the loops above,
+     because we can just do it here instead.*/
+  _qrdata->self_parity=((self_parity>>8)^self_parity)&0xFF;
   /*Success.*/
   _qrdata->entries=(qr_code_data_entry *)realloc(_qrdata->entries,
    _qrdata->nentries*sizeof(*_qrdata->entries));
@@ -3573,7 +3608,17 @@ static int qr_code_decode(qr_code_data *_qrdata,const rs_gf256 *_gf,
     int block_szi;
     int ndatai;
     block_szi=block_sz+(i>=nshort_blocks);
-    if(rs_correct(_gf,QR_M0,block_data+ncodewords,block_szi,npar,NULL,0)<0){
+    ret=rs_correct(_gf,QR_M0,block_data+ncodewords,block_szi,npar,NULL,0);
+    /*For version 1 symbols and version 2-L and 3-L symbols, we aren't allowed
+       to use all the parity bytes for correction.
+      They are instead used to improve detection.
+      Version 1-L reserves 3 parity bytes for detection.
+      Versions 1-M and 2-L reserve 2 parity bytes for detection.
+      Versions 1-Q, 1-H, and 3-L reserve 1 parity byte for detection.
+      We can ignore the version 3-L restriction because it has an odd number of
+       parity bytes, and we don't support erasure detection.*/
+    if(ret<0||_version==1&&ret>ecc_level+1<<1||
+     _version==2&&ecc_level==0&&ret>4){
       ret=-1;
       break;
     }
@@ -3635,6 +3680,7 @@ static int qr_reader_try_configuration(qr_reader *_reader,
     qr_finder ul;
     qr_finder ur;
     qr_finder dl;
+    qr_point  bbox[4];
     int       res;
     int       ur_version;
     int       dl_version;
@@ -3671,10 +3717,11 @@ static int qr_reader_try_configuration(qr_reader *_reader,
 #endif
     /*If we made it this far, upgrade the affine homography to a full
        homography.*/
-    if(qr_hom_fit(&hom,&ul,&ur,&dl,_qrdata->bbox,&aff,
+    if(qr_hom_fit(&hom,&ul,&ur,&dl,bbox,&aff,
      &_reader->isaac,_img,_width,_height)<0){
       continue;
     }
+    memcpy(_qrdata->bbox,bbox,sizeof(bbox));
     qr_hom_unproject(ul.o,&hom,ul.c->pos[0],ul.c->pos[1]);
     qr_hom_unproject(ur.o,&hom,ur.c->pos[0],ur.c->pos[1]);
     qr_hom_unproject(dl.o,&hom,dl.c->pos[0],dl.c->pos[1]);
@@ -3797,14 +3844,37 @@ static int qr_reader_try_configuration(qr_reader *_reader,
       continue;
     }
     fmt_info=qr_finder_fmt_info_decode(&ul,&ur,&dl,&hom,_img,_width,_height);
-    if(fmt_info<0)continue;
-    if(qr_code_decode(_qrdata,&_reader->gf,ul.c->pos,ur.c->pos,dl.c->pos,
+    if(fmt_info<0||
+     qr_code_decode(_qrdata,&_reader->gf,ul.c->pos,ur.c->pos,dl.c->pos,
      ur_version,fmt_info,_img,_width,_height)<0){
-      /*TODO: Maybe somebody flipped the code?
-        We'd still get a valid version, and probably valid (but incorrect)
-         format info.
-        After we've come this far, it should be a simple matter to check.*/
-      continue;
+      /*The code may be flipped.
+        Try again, swapping the UR and DL centers.
+        We should get a valid version either way, so it's relatively cheap to
+         check this, as we've already filtered out a lot of invalid
+         configurations.*/
+      QR_SWAP2I(hom.inv[0][0],hom.inv[1][0]);
+      QR_SWAP2I(hom.inv[0][1],hom.inv[1][1]);
+      QR_SWAP2I(hom.fwd[0][0],hom.fwd[0][1]);
+      QR_SWAP2I(hom.fwd[1][0],hom.fwd[1][1]);
+      QR_SWAP2I(hom.fwd[2][0],hom.fwd[2][1]);
+      QR_SWAP2I(ul.o[0],ul.o[1]);
+      QR_SWAP2I(ul.size[0],ul.size[1]);
+      QR_SWAP2I(ur.o[0],ur.o[1]);
+      QR_SWAP2I(ur.size[0],ur.size[1]);
+      QR_SWAP2I(dl.o[0],dl.o[1]);
+      QR_SWAP2I(dl.size[0],dl.size[1]);
+#if defined(QR_DEBUG)
+      qr_finder_dump_hom_undistorted(&ul,&dl,&ur,&hom,_img,_width,_height);
+#endif
+      fmt_info=qr_finder_fmt_info_decode(&ul,&dl,&ur,&hom,_img,_width,_height);
+      if(fmt_info<0)continue;
+      QR_SWAP2I(bbox[1][0],bbox[2][0]);
+      QR_SWAP2I(bbox[1][1],bbox[2][1]);
+      memcpy(_qrdata->bbox,bbox,sizeof(bbox));
+      if(qr_code_decode(_qrdata,&_reader->gf,ul.c->pos,dl.c->pos,ur.c->pos,
+       ur_version,fmt_info,_img,_width,_height)<0){
+        continue;
+      }
     }
     return ur_version;
   }
@@ -3817,10 +3887,14 @@ void qr_reader_match_centers(qr_reader *_reader,qr_code_data_list *_qrlist,
   /*The number of centers should be small, so an O(n^3) exhaustive search of
      which ones go together should be reasonable.*/
   unsigned char *mark;
+  int            nfailures_max;
+  int            nfailures;
   int            i;
   int            j;
   int            k;
   mark=(unsigned char *)calloc(_ncenters,sizeof(*mark));
+  nfailures_max=QR_MAXI(8192,_width*_height>>9);
+  nfailures=0;
   for(i=0;i<_ncenters;i++){
     /*TODO: We might be able to accelerate this step significantly by
        considering the remaining finder centers in a more intelligent order,
@@ -3873,6 +3947,13 @@ void qr_reader_match_centers(qr_reader *_reader,qr_code_data_list *_qrlist,
           }
           /*Mark _all_ such centers used: codes cannot partially overlap.*/
           for(l=0;l<_ncenters;l++)if(mark[l]==2)mark[l]=1;
+          nfailures=0;
+        }
+        else if(++nfailures>nfailures_max){
+          /*Give up.
+            We're unlikely to find a valid code in all this clutter, and we
+             could spent quite a lot of time trying.*/
+          i=j=k=_ncenters;
         }
       }
     }

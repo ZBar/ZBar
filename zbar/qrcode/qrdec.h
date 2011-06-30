@@ -85,7 +85,9 @@ typedef enum qr_eci_encoding{
   QR_ECI_ISO8859_16,
   /*ECI 000019 is reserved?*/
   /*Shift-JIS.*/
-  QR_ECI_SJIS=20
+  QR_ECI_SJIS=20,
+  /*UTF-8.*/
+  QR_ECI_UTF8=26
 }qr_eci_encoding;
 
 
@@ -101,6 +103,8 @@ struct qr_code_data_entry{
     }data;
     /*Decoded "Extended Channel Interpretation" data.*/
     unsigned eci;
+    /*Decoded "Application Indicator" for FNC1 in 2nd position.*/
+    int      ai;
     /*Structured-append header data.*/
     struct{
       unsigned char sa_index;

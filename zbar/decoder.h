@@ -28,6 +28,8 @@
 
 #include <zbar.h>
 
+#include "debug.h"
+
 #define NUM_CFGS (ZBAR_CFG_MAX_LEN - ZBAR_CFG_MIN_LEN + 1)
 
 #ifdef ENABLE_EAN

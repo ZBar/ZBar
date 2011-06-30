@@ -51,6 +51,10 @@ zbar_symbol_type_t _zbar_find_qr (zbar_decoder_t *dcode)
     qrf->s5 += get_width(dcode, 1);
     s = qrf->s5;
 
+    /*TODO: The 2005 standard allows reflectance-reversed codes (light on dark
+       instead of dark on light).
+      If we find finder patterns with the opposite polarity, we should invert
+       the final binarized image and use them to search for QR codes in that.*/
     if(get_color(dcode) != ZBAR_SPACE || s < 7)
         return(0);
 
