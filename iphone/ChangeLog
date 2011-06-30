@@ -1,4 +1,5 @@
 version 1.1.2:
+  * add emulation for UI videoQuality to adjust camera resolution
   * fix several simulator-related bugs
     - fix device property missing from simulated ZBarReaderView
     - fix AVCaptureDevice referenced from ZBarReaderViewController

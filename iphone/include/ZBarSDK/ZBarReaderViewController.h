@@ -52,6 +52,7 @@
     NSUInteger supportedOrientationsMask;
     UIImagePickerControllerCameraDevice cameraDevice;
     UIImagePickerControllerCameraFlashMode cameraFlashMode;
+    UIImagePickerControllerQualityType videoQuality;
     BOOL showsZBarControls, tracksSymbols, enableCache;
 
     ZBarHelpController *helpController;
@@ -105,6 +106,7 @@
 @property(nonatomic) UIImagePickerControllerCameraDevice cameraDevice;
 @property(nonatomic) UIImagePickerControllerCameraFlashMode cameraFlashMode;
 @property(nonatomic) UIImagePickerControllerCameraCaptureMode cameraCaptureMode;
+@property(nonatomic) UIImagePickerControllerQualityType videoQuality;
 
 // direct access to the ZBarReaderView
 @property (nonatomic, readonly) ZBarReaderView *readerView;

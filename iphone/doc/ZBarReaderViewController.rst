@@ -55,12 +55,18 @@ Properties
 
    .. member:: UIImagePickerControllerCameraDevice cameraDevice
 
-      The camera device to use for scanning.
+      The camera device to use for scanning.  Defaults to the system default
+      camera.
 
    .. member:: UIImagePickerControllerCameraFlashMode cameraFlashMode
 
       The "flash" (aka torch) mode to use while scanning.  Defaults to
       UIImagePickerControllerCameraFlashModeAuto.
+
+   .. member:: UIImagePickerControllerQualityType videoQuality
+
+      The resolution to use while scanning.  Defaults to
+      UIImagePickerControllerQuality640x480.
 
    .. member:: ZBarReaderView *readerView
 

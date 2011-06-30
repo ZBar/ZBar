@@ -105,6 +105,11 @@
     // simulated camera does nothing with this
 }
 
+- (AVCaptureSession*) session
+{
+    return(nil);
+}
+
 - (void) updateCrop
 {
     previewImage.frame = preview.bounds;

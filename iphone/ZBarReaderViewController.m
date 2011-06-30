@@ -87,12 +87,32 @@ AVTorchModeForUIFlashMode (UIImagePickerControllerCameraFlashMode mode)
     return(AVCaptureTorchModeOff);
 }
 
+static inline NSString*
+AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
+{
+#if !TARGET_IPHONE_SIMULATOR
+    switch(quality)
+    {
+    case UIImagePickerControllerQualityTypeHigh:
+        return(AVCaptureSessionPresetHigh);
+    case UIImagePickerControllerQualityType640x480:
+        return(AVCaptureSessionPreset640x480);
+    case UIImagePickerControllerQualityTypeMedium:
+        return(AVCaptureSessionPresetMedium);
+    case UIImagePickerControllerQualityTypeLow:
+        return(AVCaptureSessionPresetLow);
+    }
+#endif
+    return(nil);
+}
+
 
 @implementation ZBarReaderViewController
 
 @synthesize scanner, readerDelegate, showsZBarControls,
     supportedOrientationsMask, tracksSymbols, enableCache, cameraOverlayView,
-    cameraViewTransform, cameraDevice, cameraFlashMode, readerView, scanCrop;
+    cameraViewTransform, cameraDevice, cameraFlashMode, videoQuality,
+    readerView, scanCrop;
 @dynamic sourceType, allowsEditing, allowsImageEditing, showsCameraControls,
     showsHelpOnFail, cameraMode, takesPicture, maxScanDimension;
 
@@ -136,6 +156,7 @@ AVTorchModeForUIFlashMode (UIImagePickerControllerCameraFlashMode mode)
     cameraViewTransform = CGAffineTransformIdentity;
 
     cameraFlashMode = UIImagePickerControllerCameraFlashModeAuto;
+    videoQuality = UIImagePickerControllerQualityType640x480;
     AVCaptureDevice *device = nil;
 #if !TARGET_IPHONE_SIMULATOR
     device = [AVCaptureDevice defaultDeviceWithMediaType: AVMediaTypeVideo];
@@ -272,6 +293,23 @@ AVTorchModeForUIFlashMode (UIImagePickerControllerCameraFlashMode mode)
     [view addSubview: controls];
 }
 
+- (void) initVideoQuality
+{
+    if(!readerView) {
+        assert(0);
+        return;
+    }
+
+    AVCaptureSession *session = readerView.session;
+    NSString *preset = AVSessionPresetForUIVideoQuality(videoQuality);
+    if(session && preset && [session canSetSessionPreset: preset]) {
+        zlog(@"set session preset=%@", preset);
+        session.sessionPreset = preset;
+    }
+    else
+        zlog(@"unable to set session preset=%@", preset);
+}
+
 - (void) loadView
 {
     self.view = [[UIView alloc]
@@ -307,6 +345,7 @@ AVTorchModeForUIFlashMode (UIImagePickerControllerCameraFlashMode mode)
     if(device && device != readerView.device)
         readerView.device = device;
     readerView.torchMode = AVTorchModeForUIFlashMode(cameraFlashMode);
+    [self initVideoQuality];
 
     readerView.readerDelegate = (id<ZBarReaderViewDelegate>)self;
     readerView.scanCrop = scanCrop;
@@ -540,6 +579,13 @@ AVTorchModeForUIFlashMode (UIImagePickerControllerCameraFlashMode mode)
     NSAssert2(mode == UIImagePickerControllerCameraCaptureModeVideo,
               @"attempt to set unsupported value (%d)"
               @" for %@ property", mode, @"cameraCaptureMode");
+}
+
+- (void) setVideoQuality: (UIImagePickerControllerQualityType) quality
+{
+    videoQuality = quality;
+    if(readerView)
+        [self initVideoQuality];
 }
 
 

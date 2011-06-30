@@ -4,6 +4,7 @@ enum {
     CAMODE_SECTION,
     DEVICE_SECTION,
     FLASH_SECTION,
+    QUALITY_SECTION,
     CONFIG_SECTION,
     CUSTOM_SECTION,
     SYMBOL_SECTION,
@@ -17,6 +18,7 @@ static NSString* const section_titles[] = {
     @"CameraMode",
     @"CaptureDevice",
     @"CameraFlashMode",
+    @"VideoQuality",
     @"Reader Configuration",
     nil,
     @"Enabled Symbologies",
@@ -357,6 +359,18 @@ static const CGFloat const zoom_choices[] = {
                   checked: (reader.cameraFlashMode == i - 1)]];
     [sections replaceObjectAtIndex: FLASH_SECTION
               withObject: flashModes];
+
+    static NSString *const qualityNames[] = {
+        @"High", @"Medium", @"Low", @"640x480", nil
+    };
+    NSMutableArray *qualities = [NSMutableArray array];
+    for(int i = 0; qualityNames[i]; i++)
+        [qualities addObject:
+            [self cellWithTitle: qualityNames[i]
+                  tag: i
+                  checked: (reader.videoQuality == i)]];
+    [sections replaceObjectAtIndex: QUALITY_SECTION
+              withObject: qualities];
 
     static NSString* const configNames[] = {
         @"showsCameraControls", @"showsZBarControls", @"tracksSymbols",
@@ -773,6 +787,12 @@ static const CGFloat const zoom_choices[] = {
         reader.cameraFlashMode = cell.tag;
         [self setCheckForTag: reader.cameraFlashMode
               inSection: FLASH_SECTION];
+        break;
+
+    case QUALITY_SECTION:
+        reader.videoQuality = cell.tag;
+        [self setCheckForTag: reader.videoQuality
+              inSection: QUALITY_SECTION];
         break;
 
     case CONFIG_SECTION: {
