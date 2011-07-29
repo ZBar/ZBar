@@ -379,10 +379,13 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
 - (void) viewWillAppear: (BOOL) animated
 {
-    zlog(@"willAppear: anim=%d", animated);
+    zlog(@"willAppear: anim=%d orient=%d",
+         animated, self.interfaceOrientation);
     [self initControls];
     [super viewWillAppear: animated];
 
+    [readerView willRotateToInterfaceOrientation: self.interfaceOrientation
+                duration: 0];
     [readerView start];
 
     UIApplication *app = [UIApplication sharedApplication];

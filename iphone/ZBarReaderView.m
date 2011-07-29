@@ -363,9 +363,11 @@ static inline CGFloat rotationForInterfaceOrientation (int orient)
 - (void) willRotateToInterfaceOrientation: (UIInterfaceOrientation) orient
                                  duration: (NSTimeInterval) duration
 {
-    zlog(@"orient=%d", orient);
-    interfaceOrientation = orient;
-    animationDuration = duration;
+    if(interfaceOrientation != orient) {
+        zlog(@"orient=%d #%g", orient, duration);
+        interfaceOrientation = orient;
+        animationDuration = duration;
+    }
 }
 
 - (void) setScanCrop: (CGRect) r
