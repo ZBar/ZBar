@@ -51,7 +51,12 @@ Properties
 
       Zoom scale factor applied to the video preview *and* scanCrop.  This
       value is also updated by the pinch-zoom gesture.  Valid values are in
-      the range [1,2].  (default 1.25)
+      the range [1,maxZoom].  (default 1.25)
+
+   .. member:: CGFloat maxZoom
+
+      Maximum settable zoom level.  The zoom property will be clipped to this
+      value.
 
    .. member:: CGRect scanCrop
 
