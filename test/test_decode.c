@@ -1122,6 +1122,9 @@ int main (int argc, char **argv)
     decoder = zbar_decoder_create();
     /* allow empty CODE39 symbologies */
     zbar_decoder_set_config(decoder, ZBAR_CODE39, ZBAR_CFG_MIN_LEN, 0);
+    /* enable addons */
+    zbar_decoder_set_config(decoder, ZBAR_EAN2, ZBAR_CFG_ENABLE, 1);
+    zbar_decoder_set_config(decoder, ZBAR_EAN5, ZBAR_CFG_ENABLE, 1);
     zbar_decoder_set_handler(decoder, symbol_handler);
 
     encode_junk(rnd_size + 1);

@@ -284,46 +284,100 @@ set appropriately or configure --without-jpeg])],
 ])
 AM_CONDITIONAL([HAVE_JPEG], [test "x$with_jpeg" = "xyes"])
 
-dnl ImageMagick
+dnl ImageMagick or GraphicsMagick
+dnl disable both if IM is explicitly disabled to preserve old behavior
+
 AC_ARG_WITH([imagemagick],
   [AS_HELP_STRING([--without-imagemagick],
     [disable support for scanning images with ImageMagick])],
   [],
-  [with_imagemagick="yes"])
+  [with_imagemagick="check"])
 
-AS_IF([test "x$with_imagemagick" != "xno"],
-  [PKG_CHECK_MODULES([MAGICK], [MagickWand >= 6.2.6], [],
-     [dnl Wand is deprecated in favor of MagickWand,
-      dnl but the latter doesn't exist in older verisons (bug #2848437)
+AC_ARG_WITH([graphicsmagick],
+  [AS_HELP_STRING([--with-graphicsmagick],
+    [use GraphicsMagick alternative to ImageMagick])],
+  [],
+  [with_graphicsmagick="check"])
+
+magick="UnknownMagick"
+have_IM="maybe"
+AS_IF([test "x$with_imagemagick" = "xno"], [],
+      [test "x$with_imagemagick" = "xyes" || \
+       test "x$with_graphicsmagick" != "xyes"],
+  [looked_for="ImageMagick >= 6.2.6"
+   PKG_CHECK_MODULES([MAGICK], [MagickWand >= 6.2.6],
+     [MAGICK_VERSION=`$PKG_CONFIG MagickWand --modversion`],
+     [dnl
+dnl Wand is deprecated in favor of MagickWand,
+dnl but the latter doesn't exist in older verisons (bug #2848437)
       saved_error=$MAGICK_PKG_ERRORS
-      PKG_CHECK_MODULES([MAGICK], [Wand >= 6.2.6], [],
-        [AC_MSG_FAILURE([dnl
-Unable to find ImageMagick >= 6.2.6:
+      PKG_CHECK_MODULES([MAGICK], [Wand >= 6.2.6],
+        [MAGICK_VERSION=`$PKG_CONFIG Wand --modversion`],
+        [have_IM="no"])])
+   AS_IF([test "x$have_IM" != "xno"],
+     [magick="ImageMagick"
+      AC_MSG_NOTICE([trying ImageMagick version $MAGICK_VERSION])
+dnl double check ImageMagick install (bug #2582232)
+      CPPFLAGS_save="$CPPFLAGS"
+      CPPFLAGS="$CPPFLAGS $MAGICK_CFLAGS"
+      AC_CHECK_HEADER([wand/MagickWand.h],
+        [have_IM="yes"],
+        [have_IM="broken"])
+      CPPFLAGS="$CPPFLAGS_save"])])
+
+have_GM="maybe"
+AS_IF([test "x$have_IM" = "xyes"], [],
+      [test "x$with_graphicsmagick" = "xno"], [],
+      [test "x$with_graphicsmagick" = "xyes" || \
+       test "x$with_imagemagick" = "xcheck"],
+  [AS_IF([test "x$looked_for" = "x"],
+     [looked_for="GraphicsMagick"],
+     [looked_for="$looked_for or GraphicsMagick"])
+   PKG_CHECK_MODULES([MAGICK], [GraphicsMagickWand],
+     [have_GM="yes"
+      magick="GraphicsMagick"
+      MAGICK_VERSION=`$PKG_CONFIG GraphicsMagickWand --modversion`],
+     [have_GM="no"
+      AS_IF([test "x$saved_error" = "x"],
+        [saved_error=$MAGICK_PKG_ERRORS])])])
+
+dnl now that we have collected all the info abt what Magick is available
+dnl let the user know what we will or can't do
+AS_IF([test "x$have_IM" = "xbroken" && test "x$have_GM" = "xyes"],
+  [AC_MSG_WARN([Your ImageMagick install is broken, using GraphicsMagick instead])])
+
+AS_IF([test "x$have_IM" = "xyes" || test "x$have_GM" = "xyes"],
+  [AC_MSG_NOTICE([using $magick version $MAGICK_VERSION])],
+  [test "x$with_imagemagick" = "xno" && \
+   test "x$with_graphicsmagick" != "xyes"],
+  [AC_MSG_NOTICE([image scanning disabled -- zbarimg will *not* be built])],
+  [test "x$have_IM" = "xbroken"],
+  [AC_MSG_FAILURE([$magick package found but wand/MagickWand.h not installed?!
+this is a problem with your $magick install, please try again after
+resolving the inconsistency or installing GraphicsMagick alternative...])],
+  [AC_MSG_FAILURE([dnl
+Unable to find $looked_for:
 
 $saved_error
 
-* Ensure that you installed any "development" packages for ImageMagick.
+* Ensure that you installed any "development" packages for ImageMagick or
+  GraphicsMagick.
 * Consider adjusting the PKG_CONFIG_PATH environment variable if you
   installed software in a non-standard prefix.
 * You may set the environment variables MAGICK_CFLAGS and MAGICK_LIBS
   to avoid the need to call pkg-config.
   See the pkg-config man page for more details.
-* To avoid using ImageMagick altogether you may add the --without-imagemagick
-  flag to the configure command; the zbarimg program will not be built.
-])])])
-   MAGICK_VERSION=`$PKG_CONFIG MagickWand --modversion`
-   AC_MSG_NOTICE([using ImageMagick version $MAGICK_VERSION])
+* To avoid using ImageMagick or GraphicsMagick altogether you may add the
+  --without-imagemagick flag to the configure command; the zbarimg program
+  will *not* be built.
+])])
 
-dnl double check ImageMagick install (bug #2582232)
-   CPPFLAGS_save="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS $MAGICK_CFLAGS"
-   AC_CHECK_HEADER([wand/MagickWand.h], [],
-     [AC_MSG_FAILURE([ImageMagick package found but wand/MagickWand.h not installed?!
-this is a problem with your ImageMagick install,
-please resolve the inconsistency and try again...])])
-   CPPFLAGS="$CPPFLAGS_save"])
-
-AM_CONDITIONAL([HAVE_MAGICK], [test "x$with_imagemagick" = "xyes"])
+AS_IF([test "x$have_IM" = "xyes"],
+  [AC_DEFINE([HAVE_IMAGEMAGICK], [1], [Define to 1 to use ImageMagick])],
+  [test "x$have_GM" = "xyes"],
+  [AC_DEFINE([HAVE_GRAPHICSMAGICK], [1], [Define to 1 to use GraphicsMagick])])
+AM_CONDITIONAL([HAVE_MAGICK],
+  [test "x$have_IM" = "xyes" || test "x$have_GM" = "xyes"])
 
 dnl Mozilla NPAPI
 AC_ARG_WITH([npapi],
@@ -506,8 +560,10 @@ AS_IF([test "x$enable_video" != "xyes"],
 echo "jpeg              --with-jpeg=$with_jpeg"
 AS_IF([test "x$with_jpeg" != "xyes"],
   [echo "        => JPEG image conversions will *NOT* be supported"])
-echo "Magick++          --with-imagemagick=$with_imagemagick"
-AS_IF([test "x$with_imagemagick" != "xyes"],
+AS_IF([test "x$have_GM" = "xyes"],
+  [echo "GraphicsMagick    --with-graphicsmagick=yes"],
+  [echo "ImageMagick       --with-imagemagick=$with_imagemagick"])
+AS_IF([test "x$have_IM" != "xyes" && test "x$have_GM" != "xyes"],
   [echo "        => the zbarimg file scanner will *NOT* be built"])
 echo "Python            --with-python=$with_python"
 echo "GTK+              --with-gtk=$with_gtk"

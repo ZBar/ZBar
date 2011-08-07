@@ -38,15 +38,29 @@
 #include <assert.h>
 
 #include <zbar.h>
-#include <wand/MagickWand.h>
+
+#ifdef HAVE_GRAPHICSMAGICK
+# include <wand/wand_api.h>
+#endif
+
+#ifdef HAVE_IMAGEMAGICK
+# include <wand/MagickWand.h>
+
+/* ImageMagick frequently changes API names - just use the original
+ * (more stable?) names to match GraphicsMagick
+ */
+# define InitializeMagick(f) MagickWandGenesis()
+# define DestroyMagick MagickWandTerminus
+# define MagickSetImageIndex MagickSetIteratorIndex
 
 /* in 6.4.5.4 MagickGetImagePixels changed to MagickExportImagePixels.
  * (still not sure this check is quite right...
  *  how does MagickGetAuthenticImagePixels fit in?)
  * ref http://bugs.gentoo.org/247292
  */
-#if MagickLibVersion <= 0x645
-# define MagickExportImagePixels MagickGetImagePixels
+# if MagickLibVersion > 0x645
+#  define MagickGetImagePixels MagickExportImagePixels
+# endif
 #endif
 
 static const char *note_usage =
@@ -133,7 +147,7 @@ static int scan_image (const char *filename)
         if(exit_code == 3)
             return(-1);
 
-        if(!MagickSetIteratorIndex(images, seq) && dump_error(images))
+        if(!MagickSetImageIndex(images, seq) && dump_error(images))
             return(-1);
 
         zbar_image_t *zimage = zbar_image_create();
@@ -151,8 +165,8 @@ static int scan_image (const char *filename)
         unsigned char *blob = malloc(bloblen);
         zbar_image_set_data(zimage, blob, bloblen, zbar_image_free_data);
 
-        if(!MagickExportImagePixels(images, 0, 0, width, height,
-                                    "I", CharPixel, blob))
+        if(!MagickGetImagePixels(images, 0, 0, width, height,
+                                 "I", CharPixel, blob))
             return(-1);
 
         if(xmllvl == 1) {
@@ -312,7 +326,7 @@ int main (int argc, const char *argv[])
         return(usage(1, "ERROR: specify image file(s) to scan", NULL));
     num_images = 0;
 
-    MagickWandGenesis();
+    InitializeMagick("zbarimg");
 
     processor = zbar_processor_create(0);
     assert(processor);
@@ -425,6 +439,6 @@ int main (int argc, const char *argv[])
         exit_code = 4;
 
     zbar_processor_destroy(processor);
-    MagickWandTerminus();
+    DestroyMagick();
     return(exit_code);
 }

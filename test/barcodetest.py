@@ -66,7 +66,7 @@ def distdir_search(subdir, base, suffixes=('',)):
         import re
         makefile = open('Makefile')
         for line in makefile:
-            if re.match('^VPATH\s*=', line):
+            if re.match(r'^VPATH\s*=', line):
                 vpath = line.split('=', 1)[1].strip()
                 if vpath and vpath != rundir:
                     search.append(vpath)
@@ -352,7 +352,10 @@ class TestLoader:
                 continue
             if src.tag == ET.QName(BC, 'source'):
                 test = TestCase()
-                src.set('href', urljoin(url, href))
+                # convert file URLs to filesystem paths
+                href = urljoin(url, href)
+                href = re.sub(r'^file://', '', href)
+                src.set('href', href)
                 test.source = src
                 suite.addTest(test)
             elif src.tag == ET.QName(TS, 'index'):
