@@ -835,7 +835,9 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
                     _zbar_image_scanner_recycle_syms(iscn, sym);
                     continue;
                 }
-                else if(sym->type < ZBAR_COMPOSITE) {
+                else if(sym->type < ZBAR_COMPOSITE &&
+                        sym->type != ZBAR_ISBN10)
+                {
                     if(sym->type > ZBAR_EAN5)
                         nean++;
                     else
