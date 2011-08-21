@@ -572,6 +572,8 @@ static const CGFloat const zoom_choices[] = {
     typeOvl.text = nil;
     dataOvl.text = nil;
     [self.tableView reloadData];
+    if(reader.sourceType == UIImagePickerControllerSourceTypeCamera)
+        reader.cameraOverlayView = (reader.showsZBarControls) ? nil : overlay;
     if([reader respondsToSelector: @selector(readerView)]) {
         reader.readerView.showsFPS = YES;
         if(zoom)
@@ -580,8 +582,6 @@ static const CGFloat const zoom_choices[] = {
             ? ZBarOrientationMaskAll
             : ZBarOrientationMask(UIInterfaceOrientationPortrait); // tmp disable
     }
-    if(reader.sourceType == UIImagePickerControllerSourceTypeCamera)
-        reader.cameraOverlayView = (reader.showsZBarControls) ? nil : overlay;
     manualBtn.enabled = TARGET_IPHONE_SIMULATOR ||
         (reader.cameraMode == ZBarReaderControllerCameraModeDefault) ||
         [reader isKindOfClass: [ZBarReaderViewController class]];

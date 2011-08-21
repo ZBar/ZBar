@@ -208,6 +208,7 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
 - (void) cleanup
 {
+    [cameraOverlayView removeFromSuperview];
     cameraSim.readerView = nil;
     [cameraSim release];
     cameraSim = nil;
@@ -357,7 +358,6 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
     if(cameraOverlayView) {
         assert(!cameraOverlayView.superview);
         [cameraOverlayView removeFromSuperview];
-        cameraOverlayView.frame = readerView.frame;
         [view addSubview: cameraOverlayView];
     }
 
