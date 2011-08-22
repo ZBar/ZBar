@@ -217,6 +217,8 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
     readerView = nil;
     [controls release];
     controls = nil;
+    [shutter release];
+    shutter = nil;
 }
 
 - (void) dealloc
@@ -355,6 +357,15 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
     readerView.enableCache = enableCache;
     [view addSubview: readerView];
 
+    shutter = [[UIView alloc]
+                  initWithFrame: r];
+    shutter.backgroundColor = [UIColor blackColor];
+    shutter.opaque = NO;
+    shutter.autoresizingMask =
+        UIViewAutoresizingFlexibleWidth |
+        UIViewAutoresizingFlexibleHeight;
+    [view addSubview: shutter];
+
     if(cameraOverlayView) {
         assert(!cameraOverlayView.superview);
         [cameraOverlayView removeFromSuperview];
@@ -386,7 +397,11 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
     [readerView willRotateToInterfaceOrientation: self.interfaceOrientation
                 duration: 0];
-    [readerView start];
+    [readerView performSelector: @selector(start)
+                withObject: nil
+                afterDelay: .001];
+    shutter.alpha = 1;
+    shutter.hidden = NO;
 
     UIApplication *app = [UIApplication sharedApplication];
     BOOL willHideStatusBar =
@@ -410,7 +425,7 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
 - (void) viewWillDisappear: (BOOL) animated
 {
-    [readerView stop];
+    readerView.captureReader.enableReader = NO;
 
     if(didHideStatusBar) {
         [[UIApplication sharedApplication]
@@ -420,6 +435,13 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
     }
 
     [super viewWillDisappear: animated];
+}
+
+- (void) viewDidDisappear: (BOOL) animated
+{
+    // stopRunning can take a really long time (>1s observed),
+    // so defer until the view transitions are complete
+    [readerView stop];
 }
 
 - (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation) orient
@@ -620,7 +642,7 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
 // ZBarReaderViewDelegate
 
-- (void) readerView: (ZBarReaderView*) view
+- (void) readerView: (ZBarReaderView*) readerView
      didReadSymbols: (ZBarSymbolSet*) syms
           fromImage: (UIImage*) image
 {
@@ -632,6 +654,19 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
                 syms, ZBarReaderControllerResults,
                 nil]];
 }
+
+- (void) readerViewDidStart: (ZBarReaderView*) readerView
+{
+    if(!shutter.hidden)
+        [UIView animateWithDuration: .25
+                animations: ^{
+                    shutter.alpha = 0;
+                }
+                completion: ^(BOOL finished) {
+                    shutter.hidden = YES;
+                }];
+}
+
 
 // "deprecated" properties
 

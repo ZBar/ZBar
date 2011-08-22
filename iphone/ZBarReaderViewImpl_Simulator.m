@@ -125,6 +125,10 @@
         return;
     [super start];
     running = YES;
+
+    [self performSelector: @selector(onVideoStart)
+          withObject: nil
+          afterDelay: 0.5];
 }
 
 - (void) stop
@@ -133,6 +137,10 @@
         return;
     [super stop];
     running = NO;
+
+    [self performSelector: @selector(onVideoStop)
+          withObject: nil
+          afterDelay: 0.5];
 }
 
 - (void) scanImage: (UIImage*) image
@@ -190,6 +198,22 @@
         fromImage: scanImage];
     [scanImage release];
     scanImage = nil;
+}
+
+- (void) onVideoStart
+{
+    if(running &&
+       [readerDelegate respondsToSelector: @selector(readerViewDidStart:)])
+        [readerDelegate readerViewDidStart: self];
+}
+
+- (void) onVideoStop
+{
+    if(!running &&
+       [readerDelegate respondsToSelector:
+                           @selector(readerView:didStopWithError:)])
+        [readerDelegate readerView: self
+                        didStopWithError: nil];
 }
 
 @end

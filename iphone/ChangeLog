@@ -1,3 +1,7 @@
+version 1.2.2:
+  * reduce controller present and dismiss latency
+    - add simple shutter to mask video start
+
 version 1.2.1:
   * fix overlay resizing bug
 

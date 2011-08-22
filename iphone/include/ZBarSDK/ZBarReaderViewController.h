@@ -56,7 +56,7 @@
     BOOL showsZBarControls, tracksSymbols, enableCache;
 
     ZBarHelpController *helpController;
-    UIView *controls;
+    UIView *controls, *shutter;
     BOOL didHideStatusBar, rotating;
     ZBarCameraSimulator *cameraSim;
 }
