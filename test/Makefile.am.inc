@@ -28,6 +28,10 @@ check_PROGRAMS += test/test_cpp
 test_test_cpp_SOURCES = test/test_cpp.cpp
 test_test_cpp_LDADD = zbar/libzbar.la $(AM_LDADD)
 
+check_PROGRAMS += test/test_cpp_img
+test_test_cpp_img_SOURCES = test/test_cpp_img.cpp $(TEST_IMAGE_SOURCES)
+test_test_cpp_img_LDADD = zbar/libzbar.la $(AM_LDADD)
+
 if HAVE_JPEG
 check_PROGRAMS += test/test_jpeg
 test_test_jpeg_SOURCES = test/test_jpeg.c
@@ -68,13 +72,16 @@ CLEANFILES += test/.libs/test_decode test/.libs/test_proc \
     test/.libs/test_convert test/.libs/test_window \
     test/.libs/test_video test/.libs/dbg_scan test/.libs/test_gtk
 
+check-cpp: test/test_cpp_img
+	test/test_cpp_img
+
 check-decoder: test/test_decode
 	test/test_decode -q
 
 regress-decoder: test/test_decode
 	test/test_decode -n 100000
 
-check-local: check-decoder check-images
+check-local: check-cpp check-decoder check-images
 regress: regress-decoder regress-images
 
 .PHONY: check-decoder check-images regress-decoder regress-images regress

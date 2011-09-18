@@ -1,4 +1,7 @@
 current:
+  * fix C++ wrapper bugs (bug #3396068)
+    - thanks to anotheruser1 for reporting this!
+    - add new C++ wrapper test
   * fix avoid compositing ISBN10 data
   * add support for GraphicsMagick as ImageMagick alternative
   * mention xmlto in HACKING (patch #3297039)

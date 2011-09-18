@@ -151,7 +151,8 @@ public:
             : _sym(sym),
               _index(index)
         {
-            sym->ref(1);
+            if(sym)
+                sym->ref(1);
             if(!sym ||
                (unsigned)_index >= zbar_symbol_get_loc_size(*_sym))
                 _index = -1;
@@ -162,20 +163,24 @@ public:
             : _sym(iter._sym),
               _index(iter._index)
         {
-            _sym->ref();
+            if(_sym)
+                _sym->ref();
         }
 
         /// destructor.
         ~PointIterator ()
         {
-            _sym->ref(-1);
+            if(_sym)
+                _sym->ref(-1);
         }
 
         /// assignment.
         PointIterator& operator= (const PointIterator& iter)
         {
-            iter._sym->ref();
-            _sym->ref(-1);
+            if(iter._sym)
+                iter._sym->ref();
+            if(_sym)
+                _sym->ref(-1);
             _sym = iter._sym;
             _index = iter._index;
             return(*this);
@@ -191,7 +196,7 @@ public:
         PointIterator& operator++ ()
         {
             unsigned int i = ++_index;
-            if(i >= zbar_symbol_get_loc_size(*_sym))
+            if(!_sym || i >= zbar_symbol_get_loc_size(*_sym))
                 _index = -1;
             return(*this);
         }
