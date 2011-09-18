@@ -1,4 +1,6 @@
 current:
+  * fix C++ wrapper missing Symbol.quality (bug #3076524)
+    - thanks to Rudy Melli for pointing this out!
   * fix C++ wrapper bugs (bug #3396068)
     - thanks to anotheruser1 for reporting this!
     - add new C++ wrapper test

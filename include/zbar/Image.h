@@ -257,6 +257,7 @@ public:
 
     /// image format conversion.
     /// see zbar_image_convert()
+    /// @since 0.11
     Image convert (std::string format) const
     {
         unsigned long fourcc = zbar_fourcc_parse(format.c_str());

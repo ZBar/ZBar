@@ -84,7 +84,8 @@ check_symbol (const zbar::Image &img,
         expect_type &&
         type == expect_type &&
         data == expect_data &&
-        sym.get_data_length() == expect_data.length();
+        sym.get_data_length() == expect_data.length() &&
+        sym.get_quality() > 4;
     if(pass)
         pass = !check_loc(img, sym);
 

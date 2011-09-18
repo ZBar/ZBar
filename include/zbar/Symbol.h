@@ -341,10 +341,18 @@ public:
 
     /// retrieve inter-frame coherency count.
     /// see zbar_symbol_get_count()
-    /// @since 1.5
+    /// @since 0.5
     int get_count () const
     {
         return((_sym) ? zbar_symbol_get_count(_sym) : -1);
+    }
+
+    /// retrieve loosely defined relative quality metric.
+    /// see zbar_symbol_get_quality()
+    /// @since 0.11
+    int get_quality () const
+    {
+        return((_sym) ? zbar_symbol_get_quality(_sym) : 0);
     }
 
     SymbolSet get_components () const
