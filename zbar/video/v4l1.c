@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2011 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -45,8 +45,6 @@
 
 #include "video.h"
 #include "image.h"
-
-extern int _zbar_v4l2_probe(zbar_video_t*);
 
 typedef struct v4l1_format_s {
     uint32_t format;
@@ -371,7 +369,7 @@ static inline int v4l1_init_window (zbar_video_t *vdo)
     return(0);
 }
 
-static int _zbar_v4l1_probe (zbar_video_t *vdo)
+int _zbar_v4l1_probe (zbar_video_t *vdo)
 {
     /* check capabilities */
     struct video_capability vcap;
@@ -406,30 +404,4 @@ static int _zbar_v4l1_probe (zbar_video_t *vdo)
     vdo->nq = v4l1_nq;
     vdo->dq = v4l1_dq;
     return(0);
-}
-
-int _zbar_video_open (zbar_video_t *vdo,
-                      const char *dev)
-{
-    vdo->fd = open(dev, O_RDWR);
-    if(vdo->fd < 0)
-        return(err_capture_str(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
-                               "opening video device '%s'", dev));
-    zprintf(1, "opened camera device %s (fd=%d)\n", dev, vdo->fd);
-
-    int rc = -1;
-#ifdef HAVE_LINUX_VIDEODEV2_H
-    if(vdo->intf != VIDEO_V4L1)
-        rc = _zbar_v4l2_probe(vdo);
-    if(rc)
-#else
-    zprintf(1, "WARNING: not compiled with v4l2 support, trying v4l1\n");
-#endif
-        rc = _zbar_v4l1_probe(vdo);
-
-    if(rc && vdo->fd >= 0) {
-        close(vdo->fd);
-        vdo->fd = -1;
-    }
-    return(rc);
 }

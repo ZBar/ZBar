@@ -59,11 +59,14 @@ else
 zbar_libzbar_la_SOURCES += zbar/processor/posix.h zbar/processor/posix.c
 endif
 
-if HAVE_V4L1
-zbar_libzbar_la_SOURCES += zbar/video/v4l1.c
 if HAVE_V4L2
-zbar_libzbar_la_SOURCES += zbar/video/v4l2.c
+zbar_libzbar_la_SOURCES += zbar/video/v4l.c zbar/video/v4l2.c
 endif
+if HAVE_V4L1
+if !HAVE_V4L2
+zbar_libzbar_la_SOURCES += zbar/video/v4l.c
+endif
+zbar_libzbar_la_SOURCES += zbar/video/v4l1.c
 endif
 if WIN32
 if HAVE_VIDEO

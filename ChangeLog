@@ -1,4 +1,7 @@
 current:
+  * fix v4l config and build variations (bug #3348888)
+    - thanks to jarekczek for reporting this!
+    - NB v4l1 removed from kernel as of 2.6.38
   * fix missing python thread initialization (bug #3349199)
     - thanks to jarekczek for reporting this problem!
   * fix missing configure check for Python.h (bug #3092663)
