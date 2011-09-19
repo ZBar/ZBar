@@ -1,4 +1,6 @@
 current:
+  * fix missing configure check for Python.h (bug #3092663)
+    - thanks to Zoltan Kovacs for reporting this problem!
   * fix C++ wrapper missing Symbol.quality (bug #3076524)
     - thanks to Rudy Melli for pointing this out!
   * fix C++ wrapper bugs (bug #3396068)
