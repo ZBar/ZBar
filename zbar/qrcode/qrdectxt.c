@@ -266,8 +266,9 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
               /*If there was data encoded in kanji mode, assume it's SJIS.*/
               if(has_kanji)enc_list_mtf(enc_list,sjis_cd);
               /*Otherwise check for the UTF-8 BOM.
-                There's no way to specify UTF-8 using ECI, so this is the
-                 only way for encoders to reliably indicate it.*/
+                UTF-8 is rarely specified with ECI, and few decoders
+                 currently support doing so, so this is the best way for
+                 encoders to reliably indicate it.*/
               else if(inleft>=3&&
                in[0]==(char)0xEF&&in[1]==(char)0xBB&&in[2]==(char)0xBF){
                 in+=3;
