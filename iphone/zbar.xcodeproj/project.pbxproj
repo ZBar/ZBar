@@ -41,6 +41,7 @@
 
 /* Begin PBXBuildFile section */
 		DC26004C118631C200FA987B /* ZBarCaptureReader.m in Sources */ = {isa = PBXBuildFile; fileRef = DC26004B118631C200FA987B /* ZBarCaptureReader.m */; };
+		DC290E281351496400A9B857 /* codabar.c in Sources */ = {isa = PBXBuildFile; fileRef = DC290E261351496400A9B857 /* codabar.c */; };
 		DC299A9D1208B5E8006A023C /* libzbar.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D2AAC07E0554694100DB518D /* libzbar.a */; };
 		DC299AA01208B61C006A023C /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC50453D1203396B009FF359 /* AVFoundation.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		DC299AA11208B61C006A023C /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC50453F1203396B009FF359 /* CoreMedia.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
@@ -243,6 +244,8 @@
 		DC1A49A411FF33B300BCDA30 /* zbar-samples.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "zbar-samples.png"; path = "res/zbar-samples.png"; sourceTree = "<group>"; };
 		DC1A49C111FF537000BCDA30 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		DC26004B118631C200FA987B /* ZBarCaptureReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarCaptureReader.m; sourceTree = "<group>"; usesTabs = 0; };
+		DC290E261351496400A9B857 /* codabar.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = codabar.c; sourceTree = "<group>"; };
+		DC290E271351496400A9B857 /* codabar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codabar.h; sourceTree = "<group>"; };
 		DC299AF51208B7BD006A023C /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = include/config.h; sourceTree = "<group>"; };
 		DC299B051208FC11006A023C /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		DC299BEC1208FE40006A023C /* prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = prefix.pch; path = include/prefix.pch; sourceTree = "<group>"; };
@@ -545,6 +548,8 @@
 				DC67C12610A07AD30033B702 /* code39.h */,
 				DC67C12710A07AD30033B702 /* ean.c */,
 				DC67C12810A07AD30033B702 /* ean.h */,
+				DC290E261351496400A9B857 /* codabar.c */,
+				DC290E271351496400A9B857 /* codabar.h */,
 				DC67C12910A07AD30033B702 /* i25.c */,
 				DC67C12A10A07AD30033B702 /* i25.h */,
 				DC67C12E10A07AD30033B702 /* qr_finder.c */,
@@ -740,6 +745,7 @@
 				DC3CE47911FA1622008FAF88 /* ZBarReaderViewImpl_Simulator.m in Sources */,
 				DCE9900D129719F100D2655C /* code93.c in Sources */,
 				DC5D76C3136FA8C40069AEF5 /* ZBarCameraSimulator.m in Sources */,
+				DC290E281351496400A9B857 /* codabar.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -830,7 +836,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG_OBJC=1";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 3.1;
 				OTHER_LDFLAGS = "-all_load";
 				PREBINDING = NO;
 				PROVISIONING_PROFILE = "";
@@ -855,7 +861,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "NDEBUG=1";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 3.1;
 				OTHER_LDFLAGS = "-all_load";
 				PREBINDING = NO;
 				PROVISIONING_PROFILE = "";
@@ -943,7 +949,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "NDEBUG=1";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 3.1;
 				OTHER_LDFLAGS = "-all_load";
 				PREBINDING = NO;
 				PROVISIONING_PROFILE = "";

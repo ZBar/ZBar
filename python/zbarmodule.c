@@ -55,6 +55,7 @@ static const enumdef symbol_defs[] = {
     { "DATABAR",        ZBAR_DATABAR },
     { "DATABAR_EXP",    ZBAR_DATABAR_EXP },
     { "I25",            ZBAR_I25 },
+    { "CODABAR",        ZBAR_CODABAR },
     { "CODE39",         ZBAR_CODE39 },
     { "PDF417",         ZBAR_PDF417 },
     { "QRCODE",         ZBAR_QRCODE },

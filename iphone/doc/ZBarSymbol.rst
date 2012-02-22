@@ -132,6 +132,9 @@ Constants
    ZBAR_DATABAR_EXP
       GS1 DataBar Expanded
 
+   ZBAR_CODABAR
+      Codabar
+
    ZBAR_CODE39
       Code 39 (3 of 9)
 

@@ -86,8 +86,8 @@ collect results:
 
 The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
-intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
-Interleaved 2 of 5.
+intensity sensors.  It supports EAN-13/UPC-A, UPC-E, EAN-8, Code 128,
+Code 93, Code 39, Codabar, Interleaved 2 of 5 and QR Code.
 
 These are the bindings for interacting directly with the library from
 Perl.

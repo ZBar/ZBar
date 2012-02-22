@@ -25,6 +25,7 @@
 
 #include <config.h>
 #include <stdlib.h>     /* realloc */
+#include <limits.h>
 
 #include <zbar.h>
 
@@ -40,6 +41,9 @@
 #endif
 #ifdef ENABLE_DATABAR
 # include "decoder/databar.h"
+#endif
+#ifdef ENABLE_CODABAR
+# include "decoder/codabar.h"
 #endif
 #ifdef ENABLE_CODE39
 # include "decoder/code39.h"
@@ -109,6 +113,9 @@ struct zbar_decoder_s {
 #endif
 #ifdef ENABLE_DATABAR
     databar_decoder_t databar;          /* DataBar decode state */
+#endif
+#ifdef ENABLE_CODABAR
+    codabar_decoder_t codabar;          /* Codabar decode state */
 #endif
 #ifdef ENABLE_CODE39
     code39_decoder_t code39;            /* Code 39 decode state */
@@ -183,6 +190,57 @@ static inline int decode_e (unsigned e,
      */
     unsigned char E = ((e * n * 2 + 1) / s - 3) / 2;
     return((E >= n - 3) ? -1 : E);
+}
+
+/* sort three like-colored elements and return ordering
+ */
+static inline unsigned decode_sort3 (zbar_decoder_t *dcode,
+                                     int i0)
+{
+    unsigned w0 = get_width(dcode, i0);
+    unsigned w2 = get_width(dcode, i0 + 2);
+    unsigned w4 = get_width(dcode, i0 + 4);
+    if(w0 < w2) {
+        if(w2 < w4)
+            return((i0 << 8) | ((i0 + 2) << 4) | (i0 + 4));
+        if(w0 < w4)
+            return((i0 << 8) | ((i0 + 4) << 4) | (i0 + 2));
+        return(((i0 + 4) << 8) | (i0 << 4) | (i0 + 2));
+    }
+    if(w4 < w2)
+        return(((i0 + 4) << 8) | ((i0 + 2) << 4) | i0);
+    if(w0 < w4)
+        return(((i0 + 2) << 8) | (i0 << 4) | (i0 + 4));
+    return(((i0 + 2) << 8) | ((i0 + 4) << 4) | i0);
+}
+
+/* sort N like-colored elements and return ordering
+ */
+static inline unsigned decode_sortn (zbar_decoder_t *dcode,
+                                     int n,
+                                     int i0)
+{
+    unsigned mask = 0, sort = 0;
+    int i;
+    for(i = n - 1; i >= 0; i--) {
+        unsigned wmin = UINT_MAX;
+        int jmin = -1, j;
+        for(j = n - 1; j >= 0; j--) {
+            if((mask >> j) & 1)
+                continue;
+            unsigned w = get_width(dcode, i0 + j * 2);
+            if(wmin >= w) {
+                wmin = w;
+                jmin = j;
+            }
+        }
+        zassert(jmin >= 0, 0, "sortn(%d,%d) jmin=%d",
+                n, i0, jmin);
+        sort <<= 4;
+        mask |= 1 << jmin;
+        sort |= i0 + jmin * 2;
+    }
+    return(sort);
 }
 
 /* acquire shared state lock */

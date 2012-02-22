@@ -339,6 +339,7 @@ BOOT:
         CONSTANT(symbol_type, , DATABAR_EXP,
                  zbar_get_symbol_name(ZBAR_DATABAR_EXP));
         CONSTANT(symbol_type, , I25, zbar_get_symbol_name(ZBAR_I25));
+        CONSTANT(symbol_type, , CODABAR, zbar_get_symbol_name(ZBAR_CODABAR));
         CONSTANT(symbol_type, , CODE39, zbar_get_symbol_name(ZBAR_CODE39));
         CONSTANT(symbol_type, , PDF417, zbar_get_symbol_name(ZBAR_PDF417));
         CONSTANT(symbol_type, , QRCODE, zbar_get_symbol_name(ZBAR_QRCODE));
@@ -796,7 +797,7 @@ zbar_decoder_get_configs(decoder, symbology)
         zbar_symbol_type_t	symbology
     PPCODE:
         if(symbology == ZBAR_NONE)
-            symbology = zbar_decoder_get_type(decoder)
+            symbology = zbar_decoder_get_type(decoder);
         PUSH_ENUM_MASK(config, CFG, zbar_decoder_get_configs(decoder, symbology));
 
 SV *

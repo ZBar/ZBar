@@ -61,8 +61,8 @@
 
     <para>The underlying library currently supports EAN-13 (including
     UPC and ISBN subsets), EAN-8, DataBar, DataBar Expanded, Code 128,
-    Code 93, Code 39, Interleaved 2 of 5 and QR Code symbologies.  The
-    specific type of each detected symbol is printed with the decoded
+    Code 93, Code 39, Codabar, Interleaved 2 of 5 and QR Code symbologies.
+    The specific type of each detected symbol is printed with the decoded
     data.</para>
 
   </refsection>

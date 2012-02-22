@@ -296,7 +296,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
             n /= 12;
             yy = n;
             PUSH_CHAR('1');
-            PUSH_CHAR('0' + (enc - 6) | 1);
+            PUSH_CHAR('0' + ((enc - 6) | 1));
             decode10(buf, yy, 2);
             buf += 2;
             decode10(buf, mm, 2);
@@ -611,8 +611,8 @@ match_segment (zbar_decoder_t *dcode,
                 chk = 79 + chkf - chks;
 
             dbprintf(2, " chk=(%d,%d) => %d", chkf, chks, chk);
-            age1 = ((db->epoch - s0->epoch) & 0xff +
-                    (db->epoch - s1->epoch) & 0xff);
+            age1 = (((db->epoch - s0->epoch) & 0xff) +
+                    ((db->epoch - s1->epoch) & 0xff));
 
             for(i2 = i1 + 1; i2 < csegs; i2++) {
                 databar_segment_t *s2 = db->segs + i2;

@@ -80,6 +80,8 @@ int zbar_parse_config (const char *cfgstr,
             *sym = ZBAR_ISBN10;
         else if(!strncmp(cfgstr, "db-exp", len))
             *sym = ZBAR_DATABAR_EXP;
+        else if(!strncmp(cfgstr, "codabar", len))
+            *sym = ZBAR_CODABAR;
         else if(len < 6)
             return(1);
         else if(!strncmp(cfgstr, "code93", len))

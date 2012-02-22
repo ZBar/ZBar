@@ -439,8 +439,8 @@ static const CGFloat const zoom_choices[] = {
                               nil]];
 
     static const zbar_symbol_type_t allSymbologies[] = {
-        ZBAR_QRCODE, ZBAR_CODE128, ZBAR_CODE93, ZBAR_CODE39, ZBAR_I25,
-        ZBAR_DATABAR, ZBAR_DATABAR_EXP,
+        ZBAR_QRCODE, ZBAR_CODE128, ZBAR_CODE93, ZBAR_CODE39, ZBAR_CODABAR,
+        ZBAR_I25, ZBAR_DATABAR, ZBAR_DATABAR_EXP,
         ZBAR_EAN13, ZBAR_EAN8, 
         ZBAR_EAN2, ZBAR_EAN5, ZBAR_COMPOSITE,
         ZBAR_UPCA, ZBAR_UPCE,

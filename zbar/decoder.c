@@ -29,9 +29,9 @@
 #include <zbar.h>
 
 #if defined(DEBUG_DECODER) || defined(DEBUG_EAN) || defined(DEBUG_CODE93) || \
-    defined(DEBUG_CODE39) || defined(DEBUG_I25) || defined(DEBUG_DATABAR) || \
-    defined(DEBUG_CODE128) || defined(DEBUG_QR_FINDER) ||       \
-    (defined(DEBUG_PDF417) && (DEBUG_PDF417 >= 4))
+    defined(DEBUG_CODE39) || defined(DEBUG_CODABAR) || defined(DEBUG_I25) || \
+    defined(DEBUG_DATABAR) || defined(DEBUG_CODE128) || \
+    defined(DEBUG_QR_FINDER) || (defined(DEBUG_PDF417) && (DEBUG_PDF417 >= 4))
 # define DEBUG_LEVEL 1
 #endif
 #include "debug.h"
@@ -70,6 +70,10 @@ zbar_decoder_t *zbar_decoder_create ()
                                  (1 << ZBAR_CFG_EMIT_CHECK));
     dcode->databar.csegs = 4;
     dcode->databar.segs = calloc(4, sizeof(*dcode->databar.segs));
+#endif
+#ifdef ENABLE_CODABAR
+    dcode->codabar.config = 1 << ZBAR_CFG_ENABLE;
+    CFG(dcode->codabar, ZBAR_CFG_MIN_LEN) = 4;
 #endif
 #ifdef ENABLE_CODE39
     dcode->code39.config = 1 << ZBAR_CFG_ENABLE;
@@ -115,6 +119,9 @@ void zbar_decoder_reset (zbar_decoder_t *dcode)
 #ifdef ENABLE_DATABAR
     databar_reset(&dcode->databar);
 #endif
+#ifdef ENABLE_CODABAR
+    codabar_reset(&dcode->codabar);
+#endif
 #ifdef ENABLE_CODE39
     code39_reset(&dcode->code39);
 #endif
@@ -147,6 +154,9 @@ void zbar_decoder_new_scan (zbar_decoder_t *dcode)
 #endif
 #ifdef ENABLE_DATABAR
     databar_new_scan(&dcode->databar);
+#endif
+#ifdef ENABLE_CODABAR
+    codabar_reset(&dcode->codabar);
 #endif
 #ifdef ENABLE_CODE39
     code39_reset(&dcode->code39);
@@ -260,6 +270,11 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
        (tmp = _zbar_decode_databar(dcode)) > ZBAR_PARTIAL)
         sym = tmp;
 #endif
+#ifdef ENABLE_CODABAR
+    if(TEST_CFG(dcode->codabar.config, ZBAR_CFG_ENABLE) &&
+       (tmp = _zbar_decode_codabar(dcode)) > ZBAR_PARTIAL)
+        sym = tmp;
+#endif
 #ifdef ENABLE_I25
     if(TEST_CFG(dcode->i25.config, ZBAR_CFG_ENABLE) &&
        (tmp = _zbar_decode_i25(dcode)) > ZBAR_PARTIAL)
@@ -334,6 +349,12 @@ decoder_get_configp (const zbar_decoder_t *dcode,
         break;
     case ZBAR_DATABAR_EXP:
         config = &dcode->databar.config_exp;
+        break;
+#endif
+
+#ifdef ENABLE_CODABAR
+    case ZBAR_CODABAR:
+        config = &dcode->codabar.config;
         break;
 #endif
 
@@ -425,6 +446,11 @@ static inline int decoder_set_config_int (zbar_decoder_t *dcode,
         CFG(dcode->i25, cfg) = val;
         break;
 #endif
+#ifdef ENABLE_CODABAR
+    case ZBAR_CODABAR:
+        CFG(dcode->codabar, cfg) = val;
+        break;
+#endif
 #ifdef ENABLE_CODE39
     case ZBAR_CODE39:
         CFG(dcode->code39, cfg) = val;
@@ -461,7 +487,7 @@ int zbar_decoder_set_config (zbar_decoder_t *dcode,
         static const zbar_symbol_type_t all[] = {
 	    ZBAR_EAN13, ZBAR_EAN2, ZBAR_EAN5, ZBAR_EAN8,
             ZBAR_UPCA, ZBAR_UPCE, ZBAR_ISBN10, ZBAR_ISBN13,
-            ZBAR_I25, ZBAR_DATABAR, ZBAR_DATABAR_EXP,
+            ZBAR_I25, ZBAR_DATABAR, ZBAR_DATABAR_EXP, ZBAR_CODABAR,
 	    ZBAR_CODE39, ZBAR_CODE93, ZBAR_CODE128, ZBAR_QRCODE, 
 	    ZBAR_PDF417, 0
         };

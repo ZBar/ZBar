@@ -4,8 +4,8 @@ Barcode::ZBar Perl module
 ZBar Bar Code Reader is an open source software suite for reading bar
 codes from various sources, such as video streams, image files and raw
 intensity sensors. It supports EAN-13/UPC-A, UPC-E, EAN-8, Code 128,
-Code 93, Code 39, Interleaved 2 of 5 and QR Code.  These are the Perl
-bindings for the library.
+Code 93, Code 39, Codabar, Interleaved 2 of 5 and QR Code.  These are
+the Perl bindings for the library.
 
 Check the ZBar project home page for the latest release, mailing
 lists, etc.

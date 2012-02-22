@@ -1,4 +1,13 @@
 current:
+  * Codabar reliability enhancements
+    - fix missing check
+    - require minimum quality
+    - bump default uncertainty
+  * tweak Codabar bar/space ratio validation
+  * finish Codabar support for python, perl, java and iPhone interfaces
+    - reduce Codabar uncertainty to minimum
+  * add core support for Codabar symbology
+    - TBD: python, perl, java and iPhone interfaces
   * fix v4l config and build variations (bug #3348888)
     - thanks to jarekczek for reporting this!
     - NB v4l1 removed from kernel as of 2.6.38
