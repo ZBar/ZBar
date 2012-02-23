@@ -1,3 +1,6 @@
+current:
+  * Fix EmbedReader example rotation interaction
+
 version 1.2.2:
   * reduce controller present and dismiss latency
     - add simple shutter to mask video start

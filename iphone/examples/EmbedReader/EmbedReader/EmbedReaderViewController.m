@@ -63,6 +63,14 @@
                                         duration: duration];
 }
 
+- (void) willAnimateRotationToInterfaceOrientation: (UIInterfaceOrientation) orient
+                                          duration: (NSTimeInterval) duration
+{
+    // perform rotation in animation loop so camera preview does not move
+    // wrt device orientation
+    [readerView setNeedsLayout];
+}
+
 - (void) viewDidAppear: (BOOL) animated
 {
     // run the reader when the view is visible
