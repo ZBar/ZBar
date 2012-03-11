@@ -26,3 +26,11 @@ build
 xcuserdata
 contents.xcworkspacedata
 .DS_Store
+android/obj
+*.class
+*.dex
+android/libs
+android/examples/*/libs
+android/*.zip
+android/local.properties
+android/examples/*/local.properties

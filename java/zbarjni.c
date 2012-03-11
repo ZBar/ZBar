@@ -297,7 +297,7 @@ Image_cleanupByteArray (zbar_image_t *zimg)
     assert(data);
 
     JNIEnv *env = NULL;
-    if((*jvm)->AttachCurrentThread(jvm, (void**)&env, NULL))
+    if((*jvm)->AttachCurrentThread(jvm, (void*)&env, NULL))
         return;
     assert(env);
     if(env && data) {
@@ -317,7 +317,7 @@ Image_cleanupIntArray (zbar_image_t *zimg)
     assert(data);
 
     JNIEnv *env = NULL;
-    if((*jvm)->AttachCurrentThread(jvm, (void**)&env, NULL))
+    if((*jvm)->AttachCurrentThread(jvm, (void*)&env, NULL))
         return;
     assert(env);
     if(env && data) {
