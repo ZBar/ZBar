@@ -11,6 +11,9 @@
 /* whether to build support for Code 39 symbology */
 #define ENABLE_CODE39 1
 
+/* whether to build support for Codabar symbology */
+#define ENABLE_CODABAR 1
+
 /* whether to build support for DataBar symbology */
 #define ENABLE_DATABAR 1
 

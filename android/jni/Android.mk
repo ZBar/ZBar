@@ -54,6 +54,7 @@ LOCAL_SRC_FILES := ../../java/zbarjni.c \
 		   ../../zbar/decoder/code128.c \
 		   ../../zbar/decoder/code39.c \
 		   ../../zbar/decoder/code93.c \
+		   ../../zbar/decoder/codabar.c \
 		   ../../zbar/decoder/databar.c \
 		   ../../zbar/decoder/ean.c \
 		   ../../zbar/decoder/i25.c \

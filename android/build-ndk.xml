@@ -39,7 +39,7 @@ targets:
 
   <target name="zbar-zip">
       <if><condition><not><isset property="version"/></not></condition><then>
-         <property name="version" value="0.1" />
+         <property name="version" value="0.2" />
       </then></if>
       <zip destfile="${project.sdk.name}-${version}.zip" >
           <zipfileset dir="../" prefix="${project.sdk.name}-${version}" includes="COPYING, LICENSE"/>
@@ -52,7 +52,7 @@ targets:
 
   <target name="zbar-all" depends="zbar-jar">
       <if><condition><not><isset property="version"/></not></condition><then>
-         <property name="version" value="0.1" />
+         <property name="version" value="0.2" />
       </then></if>
       <zip destfile="${project.sdk.name}-${version}.zip" >
           <zipfileset dir="../" prefix="${project.sdk.name}-${version}" includes="COPYING, LICENSE"/>
