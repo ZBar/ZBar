@@ -82,7 +82,8 @@ AVTorchModeForUIFlashMode (UIImagePickerControllerCameraFlashMode mode)
         return(AVCaptureTorchModeAuto);
     case UIImagePickerControllerCameraFlashModeOn:
         return(AVCaptureTorchModeOn);
-    //case UIImagePickerControllerCameraFlashModeOff:
+    case UIImagePickerControllerCameraFlashModeOff:
+        break;
     }
     return(AVCaptureTorchModeOff);
 }
@@ -101,6 +102,10 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
         return(AVCaptureSessionPresetMedium);
     case UIImagePickerControllerQualityTypeLow:
         return(AVCaptureSessionPresetLow);
+    case UIImagePickerControllerQualityTypeIFrame1280x720:
+        return(AVCaptureSessionPresetiFrame1280x720);
+    case UIImagePickerControllerQualityTypeIFrame960x540:
+        return(AVCaptureSessionPresetiFrame960x540);
     }
 #endif
     return(nil);
@@ -184,7 +189,7 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
         // fallback to old interface
         zlog(@"Falling back to ZBarReaderController");
         [self release];
-        return([ZBarReaderController new]);
+        return((id)[ZBarReaderController new]);
     }
 
     self = [super init];

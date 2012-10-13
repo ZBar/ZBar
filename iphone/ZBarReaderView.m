@@ -41,7 +41,7 @@
     if(self == [ZBarReaderView class]) {
         // this is an abstract wrapper for implementation selected
         // at compile time.  replace with concrete subclass.
-        return([ZBarReaderViewImpl alloc]);
+        return((id)[ZBarReaderViewImpl alloc]);
     }
     return([super alloc]);
 }

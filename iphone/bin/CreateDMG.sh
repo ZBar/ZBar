@@ -3,8 +3,11 @@ set -ux
 VOLNAME=${1:?}
 shift
 RES=$SOURCE_ROOT/res
-BUDDY=$(xcrun -find PlistBuddy) \
-    || exit 1
+BUDDY=/usr/libexec/PlistBuddy
+if [ ! -x "$BUDDY" ]; then
+    BUDDY=$(xcrun -find PlistBuddy) \
+        || exit 1
+fi
 VERSION=$($BUDDY -c 'Print :CFBundleVersion' $RES/$VOLNAME-Info.plist) \
     || exit 1
 DMG=$VOLNAME-$VERSION

@@ -816,10 +816,10 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
         for(symp = &syms->head; *symp; ) {
             zbar_symbol_t *sym = *symp;
             if(sym->cache_count <= 0 &&
-               (sym->type < ZBAR_COMPOSITE && sym->type > ZBAR_PARTIAL) ||
-               sym->type == ZBAR_DATABAR ||
-               sym->type == ZBAR_DATABAR_EXP ||
-               sym->type == ZBAR_CODABAR)
+               ((sym->type < ZBAR_COMPOSITE && sym->type > ZBAR_PARTIAL) ||
+                sym->type == ZBAR_DATABAR ||
+                sym->type == ZBAR_DATABAR_EXP ||
+                sym->type == ZBAR_CODABAR))
             {
 	        if((sym->type == ZBAR_CODABAR || filter) && sym->quality < 4) {
                     if(iscn->enable_cache) {

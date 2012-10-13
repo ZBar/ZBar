@@ -46,7 +46,7 @@ documentation for :class:`UIImagePickerController` for more detais.
 5. Process the results.
 
    The controller will call the
-   :member:`imagePickerController:didFinishPickingMediaWithInfo:` method of
+   ``imagePickerController:didFinishPickingMediaWithInfo:`` method of
    your delegate for a successful decode (NB *not* every time the user takes a
    picture or selects an image).  The barcode data can be obtained using the
    :c:data:`ZBarReaderControllerResults` key of the info dictionary.  This key

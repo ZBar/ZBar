@@ -64,7 +64,7 @@ you are familiar with that.  Basically you:
 5. Process the results.
 
    The controller will call the
-   :member:`imagePickerController:didFinishPickingMediaWithInfo:` method of
+   ``imagePickerController:didFinishPickingMediaWithInfo:`` method of
    your delegate every time new results become available.  The barcode data
    can be obtained using the :c:data:`ZBarReaderControllerResults` key of the
    info dictionary.  This key will return "something enumerable"; keep in mind
