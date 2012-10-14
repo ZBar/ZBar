@@ -15,16 +15,17 @@ You will need *all* of the following to develop iPhone applications
 using this SDK:
 
 * Mac OS X >= 10.6.x (Snow Leopard)
-* Xcode >= 3.2.3
+* Xcode >= 4.5.1
 * iPhone SDK >= 4.0
-* An iPhone 3GS or iPhone 4
-* iOS >= 3.1 running on the device (>= 4.0 is preferred)
+* An iPhone 3GS, iPhone 4 or newer iOS device with an auto-focus camera
+* iOS >= 4.0 running on the device
 
 .. warning::
 
-   *Only* the iPhone 3GS and iPhone 4 are supported, as they have a camera
-   with auto-focus.  The ZBar library does not support the iPhone 3G and is
-   unlikely to ever support it.
+   *Only* the iPhone 3GS, iPhone 4 and newer models are supported, as they
+   have a camera with auto-focus.  The iPad 2 and iPad 3 will also work, *iff*
+   the barcode is printed large enough to achieve good focus.  The ZBar
+   library does not support the iPhone 3G and is unlikely to ever support it.
 
 
 Downloading

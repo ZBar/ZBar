@@ -10,7 +10,7 @@ master_doc = 'index'
 exclude_patterns = ['.#*']
 
 project = u'ZBar iPhone SDK'
-copyright = u'2010, Jeff Brown et al'
+copyright = u'2010-2012, Jeff Brown et al'
 
 today_fmt = '%Y-%m-%d'
 info = readPlist('../res/ZBarSDK-Info.plist')

@@ -247,6 +247,36 @@
     [captureReader flushCache];
 }
 
+- (void) configureDevice
+{
+    if([device isFocusModeSupported: AVCaptureFocusModeContinuousAutoFocus])
+        device.focusMode = AVCaptureFocusModeContinuousAutoFocus;
+    if([device isTorchModeSupported: torchMode])
+        device.torchMode = torchMode;
+}
+
+- (void) lockDevice
+{
+    if(!running || locked) {
+        assert(0);
+        return;
+    }
+
+    // lock device and set focus mode
+    NSError *error = nil;
+    if([device lockForConfiguration: &error]) {
+        locked = YES;
+        [self configureDevice];
+    }
+    else {
+        zlog(@"failed to lock device: %@", error);
+        // just keep trying
+        [self performSelector: @selector(lockDevice)
+              withObject: nil
+              afterDelay: .5];
+    }
+}
+
 
 // AVCaptureSession notifications
 
@@ -256,17 +286,9 @@
     if(running)
         return;
     running = YES;
+    locked = NO;
 
-    // lock device and set focus mode
-    NSError *error = nil;
-    if([device lockForConfiguration: &error]) {
-        if([device isFocusModeSupported: AVCaptureFocusModeContinuousAutoFocus])
-            device.focusMode = AVCaptureFocusModeContinuousAutoFocus;
-        if([device isTorchModeSupported: torchMode])
-            device.torchMode = torchMode;
-    }
-    else
-        zlog(@"failed to lock device: %@", error);
+    [self lockDevice];
 
     if([readerDelegate respondsToSelector: @selector(readerViewDidStart:)])
         [readerDelegate readerViewDidStart: self];
@@ -277,9 +299,15 @@
     zlog(@"onVideoStop: %@", note);
     if(!running)
         return;
-
-    [device unlockForConfiguration];
     running = NO;
+
+    if(locked)
+        [device unlockForConfiguration];
+    else
+        [NSObject cancelPreviousPerformRequestsWithTarget: self
+                  selector: @selector(lockDevice)
+                  object: nil];
+    locked = NO;
 
     if([readerDelegate respondsToSelector:
                            @selector(readerView:didStopWithError:)])

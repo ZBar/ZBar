@@ -21,7 +21,7 @@ The completed project is also available with the distributed SDK under
 Create the App
 --------------
 
-1. Open Xcode; you must have version 3.2.3 or later.
+1. Open Xcode; you must have version 4.5.1 or later.
 
 2. Create a new project using the "View-based Application" template.  Name the
    project "ReaderSample".  Save it wherever you like.
@@ -140,7 +140,7 @@ Now for the exciting part - let's add a barcode reader!
       - (IBAction) scanButtonTapped
       {
           // ADD: present a barcode reader that scans from the camera feed
-          ZBarReaderViewController *reader = [ZBarReaderViewController new];
+          ZBarReaderViewController *reader = [[ZBarReaderViewController alloc] init];
           reader.readerDelegate = self;
           reader.supportedOrientationsMask = ZBarOrientationMaskAll;
       

@@ -1,8 +1,8 @@
-###################
-  ZBar iPhone SDK
-###################
+################
+  ZBar iOS SDK
+################
 
-Welcome to the ZBar SDK for iPhone!
+Welcome to the ZBar SDK for iOS!
 
 This documentation covers all aspects of developing with the SDK: from adding
 the SDK to your project, to writing code that uses it, even licensing the

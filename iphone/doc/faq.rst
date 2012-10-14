@@ -21,7 +21,10 @@ Compatibility
 -------------
 
 Which iPhone devices does this library support?
-   The library works *only* with the iPhone 3GS and iPhone 4.
+   The library works *only* with iOS devices that have an auto-focus camera.
+   Currently, the iPhone 3GS, iPhone 4 and newer devices.  The iPad 2 and iPad
+   3 will also work in many cases, *iff* the barcode is printed large enough
+   to achieve good focus.
 
 Will you make it work with the iPhone 3G?
    *No* - the 3G it is not supported and is unlikely to ever be supported.
@@ -31,38 +34,23 @@ Will you make it work with the iPhone 3G?
    is at least one application that found a use for this...
 
 What target iOS versions does this library work with?
-   iOS 4 is fully supported, including the latest video streaming interfaces.
-   Since Apple has dropped support for earlier versions of iOS on the App
-   Store, we recommend that you target only iOS 4 for reading barcodes.
+   iOS 4, 5 and 6 are fully supported, including the latest video streaming
+   interfaces.  Since Apple has dropped support for earlier versions of iOS on
+   the App Store, we recommend that you target only iOS 4 and later for reading
+   barcodes.
 
-   iOS 3.1 is also supported, but you will have to resort to manual capture if
-   you intend to distribute on the App Store.
+   Note that iOS 3.1 is no longer supported; if you really think you need
+   that, you should still be able to get it working...  See :doc:`compat` for
+   details about iOS version fallbacks.
 
-   The library should work all the way back to iOS 3.0, although we no longer
-   test with it.  For most cases we recommend you use at least iOS 3.1, which
-   introduced several must-have enhancements for the UIImagePickerController
-   (ie, :member:`~ZBarReaderController::cameraOverlayView` and ``takePicture``)
-
-   In all cases you will need at least a 4.0 SDK to build.
-
-   See :doc:`compat` for details about iOS version fallbacks.
+   In all cases you should use the latest SDK to build.
 
 Are any private APIs in use?
    No - the binary release of the SDK does not use any private APIs.
 
-   OTOH, if you do not care about private APIs (for instance, you are
-   targeting AdHoc or enterprise distribution) and you want to enable
-   automatic capture with iOS 3.1, you can build a version that uses
-   UIGetScreenImage (which is again a private API).
-
-   See :doc:`compat` for details.
-
 Does this support "automatic" barcode capture?
-   Yes - if you use iOS 4, the default configuration will capture barcodes
-   automatically from the video stream.
-
-   Again, automatic capture is no longer supported with iOS 3.1 for apps
-   distributed on the App Store.
+   Yes - with recent iOS versions, the default configuration will capture
+   barcodes automatically from the video stream.
 
 
 Building
@@ -110,4 +98,4 @@ Why does my UPC-E (short version) barcode data look completely wrong?
 .. _GTIN: http://wikipedia.org/wiki/GTIN
 .. _EAN-13: http://wikipedia.org/wiki/EAN-13
 .. _UPC-A: http://wikipedia.org/wiki/UPC-A
-.. _UPC-E: http://wikipedia.org/wiki/UPC-E#Zero-compressed_UPC-E
+.. _UPC-E: http://wikipedia.org/wiki/UPC-E#UPC-E

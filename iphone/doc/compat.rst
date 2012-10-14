@@ -9,6 +9,13 @@ and associated "deprecation" of the former automatic capture method by our
 vendor.
 
 
+.. warning::
+
+   Versions before iOS 4 are no longer supported by the library.  We are no
+   longer able to test anything in this section, so you're on your own if you
+   try to make use of it.
+
+
 The Private API
 ---------------
 

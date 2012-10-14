@@ -1,8 +1,8 @@
 Scanning From the Camera Feed
 =============================
 
-Many iPhone developers want their application to support automatic recognition
-of barcodes from the camera feed in real-time.  ZBar makes this easy!
+Many iOS developers want their application to support automatic recognition of
+barcodes from the camera feed in real-time.  ZBar makes this easy!
 
 There are three levels that you may choose to integrate at, from least complex
 (recommended) to most complex these are:
@@ -20,8 +20,7 @@ Using a ZBarReaderViewController
 --------------------------------
 
 This is the fastest, easiest and recommend way to get the barcode reader into
-your application.  It is also the only way to support :doc:`automatic fallback
-for iOS 3.1 <compat>`.  The procedure is the same as using a
+your application.  The procedure is the same as using a
 UIImagePickerController to take a picture with the camera, so it will help if
 you are familiar with that.  Basically you:
 
@@ -29,7 +28,7 @@ you are familiar with that.  Basically you:
 
    This is as simple as creating a new :class:`ZBarReaderViewController`::
 
-      ZBarReaderViewController *reader = [ZBarReaderViewController new];
+      ZBarReaderViewController *reader = [[ZBarReaderViewController alloc] init];
 
 2. Setup a delegate to receive the results.
 
@@ -45,6 +44,7 @@ you are familiar with that.  Basically you:
    further customize the view via the
    :member:`~ZBarReaderViewController::readerView` property::
 
+      // disable QR Code
       [reader.scanner setSymbology: ZBAR_QRCODE
                       config: ZBAR_CFG_ENABLE
                       to: 0];
@@ -54,12 +54,12 @@ you are familiar with that.  Basically you:
 
 4. Present the reader to the user.
 
-   Typically the controller is presented modally, although the new controller
-   does not require it (note that modal presentation is the only option if you
-   want to support :doc:`iOS 3.1 fallback <compat>`)::
+   Typically the controller is presented modally::
 
       [self presentModalViewController: reader
             animated: YES];
+
+   Alternatively, it may be added to a container controller.
 
 5. Process the results.
 
@@ -112,10 +112,9 @@ Using a ZBarReaderView
 
 :class:`ZBarReaderViewController` is a relatively thin wrapper around a
 :class:`ZBarReaderView`; it is possible to use the view directly, even from
-Interface Builder.  You will lose the automatic fallback for iOS 3.1 and some
-of the simulator and rotation hooks.  The documentation is also less complete,
-so you need to be able to UTSL.  See the :file:`EmbedReader` sample for a
-working example.
+Interface Builder.  You lose only some of the simulator and rotation hooks.
+The documentation is also less complete, so you need to be able to UTSL.  See
+the :file:`EmbedReader` sample for a working example.
 
 
 Using the ZBarCaptureReader

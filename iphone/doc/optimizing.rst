@@ -91,7 +91,7 @@ Delegate Latency
 ----------------
 
 This latency contributor is the easiest for you to effect (and sometimes the
-easiest to overlook).  You delegate method should update the interface -
+easiest to overlook).  Your delegate method should update the interface -
 dismiss the controller or update your overlay to indicate success - and
 *nothing* else.  All other processing should be deferred until after the
 animations have started.
@@ -121,8 +121,8 @@ Other quality factors, such as poor focus, bad lighting or even excessive
 noise, can increase (or decrease) the resolution requirement.
 
 When scanning from the camera, the reader defaults to 640x480, which is good
-for most applications.  On the iPhone 4, you can increase this using a capture
-:member:`~ZBarReaderView::session` preset.  The iPhone 3GS does not have a
+for most applications.  On newer devices, you can increase this using a capture
+:member:`~ZBarReaderView::session` preset.  Some older devices do not have a
 higher resolution option available.
 
 For scanning images, you can use
@@ -143,8 +143,8 @@ the aperture selection to maximize the depth of field.  Unfortunately the APIs
 do not currently give us control over any of these settings, the best we can
 do (as of iOS 4) is continuous auto-focus mode - this mode is configured by
 the reader automatically.  It can still take the device as long as 1-2 seconds
-to find the appropriate macro focus setting, but there just isn't much we can
-do about that.
+to find the appropriate macro focus setting, but again, there is currently no
+way to reduce this delay.
 
 Lighting and Exposure
 ^^^^^^^^^^^^^^^^^^^^^
@@ -159,7 +159,7 @@ The camera defaults to continuous automatic exposure and white balance.  Since
 there are no other useful values, the reader leaves these unchanged from their
 default setting.
 
-For the iPhone 4 device, the "torch" can be enabled to provide additional
+For some devices, the "torch" can be enabled to provide additional
 illumination for the camera in low-light conditions.  The reader sets the
 torch to automatic by default, so it should turn on only when needeed...
 There have been some reports that the torch turns on inappropriately, washing
@@ -305,8 +305,8 @@ Examples
 --------
 
 These examples demonstrate several scenarios for scanning from the camera with
-automatic capture using iOS 4.  You can try them yourself using the
-readertest.  For each example, start with the default settings (by tapping the
+automatic capture.  You can try them yourself using the readertest.  For each
+example, start with the default settings (by tapping the
 ``ZBarReaderViewController`` class), then enable continuous mode and the
 custom overlay (by disabling
 :member:`~ZBarReaderViewController::showsZBarControls`).  You should also use
@@ -363,10 +363,9 @@ decode latency by performing more scan passes through the symbol:
 
 You should now be able to quickly and reliably decode long linear symbols.
 
-If have an iPhone 4, you may also try increasing the resolution to support
-even longer symbols (NB there is no readertest setting for resolution).  You
-may have to compensate elsewhere to bring the frame rate back to a reasonable
-level.
+If have a newer device, you may also try increasing the resolution to support
+even longer symbols.  You may have to compensate elsewhere to bring the frame
+rate back to a reasonable level.
 
 High Density QR Symbols
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -398,9 +397,8 @@ Even though the frame rate is still pretty bad, the QR recognition latency
 should be acceptable.
 
 If have an iPhone 4, you may also try increasing the resolution to support
-even denser QR symbols (NB there is no readertest setting for resolution).
-You may have to compensate elsewhere to bring the frame rate back to a
-reasonable level.
+even denser QR symbols. You may have to compensate elsewhere to bring the
+frame rate back to a reasonable level.
 
 Small DataBar Symbols
 ^^^^^^^^^^^^^^^^^^^^^

@@ -67,7 +67,7 @@
     UIPinchGestureRecognizer *pinch;
     CGFloat imageScale;
     CGSize imageSize;
-    BOOL started, running;
+    BOOL started, running, locked;
 }
 
 // supply a pre-configured image scanner.

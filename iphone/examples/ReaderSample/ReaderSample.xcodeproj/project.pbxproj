@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DC8245F5162B549F0010B2E6 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = DC8245F4162B549F0010B2E6 /* Default-568h@2x.png */; };
 		DC8F289413579EFF005B8862 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC8F289313579EFF005B8862 /* UIKit.framework */; };
 		DC8F289613579EFF005B8862 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC8F289513579EFF005B8862 /* Foundation.framework */; };
 		DC8F289813579EFF005B8862 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC8F289713579EFF005B8862 /* CoreGraphics.framework */; };
@@ -29,6 +30,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		DC8245F4162B549F0010B2E6 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = SOURCE_ROOT; };
 		DC8F288F13579EFF005B8862 /* ReaderSample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ReaderSample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC8F289313579EFF005B8862 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		DC8F289513579EFF005B8862 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -146,6 +148,7 @@
 			children = (
 				DC8F289B13579EFF005B8862 /* ReaderSample-Info.plist */,
 				DC8F289C13579EFF005B8862 /* InfoPlist.strings */,
+				DC8245F4162B549F0010B2E6 /* Default-568h@2x.png */,
 				DC8F289F13579EFF005B8862 /* ReaderSample-Prefix.pch */,
 				DC8F28A013579EFF005B8862 /* main.m */,
 			);
@@ -272,6 +275,7 @@
 				DC8F28D21357A29D005B8862 /* zbar-help.html in Resources */,
 				DC8F28D31357A29D005B8862 /* zbar-helpicons.png in Resources */,
 				DC8F28D41357A29D005B8862 /* zbar-samples.png in Resources */,
+				DC8245F5162B549F0010B2E6 /* Default-568h@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

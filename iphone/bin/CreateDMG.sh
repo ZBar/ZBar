@@ -31,6 +31,12 @@ do
     cp -af $BUILT_PRODUCTS_DIR/ZBarSDK $example/
 done
 
+# override subdir .DS_Stores
+for dir in $(find $TARGET_BUILD_DIR -type d -depth 1)
+do
+    cp -af $RES/Columns.DS_Store $dir/.DS_Store
+done
+
 hdiutil create -ov -fs HFS+ -format UDZO -imagekey zlib-level=9 \
     -volname $VOLNAME \
     -srcdir $TARGET_BUILD_DIR \

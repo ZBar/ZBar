@@ -14,7 +14,7 @@
 - (IBAction) scanButtonTapped
 {
     // ADD: present a barcode reader that scans from the camera feed
-    ZBarReaderViewController *reader = [ZBarReaderViewController new];
+    ZBarReaderViewController *reader = [[ZBarReaderViewController alloc] init];
     reader.readerDelegate = self;
     reader.supportedOrientationsMask = ZBarOrientationMaskAll;
 

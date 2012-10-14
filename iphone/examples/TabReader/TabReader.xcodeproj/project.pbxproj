@@ -26,6 +26,7 @@
 		DC5D771C1370F0E30069AEF5 /* zbar-help.html in Resources */ = {isa = PBXBuildFile; fileRef = DC5D77171370F0E30069AEF5 /* zbar-help.html */; };
 		DC5D771D1370F0E30069AEF5 /* zbar-helpicons.png in Resources */ = {isa = PBXBuildFile; fileRef = DC5D77181370F0E30069AEF5 /* zbar-helpicons.png */; };
 		DC5D771E1370F0E30069AEF5 /* zbar-samples.png in Resources */ = {isa = PBXBuildFile; fileRef = DC5D77191370F0E30069AEF5 /* zbar-samples.png */; };
+		DC82460B162B5A1D0010B2E6 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = DC82460A162B5A1D0010B2E6 /* Default-568h@2x.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -73,6 +74,7 @@
 		DC5D77171370F0E30069AEF5 /* zbar-help.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "zbar-help.html"; sourceTree = "<group>"; };
 		DC5D77181370F0E30069AEF5 /* zbar-helpicons.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "zbar-helpicons.png"; sourceTree = "<group>"; };
 		DC5D77191370F0E30069AEF5 /* zbar-samples.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "zbar-samples.png"; sourceTree = "<group>"; };
+		DC82460A162B5A1D0010B2E6 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,6 +149,7 @@
 			children = (
 				DC5D76DE1370EE8F0069AEF5 /* TabReader-Info.plist */,
 				DC5D76DF1370EE8F0069AEF5 /* InfoPlist.strings */,
+				DC82460A162B5A1D0010B2E6 /* Default-568h@2x.png */,
 				DC5D76E21370EE8F0069AEF5 /* TabReader-Prefix.pch */,
 				DC5D76E31370EE8F0069AEF5 /* main.m */,
 			);
@@ -271,6 +274,7 @@
 				DC5D771C1370F0E30069AEF5 /* zbar-help.html in Resources */,
 				DC5D771D1370F0E30069AEF5 /* zbar-helpicons.png in Resources */,
 				DC5D771E1370F0E30069AEF5 /* zbar-samples.png in Resources */,
+				DC82460B162B5A1D0010B2E6 /* Default-568h@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
