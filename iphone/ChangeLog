@@ -1,4 +1,7 @@
 version 1.3.1:
+  * fix examples
+    - fix EmbedReader initial iPad orientation
+    - fix TabReader shouldn't show controls
   * add retry workaround when device lock fails
     - add iPhone 5 launch image to examples
     - doc updates

@@ -16,9 +16,6 @@
 - (BOOL)            application: (UIApplication*) application
   didFinishLaunchingWithOptions: (NSDictionary*) options
 {
-    self.window.rootViewController = self.tabBarController;
-    [self.window makeKeyAndVisible];
-
     // force class to load so it may be referenced directly from nib
     [ZBarReaderViewController class];
 
@@ -27,6 +24,9 @@
     reader.readerDelegate = self;
     reader.showsZBarControls = NO;
     reader.supportedOrientationsMask = ZBarOrientationMaskAll;
+
+    self.window.rootViewController = self.tabBarController;
+    [self.window makeKeyAndVisible];
 
     return(YES);
 }
