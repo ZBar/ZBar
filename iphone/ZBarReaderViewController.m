@@ -218,6 +218,7 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
     [cameraSim release];
     cameraSim = nil;
     readerView.readerDelegate = nil;
+    [readerView removeFromSuperview];
     [readerView release];
     readerView = nil;
     [controls release];
