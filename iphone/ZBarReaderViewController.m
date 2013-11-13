@@ -320,8 +320,9 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
 - (void) loadView
 {
-    self.view = [[UIView alloc]
-                    initWithFrame: CGRectMake(0, 0, 320, 480)];
+    self.view = [[[UIView alloc]
+                  initWithFrame: CGRectMake(0, 0, 320, 480)]
+                 autorelease];
 }
 
 - (void) viewDidLoad
