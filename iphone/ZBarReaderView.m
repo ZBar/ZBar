@@ -54,21 +54,21 @@
     overlay.backgroundColor = [UIColor clearColor].CGColor;
     [preview addSublayer: overlay];
 
-#ifndef NDEBUG
-    overlay.borderWidth = 2;
-    overlay.borderColor = [UIColor colorWithRed: 1
-                                   green: 0
-                                   blue: 0
-                                   alpha: .5].CGColor;
-    cropLayer = [CALayer new];
-    cropLayer.backgroundColor = [UIColor clearColor].CGColor;
-    cropLayer.borderWidth = 2;
-    cropLayer.borderColor = [UIColor colorWithRed: 0
-                                     green: 0
-                                     blue: 1
-                                     alpha: .5].CGColor;
-    [overlay addSublayer: cropLayer];
-#endif
+//#ifndef NDEBUG
+//    overlay.borderWidth = 2;
+//    overlay.borderColor = [UIColor colorWithRed: 1
+//                                   green: 0
+//                                   blue: 0
+//                                   alpha: .5].CGColor;
+//    cropLayer = [CALayer new];
+//    cropLayer.backgroundColor = [UIColor clearColor].CGColor;
+//    cropLayer.borderWidth = 2;
+//    cropLayer.borderColor = [UIColor colorWithRed: 0
+//                                     green: 0
+//                                     blue: 1
+//                                     alpha: .5].CGColor;
+//    [overlay addSublayer: cropLayer];
+//#endif
 
     tracking = [CALayer new];
     tracking.opacity = 0;
@@ -125,7 +125,7 @@
     if(!self)
         return(nil);
 
-    self.backgroundColor = [UIColor blackColor];
+    self.backgroundColor = [UIColor whiteColor];
     self.contentMode = UIViewContentModeScaleAspectFill;
     self.clipsToBounds = YES;
     self.autoresizingMask =
