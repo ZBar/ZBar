@@ -262,7 +262,7 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
         UIViewAutoresizingFlexibleWidth |
         UIViewAutoresizingFlexibleHeight |
         UIViewAutoresizingFlexibleTopMargin;
-    controls.backgroundColor = [UIColor blackColor];
+    controls.backgroundColor = [UIColor whiteColor];
 
     UIToolbar *toolbar =
         [UIToolbar new];
@@ -328,7 +328,7 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 {
     [super viewDidLoad];
     UIView *view = self.view;
-    view.backgroundColor = [UIColor blackColor];
+    view.backgroundColor = [UIColor whiteColor];
     view.autoresizingMask =
         UIViewAutoresizingFlexibleWidth |
         UIViewAutoresizingFlexibleHeight;
@@ -364,7 +364,7 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
     shutter = [[UIView alloc]
                   initWithFrame: r];
-    shutter.backgroundColor = [UIColor blackColor];
+    shutter.backgroundColor = [UIColor whiteColor];
     shutter.opaque = NO;
     shutter.autoresizingMask =
         UIViewAutoresizingFlexibleWidth |
