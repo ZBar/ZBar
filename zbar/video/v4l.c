@@ -34,6 +34,11 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#ifdef HAVE_LINUX_VIDEODEV2_H
+# include <libv4l2.h>
+#else
+# include <libv4l1.h>
+#endif
 
 #include "video.h"
 
@@ -43,7 +48,11 @@ extern int _zbar_v4l2_probe(zbar_video_t*);
 int _zbar_video_open (zbar_video_t *vdo,
                       const char *dev)
 {
-    vdo->fd = open(dev, O_RDWR);
+#ifdef HAVE_LINUX_VIDEODEV2_H
+    vdo->fd = v4l2_open(dev, O_RDWR);
+#else
+    vdo->fd = v4l1_open(dev, O_RDWR);
+#endif
     if(vdo->fd < 0)
         return(err_capture_str(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
                                "opening video device '%s'", dev));
@@ -60,7 +69,11 @@ int _zbar_video_open (zbar_video_t *vdo,
 #endif
 
     if(rc && vdo->fd >= 0) {
-        close(vdo->fd);
+#ifdef HAVE_LINUX_VIDEODEV2_H
+        v4l2_close(vdo->fd);
+#else
+        v4l1_close(vdo->fd);
+#endif
         vdo->fd = -1;
     }
     return(rc);

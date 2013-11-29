@@ -42,6 +42,7 @@
 # include <sys/mman.h>
 #endif
 #include <linux/videodev.h>
+#include <libv4l1.h>
 
 #include "video.h"
 #include "image.h"
@@ -114,7 +115,7 @@ static zbar_image_t *v4l1_dq (zbar_video_t *vdo)
         if(ioctl(fd, VIDIOCSYNC, &frame) < 0)
             return(NULL);
     }
-    else if(read(fd, (void*)img->data, img->datalen) != img->datalen)
+    else if(v4l1_read(fd, (void*)img->data, img->datalen) != img->datalen)
         return(NULL);
 
     return(img);
@@ -133,7 +134,7 @@ static int v4l1_mmap_buffers (zbar_video_t *vdo)
 
     zprintf(1, "mapping %d buffers size=0x%x\n", vbuf.frames, vbuf.size);
     vdo->buflen = vbuf.size;
-    vdo->buf = mmap(0, vbuf.size, PROT_READ | PROT_WRITE, MAP_SHARED,
+    vdo->buf = v4l1_mmap(0, vbuf.size, PROT_READ | PROT_WRITE, MAP_SHARED,
                     vdo->fd, 0);
     if(vdo->buf == MAP_FAILED)
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
@@ -236,7 +237,7 @@ static int v4l1_cleanup (zbar_video_t *vdo)
 #ifdef HAVE_SYS_MMAN_H
     /* FIXME should avoid holding onto mmap'd buffers so long? */
     if(vdo->iomode == VIDEO_MMAP && vdo->buf) {
-        if(munmap(vdo->buf, vdo->buflen))
+        if(v4l1_munmap(vdo->buf, vdo->buflen))
             return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
                                "unmapping video frame buffers"));
         vdo->buf = NULL;
@@ -246,7 +247,7 @@ static int v4l1_cleanup (zbar_video_t *vdo)
 
     /* close open device */
     if(vdo->fd >= 0) {
-        close(vdo->fd);
+        v4l1_close(vdo->fd);
         vdo->fd = -1;
     }
     return(0);
@@ -258,7 +259,7 @@ static int v4l1_probe_iomode (zbar_video_t *vdo)
 #ifdef HAVE_SYS_MMAN_H
     struct video_mbuf vbuf;
     memset(&vbuf, 0, sizeof(vbuf));
-    if(ioctl(vdo->fd, VIDIOCGMBUF, &vbuf) < 0) {
+    if(v4l1_ioctl(vdo->fd, VIDIOCGMBUF, &vbuf) < 0) {
         if(errno != EINVAL)
             return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
                                "querying video frame buffers (VIDIOCGMBUF)"));
@@ -280,7 +281,7 @@ static inline int v4l1_probe_formats (zbar_video_t *vdo)
 {
     struct video_picture vpic;
     memset(&vpic, 0, sizeof(vpic));
-    if(ioctl(vdo->fd, VIDIOCGPICT, &vpic) < 0)
+    if(v4l1_ioctl(vdo->fd, VIDIOCGPICT, &vpic) < 0)
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
                            "querying format (VIDIOCGPICT)"));
 
@@ -304,12 +305,12 @@ static inline int v4l1_probe_formats (zbar_video_t *vdo)
             continue;
         vpic.depth = v4l1_formats[i].bpp;
         vpic.palette = i;
-        if(ioctl(vdo->fd, VIDIOCSPICT, &vpic) < 0) {
+        if(v4l1_ioctl(vdo->fd, VIDIOCSPICT, &vpic) < 0) {
             zprintf(2, "    [%02d] %.4s...no (set fails)\n",
                     i, (char*)&v4l1_formats[i].format);
             continue;
         }
-        if(ioctl(vdo->fd, VIDIOCGPICT, &vpic) < 0 ||
+        if(v4l1_ioctl(vdo->fd, VIDIOCGPICT, &vpic) < 0 ||
            vpic.palette != i) {
             zprintf(2, "    [%02d] %.4s...no (set ignored)\n",
                     i, (char*)&v4l1_formats[i].format);
@@ -329,7 +330,7 @@ static inline int v4l1_init_window (zbar_video_t *vdo)
 {
     struct video_window vwin;
     memset(&vwin, 0, sizeof(vwin));
-    if(ioctl(vdo->fd, VIDIOCGWIN, &vwin) < 0)
+    if(v4l1_ioctl(vdo->fd, VIDIOCGWIN, &vwin) < 0)
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
                            "querying video window settings (VIDIOCGWIN)"));
 
@@ -349,15 +350,15 @@ static inline int v4l1_init_window (zbar_video_t *vdo)
     zprintf(1, "setting max win: %d x %d @(%d, %d)%s\n",
             maxwin.width, maxwin.height, maxwin.x, maxwin.y,
             (maxwin.flags & 1) ? " INTERLACE" : "");
-    if(ioctl(vdo->fd, VIDIOCSWIN, &maxwin) < 0) {
+    if(v4l1_ioctl(vdo->fd, VIDIOCSWIN, &maxwin) < 0) {
         zprintf(1, "set FAILED...trying to recover original window\n");
         /* ignore errors (driver broken anyway) */
-        ioctl(vdo->fd, VIDIOCSWIN, &vwin);
+        v4l1_ioctl(vdo->fd, VIDIOCSWIN, &vwin);
     }
 
     /* re-query resulting parameters */
     memset(&vwin, 0, sizeof(vwin));
-    if(ioctl(vdo->fd, VIDIOCGWIN, &vwin) < 0)
+    if(v4l1_ioctl(vdo->fd, VIDIOCGWIN, &vwin) < 0)
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
                            "querying video window settings (VIDIOCGWIN)"));
 
@@ -374,7 +375,7 @@ int _zbar_v4l1_probe (zbar_video_t *vdo)
     /* check capabilities */
     struct video_capability vcap;
     memset(&vcap, 0, sizeof(vcap));
-    if(ioctl(vdo->fd, VIDIOCGCAP, &vcap) < 0)
+    if(v4l1_ioctl(vdo->fd, VIDIOCGCAP, &vcap) < 0)
         return(err_capture(vdo, SEV_ERROR, ZBAR_ERR_UNSUPPORTED, __func__,
                            "video4linux version 1 not supported (VIDIOCGCAP)"));
 

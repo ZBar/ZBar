@@ -64,12 +64,14 @@ endif
 
 if HAVE_V4L2
 zbar_libzbar_la_SOURCES += zbar/video/v4l.c zbar/video/v4l2.c
+zbar_libzbar_la_LIBADD += -lv4l2
 endif
 if HAVE_V4L1
 if !HAVE_V4L2
 zbar_libzbar_la_SOURCES += zbar/video/v4l.c
 endif
 zbar_libzbar_la_SOURCES += zbar/video/v4l1.c
+zbar_libzbar_la_LIBADD += -lv4l1
 endif
 if WIN32
 if HAVE_VIDEO
