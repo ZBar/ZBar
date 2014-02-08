@@ -1,3 +1,13 @@
+ZBAR WITH BIG-5 ENCODING QRCODE
+====================
+
+This forked project fixes the issues that caused ZBar using wrong encoding for BIG-5 encoded text in QRCode. I only change qrdectxt.c file to add BIG-5 support and you should find no problem using the original encoding for QRCode such as ISO8859-1, SJIS, UTF-8.
+
+Since Taiwan E-Invoice allows both BIG-5 and UTF-8 encoding as QRCode. I modify the original project to support BIG-5 which may be helpful for some developers in Taiwan.
+More information about Taiwan E-Invoice: https://www.einvoice.nat.gov.tw/
+
+
+
 ZBAR BAR CODE READER
 ====================
 

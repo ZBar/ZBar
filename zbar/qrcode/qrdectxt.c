@@ -32,9 +32,27 @@ static int text_is_latin1(const unsigned char *_text,int _len){
   return 1;
 }
 
+static int text_is_big5(const unsigned char *_text, int _len){
+  int i;
+  for(i=0;i<_len;i++){
+    if(_text[i]==0xFF)
+      return 0;
+    else if(_text[i]>=0x80){ // first byte is big5
+      i++;
+      if(i >= _len) // second byte not exists
+        return 0;
+      if(_text[i]<0x40 || (_text[i]>0x7E && _text[i]<0xA1) || _text[i]>0xFE){ // second byte not in range
+        return 0;
+      }
+    }else{ // normal ascii encoding, it's okay
+    }
+  }
+  return 1;
+}
+
 static void enc_list_mtf(iconv_t _enc_list[3],iconv_t _enc){
   int i;
-  for(i=0;i<3;i++)if(_enc_list[i]==_enc){
+  for(i=0;i<4;i++)if(_enc_list[i]==_enc){
     int j;
     for(j=i;j-->0;)_enc_list[j+1]=_enc_list[j];
     _enc_list[0]=_enc;
@@ -49,6 +67,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
   iconv_t              sjis_cd;
   iconv_t              utf8_cd;
   iconv_t              latin1_cd;
+  iconv_t              big5_cd;
   const qr_code_data  *qrdata;
   int                  nqrdata;
   unsigned char       *mark;
@@ -64,10 +83,12 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
   sjis_cd=iconv_open("UTF-8","SJIS");
   /*This is a trivial conversion just to check validity without extra code.*/
   utf8_cd=iconv_open("UTF-8","UTF-8");
+  /* add support for big5 encoding. */
+  big5_cd=iconv_open("UTF-8","BIG-5");
   for(i=0;i<nqrdata;i++)if(!mark[i]){
     const qr_code_data       *qrdataj;
     const qr_code_data_entry *entry;
-    iconv_t                   enc_list[3];
+    iconv_t                   enc_list[4];
     iconv_t                   eci_cd;
     int                       sa[16];
     int                       sa_size;
@@ -162,7 +183,8 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
     eci=-1;
     enc_list[0]=sjis_cd;
     enc_list[1]=latin1_cd;
-    enc_list[2]=utf8_cd;
+    enc_list[2]=big5_cd;
+    enc_list[3]=utf8_cd;
     eci_cd=(iconv_t)-1;
     err=0;
     for(j = 0; j < sa_size && !err; j++, sym = &(*sym)->next) {
@@ -291,8 +313,13 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
               else if(text_is_ascii((unsigned char *)in,inleft)){
                 enc_list_mtf(enc_list,utf8_cd);
               }
+              /* Check if it's big5 encoding. */
+              else if(text_is_big5((unsigned char *)in,inleft)){
+                enc_list_mtf(enc_list,big5_cd);
+              }
+
               /*Try our list of encodings.*/
-              for(ei=0;ei<3;ei++)if(enc_list[ei]!=(iconv_t)-1){
+              for(ei=0;ei<4;ei++)if(enc_list[ei]!=(iconv_t)-1){
                 /*According to the 2005 version of the standard,
                    ISO/IEC 8859-1 (one hyphen) is supposed to be used, but
                    reality is not always so (and in the 2000 version of the
@@ -304,11 +331,11 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
                    number of seldom-used control code characters there.
                   So if we see any of those characters, move this
                    conversion to the end of the list.*/
-                if(ei<2&&enc_list[ei]==latin1_cd&&
+                if(ei<3&&enc_list[ei]==latin1_cd&&
                  !text_is_latin1((unsigned char *)in,inleft)){
                   int ej;
-                  for(ej=ei+1;ej<3;ej++)enc_list[ej-1]=enc_list[ej];
-                  enc_list[2]=latin1_cd;
+                  for(ej=ei+1;ej<4;ej++)enc_list[ej-1]=enc_list[ej];
+                  enc_list[3]=latin1_cd;
                 }
                 err=iconv(enc_list[ei],&in,&inleft,&out,&outleft)==(size_t)-1;
                 if(!err){
@@ -427,6 +454,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
   if(utf8_cd!=(iconv_t)-1)iconv_close(utf8_cd);
   if(sjis_cd!=(iconv_t)-1)iconv_close(sjis_cd);
   if(latin1_cd!=(iconv_t)-1)iconv_close(latin1_cd);
+  if(big5_cd!=(iconv_t)-1)iconv_close(big5_cd);
   free(mark);
   return ntext;
 }
