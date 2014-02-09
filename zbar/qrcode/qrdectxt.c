@@ -369,11 +369,8 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
               sa_ntext+=inleft;
             }
           }break;
-          /*TODO: This will not handle a multi-byte sequence split between
-             multiple data blocks.
-            Does such a thing occur?
-            Is it allowed?
-            It requires copying buffers around to handle correctly.*/
+          /* DONE: This handles a multi-byte sequence split between
+             multiple data blocks. */
           case QR_MODE_BYTE:
           case QR_MODE_KANJI:{
             // copy byte to bytebuf
