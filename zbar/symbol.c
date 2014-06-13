@@ -212,7 +212,7 @@ const zbar_symbol_t *zbar_symbol_first_component (const zbar_symbol_t *sym)
 }
 
 
-unsigned base64_encode (char *dst,
+unsigned zbar_base64_encode (char *dst,
                         const char *src,
                         unsigned srclen)
 {
@@ -353,7 +353,7 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
     }
     else {
         TMPL_COPY("\n");
-        n += base64_encode(*buf + n, sym->data, sym->datalen);
+        n += zbar_base64_encode(*buf + n, sym->data, sym->datalen);
     }
     assert(n <= maxlen);
 
