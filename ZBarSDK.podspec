@@ -7,6 +7,8 @@ Pod::Spec.new do |s|
   s.homepage = 'http://zbar.sourceforge.net/'
   s.author   = { 'Jeff Brown' => 'spadix@users.sourceforge.net' }
   s.source   = { :git => 'https://github.com/ZBar/ZBar.git', :tag => 'iPhoneSDK-1.3.1' }
+  s.requires_arc = false
+
 
   s.description  = 'ZBar is an open source software suite for reading bar codes from various sources, such as video streams, ' \
                    'image files and raw intensity sensors. It supports many popular symbologies (types of bar codes) including ' \
