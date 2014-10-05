@@ -32,9 +32,27 @@ static int text_is_latin1(const unsigned char *_text,int _len){
   return 1;
 }
 
+static int text_is_big5(const unsigned char *_text, int _len){
+  int i;
+  for(i=0;i<_len;i++){
+    if(_text[i]==0xFF)
+      return 0;
+    else if(_text[i]>=0x80){ // first byte is big5
+      i++;
+      if(i >= _len) // second byte not exists
+        return 0;
+      if(_text[i]<0x40 || (_text[i]>0x7E && _text[i]<0xA1) || _text[i]>0xFE){ // second byte not in range
+        return 0;
+      }
+    }else{ // normal ascii encoding, it's okay
+    }
+  }
+  return 1;
+}
+
 static void enc_list_mtf(iconv_t _enc_list[3],iconv_t _enc){
   int i;
-  for(i=0;i<3;i++)if(_enc_list[i]==_enc){
+  for(i=0;i<4;i++)if(_enc_list[i]==_enc){
     int j;
     for(j=i;j-->0;)_enc_list[j+1]=_enc_list[j];
     _enc_list[0]=_enc;
@@ -49,6 +67,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
   iconv_t              sjis_cd;
   iconv_t              utf8_cd;
   iconv_t              latin1_cd;
+  iconv_t              big5_cd;
   const qr_code_data  *qrdata;
   int                  nqrdata;
   unsigned char       *mark;
@@ -64,10 +83,12 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
   sjis_cd=iconv_open("UTF-8","SJIS");
   /*This is a trivial conversion just to check validity without extra code.*/
   utf8_cd=iconv_open("UTF-8","UTF-8");
+  /* add support for big5 encoding. */
+  big5_cd=iconv_open("UTF-8","BIG-5");
   for(i=0;i<nqrdata;i++)if(!mark[i]){
     const qr_code_data       *qrdataj;
     const qr_code_data_entry *entry;
-    iconv_t                   enc_list[3];
+    iconv_t                   enc_list[4];
     iconv_t                   eci_cd;
     int                       sa[16];
     int                       sa_size;
@@ -162,9 +183,15 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
     eci=-1;
     enc_list[0]=sjis_cd;
     enc_list[1]=latin1_cd;
-    enc_list[2]=utf8_cd;
+    enc_list[2]=big5_cd;
+    enc_list[3]=utf8_cd;
     eci_cd=(iconv_t)-1;
     err=0;
+
+
+    char *bytebuf_text = (char *)malloc((sa_ctext+1)*sizeof(*sa_text));
+    size_t bytebuf_ntext = 0;
+
     for(j = 0; j < sa_size && !err; j++, sym = &(*sym)->next) {
       *sym = _zbar_image_scanner_alloc_sym(iscn, ZBAR_QRCODE, 0);
       (*sym)->datalen = sa_ntext;
@@ -201,11 +228,104 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
       horiz = abs(dir[0]) > abs(dir[1]);
       (*sym)->orient = horiz + 2 * (dir[1 - horiz] < 0);
 
-      for(k=0;k<qrdataj->nentries&&!err;k++){
+      for(k=0;k<=qrdataj->nentries&&!err;k++){
         size_t              inleft;
         size_t              outleft;
         char               *in;
         char               *out;
+
+        // Check if bytebuf_text is empty INSIDE for loop.
+        if(bytebuf_ntext > 0){
+          entry = (k == qrdataj->nentries)? NULL : qrdataj->entries+k;
+          // next entry is not byte mode, convert bytes to text.
+          if(entry == NULL || (entry->mode != QR_MODE_BYTE && entry->mode != QR_MODE_KANJI)){
+            in=bytebuf_text;
+            inleft=bytebuf_ntext;
+            out=sa_text+sa_ntext;
+            outleft=sa_ctext-sa_ntext;
+            /*If we have no specified encoding, attempt to auto-detect it.*/
+            if(eci<0){
+              int ei;
+              /*If there was data encoded in kanji mode, assume it's SJIS.*/
+              if(has_kanji)enc_list_mtf(enc_list,sjis_cd);
+              /*Otherwise check for the UTF-8 BOM.
+                UTF-8 is rarely specified with ECI, and few decoders
+                 currently support doing so, so this is the best way for
+                 encoders to reliably indicate it.*/
+              else if(inleft>=3&&
+               in[0]==(char)0xEF&&in[1]==(char)0xBB&&in[2]==(char)0xBF){
+                in+=3;
+                inleft-=3;
+                /*Actually try converting (to check validity).*/
+                err=utf8_cd==(iconv_t)-1||
+                 iconv(utf8_cd,&in,&inleft,&out,&outleft)==(size_t)-1;
+                if(!err){
+                  sa_ntext=out-sa_text;
+                  enc_list_mtf(enc_list,utf8_cd);
+                  continue;
+                }
+                in=bytebuf_text;
+                inleft=bytebuf_ntext;
+                out=sa_text+sa_ntext;
+                outleft=sa_ctext-sa_ntext;
+              }
+              /*If the text is 8-bit clean, prefer UTF-8 over SJIS, since
+                 SJIS will corrupt the backslashes used for DoCoMo formats.*/
+              else if(text_is_ascii((unsigned char *)in,inleft)){
+                enc_list_mtf(enc_list,utf8_cd);
+              }
+              /* Check if it's big5 encoding. */
+              else if(text_is_big5((unsigned char *)in,inleft)){
+                enc_list_mtf(enc_list,big5_cd);
+              }
+
+              /*Try our list of encodings.*/
+              for(ei=0;ei<4;ei++)if(enc_list[ei]!=(iconv_t)-1){
+                /*According to the 2005 version of the standard,
+                   ISO/IEC 8859-1 (one hyphen) is supposed to be used, but
+                   reality is not always so (and in the 2000 version of the
+                   standard, it was JIS8/SJIS that was the default).
+                  It's got an invalid range that is used often with SJIS
+                   and UTF-8, though, which makes detection easier.
+                  However, iconv() does not properly reject characters in
+                   those ranges, since ISO-8859-1 (two hyphens) defines a
+                   number of seldom-used control code characters there.
+                  So if we see any of those characters, move this
+                   conversion to the end of the list.*/
+                if(ei<3&&enc_list[ei]==latin1_cd&&
+                 !text_is_latin1((unsigned char *)in,inleft)){
+                  int ej;
+                  for(ej=ei+1;ej<4;ej++)enc_list[ej-1]=enc_list[ej];
+                  enc_list[3]=latin1_cd;
+                }
+                err=iconv(enc_list[ei],&in,&inleft,&out,&outleft)==(size_t)-1;
+                if(!err){
+                  sa_ntext=out-sa_text;
+                  enc_list_mtf(enc_list,enc_list[ei]);
+                  break;
+                }
+                in=bytebuf_text;
+                inleft=bytebuf_ntext;
+                out=sa_text+sa_ntext;
+                outleft=sa_ctext-sa_ntext;
+              }
+            }
+            /*We were actually given a character set; use it.
+              The spec says that in this case, data should be treated as if it
+               came from the given character set even when encoded in kanji
+               mode.*/
+            else{
+              err=eci_cd==(iconv_t)-1||
+               iconv(eci_cd,&in,&inleft,&out,&outleft)==(size_t)-1;
+              if(!err)sa_ntext=out-sa_text;
+            }
+            bytebuf_ntext = 0;
+          }
+
+        }
+        if(k == qrdataj->nentries)
+          break;
+
         entry=qrdataj->entries+k;
         switch(entry->mode){
           case QR_MODE_NUM:{
@@ -249,88 +369,15 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
               sa_ntext+=inleft;
             }
           }break;
-          /*TODO: This will not handle a multi-byte sequence split between
-             multiple data blocks.
-            Does such a thing occur?
-            Is it allowed?
-            It requires copying buffers around to handle correctly.*/
+          /* DONE: This handles a multi-byte sequence split between
+             multiple data blocks. */
           case QR_MODE_BYTE:
           case QR_MODE_KANJI:{
+            // copy byte to bytebuf
             in=(char *)entry->payload.data.buf;
             inleft=entry->payload.data.len;
-            out=sa_text+sa_ntext;
-            outleft=sa_ctext-sa_ntext;
-            /*If we have no specified encoding, attempt to auto-detect it.*/
-            if(eci<0){
-              int ei;
-              /*If there was data encoded in kanji mode, assume it's SJIS.*/
-              if(has_kanji)enc_list_mtf(enc_list,sjis_cd);
-              /*Otherwise check for the UTF-8 BOM.
-                UTF-8 is rarely specified with ECI, and few decoders
-                 currently support doing so, so this is the best way for
-                 encoders to reliably indicate it.*/
-              else if(inleft>=3&&
-               in[0]==(char)0xEF&&in[1]==(char)0xBB&&in[2]==(char)0xBF){
-                in+=3;
-                inleft-=3;
-                /*Actually try converting (to check validity).*/
-                err=utf8_cd==(iconv_t)-1||
-                 iconv(utf8_cd,&in,&inleft,&out,&outleft)==(size_t)-1;
-                if(!err){
-                  sa_ntext=out-sa_text;
-                  enc_list_mtf(enc_list,utf8_cd);
-                  continue;
-                }
-                in=(char *)entry->payload.data.buf;
-                inleft=entry->payload.data.len;
-                out=sa_text+sa_ntext;
-                outleft=sa_ctext-sa_ntext;
-              }
-              /*If the text is 8-bit clean, prefer UTF-8 over SJIS, since
-                 SJIS will corrupt the backslashes used for DoCoMo formats.*/
-              else if(text_is_ascii((unsigned char *)in,inleft)){
-                enc_list_mtf(enc_list,utf8_cd);
-              }
-              /*Try our list of encodings.*/
-              for(ei=0;ei<3;ei++)if(enc_list[ei]!=(iconv_t)-1){
-                /*According to the 2005 version of the standard,
-                   ISO/IEC 8859-1 (one hyphen) is supposed to be used, but
-                   reality is not always so (and in the 2000 version of the
-                   standard, it was JIS8/SJIS that was the default).
-                  It's got an invalid range that is used often with SJIS
-                   and UTF-8, though, which makes detection easier.
-                  However, iconv() does not properly reject characters in
-                   those ranges, since ISO-8859-1 (two hyphens) defines a
-                   number of seldom-used control code characters there.
-                  So if we see any of those characters, move this
-                   conversion to the end of the list.*/
-                if(ei<2&&enc_list[ei]==latin1_cd&&
-                 !text_is_latin1((unsigned char *)in,inleft)){
-                  int ej;
-                  for(ej=ei+1;ej<3;ej++)enc_list[ej-1]=enc_list[ej];
-                  enc_list[2]=latin1_cd;
-                }
-                err=iconv(enc_list[ei],&in,&inleft,&out,&outleft)==(size_t)-1;
-                if(!err){
-                  sa_ntext=out-sa_text;
-                  enc_list_mtf(enc_list,enc_list[ei]);
-                  break;
-                }
-                in=(char *)entry->payload.data.buf;
-                inleft=entry->payload.data.len;
-                out=sa_text+sa_ntext;
-                outleft=sa_ctext-sa_ntext;
-              }
-            }
-            /*We were actually given a character set; use it.
-              The spec says that in this case, data should be treated as if it
-               came from the given character set even when encoded in kanji
-               mode.*/
-            else{
-              err=eci_cd==(iconv_t)-1||
-               iconv(eci_cd,&in,&inleft,&out,&outleft)==(size_t)-1;
-              if(!err)sa_ntext=out-sa_text;
-            }
+            memcpy(bytebuf_text+bytebuf_ntext,in,inleft*sizeof(*bytebuf_text));
+            bytebuf_ntext += inleft;
           }break;
           /*Check to see if a character set was specified.*/
           case QR_MODE_ECI:{
@@ -364,7 +411,12 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
         eci=-1;
         if(eci_cd!=(iconv_t)-1)iconv_close(eci_cd);
       }
+
     }
+
+    free(bytebuf_text);
+
+
     if(eci_cd!=(iconv_t)-1)iconv_close(eci_cd);
     if(!err){
       zbar_symbol_t *sa_sym;
@@ -427,6 +479,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
   if(utf8_cd!=(iconv_t)-1)iconv_close(utf8_cd);
   if(sjis_cd!=(iconv_t)-1)iconv_close(sjis_cd);
   if(latin1_cd!=(iconv_t)-1)iconv_close(latin1_cd);
+  if(big5_cd!=(iconv_t)-1)iconv_close(big5_cd);
   free(mark);
   return ntext;
 }
