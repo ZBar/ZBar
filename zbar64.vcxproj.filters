@@ -34,6 +34,15 @@
     <Filter Include="Source Files\processor">
       <UniqueIdentifier>{eccb688f-f55e-4791-95cc-d08d155b6aa3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libiconv">
+      <UniqueIdentifier>{e2dacc2b-2213-4f96-8644-4beb189727be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libiconv\Win32">
+      <UniqueIdentifier>{7bcceb33-fcbe-4c40-b373-ca58220c56b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libiconv\x64">
+      <UniqueIdentifier>{78000995-0689-4f68-8d38-eb4dcc2f5677}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include=".\zbar\config.c">
@@ -260,6 +269,9 @@
     <ClInclude Include="zbar\video.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="zbar\libiconv\Include\iconv.h">
+      <Filter>libiconv</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include=".\zbar\libzbar.rc">
@@ -275,5 +287,13 @@
     <None Include="zbar\libzbar-0.def">
       <Filter>Source Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="zbar\libiconv\lib_x64\libiconv.lib">
+      <Filter>libiconv\x64</Filter>
+    </Library>
+    <Library Include="zbar\libiconv\lib_win32\libiconv.lib">
+      <Filter>libiconv\Win32</Filter>
+    </Library>
   </ItemGroup>
 </Project>
