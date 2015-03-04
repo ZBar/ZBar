@@ -99,7 +99,7 @@ struct zbar_decoder_s {
 
     /* everything above here is automatically reset */
     unsigned buf_alloc;                 /* dynamic buffer allocation */
-    unsigned buflen;                    /* binary data length */
+	unsigned buflen;                    /* binary data length */
     unsigned char *buf;                 /* decoded characters */
     void *userdata;                     /* application data */
     zbar_decoder_handler_t *handler;    /* application callback */

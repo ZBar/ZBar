@@ -241,14 +241,14 @@ typedef struct zimg_hdr_s {
 int zbar_image_write (const zbar_image_t *img,
                       const char *filebase)
 {
-    int len = strlen(filebase) + 16;
+	ptrdiff_t len = strlen(filebase) + 16;
     char *filename = malloc(len);
     int n = 0, rc = 0;
     FILE *f;
     zimg_hdr_t hdr;
     strcpy(filename, filebase);
     if((img->format & 0xff) >= ' ')
-        n = snprintf(filename, len, "%s.%.4s.zimg",
+        n = _snprintf(filename, len, "%s.%.4s.zimg",
                      filebase, (char*)&img->format);
     else
 		n = _snprintf(filename, len, "%s.%08lx.zimg",

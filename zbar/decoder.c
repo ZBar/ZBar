@@ -523,9 +523,9 @@ const char *_zbar_decoder_buf_dump (unsigned char *buf,
         decoder_dumplen = dumplen;
     }
     p = decoder_dump +
-        snprintf(decoder_dump, 12, "buf[%04x]=",
+        _snprintf(decoder_dump, 12, "buf[%04x]=",
                  (buflen > 0xffff) ? 0xffff : buflen);
     for(i = 0; i < buflen; i++)
-        p += snprintf(p, 4, "%s%02x", (i) ? " " : "",  buf[i]);
+        p += _snprintf(p, 4, "%s%02x", (i) ? " " : "",  buf[i]);
     return(decoder_dump);
 }

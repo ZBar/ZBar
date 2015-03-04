@@ -102,7 +102,7 @@ const char *_zbar_error_string (const void *container,
     static const char basefmt[] = "%s: zbar %s in %s():\n    %s: ";
     errinfo_t *err = (errinfo_t*)container;
     const char *sev, *mod, *func, *type;
-    int len;
+	ptrdiff_t len;
 
     assert(err->magic == ERRINFO_MAGIC);
 
@@ -131,7 +131,7 @@ const char *_zbar_error_string (const void *container,
         return("<unknown>");
 
     if(err->detail) {
-        int newlen = len + strlen(err->detail) + 1;
+		ptrdiff_t newlen = len + strlen(err->detail) + 1;
         if(strstr(err->detail, "%s")) {
             if(!err->arg_str)
                 err->arg_str = strdup("<?>");

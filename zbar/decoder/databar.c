@@ -143,7 +143,8 @@ static __inline int
 databar_postprocess_exp (zbar_decoder_t *dcode,
                          int *data)
 {
-    int i = 0, enc;
+	ptrdiff_t i = 0;
+	int enc = 0;
     unsigned n;
     unsigned char *buf;
     unsigned long d = *(data++);
@@ -709,7 +710,7 @@ match_segment_exp (zbar_decoder_t *dcode,
 {
     databar_decoder_t *db = &dcode->databar;
     int bestsegs[22], i = 0, segs[22], seq[22];
-    int ifixed = seg - db->segs, fixed = IDX(seg), maxcnt = 0;
+	ptrdiff_t ifixed = seg - db->segs, fixed = IDX(seg), maxcnt = 0;
     int iseg[DATABAR_MAX_SEGMENTS];
     unsigned csegs = db->csegs, width = seg->width, maxage = 0x7fff;
 
