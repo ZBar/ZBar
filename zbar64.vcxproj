@@ -234,8 +234,13 @@
     <ClInclude Include=".\zbar\symbol.h" />
     <ClInclude Include=".\zbar\thread.h" />
     <ClInclude Include=".\zbar\timer.h" />
+    <ClInclude Include="include\zbar\Window.h" />
+    <ClInclude Include="zbar\decoder\codabar.h" />
+    <ClInclude Include="zbar\decoder\code93.h" />
+    <ClInclude Include="zbar\decoder\databar.h" />
     <ClInclude Include="zbar\svg.h" />
     <ClInclude Include="zbar\unistd.h" />
+    <ClInclude Include="zbar\video.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include=".\zbar\libzbar.rc" />

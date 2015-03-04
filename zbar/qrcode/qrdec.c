@@ -2575,7 +2575,7 @@ static const unsigned char QR_ALIGNMENT_SPACING[34]={
   24,26,26,26,28,28
 };
 
-static inline void qr_svg_points(const char *cls,
+static __inline void qr_svg_points(const char *cls,
                                  qr_point *p,
                                  int n)
 {
@@ -3979,7 +3979,7 @@ int _zbar_qr_found_line (qr_reader *reader,
     return(0);
 }
 
-static inline void qr_svg_centers (const qr_finder_center *centers,
+static __inline void qr_svg_centers (const qr_finder_center *centers,
                                    int ncenters)
 {
     int i, j;

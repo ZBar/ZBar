@@ -276,7 +276,7 @@ extern int zbar_parse_config(const char *config_string,
 /** parse a fourcc string into its encoded integer value.
  * @since 0.11
  */
-static inline unsigned long zbar_fourcc_parse (const char *format)
+static __inline unsigned long zbar_fourcc_parse (const char *format)
 {
     unsigned long fourcc = 0;
     if(format) {
@@ -846,7 +846,7 @@ extern int zbar_processor_set_config(zbar_processor_t *processor,
  * @see zbar_processor_set_config()
  * @since 0.4
  */
-static inline int zbar_processor_parse_config (zbar_processor_t *processor,
+static __inline int zbar_processor_parse_config (zbar_processor_t *processor,
                                                const char *config_string)
 {
     zbar_symbol_type_t sym;
@@ -921,7 +921,7 @@ extern int zbar_process_image(zbar_processor_t *processor,
 /** display detail for last processor error to stderr.
  * @returns a non-zero value suitable for passing to exit()
  */
-static inline int
+static __inline int
 zbar_processor_error_spew (const zbar_processor_t *processor,
                            int verbosity)
 {
@@ -929,7 +929,7 @@ zbar_processor_error_spew (const zbar_processor_t *processor,
 }
 
 /** retrieve the detail string for the last processor error. */
-static inline const char*
+static __inline const char*
 zbar_processor_error_string (const zbar_processor_t *processor,
                              int verbosity)
 {
@@ -937,7 +937,7 @@ zbar_processor_error_string (const zbar_processor_t *processor,
 }
 
 /** retrieve the type code for the last processor error. */
-static inline zbar_error_t
+static __inline zbar_error_t
 zbar_processor_get_error_code (const zbar_processor_t *processor)
 {
     return(_zbar_get_error_code(processor));
@@ -1043,21 +1043,21 @@ extern zbar_image_t *zbar_video_next_image(zbar_video_t *video);
 /** display detail for last video error to stderr.
  * @returns a non-zero value suitable for passing to exit()
  */
-static inline int zbar_video_error_spew (const zbar_video_t *video,
+static __inline int zbar_video_error_spew (const zbar_video_t *video,
                                          int verbosity)
 {
     return(_zbar_error_spew(video, verbosity));
 }
 
 /** retrieve the detail string for the last video error. */
-static inline const char *zbar_video_error_string (const zbar_video_t *video,
+static __inline const char *zbar_video_error_string (const zbar_video_t *video,
                                                    int verbosity)
 {
     return(_zbar_error_string(video, verbosity));
 }
 
 /** retrieve the type code for the last video error. */
-static inline zbar_error_t
+static __inline zbar_error_t
 zbar_video_get_error_code (const zbar_video_t *video)
 {
     return(_zbar_get_error_code(video));
@@ -1129,14 +1129,14 @@ extern int zbar_window_resize(zbar_window_t *window,
 /** display detail for last window error to stderr.
  * @returns a non-zero value suitable for passing to exit()
  */
-static inline int zbar_window_error_spew (const zbar_window_t *window,
+static __inline int zbar_window_error_spew (const zbar_window_t *window,
                                           int verbosity)
 {
     return(_zbar_error_spew(window, verbosity));
 }
 
 /** retrieve the detail string for the last window error. */
-static inline const char*
+static __inline const char*
 zbar_window_error_string (const zbar_window_t *window,
                           int verbosity)
 {
@@ -1144,7 +1144,7 @@ zbar_window_error_string (const zbar_window_t *window,
 }
 
 /** retrieve the type code for the last window error. */
-static inline zbar_error_t
+static __inline zbar_error_t
 zbar_window_get_error_code (const zbar_window_t *window)
 {
     return(_zbar_get_error_code(window));
@@ -1210,7 +1210,7 @@ extern int zbar_image_scanner_set_config(zbar_image_scanner_t *scanner,
  * @see zbar_image_scanner_set_config()
  * @since 0.4
  */
-static inline int
+static __inline int
 zbar_image_scanner_parse_config (zbar_image_scanner_t *scanner,
                                  const char *config_string)
 {
@@ -1302,7 +1302,7 @@ extern int zbar_decoder_set_config(zbar_decoder_t *decoder,
  * @see zbar_decoder_set_config()
  * @since 0.4
  */
-static inline int zbar_decoder_parse_config (zbar_decoder_t *decoder,
+static __inline int zbar_decoder_parse_config (zbar_decoder_t *decoder,
                                              const char *config_string)
 {
     zbar_symbol_type_t sym;
@@ -1459,7 +1459,7 @@ extern zbar_symbol_type_t zbar_scan_y(zbar_scanner_t *scanner,
                                       int y);
 
 /** process next sample from RGB (or BGR) triple. */
-static inline zbar_symbol_type_t zbar_scan_rgb24 (zbar_scanner_t *scanner,
+static __inline zbar_symbol_type_t zbar_scan_rgb24 (zbar_scanner_t *scanner,
                                                     unsigned char *rgb)
 {
     return(zbar_scan_y(scanner, rgb[0] + rgb[1] + rgb[2]));

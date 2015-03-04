@@ -35,7 +35,7 @@ typedef struct pdf417_decoder_s {
 } pdf417_decoder_t;
 
 /* reset PDF417 specific state */
-static inline void pdf417_reset (pdf417_decoder_t *pdf417)
+static __inline void pdf417_reset (pdf417_decoder_t *pdf417)
 {
     pdf417->direction = 0;
     pdf417->element = 0;

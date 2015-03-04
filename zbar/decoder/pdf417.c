@@ -35,7 +35,7 @@
 
 #define PDF417_STOP 0xbff
 
-static inline signed short pdf417_decode8 (zbar_decoder_t *dcode)
+static __inline signed short pdf417_decode8 (zbar_decoder_t *dcode)
 {
     /* build edge signature of character
      * from similar edge measurements
@@ -94,7 +94,7 @@ static inline signed short pdf417_decode8 (zbar_decoder_t *dcode)
     return(c);
 }
 
-static inline signed char pdf417_decode_start(zbar_decoder_t *dcode)
+static __inline signed char pdf417_decode_start(zbar_decoder_t *dcode)
 {
     unsigned s = dcode->pdf417.s8;
     if(s < 8)

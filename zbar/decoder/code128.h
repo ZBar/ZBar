@@ -37,7 +37,7 @@ typedef struct code128_decoder_s {
 } code128_decoder_t;
 
 /* reset Code 128 specific state */
-static inline void code128_reset (code128_decoder_t *dcode128)
+static __inline void code128_reset (code128_decoder_t *dcode128)
 {
     dcode128->direction = 0;
     dcode128->element = 0;

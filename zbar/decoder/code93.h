@@ -36,7 +36,7 @@ typedef struct code93_decoder_s {
 } code93_decoder_t;
 
 /* reset Code 93 specific state */
-static inline void code93_reset (code93_decoder_t *dcode93)
+static __inline void code93_reset (code93_decoder_t *dcode93)
 {
     dcode93->direction = 0;
     dcode93->element = 0;

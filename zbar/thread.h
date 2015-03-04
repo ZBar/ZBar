@@ -33,9 +33,11 @@
 
 # include <windows.h>
 # define HAVE_THREADS
-# define ZTHREAD DWORD WINAPI
+#define ZTHREAD DWORD WINAPI
 
-typedef ZTHREAD (zbar_thread_proc_t)(void*);
+#define ZTHREAD DWORD WINAPI
+
+typedef DWORD(WINAPI zbar_thread_proc_t)(void*);
 
 typedef DWORD zbar_thread_id_t;
 
@@ -70,18 +72,18 @@ typedef struct zbar_thread_s {
 
 #if defined(_WIN32)
 
-static inline void _zbar_thread_init (zbar_thread_t *thr)
+static __inline void _zbar_thread_init (zbar_thread_t *thr)
 {
     thr->running = 1;
     _zbar_event_trigger(&thr->activity);
 }
 
-static inline zbar_thread_id_t _zbar_thread_self ()
+static __inline zbar_thread_id_t _zbar_thread_self ()
 {
     return(GetCurrentThreadId());
 }
 
-static inline int _zbar_thread_is_self (zbar_thread_id_t tid)
+static __inline int _zbar_thread_is_self (zbar_thread_id_t tid)
 {
     return(tid == GetCurrentThreadId());
 }
@@ -89,7 +91,7 @@ static inline int _zbar_thread_is_self (zbar_thread_id_t tid)
 
 #elif defined(HAVE_LIBPTHREAD)
 
-static inline void _zbar_thread_init (zbar_thread_t *thr)
+static __inline void _zbar_thread_init (zbar_thread_t *thr)
 {
     sigset_t sigs;
     sigfillset(&sigs);
@@ -98,12 +100,12 @@ static inline void _zbar_thread_init (zbar_thread_t *thr)
     _zbar_event_trigger(&thr->activity);
 }
 
-static inline zbar_thread_id_t _zbar_thread_self (void)
+static __inline zbar_thread_id_t _zbar_thread_self (void)
 {
     return(pthread_self());
 }
 
-static inline int _zbar_thread_is_self (zbar_thread_id_t tid)
+static __inline int _zbar_thread_is_self (zbar_thread_id_t tid)
 {
     return(pthread_equal(tid, pthread_self()));
 }

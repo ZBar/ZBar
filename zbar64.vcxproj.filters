@@ -245,6 +245,21 @@
     <ClInclude Include="zbar\unistd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="zbar\decoder\codabar.h">
+      <Filter>Header Files\decoder</Filter>
+    </ClInclude>
+    <ClInclude Include="zbar\decoder\code93.h">
+      <Filter>Header Files\decoder</Filter>
+    </ClInclude>
+    <ClInclude Include="zbar\decoder\databar.h">
+      <Filter>Header Files\decoder</Filter>
+    </ClInclude>
+    <ClInclude Include="include\zbar\Window.h">
+      <Filter>include\zbar</Filter>
+    </ClInclude>
+    <ClInclude Include="zbar\video.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include=".\zbar\libzbar.rc">

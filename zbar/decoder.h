@@ -135,20 +135,20 @@ struct zbar_decoder_s {
 };
 
 /* return current element color */
-static inline char get_color (const zbar_decoder_t *dcode)
+static __inline char get_color (const zbar_decoder_t *dcode)
 {
     return(dcode->idx & 1);
 }
 
 /* retrieve i-th previous element width */
-static inline unsigned get_width (const zbar_decoder_t *dcode,
+static __inline unsigned get_width (const zbar_decoder_t *dcode,
                                   unsigned char offset)
 {
     return(dcode->w[(dcode->idx - offset) & (DECODE_WINDOW - 1)]);
 }
 
 /* retrieve bar+space pair width starting at offset i */
-static inline unsigned pair_width (const zbar_decoder_t *dcode,
+static __inline unsigned pair_width (const zbar_decoder_t *dcode,
                                    unsigned char offset)
 {
     return(get_width(dcode, offset) + get_width(dcode, offset + 1));
@@ -159,7 +159,7 @@ static inline unsigned pair_width (const zbar_decoder_t *dcode,
  *     (<= DECODE_WINDOW - n)
  *   - size of character is n elements
  */
-static inline unsigned calc_s (const zbar_decoder_t *dcode,
+static __inline unsigned calc_s (const zbar_decoder_t *dcode,
                                unsigned char offset,
                                unsigned char n)
 {
@@ -180,7 +180,7 @@ static inline unsigned calc_s (const zbar_decoder_t *dcode,
  *     => using like-edge measurements avoids these issues
  *   - n should be > 3
  */
-static inline int decode_e (unsigned e,
+static __inline int decode_e (unsigned e,
                             unsigned s,
                             unsigned n)
 {
@@ -194,7 +194,7 @@ static inline int decode_e (unsigned e,
 
 /* sort three like-colored elements and return ordering
  */
-static inline unsigned decode_sort3 (zbar_decoder_t *dcode,
+static __inline unsigned decode_sort3 (zbar_decoder_t *dcode,
                                      int i0)
 {
     unsigned w0 = get_width(dcode, i0);
@@ -216,7 +216,7 @@ static inline unsigned decode_sort3 (zbar_decoder_t *dcode,
 
 /* sort N like-colored elements and return ordering
  */
-static inline unsigned decode_sortn (zbar_decoder_t *dcode,
+static __inline unsigned decode_sortn (zbar_decoder_t *dcode,
                                      int n,
                                      int i0)
 {
@@ -244,7 +244,7 @@ static inline unsigned decode_sortn (zbar_decoder_t *dcode,
 }
 
 /* acquire shared state lock */
-static inline char acquire_lock (zbar_decoder_t *dcode,
+static __inline char acquire_lock (zbar_decoder_t *dcode,
                                  zbar_symbol_type_t req)
 {
     if(dcode->lock) {
@@ -256,7 +256,7 @@ static inline char acquire_lock (zbar_decoder_t *dcode,
 }
 
 /* check and release shared state lock */
-static inline char release_lock (zbar_decoder_t *dcode,
+static __inline char release_lock (zbar_decoder_t *dcode,
                                  zbar_symbol_type_t req)
 {
     zassert(dcode->lock == req, 1, "lock=%d req=%d\n",
@@ -266,7 +266,7 @@ static inline char release_lock (zbar_decoder_t *dcode,
 }
 
 /* ensure output buffer has sufficient allocation for request */
-static inline char size_buf (zbar_decoder_t *dcode,
+static __inline char size_buf (zbar_decoder_t *dcode,
                              unsigned len)
 {
     unsigned char *buf;

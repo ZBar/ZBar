@@ -519,17 +519,17 @@ private:
     Symbol _sym;
 };
 
-inline SymbolIterator SymbolSet::symbol_begin () const {
+__inline SymbolIterator SymbolSet::symbol_begin () const {
     return(SymbolIterator(*this));
 }
 
-inline const SymbolIterator SymbolSet::symbol_end () const {
+__inline const SymbolIterator SymbolSet::symbol_end () const {
     return(SymbolIterator());
 }
 
 /// @relates Symbol
 /// stream the string representation of a Symbol.
-static inline std::ostream& operator<< (std::ostream& out,
+static __inline std::ostream& operator<< (std::ostream& out,
                                         const Symbol& sym)
 {
     out << sym.get_type_name() << ":" << sym.get_data();

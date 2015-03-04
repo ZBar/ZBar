@@ -25,20 +25,20 @@
 #include "window.h"
 #include "image.h"
 
-static inline int proc_enter (zbar_processor_t *proc)
+static __inline int proc_enter (zbar_processor_t *proc)
 {
     _zbar_mutex_lock(&proc->mutex);
     return(_zbar_processor_lock(proc));
 }
 
-static inline int proc_leave (zbar_processor_t *proc)
+static __inline int proc_leave (zbar_processor_t *proc)
 {
     int rc = _zbar_processor_unlock(proc, 0);
     _zbar_mutex_unlock(&proc->mutex);
     return(rc);
 }
 
-static inline int proc_open (zbar_processor_t *proc)
+static __inline int proc_open (zbar_processor_t *proc)
 {
     /* arbitrary default */
     int width = 640, height = 480;
@@ -61,7 +61,7 @@ int _zbar_process_image (zbar_processor_t *proc,
         }
 
         uint32_t format = zbar_image_get_format(img);
-        zprintf(16, "processing: %.4s(%08" PRIx32 ") %dx%d @%p\n",
+		zprintf(16, "processing: %.4s(%08lx) %dx%d @%p\n",
                 (char*)&format, format,
                 zbar_image_get_width(img), zbar_image_get_height(img),
                 zbar_image_get_data(img));

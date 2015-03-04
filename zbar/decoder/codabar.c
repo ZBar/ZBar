@@ -46,7 +46,7 @@ static const unsigned char codabar_hi[8] = {
 static const unsigned char codabar_characters[20] =
     "0123456789-$:/.+ABCD";
 
-static inline int
+static __inline int
 check_width (unsigned ref,
              unsigned w)
 {
@@ -56,7 +56,7 @@ check_width (unsigned ref,
     return(ref - dref <= w && w <= ref + dref);
 }
 
-static inline signed char
+static __inline signed char
 codabar_decode7 (zbar_decoder_t *dcode)
 {
     codabar_decoder_t *codabar = &dcode->codabar;
@@ -195,7 +195,7 @@ codabar_decode7 (zbar_decoder_t *dcode)
     }
 }
 
-static inline signed char
+static __inline signed char
 codabar_decode_start (zbar_decoder_t *dcode)
 {
     codabar_decoder_t *codabar = &dcode->codabar;
@@ -282,7 +282,7 @@ codabar_decode_start (zbar_decoder_t *dcode)
     return(ZBAR_PARTIAL);
 }
 
-static inline int
+static __inline int
 codabar_checksum (zbar_decoder_t *dcode,
                   unsigned n)
 {
@@ -293,7 +293,7 @@ codabar_checksum (zbar_decoder_t *dcode,
     return(!!(chk & 0xf));
 }
 
-static inline zbar_symbol_type_t
+static __inline zbar_symbol_type_t
 codabar_postprocess (zbar_decoder_t *dcode)
 {
     codabar_decoder_t *codabar = &dcode->codabar;

@@ -371,7 +371,7 @@ zbar_symbol_set_t *_zbar_symbol_set_create ()
     return(syms);
 }
 
-inline void _zbar_symbol_set_free (zbar_symbol_set_t *syms)
+__inline void _zbar_symbol_set_free (zbar_symbol_set_t *syms)
 {
     zbar_symbol_t *sym, *next;
     for(sym = syms->head; sym; sym = next) {

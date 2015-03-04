@@ -21,6 +21,7 @@
  *  http://sourceforge.net/projects/zbar
  *------------------------------------------------------------------------*/
 
+#include "unistd.h"
 #include "image.h"
 #include "video.h"
 #include "window.h"
@@ -172,7 +173,7 @@ static int intsort (const void *a,
 #endif
 
 /* verify that format list is in required sort order */
-static inline int verify_format_sort (void)
+static __inline int verify_format_sort (void)
 {
     int i;
     for(i = 0; i < num_format_defs; i++) {
@@ -224,7 +225,7 @@ static inline int verify_format_sort (void)
     return(-1);
 }
 
-static inline void uv_round (zbar_image_t *img,
+static __inline void uv_round (zbar_image_t *img,
                              const zbar_format_def_t *fmt)
 {
     img->width >>= fmt->p.yuv.xsub2;
@@ -233,7 +234,7 @@ static inline void uv_round (zbar_image_t *img,
     img->height <<= fmt->p.yuv.ysub2;
 }
 
-static inline void uv_roundup (zbar_image_t *img,
+static __inline void uv_roundup (zbar_image_t *img,
                                const zbar_format_def_t *fmt)
 {
     unsigned xmask, ymask;
@@ -247,7 +248,7 @@ static inline void uv_roundup (zbar_image_t *img,
         img->height = (img->height + ymask) & ~ymask;
 }
 
-static inline unsigned long uvp_size (const zbar_image_t *img,
+static __inline unsigned long uvp_size (const zbar_image_t *img,
                                       const zbar_format_def_t *fmt)
 {
     if(fmt->group == ZBAR_FMT_GRAY)
@@ -256,7 +257,7 @@ static inline unsigned long uvp_size (const zbar_image_t *img,
            (img->height >> fmt->p.yuv.ysub2));
 }
 
-static inline uint32_t convert_read_rgb (const uint8_t *srcp,
+static __inline uint32_t convert_read_rgb (const uint8_t *srcp,
                                          int bpp)
 {
     uint32_t p;
@@ -274,7 +275,7 @@ static inline uint32_t convert_read_rgb (const uint8_t *srcp,
     return(p);
 }
 
-static inline void convert_write_rgb (uint8_t *dstp,
+static __inline void convert_write_rgb (uint8_t *dstp,
                                       uint32_t p,
                                       int bpp)
 {
@@ -301,7 +302,7 @@ static void cleanup_ref (zbar_image_t *img)
 /* resize y plane, drop extra columns/rows from the right/bottom,
  * or duplicate last column/row to pad missing data
  */
-static inline void convert_y_resize (zbar_image_t *dst,
+static __inline void convert_y_resize (zbar_image_t *dst,
                                      const zbar_format_def_t *dstfmt,
                                      const zbar_image_t *src,
                                      const zbar_format_def_t *srcfmt,
@@ -1045,7 +1046,7 @@ zbar_image_t *zbar_image_convert (const zbar_image_t *src,
     return(zbar_image_convert_resize(src, fmt, src->width, src->height));
 }
 
-static inline int has_format (uint32_t fmt,
+static __inline int has_format (uint32_t fmt,
                               const uint32_t *fmts)
 {
     for(; *fmts; fmts++)
@@ -1076,7 +1077,7 @@ int _zbar_best_format (uint32_t src,
     if(!srcfmt)
         return(-1);
 
-    zprintf(8, "from %.4s(%08" PRIx32 ") to", (char*)&src, src);
+    zprintf(8, "from %.4s(%08lx to", (char*)&src, src);
     for(; *dsts; dsts++) {
         const zbar_format_def_t *dstfmt = _zbar_format_lookup(*dsts);
         int cost;
@@ -1089,7 +1090,7 @@ int _zbar_best_format (uint32_t src,
             cost = conversions[srcfmt->group][dstfmt->group].cost;
 
         if(_zbar_verbosity >= 8)
-            fprintf(stderr, " %.4s(%08" PRIx32 ")=%d",
+			fprintf(stderr, " %.4s(%08lx)=%d",
                     (char*)dsts, *dsts, cost);
         if(cost >= 0 && min_cost > cost) {
             min_cost = cost;
@@ -1144,11 +1145,11 @@ int zbar_negotiate_format (zbar_video_t *vdo,
             continue;
         cost = _zbar_best_format(*fmt, &win_fmt, dsts);
         if(cost < 0) {
-            zprintf(4, "%.4s(%08" PRIx32 ") -> ? (unsupported)\n",
+            zprintf(4, "%.4s(%08lx) -> ? (unsupported)\n",
                     (char*)fmt, *fmt);
             continue;
         }
-        zprintf(4, "%.4s(%08" PRIx32 ") -> %.4s(%08" PRIx32 ") (%d)\n",
+        zprintf(4, "%.4s(%08lx) -> %.4s(%08lx) (%d)\n",
                 (char*)fmt, *fmt, (char*)&win_fmt, win_fmt, cost);
         if(min_cost > cost) {
             min_cost = cost;
@@ -1166,7 +1167,7 @@ int zbar_negotiate_format (zbar_video_t *vdo,
     if(!vdo)
         return(0);
 
-    zprintf(2, "setting best format %.4s(%08" PRIx32 ") (%d)\n",
+    zprintf(2, "setting best format %.4s(%08lx) (%d)\n",
             (char*)&min_fmt, min_fmt, min_cost);
     return(zbar_video_init(vdo, min_fmt));
 }

@@ -41,7 +41,7 @@ static const signed char code93_hash[0x40] = {
     0x2d, 0x0c, 0x1b, 0x0a, 0x3f, 0x3f, 0x29, 0x1c,
 };
 
-static inline int
+static __inline int
 check_width (unsigned cur,
              unsigned prev)
 {
@@ -54,7 +54,7 @@ check_width (unsigned cur,
     return(dw > prev);
 }
 
-static inline int
+static __inline int
 encode6 (zbar_decoder_t *dcode)
 {
     /* build edge signature of character */
@@ -77,7 +77,7 @@ encode6 (zbar_decoder_t *dcode)
     return(sig);
 }
 
-static inline int
+static __inline int
 validate_sig (int sig)
 {
     int i, sum = 0, emin = 0, sig0 = 0, sig1 = 0;
@@ -112,7 +112,7 @@ validate_sig (int sig)
     return((sig0 | sig1) & 0x888);
 }
 
-static inline int
+static __inline int
 decode6 (zbar_decoder_t *dcode)
 {
     int sig = encode6(dcode);
@@ -141,7 +141,7 @@ decode6 (zbar_decoder_t *dcode)
     return(c);
 }
 
-static inline zbar_symbol_type_t
+static __inline zbar_symbol_type_t
 decode_start (zbar_decoder_t *dcode)
 {
     code93_decoder_t *dcode93 = &dcode->code93;
@@ -177,7 +177,7 @@ decode_start (zbar_decoder_t *dcode)
     return(ZBAR_PARTIAL);
 }
 
-static inline zbar_symbol_type_t
+static __inline zbar_symbol_type_t
 decode_abort (zbar_decoder_t *dcode,
               const char *reason)
 {
@@ -190,7 +190,7 @@ decode_abort (zbar_decoder_t *dcode,
     return(ZBAR_NONE);
 }
 
-static inline zbar_symbol_type_t
+static __inline zbar_symbol_type_t
 check_stop (zbar_decoder_t *dcode)
 {
     code93_decoder_t *dcode93 = &dcode->code93;
@@ -215,7 +215,7 @@ check_stop (zbar_decoder_t *dcode)
 
 #define CHKMOD (47)
 
-static inline int
+static __inline int
 plusmod47 (int acc,
            int add)
 {
@@ -225,7 +225,7 @@ plusmod47 (int acc,
     return(acc);
 }
 
-static inline int
+static __inline int
 validate_checksums (zbar_decoder_t *dcode)
 {
     code93_decoder_t *dcode93 = &dcode->code93;
@@ -267,7 +267,7 @@ validate_checksums (zbar_decoder_t *dcode)
 }
 
 /* resolve scan direction and convert to ASCII */
-static inline int
+static __inline int
 postprocess (zbar_decoder_t *dcode)
 {
     code93_decoder_t *dcode93 = &dcode->code93;

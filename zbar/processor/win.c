@@ -192,7 +192,7 @@ static LRESULT CALLBACK win_handle_event (HWND hwnd,
     return(DefWindowProc(hwnd, message, wparam, lparam));
 }
 
-static inline int win_handle_events (zbar_processor_t *proc)
+static __inline int win_handle_events (zbar_processor_t *proc)
 {
     int rc = 0;
     while(1) {
@@ -244,7 +244,7 @@ int _zbar_processor_enable (zbar_processor_t *proc)
 }
 
 
-static inline ATOM win_register_class (HINSTANCE hmod)
+static __inline ATOM win_register_class (HINSTANCE hmod)
 {
     BYTE and_mask[1] = { 0xff };
     BYTE xor_mask[1] = { 0x00 };
@@ -253,7 +253,7 @@ static inline ATOM win_register_class (HINSTANCE hmod)
     wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     wc.hInstance = hmod;
     wc.lpfnWndProc = win_handle_event;
-    wc.lpszClassName = "_ZBar Class";
+    wc.lpszClassName = _T("_ZBar Class");
     wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wc.hCursor = CreateCursor(hmod, 0, 0, 1, 1, and_mask, xor_mask);
 
@@ -280,7 +280,7 @@ int _zbar_processor_open (zbar_processor_t *proc,
     RECT r = { 0, 0, width, height };
     AdjustWindowRectEx(&r, WIN_STYLE, 0, EXT_STYLE);
     proc->display = CreateWindowEx(EXT_STYLE, (LPCTSTR)(long)wca,
-                                   "ZBar", WIN_STYLE,
+                                   _T("ZBar"), WIN_STYLE,
                                    CW_USEDEFAULT, CW_USEDEFAULT,
                                    r.right - r.left, r.bottom - r.top,
                                    NULL, NULL, hmod, proc);

@@ -113,7 +113,7 @@ static const unsigned char lo_offset[0x80] = {
     0xf7, 0xff, 0xf8, 0x9f, 0xff, 0xff, 0xff, 0xff,     /* 33 */
 };
 
-static inline signed char decode_lo (int sig)
+static __inline signed char decode_lo (int sig)
 {
     unsigned char offset = (((sig >> 1) & 0x01) |
                             ((sig >> 3) & 0x06) |
@@ -143,7 +143,7 @@ static inline signed char decode_lo (int sig)
     return(c);
 }
 
-static inline signed char decode_hi (int sig)
+static __inline signed char decode_hi (int sig)
 {
     unsigned char rev = (sig & 0x4400) != 0;
     unsigned char idx, c;
@@ -178,7 +178,7 @@ static inline signed char decode_hi (int sig)
     return(c);
 }
 
-static inline unsigned char calc_check (unsigned char c)
+static __inline unsigned char calc_check (unsigned char c)
 {
     if(!(c & 0x80))
         return(0x18);
@@ -190,7 +190,7 @@ static inline unsigned char calc_check (unsigned char c)
     return((c < 0x67) ? 0x20 : 0x10);
 }
 
-static inline signed char decode6 (zbar_decoder_t *dcode)
+static __inline signed char decode6 (zbar_decoder_t *dcode)
 {
     int sig;
     signed char c, chk;
@@ -233,7 +233,7 @@ static inline signed char decode6 (zbar_decoder_t *dcode)
     return(c & 0x7f);
 }
 
-static inline unsigned char validate_checksum (zbar_decoder_t *dcode)
+static __inline unsigned char validate_checksum (zbar_decoder_t *dcode)
 {
     unsigned idx, sum, i, acc = 0;
     unsigned char check, err;
@@ -276,7 +276,7 @@ static inline unsigned char validate_checksum (zbar_decoder_t *dcode)
 }
 
 /* expand and decode character set C */
-static inline unsigned postprocess_c (zbar_decoder_t *dcode,
+static __inline unsigned postprocess_c (zbar_decoder_t *dcode,
                                       unsigned start,
                                       unsigned end,
                                       unsigned dst)
@@ -325,7 +325,7 @@ static inline unsigned postprocess_c (zbar_decoder_t *dcode,
 }
 
 /* resolve scan direction and convert to ASCII */
-static inline unsigned char postprocess (zbar_decoder_t *dcode)
+static __inline unsigned char postprocess (zbar_decoder_t *dcode)
 {
     unsigned i, j, cexp;
     unsigned char code = 0, charset;

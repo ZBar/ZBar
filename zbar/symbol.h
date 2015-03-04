@@ -68,7 +68,7 @@ extern void _zbar_symbol_free(zbar_symbol_t*);
 extern zbar_symbol_set_t *_zbar_symbol_set_create(void);
 extern void _zbar_symbol_set_free(zbar_symbol_set_t*);
 
-static inline void sym_add_point (zbar_symbol_t *sym,
+static __inline void sym_add_point (zbar_symbol_t *sym,
                                   int x,
                                   int y)
 {
@@ -79,14 +79,14 @@ static inline void sym_add_point (zbar_symbol_t *sym,
     sym->pts[i].y = y;
 }
 
-static inline void _zbar_symbol_refcnt (zbar_symbol_t *sym,
+static __inline void _zbar_symbol_refcnt (zbar_symbol_t *sym,
                                         int delta)
 {
     if(!_zbar_refcnt(&sym->refcnt, delta) && delta <= 0)
         _zbar_symbol_free(sym);
 }
 
-static inline void _zbar_symbol_set_add (zbar_symbol_set_t *syms,
+static __inline void _zbar_symbol_set_add (zbar_symbol_set_t *syms,
                                          zbar_symbol_t *sym)
 {
     sym->next = syms->head;

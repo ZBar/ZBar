@@ -87,7 +87,7 @@ static const unsigned char parity_decode[] = {
 #ifdef DEBUG_EAN
 static unsigned char debug_buf[0x18];
 
-static inline const unsigned char *dsprintbuf(ean_decoder_t *ean)
+static __inline const unsigned char *dsprintbuf(ean_decoder_t *ean)
 {
     int i;
     for(i = 0; i < 7; i++)
@@ -109,7 +109,7 @@ static inline const unsigned char *dsprintbuf(ean_decoder_t *ean)
 }
 #endif
 
-static inline int check_width (unsigned w0,
+static __inline int check_width (unsigned w0,
                                unsigned w1)
 {
     unsigned dw0 = w0;
@@ -121,7 +121,7 @@ static inline int check_width (unsigned w0,
 /* evaluate previous N (>= 2) widths as auxiliary pattern,
  * using preceding 4 as character width
  */
-static inline signed char aux_end (zbar_decoder_t *dcode,
+static __inline signed char aux_end (zbar_decoder_t *dcode,
                                    unsigned char fwd)
 {
     signed char code, i;
@@ -154,7 +154,7 @@ static inline signed char aux_end (zbar_decoder_t *dcode,
 /* determine possible auxiliary pattern
  * using current 4 as possible character
  */
-static inline signed char aux_start (zbar_decoder_t *dcode)
+static __inline signed char aux_start (zbar_decoder_t *dcode)
 {
     /* FIXME NB add-on has no guard in reverse */
     unsigned e1, e2 = get_width(dcode, 5) + get_width(dcode, 6);
@@ -203,14 +203,14 @@ static inline signed char aux_start (zbar_decoder_t *dcode)
 
 /* check addon delimiter using current 4 as character
  */
-static inline signed char aux_mid (zbar_decoder_t *dcode)
+static __inline signed char aux_mid (zbar_decoder_t *dcode)
 {
     unsigned e = get_width(dcode, 4) + get_width(dcode, 5);
     return(decode_e(e, dcode->ean.s4, 7));
 }
 
 /* attempt to decode previous 4 widths (2 bars and 2 spaces) as a character */
-static inline signed char decode4 (zbar_decoder_t *dcode)
+static __inline signed char decode4 (zbar_decoder_t *dcode)
 {
     signed char code;
 
@@ -258,7 +258,7 @@ static inline signed char decode4 (zbar_decoder_t *dcode)
     return(code);
 }
 
-static inline char ean_part_end2 (ean_decoder_t *ean,
+static __inline char ean_part_end2 (ean_decoder_t *ean,
                                   ean_pass_t *pass)
 {
     if(!TEST_CFG(ean->ean2_config, ZBAR_CFG_ENABLE))
@@ -280,7 +280,7 @@ static inline char ean_part_end2 (ean_decoder_t *ean,
     return(ZBAR_EAN2);
 }
 
-static inline zbar_symbol_type_t ean_part_end4 (ean_pass_t *pass,
+static __inline zbar_symbol_type_t ean_part_end4 (ean_pass_t *pass,
                                                 unsigned char fwd)
 {
     /* extract parity bits */
@@ -314,7 +314,7 @@ static inline zbar_symbol_type_t ean_part_end4 (ean_pass_t *pass,
     return(ZBAR_EAN8 | EAN_LEFT);
 }
 
-static inline char ean_part_end5 (ean_decoder_t *ean,
+static __inline char ean_part_end5 (ean_decoder_t *ean,
                                   ean_pass_t *pass)
 {
     if(!TEST_CFG(ean->ean5_config, ZBAR_CFG_ENABLE))
@@ -350,7 +350,7 @@ static inline char ean_part_end5 (ean_decoder_t *ean,
     return(ZBAR_EAN5);
 }
 
-static inline zbar_symbol_type_t ean_part_end7 (ean_decoder_t *ean,
+static __inline zbar_symbol_type_t ean_part_end7 (ean_decoder_t *ean,
                                                 ean_pass_t *pass,
                                                 unsigned char fwd)
 {
@@ -411,7 +411,7 @@ static inline zbar_symbol_type_t ean_part_end7 (ean_decoder_t *ean,
 }
 
 /* update state for one of 4 parallel passes */
-static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
+static __inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
                                               ean_pass_t *pass)
 {
     unsigned char idx, fwd;
@@ -511,7 +511,7 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
     return(0);
 }
 
-static inline signed char ean_verify_checksum (ean_decoder_t *ean,
+static __inline signed char ean_verify_checksum (ean_decoder_t *ean,
                                                int n)
 {
     unsigned char chk = 0;
@@ -544,7 +544,7 @@ static inline signed char ean_verify_checksum (ean_decoder_t *ean,
     return(0);
 }
 
-static inline unsigned char isbn10_calc_checksum (ean_decoder_t *ean)
+static __inline unsigned char isbn10_calc_checksum (ean_decoder_t *ean)
 {
     unsigned int chk = 0;
     unsigned char w;
@@ -563,7 +563,7 @@ static inline unsigned char isbn10_calc_checksum (ean_decoder_t *ean)
     return('X');
 }
 
-static inline void ean_expand_upce (ean_decoder_t *ean,
+static __inline void ean_expand_upce (ean_decoder_t *ean,
                                     ean_pass_t *pass)
 {
     int i = 0;
@@ -586,7 +586,7 @@ static inline void ean_expand_upce (ean_decoder_t *ean,
     ean->buf[11] = (decode < 5) ? pass->raw[i] & 0xf : decode;
 }
 
-static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
+static __inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
                                                     ean_pass_t *pass,
                                                     zbar_symbol_type_t part)
 {
@@ -701,7 +701,7 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
 }
 
 /* copy result to output buffer */
-static inline void postprocess (zbar_decoder_t *dcode,
+static __inline void postprocess (zbar_decoder_t *dcode,
                                 zbar_symbol_type_t sym)
 {
     ean_decoder_t *ean = &dcode->ean;

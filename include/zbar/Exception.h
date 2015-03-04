@@ -154,7 +154,7 @@ class FormatError : public Exception {
 /// @internal
 
 /// extract error information and create exception.
-static inline std::exception throw_exception (const void *obj)
+static __inline std::exception throw_exception (const void *obj)
 {
     switch(_zbar_get_error_code(obj)) {
     case ZBAR_ERR_NOMEM:

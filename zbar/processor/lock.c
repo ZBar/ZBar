@@ -37,7 +37,7 @@
  * http://www.profcon.com/profcon/cargill/jgf/9809/SpecificNotification.html
  */
 
-static inline proc_waiter_t *proc_waiter_queue (zbar_processor_t *proc)
+static __inline proc_waiter_t *proc_waiter_queue (zbar_processor_t *proc)
 {
     proc_waiter_t *waiter = proc->free_waiter;
     if(waiter) {
@@ -60,7 +60,7 @@ static inline proc_waiter_t *proc_waiter_queue (zbar_processor_t *proc)
     return(waiter);
 }
 
-static inline proc_waiter_t *proc_waiter_dequeue (zbar_processor_t *proc)
+static __inline proc_waiter_t *proc_waiter_dequeue (zbar_processor_t *proc)
 {
     proc_waiter_t *prev = proc->wait_next, *waiter;
     if(prev)
@@ -88,7 +88,7 @@ static inline proc_waiter_t *proc_waiter_dequeue (zbar_processor_t *proc)
     return(waiter);
 }
 
-static inline void proc_waiter_release (zbar_processor_t *proc,
+static __inline void proc_waiter_release (zbar_processor_t *proc,
                                         proc_waiter_t *waiter)
 {
     if(waiter) {
@@ -155,7 +155,7 @@ void _zbar_processor_notify (zbar_processor_t *proc,
     }
 }
 
-static inline int proc_wait_unthreaded (zbar_processor_t *proc,
+static __inline int proc_wait_unthreaded (zbar_processor_t *proc,
                                         proc_waiter_t *waiter,
                                         zbar_timer_t *timeout)
 {

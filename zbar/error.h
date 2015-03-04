@@ -23,6 +23,7 @@
 #ifndef _ERROR_H_
 #define _ERROR_H_
 
+#include "unistd.h"
 #include <config.h>
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
@@ -121,7 +122,7 @@ extern int _zbar_verbosity;
 
 #endif
 
-static inline int err_copy (void *dst_c,
+static __inline int err_copy (void *dst_c,
                             void *src_c)
 {
     errinfo_t *dst = dst_c;
@@ -140,7 +141,7 @@ static inline int err_copy (void *dst_c,
     return(-1);
 }
 
-static inline int err_capture (const void *container,
+static __inline int err_capture (const void *container,
                                errsev_t sev,
                                zbar_error_t type,
                                const char *func,
@@ -165,7 +166,7 @@ static inline int err_capture (const void *container,
     return(-1);
 }
 
-static inline int err_capture_str (const void *container,
+static __inline int err_capture_str (const void *container,
                                    errsev_t sev,
                                    zbar_error_t type,
                                    const char *func,
@@ -180,7 +181,7 @@ static inline int err_capture_str (const void *container,
     return(err_capture(container, sev, type, func, detail));
 }
 
-static inline int err_capture_int (const void *container,
+static __inline int err_capture_int (const void *container,
                                    errsev_t sev,
                                    zbar_error_t type,
                                    const char *func,
@@ -193,7 +194,7 @@ static inline int err_capture_int (const void *container,
     return(err_capture(container, sev, type, func, detail));
 }
 
-static inline int err_capture_num (const void *container,
+static __inline int err_capture_num (const void *container,
                                    errsev_t sev,
                                    zbar_error_t type,
                                    const char *func,
@@ -206,14 +207,14 @@ static inline int err_capture_num (const void *container,
     return(err_capture(container, sev, type, func, detail));
 }
 
-static inline void err_init (errinfo_t *err,
+static __inline void err_init (errinfo_t *err,
                              errmodule_t module)
 {
     err->magic = ERRINFO_MAGIC;
     err->module = module;
 }
 
-static inline void err_cleanup (errinfo_t *err)
+static __inline void err_cleanup (errinfo_t *err)
 {
     assert(err->magic == ERRINFO_MAGIC);
     if(err->buf) {
