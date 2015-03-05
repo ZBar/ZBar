@@ -1103,71 +1103,17 @@ int _zbar_best_format (uint32_t src,
     return(min_cost);
 }
 
-int zbar_negotiate_format (zbar_video_t *vdo,
-                           zbar_window_t *win)
+int zbar_negotiate_format(zbar_video_t *vdo,
+	zbar_window_t *win)
 {
-    static const uint32_t y800[2] = { fourcc('Y','8','0','0'), 0 };
-    errinfo_t *errdst;
-    const uint32_t *srcs, *dsts;
-    unsigned min_cost = -1;
-    uint32_t min_fmt = 0;
-    const uint32_t *fmt;
+	errinfo_t *errdst;
+	static const uint32_t y800[2] = { fourcc('Y', '8', '0', '0'), 0 };
+	const uint32_t *srcs;
+	const uint32_t *dsts;
+	unsigned min_cost = -1;
+	uint32_t min_fmt = 0;
+	const uint32_t *fmt;
 
-    if(!vdo && !win)
-        return(0);
-
-    if(win)
-        (void)window_lock(win);
-
-    errdst = (vdo) ? &vdo->err : &win->err;
-    if(verify_format_sort()) {
-        if(win)
-            (void)window_unlock(win);
-        return(err_capture(errdst, SEV_FATAL, ZBAR_ERR_INTERNAL, __func__,
-                           "image format list is not sorted!?"));
-    }
-
-    if((vdo && !vdo->formats) || (win && !win->formats)) {
-        if(win)
-            (void)window_unlock(win);
-        return(err_capture(errdst, SEV_ERROR, ZBAR_ERR_UNSUPPORTED, __func__,
-                           "no input or output formats available"));
-    }
-
-    srcs = (vdo) ? vdo->formats : y800;
-    dsts = (win) ? win->formats : y800;
-
-    for(fmt = _zbar_formats; *fmt; fmt++) {
-        /* only consider formats supported by video device */
-        uint32_t win_fmt = 0;
-        int cost;
-        if(!has_format(*fmt, srcs))
-            continue;
-        cost = _zbar_best_format(*fmt, &win_fmt, dsts);
-        if(cost < 0) {
-            zprintf(4, "%.4s(%08lx) -> ? (unsupported)\n",
-                    (char*)fmt, *fmt);
-            continue;
-        }
-        zprintf(4, "%.4s(%08lx) -> %.4s(%08lx) (%d)\n",
-                (char*)fmt, *fmt, (char*)&win_fmt, win_fmt, cost);
-        if(min_cost > cost) {
-            min_cost = cost;
-            min_fmt = *fmt;
-            if(!cost)
-                break;
-        }
-    }
-    if(win)
-        (void)window_unlock(win);
-
-    if(!min_fmt)
-        return(err_capture(errdst, SEV_ERROR, ZBAR_ERR_UNSUPPORTED, __func__,
-                           "no supported image formats available"));
-    if(!vdo)
-        return(0);
-
-    zprintf(2, "setting best format %.4s(%08lx) (%d)\n",
-            (char*)&min_fmt, min_fmt, min_cost);
-    return(zbar_video_init(vdo, min_fmt));
+	return(err_capture(0, SEV_ERROR, ZBAR_ERR_UNSUPPORTED, __func__,
+		"no supported image formats available"));
 }

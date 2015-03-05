@@ -128,11 +128,11 @@ int _zbar_process_image (zbar_processor_t *proc,
 
     /* display to window if enabled */
     int rc = 0;
-    if(proc->window) {
-        if((rc = zbar_window_draw(proc->window, img)))
-            err_copy(proc, proc->window);
-        _zbar_processor_invalidate(proc);
-    }
+    //if(proc->window) {
+    //    if((rc = zbar_window_draw(proc->window, img)))
+    //        err_copy(proc, proc->window);
+    //    _zbar_processor_invalidate(proc);
+    //}
 
     if(force_fmt && img)
         zbar_image_destroy(img);
@@ -146,43 +146,44 @@ error:
 int _zbar_processor_handle_input (zbar_processor_t *proc,
                                   int input)
 {
-    int event = EVENT_INPUT;
-    switch(input) {
-    case -1:
-        event |= EVENT_CANCELED;
-        _zbar_processor_set_visible(proc, 0);
-        err_capture(proc, SEV_WARNING, ZBAR_ERR_CLOSED, __func__,
-                    "user closed display window");
-        break;
+	return 0;
+	//int event = EVENT_INPUT;
+ //   switch(input) {
+ //   case -1:
+ //       event |= EVENT_CANCELED;
+ //       _zbar_processor_set_visible(proc, 0);
+ //       err_capture(proc, SEV_WARNING, ZBAR_ERR_CLOSED, __func__,
+ //                   "user closed display window");
+ //       break;
 
-    case 'd':
-        proc->dumping = 1;
-        return(0);
+ //   case 'd':
+ //       proc->dumping = 1;
+ //       return(0);
 
-    case '+':
-    case '=':
-        if(proc->window) {
-            int ovl = zbar_window_get_overlay(proc->window);
-            zbar_window_set_overlay(proc->window, ovl + 1);
-        }
-        break;
+ //   case '+':
+ //   case '=':
+ //       if(proc->window) {
+ //           int ovl = zbar_window_get_overlay(proc->window);
+ //           zbar_window_set_overlay(proc->window, ovl + 1);
+ //       }
+ //       break;
 
-    case '-':
-        if(proc->window) {
-            int ovl = zbar_window_get_overlay(proc->window);
-            zbar_window_set_overlay(proc->window, ovl - 1);
-        }
-        break;
-    }
+ //   case '-':
+ //       if(proc->window) {
+ //           int ovl = zbar_window_get_overlay(proc->window);
+ //           zbar_window_set_overlay(proc->window, ovl - 1);
+ //       }
+ //       break;
+ //   }
 
-    _zbar_mutex_lock(&proc->mutex);
-    proc->input = input;
-    if(input == -1 && proc->visible && proc->streaming)
-        /* also cancel outstanding output waiters */
-        event |= EVENT_OUTPUT;
-    _zbar_processor_notify(proc, event);
-    _zbar_mutex_unlock(&proc->mutex);
-    return(input);
+ //   _zbar_mutex_lock(&proc->mutex);
+ //   proc->input = input;
+ //   if(input == -1 && proc->visible && proc->streaming)
+ //       /* also cancel outstanding output waiters */
+ //       event |= EVENT_OUTPUT;
+ //   _zbar_processor_notify(proc, event);
+ //   _zbar_mutex_unlock(&proc->mutex);
+ //   return(input);
 }
 
 #ifdef ZTHREAD
@@ -315,122 +316,154 @@ void zbar_processor_destroy (zbar_processor_t *proc)
     free(proc);
 }
 
+//int zbar_processor_init(zbar_processor_t *proc,
+//	const char *dev,
+//	int enable_display)
+//{
+//	int rc, input_threaded;
+//
+//	_zbar_mutex_lock(&proc->mutex);
+//	_zbar_thread_stop(&proc->input_thread, &proc->mutex);
+//
+//	_zbar_processor_lock(proc);
+//	_zbar_mutex_unlock(&proc->mutex);
+//
+//	rc = 0;
+//
+//	if (!dev && !enable_display)
+//		/* nothing to do */
+//		goto done;
+//
+//	/* spawn input monitor thread */
+//	input_threaded = proc->threaded;
+//	if (input_threaded &&
+//		_zbar_thread_start(&proc->input_thread, proc_input_thread, proc,
+//		&proc->mutex)) {
+//		rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
+//			"spawning input thread");
+//		goto done;
+//	}
+//
+//done:
+//	_zbar_mutex_lock(&proc->mutex);
+//	proc_leave(proc);
+//	return(rc);
+//}
+
 int zbar_processor_init (zbar_processor_t *proc,
                          const char *dev,
                          int enable_display)
 {
-    if(proc->video)
-        zbar_processor_set_active(proc, 0);
+	return 0;
+	
+	//if(proc->video)
+ //       zbar_processor_set_active(proc, 0);
 
-    if(proc->window && !proc->input_thread.started)
-        _zbar_processor_close(proc);
+ //   if(proc->window && !proc->input_thread.started)
+ //       _zbar_processor_close(proc);
 
-    _zbar_mutex_lock(&proc->mutex);
-    _zbar_thread_stop(&proc->input_thread, &proc->mutex);
-    _zbar_thread_stop(&proc->video_thread, &proc->mutex);
+ //   _zbar_mutex_lock(&proc->mutex);
+ //   _zbar_thread_stop(&proc->input_thread, &proc->mutex);
+ //   _zbar_thread_stop(&proc->video_thread, &proc->mutex);
 
-    _zbar_processor_lock(proc);
-    _zbar_mutex_unlock(&proc->mutex);
+ //   _zbar_processor_lock(proc);
+ //   _zbar_mutex_unlock(&proc->mutex);
 
-    if(proc->window) {
-        zbar_window_destroy(proc->window);
-        proc->window = NULL;
-    }
+ //   if(proc->window) {
+ //       zbar_window_destroy(proc->window);
+ //       proc->window = NULL;
+ //   }
 
-    int rc = 0;
-    if(proc->video) {
-        zbar_video_destroy(proc->video);
-        proc->video = NULL;
-    }
+ //   int rc = 0;
+ //   if(proc->video) {
+ //       zbar_video_destroy(proc->video);
+ //       proc->video = NULL;
+ //   }
 
-    if(!dev && !enable_display)
-        /* nothing to do */
-        goto done;
+ //   if(!dev && !enable_display)
+ //       /* nothing to do */
+ //       goto done;
 
-    if(enable_display) {
-        proc->window = zbar_window_create();
-        if(!proc->window) {
-            rc = err_capture(proc, SEV_FATAL, ZBAR_ERR_NOMEM,
-                             __func__, "allocating window resources");
-            goto done;
-        }
-    }
+ //   if(enable_display) {
+ //       proc->window = zbar_window_create();
+ //       if(!proc->window) {
+ //           rc = err_capture(proc, SEV_FATAL, ZBAR_ERR_NOMEM,
+ //                            __func__, "allocating window resources");
+ //           goto done;
+ //       }
+ //   }
 
-    if(dev) {
-        proc->video = zbar_video_create();
-        if(!proc->video) {
-            rc = err_capture(proc, SEV_FATAL, ZBAR_ERR_NOMEM,
-                             __func__, "allocating video resources");
-            goto done;
-        }
-        if(proc->req_width || proc->req_height)
-            zbar_video_request_size(proc->video,
-                                     proc->req_width, proc->req_height);
-        if(proc->req_intf)
-            zbar_video_request_interface(proc->video, proc->req_intf);
-        if((proc->req_iomode &&
-            zbar_video_request_iomode(proc->video, proc->req_iomode)) ||
-           zbar_video_open(proc->video, dev)) {
-            rc = err_copy(proc, proc->video);
-            goto done;
-        }
-    }
+ //   if(dev) {
+ //       proc->video = zbar_video_create();
+ //       if(!proc->video) {
+ //           rc = err_capture(proc, SEV_FATAL, ZBAR_ERR_NOMEM,
+ //                            __func__, "allocating video resources");
+ //           goto done;
+ //       }
+ //       if(proc->req_width || proc->req_height)
+ //           zbar_video_request_size(proc->video,
+ //                                    proc->req_width, proc->req_height);
+ //       if(proc->req_intf)
+ //           zbar_video_request_interface(proc->video, proc->req_intf);
+ //       if((proc->req_iomode &&
+ //           zbar_video_request_iomode(proc->video, proc->req_iomode)) ||
+ //          zbar_video_open(proc->video, dev)) {
+ //           rc = err_copy(proc, proc->video);
+ //           goto done;
+ //       }
+ //   }
 
-    /* spawn blocking video thread */
-    int video_threaded = (proc->threaded && proc->video &&
-                          zbar_video_get_fd(proc->video) < 0);
-    if(video_threaded &&
-       _zbar_thread_start(&proc->video_thread, proc_video_thread, proc,
-                          &proc->mutex)) {
-        rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
-                         "spawning video thread");
-        goto done;
-    }
+ //   /* spawn blocking video thread */
+ //   int video_threaded = (proc->threaded && proc->video &&
+ //                         zbar_video_get_fd(proc->video) < 0);
+ //   if(video_threaded &&
+ //      _zbar_thread_start(&proc->video_thread, proc_video_thread, proc,
+ //                         &proc->mutex)) {
+ //       rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
+ //                        "spawning video thread");
+ //       goto done;
+ //   }
 
-    /* spawn input monitor thread */
-    int input_threaded = (proc->threaded &&
-                          (proc->window ||
-                           (proc->video && !video_threaded)));
-    if(input_threaded &&
-       _zbar_thread_start(&proc->input_thread, proc_input_thread, proc,
-                          &proc->mutex)) {
-        rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
-                         "spawning input thread");
-        goto done;
-    }
+ //   /* spawn input monitor thread */
+ //   int input_threaded = (proc->threaded &&
+ //                         (proc->window ||
+ //                          (proc->video && !video_threaded)));
+ //   if(input_threaded &&
+ //      _zbar_thread_start(&proc->input_thread, proc_input_thread, proc,
+ //                         &proc->mutex)) {
+ //       rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_SYSTEM, __func__,
+ //                        "spawning input thread");
+ //       goto done;
+ //   }
 
-    if(proc->window && !input_threaded &&
-       (rc = proc_open(proc)))
-        goto done;
+ //   if(proc->window && !input_threaded &&
+ //      (rc = proc_open(proc)))
+ //       goto done;
 
-    if(proc->video && proc->force_input) {
-        if(zbar_video_init(proc->video, proc->force_input))
-            rc = err_copy(proc, proc->video);
-    }
-    else if(proc->video) {
-        int retry = -1;
-        if(proc->window) {
-            retry = zbar_negotiate_format(proc->video, proc->window);
-            if(retry)
-                fprintf(stderr,
-                        "WARNING: no compatible input to output format\n"
-                        "...trying again with output disabled\n");
-        }
-        if(retry)
-            retry = zbar_negotiate_format(proc->video, NULL);
+ //   else if(proc->video) {
+ //       int retry = -1;
+ //       if(proc->window) {
+ //           retry = zbar_negotiate_format(proc->video, proc->window);
+ //           if(retry)
+ //               fprintf(stderr,
+ //                       "WARNING: no compatible input to output format\n"
+ //                       "...trying again with output disabled\n");
+ //       }
+ //       if(retry)
+ //           retry = zbar_negotiate_format(proc->video, NULL);
 
-        if(retry) {
-            zprintf(1, "ERROR: no compatible %s format\n",
-                    (proc->video) ? "video input" : "window output");
-            rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_UNSUPPORTED,
-                             __func__, "no compatible image format");
-        }
-    }
+ //       if(retry) {
+ //           zprintf(1, "ERROR: no compatible %s format\n",
+ //                   (proc->video) ? "video input" : "window output");
+ //           rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_UNSUPPORTED,
+ //                            __func__, "no compatible image format");
+ //       }
+ //   }
 
- done:
-    _zbar_mutex_lock(&proc->mutex);
-    proc_leave(proc);
-    return(rc);
+ //done:
+ //   _zbar_mutex_lock(&proc->mutex);
+ //   proc_leave(proc);
+ //   return(rc);
 }
 
 zbar_image_data_handler_t*
@@ -528,28 +561,29 @@ int zbar_processor_is_visible (zbar_processor_t *proc)
 int zbar_processor_set_visible (zbar_processor_t *proc,
                                 int visible)
 {
-    proc_enter(proc);
-    _zbar_mutex_unlock(&proc->mutex);
+	return 0;
+	//proc_enter(proc);
+ //   _zbar_mutex_unlock(&proc->mutex);
 
-    int rc = 0;
-    if(proc->window) {
-        if(proc->video)
-            rc = _zbar_processor_set_size(proc,
-                                          zbar_video_get_width(proc->video),
-                                          zbar_video_get_height(proc->video));
-        if(!rc)
-            rc = _zbar_processor_set_visible(proc, visible);
+ //   int rc = 0;
+ //   if(proc->window) {
+ //       if(proc->video)
+ //           rc = _zbar_processor_set_size(proc,
+ //                                         zbar_video_get_width(proc->video),
+ //                                         zbar_video_get_height(proc->video));
+ //       if(!rc)
+ //           rc = _zbar_processor_set_visible(proc, visible);
 
-        if(!rc)
-            proc->visible = (visible != 0);
-    }
-    else if(visible)
-        rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
-                         "processor display window not initialized");
+ //       if(!rc)
+ //           proc->visible = (visible != 0);
+ //   }
+ //   else if(visible)
+ //       rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
+ //                        "processor display window not initialized");
 
-    _zbar_mutex_lock(&proc->mutex);
-    proc_leave(proc);
-    return(rc);
+ //   _zbar_mutex_lock(&proc->mutex);
+ //   proc_leave(proc);
+ //   return(rc);
 }
 
 const zbar_symbol_set_t*
@@ -592,74 +626,76 @@ int zbar_processor_user_wait (zbar_processor_t *proc,
 int zbar_processor_set_active (zbar_processor_t *proc,
                                int active)
 {
-    proc_enter(proc);
+	return 0;
+	//proc_enter(proc);
 
-    int rc;
-    if(!proc->video) {
-        rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
-                         "video input not initialized");
-        goto done;
-    }
-    _zbar_mutex_unlock(&proc->mutex);
+ //   int rc;
+ //   if(!proc->video) {
+ //       rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
+ //                        "video input not initialized");
+ //       goto done;
+ //   }
+ //   _zbar_mutex_unlock(&proc->mutex);
 
-    zbar_image_scanner_enable_cache(proc->scanner, active);
+ //   zbar_image_scanner_enable_cache(proc->scanner, active);
 
-    rc = zbar_video_enable(proc->video, active);
-    if(!rc) {
-        _zbar_mutex_lock(&proc->mutex);
-        proc->streaming = active;
-        _zbar_mutex_unlock(&proc->mutex);
-        rc = _zbar_processor_enable(proc);
-    }
-    else
-        err_copy(proc, proc->video);
+ //   rc = zbar_video_enable(proc->video, active);
+ //   if(!rc) {
+ //       _zbar_mutex_lock(&proc->mutex);
+ //       proc->streaming = active;
+ //       _zbar_mutex_unlock(&proc->mutex);
+ //       rc = _zbar_processor_enable(proc);
+ //   }
+ //   else
+ //       err_copy(proc, proc->video);
 
-    if(!proc->streaming && proc->window) {
-        if(zbar_window_draw(proc->window, NULL) && !rc)
-            rc = err_copy(proc, proc->window);
-        _zbar_processor_invalidate(proc);
-    }
+ //   if(!proc->streaming && proc->window) {
+ //       if(zbar_window_draw(proc->window, NULL) && !rc)
+ //           rc = err_copy(proc, proc->window);
+ //       _zbar_processor_invalidate(proc);
+ //   }
 
-    _zbar_mutex_lock(&proc->mutex);
-    if(proc->video_thread.started)
-        _zbar_event_trigger(&proc->video_thread.notify);
+ //   _zbar_mutex_lock(&proc->mutex);
+ //   if(proc->video_thread.started)
+ //       _zbar_event_trigger(&proc->video_thread.notify);
 
- done:
-    proc_leave(proc);
-    return(rc);
+ //done:
+ //   proc_leave(proc);
+ //   return(rc);
 }
 
 int zbar_process_one (zbar_processor_t *proc,
                       int timeout)
 {
-    proc_enter(proc);
-    int streaming = proc->streaming;
-    _zbar_mutex_unlock(&proc->mutex);
+	return 0;
+	//proc_enter(proc);
+ //   int streaming = proc->streaming;
+ //   _zbar_mutex_unlock(&proc->mutex);
 
-    int rc = 0;
-    if(!proc->video) {
-        rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
-                         "video input not initialized");
-        goto done;
-    }
+ //   int rc = 0;
+ //   if(!proc->video) {
+ //       rc = err_capture(proc, SEV_ERROR, ZBAR_ERR_INVALID, __func__,
+ //                        "video input not initialized");
+ //       goto done;
+ //   }
 
-    if(!streaming) {
-        rc = zbar_processor_set_active(proc, 1);
-        if(rc)
-            goto done;
-    }
+ //   if(!streaming) {
+ //       rc = zbar_processor_set_active(proc, 1);
+ //       if(rc)
+ //           goto done;
+ //   }
 
-    zbar_timer_t timer;
-    rc = _zbar_processor_wait(proc, EVENT_OUTPUT,
-                              _zbar_timer_init(&timer, timeout));
+ //   zbar_timer_t timer;
+ //   rc = _zbar_processor_wait(proc, EVENT_OUTPUT,
+ //                             _zbar_timer_init(&timer, timeout));
 
-    if(!streaming && zbar_processor_set_active(proc, 0))
-        rc = -1;
+ //   if(!streaming && zbar_processor_set_active(proc, 0))
+ //       rc = -1;
 
- done:
-    _zbar_mutex_lock(&proc->mutex);
-    proc_leave(proc);
-    return(rc);
+ //done:
+ //   _zbar_mutex_lock(&proc->mutex);
+ //   proc_leave(proc);
+ //   return(rc);
 }
 
 int zbar_process_image (zbar_processor_t *proc,
