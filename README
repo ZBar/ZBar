@@ -1,3 +1,43 @@
+ZBar Windows x64 port for VS2013
+================================
+
+This project is a fork of the Zbar bar code reader project, adapted for compiling under VS2013. My main objective was to be able to build a x64 version of the ZBar library for use in my applications. 
+
+If you find any bugs please let me know via this project.
+
+This library is provided as is, use it at your own risk. No guarantee of functional or operational safety or security can be given. 
+
+Usage
+=====
+There is no installer. To use the libraries you can either use the built .lib and .dll versions and the include files, or you can build the libraries yourself.
+
+The built dll and lib files are also distributed under the lib dir. You will also need the libiconv dll which can be found under zbar/libiconv/dll_xxx.
+
+The include files are in zbar/include like in the original project.
+
+Limitation 
+==========
+- No Output Window and Video Input functions. Removed from the DLL def file. Some of it might be still in the code but you should not try to use them. 
+- I have done limited testing. Basically testing of the EAN and QR codes which I need for my own applications. 
+
+License and copying
+===================
+See the licensing and copying information of the original project which are all still present. The licensing of this library should be LGPL following the license of the original library.
+
+Copyright
+=========
+Dani van der Meer 2015
+
+Acknowledgements
+================
+I used the libiconv for windows from http://www.codeproject.com/Articles/302012/How-to-Build-libiconv-with-Microsoft-Visual-Studio
+
+I got some ideas for the conversion from https://code.google.com/p/zbar-redux
+
+And of course the ZBar library itself. http://sourceforge.net/projects/zbar. ZBar is an extremely useful library for me!
+
+--- Original ZBar readme ---
+
 ZBAR BAR CODE READER
 ====================
 
