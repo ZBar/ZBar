@@ -254,7 +254,12 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
             Does such a thing occur?
             Is it allowed?
             It requires copying buffers around to handle correctly.*/
-          case QR_MODE_BYTE:
+          case QR_MODE_BYTE:{
+            in=(char *)entry->payload.data.buf;
+            inleft=entry->payload.data.len;
+            memcpy(sa_text+sa_ntext,in,inleft*sizeof(*sa_text));
+            sa_ntext+=inleft;
+          }break;
           case QR_MODE_KANJI:{
             in=(char *)entry->payload.data.buf;
             inleft=entry->payload.data.len;
