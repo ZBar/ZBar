@@ -3,7 +3,7 @@ AC_PREREQ([2.61])
 AC_INIT([zbar], [0.10], [spadix@users.sourceforge.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
-AM_INIT_AUTOMAKE([1.10 -Wall -Werror foreign subdir-objects std-options dist-bzip2])
+AM_INIT_AUTOMAKE([1.10 -Wall foreign subdir-objects std-options dist-bzip2])
 AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_SRCDIR(zbar/scanner.c)
 LT_PREREQ([2.2])
@@ -47,7 +47,7 @@ AC_DEFINE_UNQUOTED([LIB_VERSION_REVISION],
   [Library revision])
 
 AM_CPPFLAGS="-I$srcdir/include"
-AM_CFLAGS="-Wall -Wno-parentheses -Werror"
+AM_CFLAGS="-Wall -Wno-parentheses -fPIC"
 AM_CXXFLAGS="$AM_CFLAGS"
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CFLAGS])
@@ -467,17 +467,17 @@ AM_CONDITIONAL([HAVE_PYTHON], [test "x$with_python" = "xyes"])
 dnl Qt
 AC_ARG_WITH([qt],
   [AS_HELP_STRING([--without-qt],
-    [disable support for Qt4 widget])],
+    [disable support for Qt5 widget])],
   [],
   [with_qt="yes"])
 
 AC_ARG_VAR([MOC], [full path to Qt moc program])
 
 AS_IF([test "x$with_qt" != "xno"],
-  [PKG_CHECK_MODULES([QT], [QtCore >= 4 QtGui >= 4])
-   MOC=`$PKG_CONFIG QtGui --variable=moc_location`
+  [PKG_CHECK_MODULES([QT], [Qt5Gui Qt5Widgets Qt5X11Extras])
+   MOC=`$PKG_CONFIG Qt5 --variable=moc`
    AC_MSG_NOTICE([using moc from $MOC])
-   QT_VERSION=`$PKG_CONFIG QtGui --modversion`
+   QT_VERSION=`$PKG_CONFIG Qt5Gui --modversion`
    AC_MSG_NOTICE([using Qt version $QT_VERSION])])
 
 AM_CONDITIONAL([HAVE_QT], [test "x$with_qt" = "xyes"])
@@ -585,9 +585,9 @@ AS_IF([test "x$with_gtk" != "xyes"],
   [echo "        => the GTK+ widget will *NOT* be built"],
   [AS_IF([test "x$with_python" != "xyes"],
      [echo "        => the PyGTK widget wrapper will *NOT* be built"])])
-echo "Qt4               --with-qt=$with_qt"
+echo "Qt5               --with-qt=$with_qt"
 AS_IF([test "x$with_qt" != "xyes"],
-  [echo "        => the Qt4 widget will *NOT* be built"])
+  [echo "        => the Qt5 widget will *NOT* be built"])
 echo "Java              --with-java=$with_java"
 AS_IF([test "x$with_java" != "xyes"],
   [echo "        => the Java interface will *NOT* be built"])

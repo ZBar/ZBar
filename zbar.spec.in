@@ -8,7 +8,9 @@ URL: http://zbar.sourceforge.net
 Packager: Vit Hrachovy <fangorn34@users.sourceforge.net>
 Source: zbar-%{version}.tar.gz
 Requires: ImageMagick-c++
-BuildPreReq: pkgconfig, libX11-devel, python-devel, gtk2-devel, pygtk2-devel, qt-devel >= 4, ImageMagick-c++-devel
+BuildRequires:	libX11-devel, python-devel, gtk2-devel, pygtk2-devel
+Buildrequires:	qt5-qtbase-devel, qt5-qtx11extras-devel
+BuildRequires:	ImageMagick-c++-devel
 Prefix: %{_prefix}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
@@ -93,12 +95,12 @@ and Interleaved 2 of 5. The flexible, layered architecture features a
 fast, streaming interface with a minimal memory footprint.
 
 This package contains a bar code scanning widget for use with GUI
-applications based on Qt4.
+applications based on Qt5.
 
 %package qt-devel
 Group: Development/Libraries
 Summary: bar code reader Qt widget extra development files
-Requires: %{name}-qt = %{version}, %{name}-devel = %{version}, qt-devel >= 4
+Requires: %{name}-qt = %{version}, %{name}-devel = %{version}, qt5-qtbase-devel
 
 %description qt-devel
 The ZBar Bar Code Reader is a library for scanning and decoding bar
@@ -108,7 +110,7 @@ and Interleaved 2 of 5. The flexible, layered architecture features a
 fast, streaming interface with a minimal memory footprint.
 
 This package contains header files and additional libraries used for
-developing GUI applications based on Qt4 that include a bar code
+developing GUI applications based on Qt5 that include a bar code
 scanning widget.
 
 %prep
