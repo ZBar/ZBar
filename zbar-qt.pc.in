@@ -4,9 +4,9 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: zbar-qt
-Description: bar code scanning and decoding Qt4 widget
+Description: bar code scanning and decoding Qt5 widget
 URL: http://zbar.sourceforge.net
 Version: @VERSION@
-Requires: zbar, QtCore >= 4, QtGui >= 4
+Requires: zbar, Qt5Widgets, Qt5Gui
 Libs: -L${libdir} -lzbarqt
 Cflags: -I${includedir}
