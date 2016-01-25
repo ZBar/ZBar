@@ -1219,8 +1219,8 @@ static int qr_finder_quick_crossing_check(const unsigned char *_img,
    _x1<0||_x1>=_width||_y1<0||_y1>=_height){
     return -1;
   }
-  if(!_img[_y0*_width+_x0]!=_v||!_img[_y1*_width+_x1]!=_v)return 1;
-  if(!_img[(_y0+_y1>>1)*_width+(_x0+_x1>>1)]==_v)return -1;
+  if((!_img[_y0*_width+_x0])!=_v||(!_img[_y1*_width+_x1])!=_v)return 1;
+  if((!_img[(_y0+_y1>>1)*_width+(_x0+_x1>>1)])==_v)return -1;
   return 0;
 }
 
@@ -1261,7 +1261,7 @@ static int qr_finder_locate_crossing(const unsigned char *_img,
       x0[1-steep]+=step[1-steep];
       err-=dx[steep];
     }
-    if(!_img[x0[1]*_width+x0[0]]!=_v)break;
+    if((!_img[x0[1]*_width+x0[0]])!=_v)break;
   }
   /*Find the last crossing from _v to !_v.*/
   err=0;
@@ -1273,7 +1273,7 @@ static int qr_finder_locate_crossing(const unsigned char *_img,
       x1[1-steep]-=step[1-steep];
       err-=dx[steep];
     }
-    if(!_img[x1[1]*_width+x1[0]]!=_v)break;
+    if((!_img[x1[1]*_width+x1[0]])!=_v)break;
   }
   /*Return the midpoint of the _v segment.*/
   _p[0]=(x0[0]+x1[0]+1<<QR_FINDER_SUBPREC)>>1;
