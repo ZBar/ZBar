@@ -15,7 +15,7 @@ LOCAL_MODULE := libiconv
 LOCAL_CFLAGS := \
     -Wno-multichar \
     -D_ANDROID \
-    -DLIBDIR="c" \
+    -DLIBDIR=\"c\" \
     -DBUILDING_LIBICONV \
     -DBUILDING_LIBCHARSET \
     -DIN_LIBRARY
