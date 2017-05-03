@@ -117,15 +117,15 @@ static LRESULT CALLBACK win_handle_event (HWND hwnd,
                                           LPARAM lparam)
 {
     zbar_processor_t *proc =
-        (zbar_processor_t*)GetWindowLongPtr(hwnd, GWL_USERDATA);
+        (zbar_processor_t*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     /* initialized during window creation */
     if(message == WM_NCCREATE) {
         proc = ((LPCREATESTRUCT)lparam)->lpCreateParams;
         assert(proc);
-        SetWindowLongPtr(hwnd, GWL_USERDATA, (LONG_PTR)proc);
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)proc);
         proc->display = hwnd;
 
-        zbar_window_attach(proc->window, proc->display, proc->xwin);
+ //       zbar_window_attach(proc->window, proc->display, proc->xwin);
     }
     else if(!proc)
         return(DefWindowProc(hwnd, message, wparam, lparam));
@@ -137,7 +137,7 @@ static LRESULT CALLBACK win_handle_event (HWND hwnd,
         GetClientRect(hwnd, &r);
         zprintf(3, "WM_SIZE %ldx%ld\n", r.right, r.bottom);
         assert(proc);
-        zbar_window_resize(proc->window, r.right, r.bottom);
+//        zbar_window_resize(proc->window, r.right, r.bottom);
         InvalidateRect(hwnd, NULL, 0);
         return(0);
     }
@@ -145,13 +145,13 @@ static LRESULT CALLBACK win_handle_event (HWND hwnd,
     case WM_PAINT: {
         PAINTSTRUCT ps;
         BeginPaint(hwnd, &ps);
-        if(zbar_window_redraw(proc->window)) {
-            HDC hdc = GetDC(hwnd);
-            RECT r;
-            GetClientRect(hwnd, &r);
-            FillRect(hdc, &r, GetStockObject(BLACK_BRUSH));
-            ReleaseDC(hwnd, hdc);
-        }
+        //if(zbar_window_redraw(proc->window)) {
+        //    HDC hdc = GetDC(hwnd);
+        //    RECT r;
+        //    GetClientRect(hwnd, &r);
+        //    FillRect(hdc, &r, GetStockObject(BLACK_BRUSH));
+        //    ReleaseDC(hwnd, hdc);
+        //}
         EndPaint(hwnd, &ps);
         return(0);
     }
@@ -185,14 +185,14 @@ static LRESULT CALLBACK win_handle_event (HWND hwnd,
     case WM_DESTROY: {
         zprintf(3, "WM_DESTROY\n");
         proc->display = NULL;
-        zbar_window_attach(proc->window, NULL, 0);
+//        zbar_window_attach(proc->window, NULL, 0);
         return(0);
     }
     }
     return(DefWindowProc(hwnd, message, wparam, lparam));
 }
 
-static inline int win_handle_events (zbar_processor_t *proc)
+static __inline int win_handle_events (zbar_processor_t *proc)
 {
     int rc = 0;
     while(1) {
@@ -244,7 +244,7 @@ int _zbar_processor_enable (zbar_processor_t *proc)
 }
 
 
-static inline ATOM win_register_class (HINSTANCE hmod)
+static __inline ATOM win_register_class (HINSTANCE hmod)
 {
     BYTE and_mask[1] = { 0xff };
     BYTE xor_mask[1] = { 0x00 };
@@ -253,7 +253,7 @@ static inline ATOM win_register_class (HINSTANCE hmod)
     wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     wc.hInstance = hmod;
     wc.lpfnWndProc = win_handle_event;
-    wc.lpszClassName = "_ZBar Class";
+    wc.lpszClassName = L"_ZBar Class";
     wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wc.hCursor = CreateCursor(hmod, 0, 0, 1, 1, and_mask, xor_mask);
 
@@ -280,7 +280,7 @@ int _zbar_processor_open (zbar_processor_t *proc,
     RECT r = { 0, 0, width, height };
     AdjustWindowRectEx(&r, WIN_STYLE, 0, EXT_STYLE);
     proc->display = CreateWindowEx(EXT_STYLE, (LPCTSTR)(long)wca,
-                                   "ZBar", WIN_STYLE,
+                                   L"ZBar", WIN_STYLE,
                                    CW_USEDEFAULT, CW_USEDEFAULT,
                                    r.right - r.left, r.bottom - r.top,
                                    NULL, NULL, hmod, proc);

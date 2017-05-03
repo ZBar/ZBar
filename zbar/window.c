@@ -85,7 +85,7 @@ static void window_outline_symbol (zbar_window_t *w,
     _zbar_window_draw_polygon(w, color, sym->pts, sym->npts);
 }
 
-static inline int window_draw_overlay (zbar_window_t *w)
+static __inline int window_draw_overlay (zbar_window_t *w)
 {
     if(!w->overlay)
         return(0);
@@ -133,7 +133,7 @@ static inline int window_draw_overlay (zbar_window_t *w)
     return(0);
 }
 
-inline int zbar_window_redraw (zbar_window_t *w)
+__inline int zbar_window_redraw (zbar_window_t *w)
 {
     int rc = 0;
     zbar_image_t *img;

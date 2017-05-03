@@ -126,7 +126,7 @@ static const char39_t code39_encodings[NUM_CHARS] = {
 static const unsigned char code39_characters[NUM_CHARS] =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%*";
 
-static inline unsigned char code39_decode1 (unsigned char enc,
+static __inline unsigned char code39_decode1 (unsigned char enc,
                                             unsigned e,
                                             unsigned s)
 {
@@ -143,7 +143,7 @@ static inline unsigned char code39_decode1 (unsigned char enc,
     return(enc);
 }
 
-static inline signed char code39_decode9 (zbar_decoder_t *dcode)
+static __inline signed char code39_decode9 (zbar_decoder_t *dcode)
 {
     code39_decoder_t *dcode39 = &dcode->code39;
 
@@ -188,7 +188,7 @@ static inline signed char code39_decode9 (zbar_decoder_t *dcode)
     return((dcode39->direction) ? c->rev : c->fwd);
 }
 
-static inline signed char code39_decode_start (zbar_decoder_t *dcode)
+static __inline signed char code39_decode_start (zbar_decoder_t *dcode)
 {
     code39_decoder_t *dcode39 = &dcode->code39;
     dbprintf(2, " s=%d ", dcode39->s9);
@@ -213,7 +213,7 @@ static inline signed char code39_decode_start (zbar_decoder_t *dcode)
     return(ZBAR_PARTIAL);
 }
 
-static inline int code39_postprocess (zbar_decoder_t *dcode)
+static __inline int code39_postprocess (zbar_decoder_t *dcode)
 {
     code39_decoder_t *dcode39 = &dcode->code39;
     dcode->direction = 1 - 2 * dcode39->direction;
@@ -240,7 +240,7 @@ static inline int code39_postprocess (zbar_decoder_t *dcode)
     return(0);
 }
 
-static inline int
+static __inline int
 check_width (unsigned ref,
              unsigned w)
 {

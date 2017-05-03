@@ -32,7 +32,7 @@
 #include "debug.h"
 #include "decoder.h"
 
-static inline unsigned char i25_decode1 (unsigned char enc,
+static __inline unsigned char i25_decode1 (unsigned char enc,
                                          unsigned e,
                                          unsigned s)
 {
@@ -45,7 +45,7 @@ static inline unsigned char i25_decode1 (unsigned char enc,
     return(enc);
 }
 
-static inline unsigned char i25_decode10 (zbar_decoder_t *dcode,
+static __inline unsigned char i25_decode10 (zbar_decoder_t *dcode,
                                           unsigned char offset)
 {
     i25_decoder_t *dcode25 = &dcode->i25;
@@ -88,7 +88,7 @@ static inline unsigned char i25_decode10 (zbar_decoder_t *dcode,
     return(enc);
 }
 
-static inline signed char i25_decode_start (zbar_decoder_t *dcode)
+static __inline signed char i25_decode_start (zbar_decoder_t *dcode)
 {
     i25_decoder_t *dcode25 = &dcode->i25;
     if(dcode25->s10 < 10)
@@ -124,7 +124,7 @@ static inline signed char i25_decode_start (zbar_decoder_t *dcode)
     return(ZBAR_PARTIAL);
 }
 
-static inline int i25_acquire_lock (zbar_decoder_t *dcode)
+static __inline int i25_acquire_lock (zbar_decoder_t *dcode)
 {
     int i;
     /* lock shared resources */
@@ -139,7 +139,7 @@ static inline int i25_acquire_lock (zbar_decoder_t *dcode)
     return(0);
 }
 
-static inline signed char i25_decode_end (zbar_decoder_t *dcode)
+static __inline signed char i25_decode_end (zbar_decoder_t *dcode)
 {
     i25_decoder_t *dcode25 = &dcode->i25;
 

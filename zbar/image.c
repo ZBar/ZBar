@@ -144,7 +144,7 @@ void zbar_image_set_crop (zbar_image_t *img,
     img->crop_h = h;
 }
 
-inline void zbar_image_free_data (zbar_image_t *img)
+__inline void zbar_image_free_data (zbar_image_t *img)
 {
     if(!img)
         return;
@@ -241,22 +241,22 @@ typedef struct zimg_hdr_s {
 int zbar_image_write (const zbar_image_t *img,
                       const char *filebase)
 {
-    int len = strlen(filebase) + 16;
+	ptrdiff_t len = strlen(filebase) + 16;
     char *filename = malloc(len);
     int n = 0, rc = 0;
     FILE *f;
     zimg_hdr_t hdr;
     strcpy(filename, filebase);
     if((img->format & 0xff) >= ' ')
-        n = snprintf(filename, len, "%s.%.4s.zimg",
+        n = _snprintf(filename, len, "%s.%.4s.zimg",
                      filebase, (char*)&img->format);
     else
-        n = snprintf(filename, len, "%s.%08" PRIx32 ".zimg",
+		n = _snprintf(filename, len, "%s.%08lx.zimg",
                      filebase, img->format);
     assert(n < len - 1);
     filename[len - 1] = '\0';
 
-    zprintf(1, "dumping %.4s(%08" PRIx32 ") image to %s\n",
+	zprintf(1, "dumping %.4s(%08lx) image to %s\n",
             (char*)&img->format, img->format, filename);
 
     f = fopen(filename, "w");

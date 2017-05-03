@@ -53,7 +53,7 @@ typedef struct databar_decoder_s {
 } databar_decoder_t;
 
 /* reset DataBar segment decode state */
-static inline void databar_new_scan (databar_decoder_t *db)
+static __inline void databar_new_scan (databar_decoder_t *db)
 {
     int i;
     for(i = 0; i < 16; i++)
@@ -66,7 +66,7 @@ static inline void databar_new_scan (databar_decoder_t *db)
 }
 
 /* reset DataBar accumulated segments */
-static inline void databar_reset (databar_decoder_t *db)
+static __inline void databar_reset (databar_decoder_t *db)
 {
     int i, n = db->csegs;
     databar_new_scan(db);

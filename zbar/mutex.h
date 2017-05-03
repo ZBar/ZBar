@@ -40,19 +40,19 @@ typedef struct zbar_mutex_s {
     CRITICAL_SECTION mutex;
 } zbar_mutex_t;
 
-static inline int _zbar_mutex_init (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_init (zbar_mutex_t *lock)
 {
     lock->count = 1;
     InitializeCriticalSection(&lock->mutex);
     return(0);
 }
 
-static inline void _zbar_mutex_destroy (zbar_mutex_t *lock)
+static __inline void _zbar_mutex_destroy (zbar_mutex_t *lock)
 {
     DeleteCriticalSection(&lock->mutex);
 }
 
-static inline int _zbar_mutex_lock (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_lock (zbar_mutex_t *lock)
 {
     EnterCriticalSection(&lock->mutex);
     if(lock->count++ < 1)
@@ -60,7 +60,7 @@ static inline int _zbar_mutex_lock (zbar_mutex_t *lock)
     return(0);
 }
 
-static inline int _zbar_mutex_unlock (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_unlock (zbar_mutex_t *lock)
 {
     if(lock->count-- <= 1)
         assert(0);
@@ -72,24 +72,24 @@ static inline int _zbar_mutex_unlock (zbar_mutex_t *lock)
 
 typedef CRITICAL_SECTION zbar_mutex_t;
 
-static inline int _zbar_mutex_init (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_init (zbar_mutex_t *lock)
 {
     InitializeCriticalSection(lock);
     return(0);
 }
 
-static inline void _zbar_mutex_destroy (zbar_mutex_t *lock)
+static __inline void _zbar_mutex_destroy (zbar_mutex_t *lock)
 {
     DeleteCriticalSection(lock);
 }
 
-static inline int _zbar_mutex_lock (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_lock (zbar_mutex_t *lock)
 {
     EnterCriticalSection(lock);
     return(0);
 }
 
-static inline int _zbar_mutex_unlock (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_unlock (zbar_mutex_t *lock)
 {
     LeaveCriticalSection(lock);
     return(0);
@@ -104,7 +104,7 @@ static inline int _zbar_mutex_unlock (zbar_mutex_t *lock)
 
 typedef pthread_mutex_t zbar_mutex_t;
 
-static inline int _zbar_mutex_init (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_init (zbar_mutex_t *lock)
 {
 # ifdef DEBUG_LOCKS
     pthread_mutexattr_t attr;
@@ -118,12 +118,12 @@ static inline int _zbar_mutex_init (zbar_mutex_t *lock)
 # endif
 }
 
-static inline void _zbar_mutex_destroy (zbar_mutex_t *lock)
+static __inline void _zbar_mutex_destroy (zbar_mutex_t *lock)
 {
     pthread_mutex_destroy(lock);
 }
 
-static inline int _zbar_mutex_lock (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_lock (zbar_mutex_t *lock)
 {
     int rc = pthread_mutex_lock(lock);
 # ifdef DEBUG_LOCKS
@@ -135,7 +135,7 @@ static inline int _zbar_mutex_lock (zbar_mutex_t *lock)
     return(rc);
 }
 
-static inline int _zbar_mutex_unlock (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_unlock (zbar_mutex_t *lock)
 {
     int rc = pthread_mutex_unlock(lock);
 # ifdef DEBUG_LOCKS

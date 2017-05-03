@@ -37,7 +37,7 @@ typedef struct i25_decoder_s {
 } i25_decoder_t;
 
 /* reset interleaved 2 of 5 specific state */
-static inline void i25_reset (i25_decoder_t *i25)
+static __inline void i25_reset (i25_decoder_t *i25)
 {
     i25->direction = 0;
     i25->element = 0;

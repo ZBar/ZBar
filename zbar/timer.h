@@ -43,14 +43,14 @@
 
 typedef struct timespec zbar_timer_t;
 
-static inline int _zbar_timer_now ()
+static __inline int _zbar_timer_now ()
 {
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
     return(now.tv_sec * 1000 + now.tv_nsec / 1000000);
 }
 
-static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
+static __inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
                                               int delay)
 {
     if(delay < 0)
@@ -63,7 +63,7 @@ static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
     return(timer);
 }
 
-static inline int _zbar_timer_check (zbar_timer_t *timer)
+static __inline int _zbar_timer_check (zbar_timer_t *timer)
 {
     struct timespec now;
     int delay;
@@ -83,12 +83,12 @@ static inline int _zbar_timer_check (zbar_timer_t *timer)
 
 typedef DWORD zbar_timer_t;
 
-static inline int _zbar_timer_now ()
+static __inline int _zbar_timer_now ()
 {
     return(timeGetTime());
 }
 
-static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
+static __inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
                                               int delay)
 {
     if(delay < 0)
@@ -98,7 +98,7 @@ static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
     return(timer);
 }
 
-static inline int _zbar_timer_check (zbar_timer_t *timer)
+static __inline int _zbar_timer_check (zbar_timer_t *timer)
 {
     int delay;
     if(!timer)
@@ -113,14 +113,14 @@ static inline int _zbar_timer_check (zbar_timer_t *timer)
 
 typedef struct timeval zbar_timer_t;
 
-static inline int _zbar_timer_now ()
+static __inline int _zbar_timer_now ()
 {
     struct timeval now;
     gettimeofday(&now, NULL);
     return(now.tv_sec * 1000 + now.tv_usec / 1000);
 }
 
-static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
+static __inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
                                               int delay)
 {
     if(delay < 0)
@@ -133,7 +133,7 @@ static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
     return(timer);
 }
 
-static inline int _zbar_timer_check (zbar_timer_t *timer)
+static __inline int _zbar_timer_check (zbar_timer_t *timer)
 {
     struct timeval now;
     if(!timer)

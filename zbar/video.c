@@ -226,7 +226,7 @@ uint32_t zbar_video_get_format (const zbar_video_t *vdo)
     return(vdo->format);
 }
 
-static inline int video_init_images (zbar_video_t *vdo)
+static __inline int video_init_images (zbar_video_t *vdo)
 {
     int i;
     assert(vdo->datalen);

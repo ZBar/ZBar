@@ -103,7 +103,7 @@ struct zbar_video_s {
 /* video.next_image and video.recycle_image have to be thread safe
  * wrt/other apis
  */
-static inline int video_lock (zbar_video_t *vdo)
+static __inline int video_lock (zbar_video_t *vdo)
 {
     int rc = 0;
     if((rc = _zbar_mutex_lock(&vdo->qlock))) {
@@ -115,7 +115,7 @@ static inline int video_lock (zbar_video_t *vdo)
     return(0);
 }
 
-static inline int video_unlock (zbar_video_t *vdo)
+static __inline int video_unlock (zbar_video_t *vdo)
 {
     int rc = 0;
     if((rc = _zbar_mutex_unlock(&vdo->qlock))) {
@@ -127,7 +127,7 @@ static inline int video_unlock (zbar_video_t *vdo)
     return(0);
 }
 
-static inline int video_nq_image (zbar_video_t *vdo,
+static __inline int video_nq_image (zbar_video_t *vdo,
                                   zbar_image_t *img)
 {
     /* maintains queued buffers in order */
@@ -140,7 +140,7 @@ static inline int video_nq_image (zbar_video_t *vdo,
     return(video_unlock(vdo));
 }
 
-static inline zbar_image_t *video_dq_image (zbar_video_t *vdo)
+static __inline zbar_image_t *video_dq_image (zbar_video_t *vdo)
 {
     zbar_image_t *img = vdo->dq_image;
     if(img) {

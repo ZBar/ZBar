@@ -17,8 +17,7 @@ VS_VERSION_INFO VERSIONINFO
             VALUE "InternalName", "libzbar"
             VALUE "OriginalFilename", "libzbar-" XSTR(LIB_VERSION_MAJOR) ".dll"
 
-            VALUE "FileVersion", XSTR(LIB_VERSION_MAJOR) "." \
-                XSTR(LIB_VERSION_MINOR) "." XSTR(LIB_VERSION_REVISION)
+            VALUE "FileVersion", XSTR(LIB_VERSION_MAJOR) "." XSTR(LIB_VERSION_MINOR) "." XSTR(LIB_VERSION_REVISION)
             VALUE "ProductVersion", PACKAGE_VERSION
 
             VALUE "FileDescription", "Bar code reader library"

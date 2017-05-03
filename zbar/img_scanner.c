@@ -168,7 +168,7 @@ void _zbar_image_scanner_recycle_syms (zbar_image_scanner_t *iscn,
     }
 }
 
-static inline int recycle_syms (zbar_image_scanner_t *iscn,
+static __inline int recycle_syms (zbar_image_scanner_t *iscn,
                                 zbar_symbol_set_t *syms)
 {
     if(_zbar_refcnt(&syms->refcnt, -1))
@@ -180,7 +180,7 @@ static inline int recycle_syms (zbar_image_scanner_t *iscn,
     return(0);
 }
 
-inline void zbar_image_scanner_recycle_image (zbar_image_scanner_t *iscn,
+__inline void zbar_image_scanner_recycle_image (zbar_image_scanner_t *iscn,
                                               zbar_image_t *img)
 {
     zbar_symbol_set_t *syms = iscn->syms;
@@ -208,7 +208,7 @@ inline void zbar_image_scanner_recycle_image (zbar_image_scanner_t *iscn,
     }
 }
 
-inline zbar_symbol_t*
+__inline zbar_symbol_t*
 _zbar_image_scanner_alloc_sym (zbar_image_scanner_t *iscn,
                                zbar_symbol_type_t type,
                                int datalen)
@@ -264,7 +264,7 @@ _zbar_image_scanner_alloc_sym (zbar_image_scanner_t *iscn,
     return(sym);
 }
 
-static inline zbar_symbol_t *cache_lookup (zbar_image_scanner_t *iscn,
+static __inline zbar_symbol_t *cache_lookup (zbar_image_scanner_t *iscn,
                                            zbar_symbol_t *sym)
 {
     /* search for matching entry in cache */
@@ -287,7 +287,7 @@ static inline zbar_symbol_t *cache_lookup (zbar_image_scanner_t *iscn,
     return(*entry);
 }
 
-static inline void cache_sym (zbar_image_scanner_t *iscn,
+static __inline void cache_sym (zbar_image_scanner_t *iscn,
                               zbar_symbol_t *sym)
 {
     if(iscn->enable_cache) {
@@ -359,7 +359,7 @@ extern qr_finder_line *_zbar_decoder_get_qr_finder_line(zbar_decoder_t*);
     ((val) >> (prec)),         \
         (1000 * ((val) & ((1 << (prec)) - 1)) / (1 << (prec)))
 
-static inline void qr_handler (zbar_image_scanner_t *iscn)
+static __inline void qr_handler (zbar_image_scanner_t *iscn)
 {
     unsigned u;
     int vert;
@@ -499,7 +499,7 @@ zbar_image_scanner_t *zbar_image_scanner_create ()
 }
 
 #ifndef NO_STATS
-static inline void dump_stats (const zbar_image_scanner_t *iscn)
+static __inline void dump_stats (const zbar_image_scanner_t *iscn)
 {
     int i;
     zprintf(1, "symbol sets allocated   = %-4d\n", iscn->stat_syms_new);
@@ -626,7 +626,7 @@ zbar_image_scanner_get_results (const zbar_image_scanner_t *iscn)
     return(iscn->syms);
 }
 
-static inline void quiet_border (zbar_image_scanner_t *iscn)
+static __inline void quiet_border (zbar_image_scanner_t *iscn)
 {
     /* flush scanner pipeline */
     zbar_scanner_t *scn = iscn->scn;

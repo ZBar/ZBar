@@ -12,7 +12,7 @@ typedef struct qr_finder_s {
 } qr_finder_t;
 
 /* reset QR finder specific state */
-static inline void qr_finder_reset (qr_finder_t *qrf)
+static __inline void qr_finder_reset (qr_finder_t *qrf)
 {
     qrf->s5 = 0;
 }

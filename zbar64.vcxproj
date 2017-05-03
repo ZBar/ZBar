@@ -1,0 +1,276 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{F2B2900E-80DE-4A48-A978-DACD7B2F69A6}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>zbar64</RootNamespace>
+    <SccProjectName>Svn</SccProjectName>
+    <SccAuxPath>Svn</SccAuxPath>
+    <SccLocalPath>Svn</SccLocalPath>
+    <SccProvider>SubversionScc</SccProvider>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>libzbar-0</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>libzbar64-0</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>libzbar-0</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>libzbar64-0</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;ZBAR64_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)zbar;$(ProjectDir)zbar/decoder;$(ProjectDir)zbar/libiconv/include;$(ProjectDir)zbar/qrcode;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>./zbar/libzbar-0.def</ModuleDefinitionFile>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;ZBAR64_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)zbar;$(ProjectDir)zbar/decoder;$(ProjectDir)zbar/libiconv/include;$(ProjectDir)zbar/qrcode;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <ModuleDefinitionFile>./zbar/libzbar-0.def</ModuleDefinitionFile>
+      <AdditionalDependencies>winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;ZBAR64_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)zbar;$(ProjectDir)zbar/decoder;$(ProjectDir)zbar/libiconv/include;$(ProjectDir)zbar/qrcode;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>./zbar/libzbar-0.def</ModuleDefinitionFile>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;ZBAR64_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)zbar;$(ProjectDir)zbar/decoder;$(ProjectDir)zbar/libiconv/include;$(ProjectDir)zbar/qrcode;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <ModuleDefinitionFile>./zbar/libzbar-0.def</ModuleDefinitionFile>
+      <AdditionalDependencies>winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)include</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include=".\zbar\config.c" />
+    <ClCompile Include=".\zbar\convert.c" />
+    <ClCompile Include=".\zbar\decoder.c" />
+    <ClCompile Include=".\zbar\decoder\code128.c" />
+    <ClCompile Include=".\zbar\decoder\code39.c" />
+    <ClCompile Include=".\zbar\decoder\ean.c" />
+    <ClCompile Include=".\zbar\decoder\i25.c" />
+    <ClCompile Include=".\zbar\decoder\pdf417.c" />
+    <ClCompile Include=".\zbar\decoder\qr_finder.c" />
+    <ClCompile Include=".\zbar\error.c" />
+    <ClCompile Include=".\zbar\image.c" />
+    <ClCompile Include=".\zbar\img_scanner.c" />
+    <ClCompile Include=".\zbar\processor.c" />
+    <ClCompile Include=".\zbar\qrcode\bch15_5.c" />
+    <ClCompile Include=".\zbar\qrcode\binarize.c" />
+    <ClCompile Include=".\zbar\qrcode\isaac.c" />
+    <ClCompile Include=".\zbar\qrcode\qrdec.c" />
+    <ClCompile Include=".\zbar\qrcode\qrdectxt.c" />
+    <ClCompile Include=".\zbar\qrcode\rs.c" />
+    <ClCompile Include=".\zbar\qrcode\util.c" />
+    <ClCompile Include=".\zbar\refcnt.c" />
+    <ClCompile Include=".\zbar\scanner.c" />
+    <ClCompile Include=".\zbar\symbol.c" />
+    <ClCompile Include="zbar\decoder\codabar.c" />
+    <ClCompile Include="zbar\decoder\code93.c" />
+    <ClCompile Include="zbar\decoder\databar.c" />
+    <ClCompile Include="zbar\processor\lock.c" />
+    <ClCompile Include="zbar\processor\win.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\include\config.h" />
+    <ClInclude Include=".\include\zbar.h" />
+    <ClInclude Include=".\include\zbar\Decoder.h" />
+    <ClInclude Include=".\include\zbar\Exception.h" />
+    <ClInclude Include=".\include\zbar\Image.h" />
+    <ClInclude Include=".\include\zbar\ImageScanner.h" />
+    <ClInclude Include=".\include\zbar\Processor.h" />
+    <ClInclude Include=".\include\zbar\QZBar.h" />
+    <ClInclude Include=".\include\zbar\QZBarImage.h" />
+    <ClInclude Include=".\include\zbar\Scanner.h" />
+    <ClInclude Include=".\include\zbar\Symbol.h" />
+    <ClInclude Include=".\include\zbar\Video.h" />
+    <ClInclude Include=".\include\zbar\zbargtk.h" />
+    <ClInclude Include=".\zbar\debug.h" />
+    <ClInclude Include=".\zbar\decoder.h" />
+    <ClInclude Include=".\zbar\decoder\code128.h" />
+    <ClInclude Include=".\zbar\decoder\code39.h" />
+    <ClInclude Include=".\zbar\decoder\ean.h" />
+    <ClInclude Include=".\zbar\decoder\i25.h" />
+    <ClInclude Include=".\zbar\decoder\pdf417.h" />
+    <ClInclude Include=".\zbar\decoder\pdf417_hash.h" />
+    <ClInclude Include=".\zbar\decoder\qr_finder.h" />
+    <ClInclude Include=".\zbar\error.h" />
+    <ClInclude Include=".\zbar\event.h" />
+    <ClInclude Include=".\zbar\image.h" />
+    <ClInclude Include=".\zbar\img_scanner.h" />
+    <ClInclude Include=".\zbar\mutex.h" />
+    <ClInclude Include=".\zbar\processor.h" />
+    <ClInclude Include=".\zbar\qrcode.h" />
+    <ClInclude Include=".\zbar\qrcode\bch15_5.h" />
+    <ClInclude Include=".\zbar\qrcode\binarize.h" />
+    <ClInclude Include=".\zbar\qrcode\isaac.h" />
+    <ClInclude Include=".\zbar\qrcode\qrdec.h" />
+    <ClInclude Include=".\zbar\qrcode\rs.h" />
+    <ClInclude Include=".\zbar\qrcode\util.h" />
+    <ClInclude Include=".\zbar\refcnt.h" />
+    <ClInclude Include=".\zbar\symbol.h" />
+    <ClInclude Include=".\zbar\thread.h" />
+    <ClInclude Include=".\zbar\timer.h" />
+    <ClInclude Include="include\zbar\Window.h" />
+    <ClInclude Include="zbar\decoder\codabar.h" />
+    <ClInclude Include="zbar\decoder\code93.h" />
+    <ClInclude Include="zbar\decoder\databar.h" />
+    <ClInclude Include="zbar\libiconv\Include\iconv.h" />
+    <ClInclude Include="zbar\svg.h" />
+    <ClInclude Include="zbar\unistd.h" />
+    <ClInclude Include="zbar\video.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include=".\zbar\libzbar.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include=".\zbar\zbar.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="zbar\libzbar-0.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="zbar\libiconv\lib_win32\libiconv.lib">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Library>
+    <Library Include="zbar\libiconv\lib_x64\libiconv.lib">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </Library>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
