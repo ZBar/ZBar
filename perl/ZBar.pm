@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------
-#  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+#  Copyright 2008-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
 #
 #  This file is part of the ZBar Bar Code Reader.
 #
@@ -32,7 +32,7 @@ our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(SPACE BAR
                     version increase_verbosity set_verbosity);
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 require XSLoader;
 XSLoader::load('Barcode::ZBar', $VERSION);
@@ -86,8 +86,8 @@ collect results:
 
 The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
-intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
-Interleaved 2 of 5.
+intensity sensors.  It supports EAN-13/UPC-A, UPC-E, EAN-8, Code 128,
+Code 93, Code 39, Codabar, Interleaved 2 of 5 and QR Code.
 
 These are the bindings for interacting directly with the library from
 Perl.
@@ -137,6 +137,56 @@ Dark area or colored bar segment.
 
 =back
 
+Decoder configuration constants:
+
+=over 4
+
+=item Config::ENABLE
+
+=item Config::ADD_CHECK
+
+=item Config::EMIT_CHECK
+
+=item Config::ASCII
+
+=item Config::MIN_LEN
+
+=item Config::MAX_LEN
+
+=item Config::POSITION
+
+=item Config::X_DENSITY
+
+=item Config::Y_DENSITY
+
+=back
+
+Symbology modifier constants:
+
+=over 4
+
+=item Modifier::GS1
+
+=item Modifier::AIM
+
+=back
+
+Symbol orientation constants:
+
+=over 4
+
+=item Orient::UNKNOWN
+
+=item Orient::UP
+
+=item Orient::RIGHT
+
+=item Orient::DOWN
+
+=item Orient::LEFT
+
+=back
+
 
 =head1 SEE ALSO
 
@@ -156,7 +206,7 @@ Jeff Brown, E<lt>spadix@users.sourceforge.netE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2008-2009 (c) Jeff Brown E<lt>spadix@users.sourceforge.netE<gt>
+Copyright 2008-2010 (c) Jeff Brown E<lt>spadix@users.sourceforge.netE<gt>
 
 The ZBar Bar Code Reader is free software; you can redistribute it
 and/or modify it under the terms of the GNU Lesser Public License as

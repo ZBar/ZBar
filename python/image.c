@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2009-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -22,6 +22,9 @@
  *------------------------------------------------------------------------*/
 
 #include "zbarmodule.h"
+#ifdef HAVE_INTTYPES_H
+# include <inttypes.h>
+#endif
 
 static char image_doc[] = PyDoc_STR(
     "image object.\n"
@@ -136,16 +139,18 @@ image_set_format (zbarImage *self,
         PyErr_SetString(PyExc_TypeError, "cannot delete format attribute");
         return(-1);
     }
-    char *format;
+    char *format = NULL;
     Py_ssize_t len;
     if(PyString_AsStringAndSize(value, &format, &len) ||
        !format || len != 4) {
+        if(!format)
+            format = "(nil)";
         PyErr_Format(PyExc_ValueError,
                      "format '%.50s' is not a valid four character code",
                      format);
         return(-1);
     }
-    zbar_image_set_format(self->zimg,*((unsigned long*)format));
+    zbar_image_set_format(self->zimg, zbar_fourcc_parse(format));
     return(0);
 }
 
@@ -153,9 +158,9 @@ static PyObject*
 image_get_size (zbarImage *self,
                 void *closure)
 {
-    unsigned int width = zbar_image_get_width(self->zimg);
-    unsigned int height = zbar_image_get_height(self->zimg);
-    return(PyTuple_Pack(2, PyInt_FromLong(width), PyInt_FromLong(height)));
+    unsigned int w, h;
+    zbar_image_get_size(self->zimg, &w, &h);
+    return(PyTuple_Pack(2, PyInt_FromLong(w), PyInt_FromLong(h)));
 }
 
 static int
@@ -167,34 +172,60 @@ image_set_size (zbarImage *self,
         PyErr_SetString(PyExc_TypeError, "cannot delete size attribute");
         return(-1);
     }
-    int rc = -1;
-    PyObject *wobj = NULL, *hobj = NULL;
-    if(!PySequence_Check(value) ||
-       PySequence_Size(value) != 2)
-        goto error;
-    wobj = PySequence_GetItem(value, 0);
-    hobj = PySequence_GetItem(value, 1);
-    if(!wobj || !hobj)
-        goto error;
 
-    int width = PyInt_AsSsize_t(wobj);
-    if(width == -1 && PyErr_Occurred())
-        goto error;
-
-    int height = PyInt_AsSsize_t(hobj);
-    if(height == -1 && PyErr_Occurred())
-        goto error;
-
-    zbar_image_set_size(self->zimg, width, height);
-    rc = 0;
-
-error:
-    Py_XDECREF(wobj);
-    Py_XDECREF(hobj);
-    if(rc)
+    int dims[2];
+    if(parse_dimensions(value, dims, 2) ||
+       dims[0] < 0 || dims[1] < 0) {
         PyErr_SetString(PyExc_ValueError,
-                        "size must be a sequence of two ints");
-    return(rc);
+                        "size must be a sequence of two positive ints");
+        return(-1);
+    }
+
+    zbar_image_set_size(self->zimg, dims[0], dims[1]);
+    return(0);
+}
+
+static PyObject*
+image_get_crop (zbarImage *self,
+                void *closure)
+{
+    unsigned int x, y, w, h;
+    zbar_image_get_crop(self->zimg, &x, &y, &w, &h);
+    return(PyTuple_Pack(4, PyInt_FromLong(x), PyInt_FromLong(y),
+                        PyInt_FromLong(w), PyInt_FromLong(h)));
+}
+
+static int
+image_set_crop (zbarImage *self,
+                PyObject *value,
+                void *closure)
+{
+    unsigned w, h;
+    zbar_image_get_size(self->zimg, &w, &h);
+    if(!value) {
+        zbar_image_set_crop(self->zimg, 0, 0, w, h);
+        return(0);
+    }
+
+    int dims[4];
+    if(parse_dimensions(value, dims, 4) ||
+       dims[2] < 0 || dims[3] < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "crop must be a sequence of four positive ints");
+        return(-1);
+    }
+
+    if(dims[0] < 0) {
+        dims[2] += dims[0];
+        dims[0] = 0;
+    }
+    if(dims[1] < 0) {
+        dims[3] += dims[1];
+        dims[1] = 0;
+    }
+
+    zbar_image_set_crop(self->zimg, dims[0], dims[1], dims[2], dims[3]);
+    return(0);
 }
 
 static PyObject*
@@ -202,7 +233,7 @@ image_get_int (zbarImage *self,
                void *closure)
 {
     unsigned int val = -1;
-    switch((int)closure) {
+    switch((intptr_t)closure) {
     case 0:
         val = zbar_image_get_width(self->zimg); break;
     case 1:
@@ -225,7 +256,7 @@ image_set_int (zbarImage *self,
         PyErr_SetString(PyExc_TypeError, "expecting an integer");
         return(-1);
     }
-    switch((int)closure) {
+    switch((intptr_t)closure) {
     case 0:
         tmp = zbar_image_get_height(self->zimg);
         zbar_image_set_size(self->zimg, val, tmp);
@@ -305,6 +336,7 @@ image_set_data (zbarImage *self,
 static PyGetSetDef image_getset[] = {
     { "format",   (getter)image_get_format, (setter)image_set_format, },
     { "size",     (getter)image_get_size,   (setter)image_set_size, },
+    { "crop",     (getter)image_get_crop,   (setter)image_set_crop, },
     { "width",    (getter)image_get_int,    (setter)image_set_int,
       NULL, (void*)0 },
     { "height",   (getter)image_get_int,    (setter)image_set_int,
@@ -356,6 +388,7 @@ image_convert (zbarImage *self,
                      format);
         return(NULL);
     }
+    unsigned long fourcc = zbar_fourcc_parse(format);
 
     zbarImage *img = PyObject_GC_New(zbarImage, &zbarImage_Type);
     if(!img)
@@ -363,11 +396,9 @@ image_convert (zbarImage *self,
     img->data = NULL;
     if(width > 0 && height > 0)
         img->zimg =
-            zbar_image_convert_resize(self->zimg,
-                                       *((unsigned long*)format),
-                                       width, height);
+            zbar_image_convert_resize(self->zimg, fourcc, width, height);
     else
-        img->zimg = zbar_image_convert(self->zimg, *((unsigned long*)format));
+        img->zimg = zbar_image_convert(self->zimg, fourcc);
 
     if(!img->zimg) {
         /* FIXME propagate exception */

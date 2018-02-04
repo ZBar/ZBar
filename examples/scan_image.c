@@ -3,6 +3,20 @@
 #include <png.h>
 #include <zbar.h>
 
+#if !defined(PNG_LIBPNG_VER) || \
+    PNG_LIBPNG_VER < 10018 ||   \
+    (PNG_LIBPNG_VER > 10200 &&  \
+     PNG_LIBPNG_VER < 10209)
+  /* Changes to Libpng from version 1.2.42 to 1.4.0 (January 4, 2010)
+   * ...
+   * 2. m. The function png_set_gray_1_2_4_to_8() was removed. It has been
+   *       deprecated since libpng-1.0.18 and 1.2.9, when it was replaced with
+   *       png_set_expand_gray_1_2_4_to_8() because the former function also
+   *       expanded palette images.
+   */
+# define png_set_expand_gray_1_2_4_to_8 png_set_gray_1_2_4_to_8
+#endif
+
 zbar_image_scanner_t *scanner = NULL;
 
 /* to complete a runnable example, this abbreviated implementation of
@@ -30,7 +44,7 @@ static void get_data (const char *name,
     if(color & PNG_COLOR_TYPE_PALETTE)
         png_set_palette_to_rgb(png);
     if(color == PNG_COLOR_TYPE_GRAY && bits < 8)
-        png_set_gray_1_2_4_to_8(png);
+        png_set_expand_gray_1_2_4_to_8(png);
     if(bits == 16)
         png_set_strip_16(png);
     if(color & PNG_COLOR_MASK_ALPHA)
@@ -65,7 +79,7 @@ int main (int argc, char **argv)
 
     /* wrap image data */
     zbar_image_t *image = zbar_image_create();
-    zbar_image_set_format(image, *(int*)"Y800");
+    zbar_image_set_format(image, zbar_fourcc('Y','8','0','0'));
     zbar_image_set_size(image, width, height);
     zbar_image_set_data(image, raw, width * height, zbar_image_free_data);
 

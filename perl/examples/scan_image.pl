@@ -15,7 +15,7 @@ $scanner->parse_config("enable");
 # obtain image data
 my $magick = Image::Magick->new();
 $magick->Read($ARGV[0]) && die;
-my $raw = $magick->ImageToBlob(magick => 'GRAY');
+my $raw = $magick->ImageToBlob(magick => 'GRAY', depth => 8);
 
 # wrap image data
 my $image = Barcode::ZBar::Image->new();

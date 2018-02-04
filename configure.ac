@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.61])
-AC_INIT([zbar], [0.9], [spadix@users.sourceforge.net])
+AC_INIT([zbar], [0.10], [spadix@users.sourceforge.net])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AM_INIT_AUTOMAKE([1.10 -Wall -Werror foreign subdir-objects std-options dist-bzip2])
@@ -21,13 +21,13 @@ dnl   - If any interfaces have been added since the last public release,
 dnl     then increment age.
 dnl   - If any interfaces have been removed since the last public release,
 dnl     then set age to 0. 
-AC_SUBST([LIB_VERSION], [1:0:1])
-AC_SUBST([RELDATE], [2009-08-31])
+AC_SUBST([LIB_VERSION], [2:0:2])
+AC_SUBST([RELDATE], [2009-10-23])
 
 dnl widget libraries use their own versioning.
 dnl NB pygtk wrapper is *unversioned*
-AC_SUBST([ZGTK_LIB_VERSION], [0:1:0])
-AC_SUBST([ZQT_LIB_VERSION], [0:1:0])
+AC_SUBST([ZGTK_LIB_VERSION], [0:2:0])
+AC_SUBST([ZQT_LIB_VERSION], [0:2:0])
 
 AC_DEFINE_UNQUOTED([ZBAR_VERSION_MAJOR],
   [[`echo "$PACKAGE_VERSION" | sed -e 's/\..*$//'`]],
@@ -45,6 +45,13 @@ AC_DEFINE_UNQUOTED([LIB_VERSION_MINOR], [[$age]],
 AC_DEFINE_UNQUOTED([LIB_VERSION_REVISION],
   [[`echo "$LIB_VERSION" | sed -e 's/^[^:]*:\([^:]*\):.*$/\1/'`]],
   [Library revision])
+
+AM_CPPFLAGS="-I$srcdir/include"
+AM_CFLAGS="-Wall -Wno-parentheses -Werror"
+AM_CXXFLAGS="$AM_CFLAGS"
+AC_SUBST([AM_CPPFLAGS])
+AC_SUBST([AM_CFLAGS])
+AC_SUBST([AM_CXXFLAGS])
 
 dnl windows build
 
@@ -73,13 +80,36 @@ documentation generation])
 AC_ARG_VAR([XMLTOFLAGS], [additional arguments for xmlto])
 AC_CHECK_PROGS([XMLTO], [xmlto], [:])
 
+have_java="maybe"
+AC_ARG_VAR([JAVA_HOME], [root location of JDK])
+AS_IF([test "x$JAVA_HOME" = "x"],
+  [JAVA_PATH="$PATH"],
+  [JAVA_PATH="$JAVA_HOME/bin$PATH_SEPARATOR$PATH"])
+
+AC_ARG_VAR([JAVAC], [location of Java language compiler])
+AC_PATH_PROGS([JAVAC], [javac jikes ecj gcj], [:], [$JAVA_PATH])
+AS_IF([test "x$JAVAC" = "x:"], [have_java="no"])
+
+AC_ARG_VAR([JAVAH], [location of Java header generator])
+AC_PATH_PROGS([JAVAH], [javah], [/bin/false], [$JAVA_PATH])
+
+AC_ARG_VAR([JAR], [location of Java archive tool])
+AC_PATH_PROGS([JAR], [jar], [:], [$JAVA_PATH])
+AS_IF([test "x$JAR" = "x:"], [have_java="no"])
+
+AC_ARG_VAR([JAVA], [location of Java application launcher])
+AC_PATH_PROGS([JAVA], [java], [/bin/false], [$JAVA_PATH])
+
+AC_ARG_VAR([CLASSPATH], [Java class path (include JUnit to run java tests)])
+AS_IF([test "x$CLASSPATH" = "x"], [CLASSPATH="."])
+
 dnl symbologies
 
 AC_ARG_ENABLE([codes],
   [AS_HELP_STRING([--enable-codes=SYMS],
-    [select symbologies to compile [default=ean,i25,code39,code128,qrcode]])],
+    [select symbologies to compile [default=ean,databar,code128,code93,code39,codabar,i25,qrcode]])],
   [],
-  [enable_codes="ean,code39,code128,i25,qrcode"]) dnl pdf417
+  [enable_codes="ean,databar,code128,code93,code39,codabar,i25,qrcode"])
 
 AC_DEFUN([ZBAR_CHK_CODE], [
   AC_MSG_CHECKING([whether to build $2])
@@ -97,11 +127,14 @@ AC_DEFUN([ZBAR_CHK_CODE], [
 ])dnl
 
 ZBAR_CHK_CODE([ean], [EAN symbologies])
+ZBAR_CHK_CODE([databar], [DataBar symbology])
 ZBAR_CHK_CODE([code128], [Code 128 symbology])
+ZBAR_CHK_CODE([code93], [Code 93 symbology])
 ZBAR_CHK_CODE([code39], [Code 39 symbology])
-ZBAR_CHK_CODE([pdf417], [PDF417 symbology])
+ZBAR_CHK_CODE([codabar], [Codabar symbology])
 ZBAR_CHK_CODE([i25], [Interleaved 2 of 5 symbology])
 ZBAR_CHK_CODE([qrcode], [QR Code])
+ZBAR_CHK_CODE([pdf417], [PDF417 symbology])
 
 dnl libraries
 
@@ -144,23 +177,26 @@ AC_ARG_ENABLE([video],
   [],
   [enable_video="yes"])
 
-with_video="no"
-AS_IF([test "x$enable_video" != "xno"],
-  [AS_IF([test "x$win32" = "xno"],
-    [AC_CHECK_HEADERS([linux/videodev.h], [with_video="v4l1"],
-      [AC_MSG_FAILURE([test for video support failed!
+have_v4l1="no"
+have_v4l2="no"
+AS_IF([test "x$enable_video" = "xno"],
+  [],
+  [test "x$win32" = "xno"],
+  [AC_CHECK_HEADERS([linux/videodev.h], [have_v4l1="yes"])
+   AC_CHECK_HEADERS([linux/videodev2.h], [have_v4l2="yes"])
+   AS_IF([test "x$have_v4l2" = "xno" && test "x$have_v4l1" = "xno"],
+     [AC_MSG_FAILURE([test for video support failed!
 rebuild your kernel to include video4linux support or
-configure --disable-video to skip building video support.])])
-       AC_CHECK_HEADERS([linux/videodev2.h], [with_video="v4l2"],
-         [AC_MSG_WARN([v4l2 API not detected, upgrade your kernel!])])],
-    [AC_CHECK_HEADERS([vfw.h], [with_video="vfw"],
-      [AC_MSG_FAILURE([test for VfW video support failed!
-configure --disable-video to skip building vidoe support.])])])
-])
+configure --disable-video to skip building video support.])],
+     [test "x$have_v4l2" = "xno"],
+     [AC_MSG_WARN([v4l2 API not detected, upgrade your kernel!])])],
+  [AC_CHECK_HEADERS([vfw.h], [with_video="vfw"],
+    [AC_MSG_FAILURE([test for VfW video support failed!
+configure --disable-video to skip building video support.])])])
+
 AM_CONDITIONAL([HAVE_VIDEO], [test "x$enable_video" != "xno"])
-AM_CONDITIONAL([HAVE_V4L1],
-  [test "x$with_video" = "xv4l1" || test "x$with_video" = "xv4l2"])
-AM_CONDITIONAL([HAVE_V4L2], [test "x$with_video" = "xv4l2"])
+AM_CONDITIONAL([HAVE_V4L1], [test "x$have_v4l1" != "xno"])
+AM_CONDITIONAL([HAVE_V4L2], [test "x$have_v4l2" != "xno"])
 
 dnl X
 AC_ARG_VAR([XSHM_LIBS], [linker flags for X shared memory extension])
@@ -252,51 +288,105 @@ set appropriately or configure --without-jpeg])],
 ])
 AM_CONDITIONAL([HAVE_JPEG], [test "x$with_jpeg" = "xyes"])
 
-dnl ImageMagick
+dnl ImageMagick or GraphicsMagick
+dnl disable both if IM is explicitly disabled to preserve old behavior
+
 AC_ARG_WITH([imagemagick],
   [AS_HELP_STRING([--without-imagemagick],
-    [disable support for scanning images using ImageMagick])],
+    [disable support for scanning images with ImageMagick])],
   [],
-  [with_imagemagick="yes"])
+  [with_imagemagick="check"])
 
-AS_IF([test "x$with_imagemagick" != "xno"],
-  [PKG_CHECK_MODULES([MAGICK], [MagickWand >= 6.2.6], [],
-     [dnl Wand is deprecated in favor of MagickWand,
-      dnl but the latter doesn't exist in older verisons (bug #2848437)
+AC_ARG_WITH([graphicsmagick],
+  [AS_HELP_STRING([--with-graphicsmagick],
+    [use GraphicsMagick alternative to ImageMagick])],
+  [],
+  [with_graphicsmagick="check"])
+
+magick="UnknownMagick"
+have_IM="maybe"
+AS_IF([test "x$with_imagemagick" = "xno"], [],
+      [test "x$with_imagemagick" = "xyes" || \
+       test "x$with_graphicsmagick" != "xyes"],
+  [looked_for="ImageMagick >= 6.2.6"
+   PKG_CHECK_MODULES([MAGICK], [MagickWand >= 6.2.6],
+     [MAGICK_VERSION=`$PKG_CONFIG MagickWand --modversion`],
+     [dnl
+dnl Wand is deprecated in favor of MagickWand,
+dnl but the latter doesn't exist in older verisons (bug #2848437)
       saved_error=$MAGICK_PKG_ERRORS
-      PKG_CHECK_MODULES([MAGICK], [Wand >= 6.2.6], [],
-        [AC_MSG_FAILURE([dnl
-Unable to find ImageMagick >= 6.2.6:
+      PKG_CHECK_MODULES([MAGICK], [Wand >= 6.2.6],
+        [MAGICK_VERSION=`$PKG_CONFIG Wand --modversion`],
+        [have_IM="no"])])
+   AS_IF([test "x$have_IM" != "xno"],
+     [magick="ImageMagick"
+      AC_MSG_NOTICE([trying ImageMagick version $MAGICK_VERSION])
+dnl double check ImageMagick install (bug #2582232)
+      CPPFLAGS_save="$CPPFLAGS"
+      CPPFLAGS="$CPPFLAGS $MAGICK_CFLAGS"
+      AC_CHECK_HEADER([wand/MagickWand.h],
+        [have_IM="yes"],
+        [have_IM="broken"])
+      CPPFLAGS="$CPPFLAGS_save"])])
+
+have_GM="maybe"
+AS_IF([test "x$have_IM" = "xyes"], [],
+      [test "x$with_graphicsmagick" = "xno"], [],
+      [test "x$with_graphicsmagick" = "xyes" || \
+       test "x$with_imagemagick" = "xcheck"],
+  [AS_IF([test "x$looked_for" = "x"],
+     [looked_for="GraphicsMagick"],
+     [looked_for="$looked_for or GraphicsMagick"])
+   PKG_CHECK_MODULES([MAGICK], [GraphicsMagickWand],
+     [have_GM="yes"
+      magick="GraphicsMagick"
+      MAGICK_VERSION=`$PKG_CONFIG GraphicsMagickWand --modversion`],
+     [have_GM="no"
+      AS_IF([test "x$saved_error" = "x"],
+        [saved_error=$MAGICK_PKG_ERRORS])])])
+
+dnl now that we have collected all the info abt what Magick is available
+dnl let the user know what we will or can't do
+AS_IF([test "x$have_IM" = "xbroken" && test "x$have_GM" = "xyes"],
+  [AC_MSG_WARN([Your ImageMagick install is broken, using GraphicsMagick instead])])
+
+AS_IF([test "x$have_IM" = "xyes" || test "x$have_GM" = "xyes"],
+  [AC_MSG_NOTICE([using $magick version $MAGICK_VERSION])],
+  [test "x$with_imagemagick" = "xno" && \
+   test "x$with_graphicsmagick" != "xyes"],
+  [AC_MSG_NOTICE([image scanning disabled -- zbarimg will *not* be built])],
+  [test "x$have_IM" = "xbroken"],
+  [AC_MSG_FAILURE([$magick package found but wand/MagickWand.h not installed?!
+this is a problem with your $magick install, please try again after
+resolving the inconsistency or installing GraphicsMagick alternative...])],
+  [AC_MSG_FAILURE([dnl
+Unable to find $looked_for:
 
 $saved_error
 
-* Ensure that you installed any "development" packages for ImageMagick.
+* Ensure that you installed any "development" packages for ImageMagick or
+  GraphicsMagick.
 * Consider adjusting the PKG_CONFIG_PATH environment variable if you
   installed software in a non-standard prefix.
 * You may set the environment variables MAGICK_CFLAGS and MAGICK_LIBS
   to avoid the need to call pkg-config.
   See the pkg-config man page for more details.
-* To avoid using ImageMagick altogether you may add the --without-imagemagick
-  flag to the configure command; the zbarimg program will not be built.
-])])])
-   MAGICK_VERSION=`$PKG_CONFIG MagickWand --modversion`
-   AC_MSG_NOTICE([using ImageMagick version $MAGICK_VERSION])
+* To avoid using ImageMagick or GraphicsMagick altogether you may add the
+  --without-imagemagick flag to the configure command; the zbarimg program
+  will *not* be built.
+])])
 
-dnl double check ImageMagick install (bug #2582232)
-   CPPFLAGS_save="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS $MAGICK_CFLAGS"
-   AC_CHECK_HEADER([wand/MagickWand.h], [],
-     [AC_MSG_FAILURE([ImageMagick package found but wand/MagickWand.h not installed?!
-this is a problem with your ImageMagick install,
-please resolve the inconsistency and try again...])])
-   CPPFLAGS="$CPPFLAGS_save"])
-
-AM_CONDITIONAL([HAVE_MAGICK], [test "x$with_imagemagick" = "xyes"])
+AS_IF([test "x$have_IM" = "xyes"],
+  [AC_DEFINE([HAVE_IMAGEMAGICK], [1], [Define to 1 to use ImageMagick])],
+  [test "x$have_GM" = "xyes"],
+  [AC_DEFINE([HAVE_GRAPHICSMAGICK], [1], [Define to 1 to use GraphicsMagick])])
+AM_CONDITIONAL([HAVE_MAGICK],
+  [test "x$have_IM" = "xyes" || test "x$have_GM" = "xyes"])
 
 dnl Mozilla NPAPI
 AC_ARG_WITH([npapi],
   [AS_HELP_STRING([--with-npapi],
-    [enable support for Firefox/Mozilla/OpenOffice NPAPI plugin])],
+    [enable support for Firefox/Mozilla/OpenOffice plugin])],
   [],
   [with_npapi="no"])
 
@@ -350,7 +440,16 @@ AS_IF([test "x$with_python" != "xno"],
      [test -x "$PYTHON-config"],
      [PYTHON_CFLAGS=`$PYTHON-config --cflags`],
      [PYTHON_CFLAGS=`$PYTHON -c 'import distutils.sysconfig as s; print " ".join(s.get_config_vars("CFLAGS")) + " -I"+s.get_python_inc() + " -I"+s.get_python_inc(plat_specific=True)'`])
-dnl FIXME now should check that #include <Python.h> compiles
+
+dnl check that #include <Python.h> compiles (bug #3092663)
+   CPPFLAGS_save="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS $PYTHON_CFLAGS"
+   AC_CHECK_HEADER([Python.h], [], [AC_MSG_ERROR([dnl
+Python module enabled, but unable to compile Python.h.
+Install the development package for python-$am_cv_python_version, or configure
+--without-python to disable the python bindings.dnl
+])])
+   CPPFLAGS="$CPPFLAGS_save"
 
    AS_IF([test "x$with_gtk" = "xyes"],
      [PKG_CHECK_MODULES([PYGTK], [pygtk-2.0])
@@ -383,13 +482,39 @@ AS_IF([test "x$with_qt" != "xno"],
 
 AM_CONDITIONAL([HAVE_QT], [test "x$with_qt" = "xyes"])
 
+dnl Java
+AC_ARG_WITH([java],
+  [AS_HELP_STRING([--without-java],
+    [disable support for Java interface])],
+  [],
+  [with_java="check"])
+
+AC_ARG_VAR([JAVA_CFLAGS], [compiler flags for building JNI extensions])
+AS_IF([test "x$JAVA_CFLAGS" = "x" && test "x$JAVA_HOME" != "x"],
+  [JAVA_CFLAGS="-I$JAVA_HOME/include"])
+
+AS_IF([test "x$with_java" != "xno"],
+  [CPPFLAGS_save="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS $JAVA_CFLAGS"
+   AC_CHECK_HEADER([jni.h], [], [have_java="no"])
+   CPPFLAGS="$CPPFLAGS_save"
+   AS_IF([test "x$have_java" != "xno"],
+     [with_java="yes"],
+     [test "x$with_java" = "xyes"],
+     [AC_MSG_FAILURE([unable to find Java JNI! ensure CFLAGS are set
+appropriately or configure --without-java])],
+     [with_java="no"])
+])
+AM_CONDITIONAL([HAVE_JAVA], [test "x$with_java" = "xyes"])
+
 
 dnl header files
 
 dnl FIXME switches for shm, mmap
 AC_HEADER_ASSERT
-AC_CHECK_HEADERS([fcntl.h inttypes.h stdlib.h string.h unistd.h \
-  sys/ioctl.h sys/time.h sys/times.h sys/ipc.h sys/shm.h sys/mman.h])
+AC_CHECK_HEADERS([errno.h fcntl.h features.h inttypes.h stdlib.h string.h \
+  unistd.h sys/types.h sys/stat.h sys/ioctl.h sys/time.h sys/times.h \
+  sys/ipc.h sys/shm.h sys/mman.h])
 
 dnl types
 
@@ -428,6 +553,7 @@ AC_CONFIG_COMMANDS([doc/reldate.xml],
 
 AC_CONFIG_FILES([
 Makefile
+java/Makefile
 zbar.pc
 zbar-gtk.pc
 zbar-qt.pc
@@ -448,8 +574,10 @@ AS_IF([test "x$enable_video" != "xyes"],
 echo "jpeg              --with-jpeg=$with_jpeg"
 AS_IF([test "x$with_jpeg" != "xyes"],
   [echo "        => JPEG image conversions will *NOT* be supported"])
-echo "Magick++          --with-imagemagick=$with_imagemagick"
-AS_IF([test "x$with_imagemagick" != "xyes"],
+AS_IF([test "x$have_GM" = "xyes"],
+  [echo "GraphicsMagick    --with-graphicsmagick=yes"],
+  [echo "ImageMagick       --with-imagemagick=$with_imagemagick"])
+AS_IF([test "x$have_IM" != "xyes" && test "x$have_GM" != "xyes"],
   [echo "        => the zbarimg file scanner will *NOT* be built"])
 echo "Python            --with-python=$with_python"
 echo "GTK+              --with-gtk=$with_gtk"
@@ -460,6 +588,9 @@ AS_IF([test "x$with_gtk" != "xyes"],
 echo "Qt4               --with-qt=$with_qt"
 AS_IF([test "x$with_qt" != "xyes"],
   [echo "        => the Qt4 widget will *NOT* be built"])
+echo "Java              --with-java=$with_java"
+AS_IF([test "x$with_java" != "xyes"],
+  [echo "        => the Java interface will *NOT* be built"])
 #echo "NPAPI Plugin     --with-npapi=$with_npapi"
 #AS_IF([test "x$with_mozilla" != "xyes"],
 #  [echo "       => the Mozilla/Firefox/OpenOffice plugin will *NOT* be built"])

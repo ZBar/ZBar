@@ -24,6 +24,11 @@
 #include "window.h"
 #include "image.h"
 #include "x.h"
+#include <ctype.h>
+
+#ifndef ZBAR_OVERLAY_FONT
+# define ZBAR_OVERLAY_FONT "-*-fixed-medium-r-*-*-*-120-75-75-*-*-ISO8859-1"
+#endif
 
 static inline unsigned long window_alloc_color (zbar_window_t *w,
                                                 Colormap cmap,
@@ -131,6 +136,10 @@ int _zbar_window_attach (zbar_window_t *w,
         if(x->gc)
             XFreeGC(w->display, x->gc);
         assert(!x->exposed);
+        if(x->font) {
+            XFreeFont(w->display, x->font);
+            x->font = NULL;
+        }
         if(x->logo_zbars) {
             XDestroyRegion(x->logo_zbars);
             x->logo_zbars = NULL;
@@ -167,6 +176,11 @@ int _zbar_window_attach (zbar_window_t *w,
     window_alloc_colors(w);
     window_hide_cursor(w);
 
+    /* load overlay font */
+    x->font = XLoadQueryFont(w->display, ZBAR_OVERLAY_FONT);
+    if(x->font)
+        XSetFont(w->display, x->gc, x->font->fid);
+
     /* FIXME add interface preference override */
 #ifdef HAVE_X11_EXTENSIONS_XVLIB_H
     if(!_zbar_window_probe_xv(w))
@@ -195,18 +209,24 @@ int _zbar_window_expose (zbar_window_t *w,
     return(0);
 }
 
-int _zbar_window_flush (zbar_window_t *w)
+int _zbar_window_begin (zbar_window_t *w)
 {
-    if(!w->display)
-        return(-1);
+    window_state_t *xs = w->state;
+    if(xs->exposed)
+        XSetRegion(w->display, xs->gc, xs->exposed);
 
+    return(0);
+}
+
+int _zbar_window_end (zbar_window_t *w)
+{
     window_state_t *x = w->state;
-    XFlush(w->display);
     XSetClipMask(w->display, x->gc, None);
     if(x->exposed) {
         XDestroyRegion(x->exposed);
         x->exposed = NULL;
     }
+    XFlush(w->display);
     return(0);
 }
 
@@ -229,15 +249,13 @@ int _zbar_window_draw_polygon (zbar_window_t *w,
     window_state_t *xs = w->state;
     XSetForeground(w->display, xs->gc, xs->colors[rgb]);
 
+    point_t org = w->scaled_offset;
     XPoint xpts[npts + 1];
     int i;
     for(i = 0; i < npts; i++) {
-        xpts[i].x = pts[i].x;
-        if(w->width != w->image->width)
-            xpts[i].x = xpts[i].x * w->width / w->image->width;
-        xpts[i].y = pts[i].y;
-        if(w->height != w->image->height)
-            xpts[i].y = xpts[i].y * w->height / w->image->height;
+        point_t p = window_scale_pt(w, pts[i]);
+        xpts[i].x = p.x + org.x;
+        xpts[i].y = p.y + org.y;
     }
     xpts[npts] = xpts[0];
 
@@ -248,43 +266,61 @@ int _zbar_window_draw_polygon (zbar_window_t *w,
 
 int _zbar_window_draw_marker (zbar_window_t *w,
                               uint32_t rgb,
-                              const point_t *p)
+                              point_t p)
 {
     window_state_t *xs = w->state;
     XSetForeground(w->display, xs->gc, xs->colors[rgb]);
+    XDrawRectangle(w->display, w->xwin, xs->gc, p.x - 2, p.y - 2, 4, 4);
+    XDrawLine(w->display, w->xwin, xs->gc, p.x, p.y - 3, p.x, p.y + 3);
+    XDrawLine(w->display, w->xwin, xs->gc, p.x - 3, p.y, p.x + 3, p.y);
+    return(0);
+}
 
-    int x = p->x;
-    if(x < 3)
-        x = 3;
-    else if(x > w->width - 4)
-        x = w->width - 4;
+int _zbar_window_draw_text (zbar_window_t *w,
+                            uint32_t rgb,
+                            point_t p,
+                            const char *text)
+{
+    window_state_t *xs = w->state;
+    if(!xs->font)
+        return(-1);
 
-    int y = p->y;
-    if(y < 3)
-        y = 3;
-    else if(y > w->height - 4)
-        y = w->height - 4;
+    XSetForeground(w->display, xs->gc, xs->colors[rgb]);
 
-    if(w->width != w->image->width)
-        x = x * w->width / w->image->width;
-    if(w->height != w->image->height)
-        y = y * w->height / w->image->height;
+    int n = 0;
+    while(n < 32 && text[n] && isprint(text[n]))
+        n++;
 
-    XDrawRectangle(w->display, w->xwin, xs->gc, x - 2, y - 2, 4, 4);
-    XDrawLine(w->display, w->xwin, xs->gc, x, y - 3, x, y + 3);
-    XDrawLine(w->display, w->xwin, xs->gc, x - 3, y, x + 3, y);
+    int width = XTextWidth(xs->font, text, n);
+    if(p.x >= 0)
+        p.x -= width / 2;
+    else
+        p.x += w->width - width;
+
+    int dy = xs->font->ascent + xs->font->descent;
+    if(p.y >= 0)
+        p.y -= dy / 2;
+    else
+        p.y = w->height + p.y * dy * 5 / 4;
+
+    XDrawString(w->display, w->xwin, xs->gc, p.x, p.y, text, n);
+    return(0);
+}
+
+int _zbar_window_fill_rect (zbar_window_t *w,
+                            uint32_t rgb,
+                            point_t org,
+                            point_t size)
+{
+    window_state_t *xs = w->state;
+    XSetForeground(w->display, xs->gc, xs->colors[rgb]);
+    XFillRectangle(w->display, w->xwin, xs->gc, org.x, org.y, size.x, size.y);
     return(0);
 }
 
 int _zbar_window_draw_logo (zbar_window_t *w)
 {
-    if(!w->display)
-        return(-1);
-
     window_state_t *x = w->state;
-    if(x->exposed)
-        XSetRegion(w->display, x->gc, x->exposed);
-
     int screen = DefaultScreen(w->display);
 
     /* clear to white */
@@ -302,7 +338,6 @@ int _zbar_window_draw_logo (zbar_window_t *w)
 
     XSetForeground(w->display, x->gc, x->logo_colors[0]);
     XDrawLines(w->display, w->xwin, x->gc, x->logo_z, 4, CoordModeOrigin);
-    XFlush(w->display);
 
     if(x->exposed) {
         XIntersectRegion(x->logo_zbars, x->exposed, x->exposed);

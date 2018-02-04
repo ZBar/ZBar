@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<!--
+   Copyright 2009-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
+     All Rights Reserved
+-->
+
+<svg version="1.1" id="top"
+  width="512px" height="512px"
+  viewBox="0,0 1,1" preserveAspectRatio="xMidYMid" overflow="visible"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <title>unstable hand icon</title>
+
+  <defs>
+    <style type="text/css"><![CDATA[
+      path, line, circle { fill: none; stroke-linejoin: round; stroke-linecap: round }
+      #bg { fill: #202020 }
+      #hand-outline { stroke: #a76; stroke-width: .75; stroke-opacity: 1 }
+      #skin-base { fill: #db9 }
+      #skin circle { fill: url(#skin-grad);/* stroke: red; stroke-width: .01*/ }
+      #shakes { stroke: #d5f; stroke-width: .03125 } /* #f43 */
+    ]]></style>
+
+    <clipPath id="hand-clip"><use xlink:href="#hand-outline"/></clipPath>
+    <clipPath id="wrist-clip"><rect x="-20" y="3" width="40" height="42"/></clipPath>
+
+    <radialGradient id="skin-grad" r=".5" cx=".5" cy=".5">
+      <stop offset="0%" stop-color="#edc"/>
+      <stop offset="100%" stop-color="#edc" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!--<rect id="bg" width="1" height="1"/>-->
+
+  <g id="hand" transform="translate(.5,-.025) scale(.0225)"
+    clip-path="url(#wrist-clip)">
+    <g id="skin" clip-path="url(#hand-clip)">
+      <rect id="skin-base" x="-20" y="0" width="40" height="50"/>
+
+      <circle r="10" transform="translate(4,33) rotate(-50) scale(1,.75)"/>
+      <circle r="4" transform="translate(-7,32) rotate(-8) scale(1,2)"/>
+      <circle r="4" transform="translate(-1.5,23) rotate(-8) scale(2.4,.9)"/>
+
+      <g transform="rotate(-27.44 0,40)">
+        <circle r="1.5" transform="translate(0,11.5) scale(.85,1.5)"/>
+        <circle r="1.5" transform="translate(0,15.25) scale(.85,1.5)"/>
+        <circle r="1.5" transform="translate(-.2,19) scale(.85,1.5)"/>
+      </g>
+      <g transform="rotate(-13.83 0,40) translate(0,.5)">
+        <circle r="2" transform="translate(0,6.25) scale(.85,1.75)"/>
+        <circle r="2" transform="translate(0,11.5) scale(.85,1.75)"/>
+        <circle r="2" transform="translate(0,16.75) scale(.85,1.75)"/>
+      </g>
+      <g>
+        <circle r="2" transform="translate(0,6.25) scale(.85,1.75)"/>
+        <circle r="2" transform="translate(0,11.5) scale(.85,1.75)"/>
+        <circle r="2" transform="translate(0,16.75) scale(.85,1.75)"/>
+      </g>
+      <g transform="rotate(13.83 0,40) translate(0,.5)">
+        <circle r="2" transform="translate(0,6.25) scale(.85,1.75)"/>
+        <circle r="2" transform="translate(0,11.5) scale(.85,1.75)"/>
+        <circle r="2" transform="translate(0,16.75) scale(.85,1.75)"/>
+      </g>
+      <g transform="rotate(23.025 0,49.75)">
+        <circle r="2.25" transform="translate(0,18) scale(.85,1.5)"/>
+        <circle r="2.25" transform="translate(0,24) scale(.85,1.5)"/>
+      </g>
+    </g>
+
+    <path id="hand-outline" d="
+M-8,45 V39
+C-11,36 -11,32 -11,29
+C-11,22 -11,22 -14.7,14.7
+A1.4,1.4 0 0 1 -12.2,13.2
+L-7.75,21.8
+A.6,.6 0 0 0 -6.66,21.3
+L-10,8
+A2,2 0 0 1 -6,7
+L-3,19.2
+A.5,.5 0 0 0 -2,19
+L-2,5.5
+A2,2 0 0 1 2,5.5
+L2,19
+A.5,.5 0 0 0 3,19.2
+L6,7
+A2,2 0 0 1 10,8
+C7,20 7,19 7,25.5
+A.42,.42 0 0 0 7.75,25.75
+L10.6,18.8
+A2.25,2.25 0 0 1 14.8,20.6
+C11.7,28 11.7,27.7 11,30
+C10,34 7,39 3,40
+L3,45
+"/>
+  </g>
+
+  <path id="shakes" transform="translate(.5,.5) rotate(22.5)" d="
+M.484,0 A.484,.484 0 0 0 .342,-.342
+M.39,0 A.39,.39 0 0 0 .276,-.276
+M-.484,0 A.484,.484 0 0 0 -.342,.342
+M-.39,0 A.39,.39 0 0 0 -.276,.276
+"/>
+
+</svg>

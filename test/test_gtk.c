@@ -45,7 +45,6 @@ static void decoded (GtkWidget *widget,
     GtkTextIter end;
     gtk_text_buffer_get_end_iter(resultbuf, &end);
     gtk_text_buffer_insert(resultbuf, &end, zbar_get_symbol_name(symbol), -1);
-    gtk_text_buffer_insert(resultbuf, &end, zbar_get_addon_name(symbol), -1);
     gtk_text_buffer_insert(resultbuf, &end, ":", -1);
     gtk_text_buffer_insert(resultbuf, &end, result, -1);
     gtk_text_buffer_insert(resultbuf, &end, "\n", -1);

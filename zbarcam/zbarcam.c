@@ -25,6 +25,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef _WIN32
+# include <io.h>
+# include <fcntl.h>
+#endif
 #include <assert.h>
 
 #include <zbar.h>
@@ -70,7 +74,7 @@ static unsigned xml_len = 0;
 static int usage (int rc)
 {
     FILE *out = (rc) ? stderr : stdout;
-    fprintf(out, note_usage);
+    fprintf(out, "%s", note_usage);
     return(rc);
 }
 
@@ -101,17 +105,27 @@ static void data_handler (zbar_image_t *img, const void *userdata)
         if(type == ZBAR_PARTIAL)
             continue;
 
-        if(!format)
-            printf("%s%s:%s\n",
-                   zbar_get_symbol_name(type), zbar_get_addon_name(type),
-                   zbar_symbol_get_data(sym));
-        else if(format == RAW)
-            printf("%s\n", zbar_symbol_get_data(sym));
+        if(!format) {
+            printf("%s:", zbar_get_symbol_name(type));
+            if(fwrite(zbar_symbol_get_data(sym),
+                      zbar_symbol_get_data_length(sym),
+                      1, stdout) != 1)
+                continue;
+        }
+        else if(format == RAW) {
+            if(fwrite(zbar_symbol_get_data(sym),
+                      zbar_symbol_get_data_length(sym),
+                      1, stdout) != 1)
+                continue;
+        }
         else if(format == XML) {
             if(!n)
                 printf("<index num='%u'>\n", zbar_image_get_sequence(img));
-            printf("%s\n", zbar_symbol_xml(sym, &xml_buf, &xml_len));
+            zbar_symbol_xml(sym, &xml_buf, &xml_len);
+            if(fwrite(xml_buf, xml_len, 1, stdout) != 1)
+                continue;
         }
+        printf("\n");
         n++;
     }
 
@@ -146,9 +160,11 @@ int main (int argc, const char *argv[])
             int j;
             for(j = 1; argv[i][j]; j++) {
                 if(argv[i][j] == 'S') {
-                    if((argv[i][++j])
-                       ? parse_config(&argv[i][j], i, argc, "-S")
-                       : parse_config(argv[++i], i, argc, "-S"))
+                    if(!argv[i][++j]) {
+                        i++;
+                        j = 0;
+                    }
+                    if(parse_config(&argv[i][j], i, argc, "-S"))
                         return(usage(1));
                     break;
                 }
@@ -173,7 +189,8 @@ int main (int argc, const char *argv[])
         else if(!strcmp(argv[i], "--version"))
             return(printf(PACKAGE_VERSION "\n") <= 0);
         else if(!strcmp(argv[i], "--set")) {
-            if(parse_config(argv[++i], i, argc, "--set"))
+            i++;
+            if(parse_config(argv[i], i, argc, "--set"))
                 return(usage(1));
         }
         else if(!strncmp(argv[i], "--set=", 6)) {
@@ -237,6 +254,10 @@ int main (int argc, const char *argv[])
         return(zbar_processor_error_spew(proc, 0));
 
     if(format == XML) {
+#ifdef _WIN32
+        fflush(stdout);
+        _setmode(_fileno(stdout), _O_BINARY);
+#endif
         printf(xml_head, video_device);
         fflush(stdout);
     }
@@ -267,7 +288,7 @@ int main (int argc, const char *argv[])
     zbar_processor_destroy(proc);
 
     if(format == XML) {
-        printf(xml_foot);
+        printf("%s", xml_foot);
         fflush(stdout);
     }
     return(0);

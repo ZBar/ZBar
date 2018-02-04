@@ -1,0 +1,60 @@
+==========================================
+zbar -- read barcodes from images or video
+==========================================
+
+ZBar Bar Code Reader is an open source software suite for reading bar
+codes from various sources, such as video streams, image files and raw
+intensity sensors. It supports EAN-13/UPC-A, UPC-E, EAN-8, Code 128,
+Code 93, Code 39, Codabar, Interleaved 2 of 5 and QR Code.  These are
+the Python bindings for the library.
+
+Check the ZBar project home page for the latest release, mailing
+lists, etc.
+
+* http://zbar.sourceforge.net/
+
+Installation
+------------
+
+To install this module type the following::
+
+   python setup.py install
+
+Dependencies
+------------
+
+This module requires the ZBar Bar Code Reader, which may be obtained
+from:
+
+* http://zbar.sourceforge.net/
+
+Windows users please note: the module *will NOT load* unless the ZBar
+library DLL (currently libzbar-0.dll) is available in your Windows system
+PATH!
+
+Examples
+--------
+
+To scan an image, wrap the raw image data in a ``zbar.Image`` and feed
+it to a ``zbar.ImageScanner``::
+
+    import zbar
+    scanner = zbar.ImageScanner()
+    image = zbar.Image(width, height, 'Y800', raw_data)
+    scanner.scan(image)
+    for symbol in image:
+        print 'decoded', symbol.type, 'symbol', '"%s"' % symbol.data
+
+Complete, runnable examples may be found in the source distribution,
+under the ``examples/`` directory.  A couple of HOWTOs_ that cover
+programming with the library may be found on the project wiki.
+
+.. _HOWTOs: http://sourceforge.net/apps/mediawiki/zbar/index.php?title=Category:HOWTOs
+
+Copyright and License
+---------------------
+
+Licensed under the GNU Lesser General Public License, version 2.1.
+http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
+
+Copyright 2008-2010 (c) Jeff Brown <spadix@users.sourceforge.net>

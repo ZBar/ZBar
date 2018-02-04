@@ -20,6 +20,9 @@ def load_image():
 encoded_widths = \
     '9 111 212241113121211311141132 11111 311213121312121332111132 111 9'
 
+databar_widths = \
+    '11 31111333 13911 31131231 11214222 11553 21231313 1'
+
 VIDEO_DEVICE = None
 if 'VIDEO_DEVICE' in os.environ:
     VIDEO_DEVICE = os.environ['VIDEO_DEVICE']
@@ -59,12 +62,20 @@ class TestZBarFunctions(ut.TestCase):
                     zbar.Config.ASCII,
                     zbar.Config.MIN_LEN,
                     zbar.Config.MAX_LEN,
+                    zbar.Config.UNCERTAINTY,
                     zbar.Config.POSITION,
                     zbar.Config.X_DENSITY,
                     zbar.Config.Y_DENSITY):
             self.assert_(isinstance(cfg, zbar.EnumItem))
             self.assert_(int(cfg) >= 0)
             self.assert_(is_identifier.match(str(cfg)))
+
+    def test_modifiers(self):
+        for mod in (zbar.Modifier.GS1,
+                    zbar.Modifier.AIM):
+            self.assert_(isinstance(mod, zbar.EnumItem))
+            self.assert_(int(mod) >= 0)
+            self.assert_(is_identifier.match(str(mod)))
 
     def test_symbologies(self):
         for sym in (zbar.Symbol.NONE,
@@ -75,14 +86,28 @@ class TestZBarFunctions(ut.TestCase):
                     zbar.Symbol.UPCA,
                     zbar.Symbol.EAN13,
                     zbar.Symbol.ISBN13,
+                    zbar.Symbol.DATABAR,
+                    zbar.Symbol.DATABAR_EXP,
                     zbar.Symbol.I25,
+                    zbar.Symbol.CODABAR,
                     zbar.Symbol.CODE39,
                     zbar.Symbol.PDF417,
                     zbar.Symbol.QRCODE,
+                    zbar.Symbol.CODE93,
                     zbar.Symbol.CODE128):
             self.assert_(isinstance(sym, zbar.EnumItem))
             self.assert_(int(sym) >= 0)
             self.assert_(is_identifier.match(str(sym)))
+
+    def test_orientations(self):
+        for orient in (zbar.Orient.UNKNOWN,
+                       zbar.Orient.UP,
+                       zbar.Orient.RIGHT,
+                       zbar.Orient.DOWN,
+                       zbar.Orient.LEFT):
+            self.assert_(isinstance(orient, zbar.EnumItem))
+            self.assert_(-1 <= int(orient) <= 3)
+            self.assert_(is_identifier.match(str(orient)))
 
 class TestScanner(ut.TestCase):
     def setUp(self):
@@ -135,6 +160,9 @@ class TestDecoder(ut.TestCase):
             self.dcode.data = data
         self.assertRaises(AttributeError, set_data, 'yomama')
 
+        self.assertRaises(AttributeError,
+                          self.dcode.__setattr__, 'direction', -1)
+
     def test_width(self):
         sym = self.dcode.decode_width(5)
         self.assert_(sym is zbar.Symbol.NONE)
@@ -150,6 +178,7 @@ class TestDecoder(ut.TestCase):
         self.assert_(self.dcode.color is zbar.BAR)
         self.dcode.reset()
         self.assert_(self.dcode.color is zbar.SPACE)
+        self.assertEqual(self.dcode.direction, 0)
 
     def test_decode(self):
         inline_sym = [ -1 ]
@@ -172,11 +201,32 @@ class TestDecoder(ut.TestCase):
             else:
                 self.assert_(sym is zbar.Symbol.EAN13)
 
+        self.assertEqual(self.dcode.configs,
+                         set((zbar.Config.ENABLE, zbar.Config.EMIT_CHECK)))
+        self.assertEqual(self.dcode.modifiers, set())
         self.assertEqual(self.dcode.data, '6268964977804')
         self.assert_(self.dcode.color is zbar.BAR)
+        self.assertEqual(self.dcode.direction, 1)
         self.assert_(sym is zbar.Symbol.EAN13)
         self.assert_(inline_sym[0] is zbar.Symbol.EAN13)
         self.assertEqual(explicit_closure, [ 2 ])
+
+    def test_databar(self):
+        self.dcode.set_config(zbar.Symbol.QRCODE, zbar.Config.ENABLE, 0)
+        for (i, width) in enumerate(databar_widths):
+            if width == ' ': continue
+            sym = self.dcode.decode_width(int(width))
+            if i < len(databar_widths) - 1:
+                self.assert_(sym is zbar.Symbol.NONE or
+                             sym is zbar.Symbol.PARTIAL)
+
+        self.assert_(sym is zbar.Symbol.DATABAR)
+        self.assertEqual(self.dcode.get_configs(zbar.Symbol.EAN13),
+                         set((zbar.Config.ENABLE, zbar.Config.EMIT_CHECK)))
+        self.assertEqual(self.dcode.modifiers, set((zbar.Modifier.GS1,)))
+        self.assertEqual(self.dcode.data, '0124012345678905')
+        self.assert_(self.dcode.color is zbar.BAR)
+        self.assertEqual(self.dcode.direction, 1)
 
     # FIXME test exception during callback
 
@@ -194,11 +244,13 @@ class TestImage(ut.TestCase):
     def test_new(self):
         self.assertEqual(self.image.format, 'Y800')
         self.assertEqual(self.image.size, (123, 456))
+        self.assertEqual(self.image.crop, (0, 0, 123, 456))
 
         image = zbar.Image()
         self.assert_(isinstance(image, zbar.Image))
         self.assertEqual(image.format, '\0\0\0\0')
         self.assertEqual(image.size, (0, 0))
+        self.assertEqual(image.crop, (0, 0, 0, 0))
 
     def test_format(self):
         def set_format(fmt):
@@ -230,6 +282,23 @@ class TestImage(ut.TestCase):
         self.assertEqual(self.image.size, (81, 64))
         self.assertEqual(self.image.width, 81)
         self.assertEqual(self.image.height, 64)
+
+    def test_crop(self):
+        def set_crop(crp):
+            self.image.crop = crp
+        self.assertRaises(ValueError, set_crop, (1,))
+        self.assertRaises(ValueError, set_crop, 1)
+        self.image.crop = (1, 2, 100, 200)
+        self.assertRaises(ValueError, set_crop, (1, 2, 3, 4, 5))
+        self.assertEqual(self.image.crop, (1, 2, 100, 200))
+        self.assertRaises(ValueError, set_crop, "foo")
+        self.assertEqual(self.image.crop, (1, 2, 100, 200))
+        self.image.crop = (-100, -100, 400, 700)
+        self.assertEqual(self.image.crop, (0, 0, 123, 456))
+        self.image.crop = (40, 50, 60, 70)
+        self.assertEqual(self.image.crop, (40, 50, 60, 70))
+        self.image.size = (82, 65)
+        self.assertEqual(self.image.crop, (0, 0, 82, 65))
 
 class TestImageScanner(ut.TestCase):
     def setUp(self):
@@ -289,6 +358,20 @@ class TestImageScan(ut.TestCase):
             self.assert_(sym.type is zbar.Symbol.EAN13)
             self.assert_(sym.type is sym.EAN13)
             self.assertEqual(str(sym.type), 'EAN13')
+
+            cfgs = sym.configs
+            self.assert_(isinstance(cfgs, set))
+            for cfg in cfgs:
+                self.assert_(isinstance(cfg, zbar.EnumItem))
+            self.assertEqual(cfgs,
+                             set((zbar.Config.ENABLE, zbar.Config.EMIT_CHECK)))
+
+            mods = sym.modifiers
+            self.assert_(isinstance(mods, set))
+            for mod in mods:
+                self.assert_(isinstance(mod, zbar.EnumItem))
+            self.assertEqual(mods, set())
+
             self.assert_(sym.quality > 0)
             self.assertEqual(sym.count, 0)
 
@@ -310,6 +393,7 @@ class TestImageScan(ut.TestCase):
                 self.assertEqual(len(pt), 2)
                 # FIXME test values (API currently in flux)
 
+            self.assert_(sym.orientation is zbar.Orient.UP)
             self.assert_(data is sym.data)
             self.assert_(loc is sym.location)
 
@@ -319,6 +403,21 @@ class TestImageScan(ut.TestCase):
 
         self.scn.recycle(self.image)
         self.assertEqual(len(self.image.symbols), 0)
+
+    def test_scan_crop(self):
+        self.image.crop = (0, 71, 114, 9)
+        self.assertEqual(self.image.crop, (0, 71, 114, 9))
+        n = self.scn.scan(self.image)
+        self.assertEqual(n, 0)
+
+        self.image.crop = (12, 24, 90, 12)
+        self.assertEqual(self.image.crop, (12, 24, 90, 12))
+        n = self.scn.scan(self.image)
+        self.assertEqual(n, 0)
+
+        self.image.crop = (9, 24, 96, 12)
+        self.assertEqual(self.image.crop, (9, 24, 96, 12))
+        self.test_scan()
 
     def test_scan_again(self):
         self.test_scan()
@@ -351,6 +450,15 @@ class TestProcessor(ut.TestCase):
         self.assertRaises(ValueError, self.proc.set_config, -1)
         self.proc.set_config()
 
+    def test_request_size(self):
+        def set_size(sz):
+            self.proc.request_size = sz
+        self.assertRaises(ValueError, set_size, (1,))
+        self.assertRaises(ValueError, set_size, 1)
+        self.proc.request_size = (12, 6)
+        self.assertRaises(ValueError, set_size, (1, 2, 3))
+        self.assertRaises(ValueError, set_size, "foo")
+
     def test_processing(self):
         self.proc.init(VIDEO_DEVICE)
         self.assert_(self.proc.visible is False)
@@ -370,13 +478,14 @@ class TestProcessor(ut.TestCase):
             symiter = iter(image)
             self.assert_(isinstance(symiter, zbar.SymbolIter))
 
-            symbols = tuple(image)
-            self.assertEqual(len(symbols), 1)
-            for symbol in symbols:
-                self.assert_(isinstance(symbol, zbar.Symbol))
-                self.assert_(symbol.type is zbar.Symbol.EAN13)
-                self.assertEqual(symbol.data, '9876543210128')
-                self.assert_(symbol.quality > 0)
+            syms = tuple(image)
+            self.assertEqual(len(syms), 1)
+            for sym in syms:
+                self.assert_(isinstance(sym, zbar.Symbol))
+                self.assert_(sym.type is zbar.Symbol.EAN13)
+                self.assertEqual(sym.data, '9876543210128')
+                self.assert_(sym.quality > 0)
+                self.assert_(sym.orientation is zbar.Orient.UP)
             closure[0] += 1
 
         explicit_closure = [ 0 ]

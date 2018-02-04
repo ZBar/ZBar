@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -86,22 +86,57 @@ typedef enum zbar_color_e {
 typedef enum zbar_symbol_type_e {
     ZBAR_NONE        =      0,  /**< no symbol decoded */
     ZBAR_PARTIAL     =      1,  /**< intermediate status */
+    ZBAR_EAN2        =      2,  /**< GS1 2-digit add-on */
+    ZBAR_EAN5        =      5,  /**< GS1 5-digit add-on */
     ZBAR_EAN8        =      8,  /**< EAN-8 */
     ZBAR_UPCE        =      9,  /**< UPC-E */
     ZBAR_ISBN10      =     10,  /**< ISBN-10 (from EAN-13). @since 0.4 */
     ZBAR_UPCA        =     12,  /**< UPC-A */
     ZBAR_EAN13       =     13,  /**< EAN-13 */
     ZBAR_ISBN13      =     14,  /**< ISBN-13 (from EAN-13). @since 0.4 */
+    ZBAR_COMPOSITE   =     15,  /**< EAN/UPC composite */
     ZBAR_I25         =     25,  /**< Interleaved 2 of 5. @since 0.4 */
+    ZBAR_DATABAR     =     34,  /**< GS1 DataBar (RSS). @since 0.11 */
+    ZBAR_DATABAR_EXP =     35,  /**< GS1 DataBar Expanded. @since 0.11 */
+    ZBAR_CODABAR     =     38,  /**< Codabar. @since 0.11 */
     ZBAR_CODE39      =     39,  /**< Code 39. @since 0.4 */
     ZBAR_PDF417      =     57,  /**< PDF417. @since 0.6 */
     ZBAR_QRCODE      =     64,  /**< QR Code. @since 0.10 */
+    ZBAR_CODE93      =     93,  /**< Code 93. @since 0.11 */
     ZBAR_CODE128     =    128,  /**< Code 128 */
-    ZBAR_SYMBOL      = 0x00ff,  /**< mask for base symbol type */
-    ZBAR_ADDON2      = 0x0200,  /**< 2-digit add-on flag */
-    ZBAR_ADDON5      = 0x0500,  /**< 5-digit add-on flag */
-    ZBAR_ADDON       = 0x0700,  /**< add-on flag mask */
+
+    /** mask for base symbol type.
+     * @deprecated in 0.11, remove this from existing code
+     */
+    ZBAR_SYMBOL      = 0x00ff,
+    /** 2-digit add-on flag.
+     * @deprecated in 0.11, a ::ZBAR_EAN2 component is used for
+     * 2-digit GS1 add-ons
+     */
+    ZBAR_ADDON2      = 0x0200,
+    /** 5-digit add-on flag.
+     * @deprecated in 0.11, a ::ZBAR_EAN5 component is used for
+     * 5-digit GS1 add-ons
+     */
+    ZBAR_ADDON5      = 0x0500,
+    /** add-on flag mask.
+     * @deprecated in 0.11, GS1 add-ons are represented using composite
+     * symbols of type ::ZBAR_COMPOSITE; add-on components use ::ZBAR_EAN2
+     * or ::ZBAR_EAN5
+     */
+    ZBAR_ADDON       = 0x0700,
 } zbar_symbol_type_t;
+
+/** decoded symbol coarse orientation.
+ * @since 0.11
+ */
+typedef enum zbar_orientation_e {
+    ZBAR_ORIENT_UNKNOWN = -1,   /**< unable to determine orientation */
+    ZBAR_ORIENT_UP,             /**< upright, read left to right */
+    ZBAR_ORIENT_RIGHT,          /**< sideways, read top to bottom */
+    ZBAR_ORIENT_DOWN,           /**< upside-down, read right to left */
+    ZBAR_ORIENT_LEFT,           /**< sideways, read bottom to top */
+} zbar_orientation_t;
 
 /** error codes. */
 typedef enum zbar_error_e {
@@ -133,11 +168,32 @@ typedef enum zbar_config_e {
     ZBAR_CFG_MIN_LEN = 0x20,    /**< minimum data length for valid decode */
     ZBAR_CFG_MAX_LEN,           /**< maximum data length for valid decode */
 
+    ZBAR_CFG_UNCERTAINTY = 0x40,/**< required video consistency frames */
+
     ZBAR_CFG_POSITION = 0x80,   /**< enable scanner to collect position data */
 
     ZBAR_CFG_X_DENSITY = 0x100, /**< image scanner vertical scan density */
     ZBAR_CFG_Y_DENSITY,         /**< image scanner horizontal scan density */
 } zbar_config_t;
+
+/** decoder symbology modifier flags.
+ * @since 0.11
+ */
+typedef enum zbar_modifier_e {
+    /** barcode tagged as GS1 (EAN.UCC) reserved
+     * (eg, FNC1 before first data character).
+     * data may be parsed as a sequence of GS1 AIs
+     */
+    ZBAR_MOD_GS1 = 0,
+
+    /** barcode tagged as AIM reserved
+     * (eg, FNC1 after first character or digit pair)
+     */
+    ZBAR_MOD_AIM,
+
+    /** number of modifiers */
+    ZBAR_MOD_NUM,
+} zbar_modifier_t;
 
 /** retrieve runtime library version information.
  * @param major set to the running major version (unless NULL)
@@ -168,8 +224,31 @@ extern const char *zbar_get_symbol_name(zbar_symbol_type_t sym);
  * @param sym symbol type encoding
  * @returns static string name for any addon, or the empty string
  * if no addons were decoded
+ * @deprecated in 0.11
  */
 extern const char *zbar_get_addon_name(zbar_symbol_type_t sym);
+
+/** retrieve string name for configuration setting.
+ * @param config setting to name
+ * @returns static string name for config,
+ * or the empty string if value is not a known config
+ */
+extern const char *zbar_get_config_name(zbar_config_t config);
+
+/** retrieve string name for modifier.
+ * @param modifier flag to name
+ * @returns static string name for modifier,
+ * or the empty string if the value is not a known flag
+ */
+extern const char *zbar_get_modifier_name(zbar_modifier_t modifier);
+
+/** retrieve string name for orientation.
+ * @param orientation orientation encoding
+ * @returns the static string name for the specified orientation,
+ * or "UNKNOWN" if the orientation is not recognized
+ * @since 0.11
+ */
+extern const char *zbar_get_orientation_name(zbar_orientation_t orientation);
 
 /** parse a configuration string of the form "[symbology.]config[=value]".
  * the config must match one of the recognized names.
@@ -183,6 +262,30 @@ extern int zbar_parse_config(const char *config_string,
                              zbar_symbol_type_t *symbology,
                              zbar_config_t *config,
                              int *value);
+
+/** consistently compute fourcc values across architectures
+ * (adapted from v4l2 specification)
+ * @since 0.11
+ */
+#define zbar_fourcc(a, b, c, d)                 \
+        ((unsigned long)(a) |                   \
+         ((unsigned long)(b) << 8) |            \
+         ((unsigned long)(c) << 16) |           \
+         ((unsigned long)(d) << 24))
+
+/** parse a fourcc string into its encoded integer value.
+ * @since 0.11
+ */
+static inline unsigned long zbar_fourcc_parse (const char *format)
+{
+    unsigned long fourcc = 0;
+    if(format) {
+        int i;
+        for(i = 0; i < 4 && format[i]; i++)
+            fourcc |= ((unsigned long)format[i]) << (i * 8);
+    }
+    return(fourcc);
+}
 
 /** @internal type unsafe error API (don't use) */
 extern int _zbar_error_spew(const void *object,
@@ -221,13 +324,27 @@ typedef struct zbar_symbol_set_s zbar_symbol_set_t;
  * destroyed or reused.
  * @since 0.9
  */
-extern void zbar_symbol_ref(zbar_symbol_t *symbol,
+extern void zbar_symbol_ref(const zbar_symbol_t *symbol,
                             int refs);
 
 /** retrieve type of decoded symbol.
  * @returns the symbol type
  */
 extern zbar_symbol_type_t zbar_symbol_get_type(const zbar_symbol_t *symbol);
+
+/** retrieve symbology boolean config settings.
+ * @returns a bitmask indicating which configs were set for the detected
+ * symbology during decoding.
+ * @since 0.11
+ */
+extern unsigned int zbar_symbol_get_configs(const zbar_symbol_t *symbol);
+
+/** retrieve symbology modifier flag settings.
+ * @returns a bitmask indicating which characteristics were detected
+ * during decoding.
+ * @since 0.11
+ */
+extern unsigned int zbar_symbol_get_modifiers(const zbar_symbol_t *symbol);
 
 /** retrieve data decoded from symbol.
  * @returns the data string
@@ -283,6 +400,14 @@ extern int zbar_symbol_get_loc_x(const zbar_symbol_t *symbol,
  */
 extern int zbar_symbol_get_loc_y(const zbar_symbol_t *symbol,
                                  unsigned index);
+
+/** retrieve general orientation of decoded symbol.
+ * @returns a coarse, axis-aligned indication of symbol orientation or
+ * ::ZBAR_ORIENT_UNKNOWN if unknown
+ * @since 0.11
+ */
+extern zbar_orientation_t
+zbar_symbol_get_orientation(const zbar_symbol_t *symbol);
 
 /** iterate the set to which this symbol belongs (there can be only one).
  * @returns the next symbol in the set, or
@@ -340,7 +465,7 @@ extern char *zbar_symbol_xml(const zbar_symbol_t *symbol,
  * the object any longer once references have been released.
  * @since 0.10
  */
-extern void zbar_symbol_set_ref(zbar_symbol_set_t *symbols,
+extern void zbar_symbol_set_ref(const zbar_symbol_set_t *symbols,
                                 int refs);
 
 /** retrieve set size.
@@ -356,6 +481,14 @@ extern int zbar_symbol_set_get_size(const zbar_symbol_set_t *symbols);
  */
 extern const zbar_symbol_t*
 zbar_symbol_set_first_symbol(const zbar_symbol_set_t *symbols);
+
+/** raw result iterator.
+ * @returns the first decoded symbol result in a set, *before* filtering
+ * @returns NULL if the set is empty
+ * @since 0.11
+ */
+extern const zbar_symbol_t*
+zbar_symbol_set_first_unfiltered(const zbar_symbol_set_t *symbols);
 
 /*@}*/
 
@@ -456,6 +589,25 @@ extern unsigned zbar_image_get_width(const zbar_image_t *image);
  */
 extern unsigned zbar_image_get_height(const zbar_image_t *image);
 
+/** retrieve both dimensions of the image.
+ * fills in the width and height in samples
+ */
+extern void zbar_image_get_size(const zbar_image_t *image,
+                                unsigned *width,
+                                unsigned *height);
+
+/** retrieve the crop rectangle.
+ * fills in the image coordinates of the upper left corner and size
+ * of an axis-aligned rectangular area of the image that will be scanned.
+ * defaults to the full image
+ * @since 0.11
+ */
+extern void zbar_image_get_crop(const zbar_image_t *image,
+                                unsigned *x,
+                                unsigned *y,
+                                unsigned *width,
+                                unsigned *height);
+
 /** return the image sample data.  the returned data buffer is only
  * valid until zbar_image_destroy() is called
  */
@@ -505,9 +657,21 @@ extern void zbar_image_set_sequence(zbar_image_t *image,
                                     unsigned sequence_num);
 
 /** specify the pixel size of the image.
+ * @note this also resets the crop rectangle to the full image
+ * (0, 0, width, height)
  * @note this does not affect the data!
  */
 extern void zbar_image_set_size(zbar_image_t *image,
+                                unsigned width,
+                                unsigned height);
+
+/** specify a rectangular region of the image to scan.
+ * the rectangle will be clipped to the image boundaries.
+ * defaults to the full image specified by zbar_image_set_size()
+ */
+extern void zbar_image_set_crop(zbar_image_t *image,
+                                unsigned x,
+                                unsigned y,
                                 unsigned width,
                                 unsigned height);
 
@@ -712,6 +876,16 @@ extern int zbar_processor_set_visible(zbar_processor_t *processor,
  */
 extern int zbar_processor_set_active(zbar_processor_t *processor,
                                      int active);
+
+/** retrieve decode results for last scanned image/frame.
+ * @returns the symbol set result container or NULL if no results are
+ * available
+ * @note the returned symbol set has its reference count incremented;
+ * ensure that the count is decremented after use
+ * @since 0.10
+ */
+extern const zbar_symbol_set_t*
+zbar_processor_get_results(const zbar_processor_t *processor);
 
 /** wait for input to the display window from the user
  * (via mouse or keyboard).
@@ -931,6 +1105,12 @@ extern int zbar_window_attach(zbar_window_t *window,
 extern void zbar_window_set_overlay(zbar_window_t *window,
                                     int level);
 
+/** retrieve current content level of reader overlay.
+ * @see zbar_window_set_overlay()
+ * @since 0.10
+ */
+extern int zbar_window_get_overlay(const zbar_window_t *window);
+
 /** draw a new image into the output window. */
 extern int zbar_window_draw(zbar_window_t *window,
                             zbar_image_t *image);
@@ -1059,6 +1239,17 @@ extern void zbar_image_scanner_enable_cache(zbar_image_scanner_t *scanner,
 extern void zbar_image_scanner_recycle_image(zbar_image_scanner_t *scanner,
                                              zbar_image_t *image);
 
+/** retrieve decode results for last scanned image.
+ * @returns the symbol set result container or NULL if no results are
+ * available
+ * @note the symbol set does not have its reference count adjusted;
+ * ensure that the count is incremented if the results may be kept
+ * after the next image is scanned
+ * @since 0.10
+ */
+extern const zbar_symbol_set_t*
+zbar_image_scanner_get_results(const zbar_image_scanner_t *scanner);
+
 /** scan for symbols in provided image.  The image format must be
  * "Y800" or "GRAY".
  * @returns >0 if symbols were successfully decoded from the image,
@@ -1121,6 +1312,14 @@ static inline int zbar_decoder_parse_config (zbar_decoder_t *decoder,
            zbar_decoder_set_config(decoder, sym, cfg, val));
 }
 
+/** retrieve symbology boolean config settings.
+ * @returns a bitmask indicating which configs are currently set for the
+ * specified symbology.
+ * @since 0.11
+ */
+extern unsigned int zbar_decoder_get_configs(const zbar_decoder_t *decoder,
+                                             zbar_symbol_type_t symbology);
+
 /** clear all decoder state.
  * any partial symbols are flushed
  */
@@ -1167,6 +1366,20 @@ zbar_decoder_get_data_length(const zbar_decoder_t *decoder);
  */
 extern zbar_symbol_type_t
 zbar_decoder_get_type(const zbar_decoder_t *decoder);
+
+/** retrieve modifier flags for the last decoded symbol.
+ * @returns a bitmask indicating which characteristics were detected
+ * during decoding.
+ * @since 0.11
+ */
+extern unsigned int zbar_decoder_get_modifiers(const zbar_decoder_t *decoder);
+
+/** retrieve last decode direction.
+ * @returns 1 for forward and -1 for reverse
+ * @returns 0 if the decode direction is unknown or does not apply
+ * @since 0.11
+ */
+extern int zbar_decoder_get_direction(const zbar_decoder_t *decoder);
 
 /** setup data handler callback.
  * the registered function will be called by the decoder

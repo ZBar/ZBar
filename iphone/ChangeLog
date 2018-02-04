@@ -1,0 +1,138 @@
+version 1.3.1:
+  * fix examples
+    - fix EmbedReader initial iPad orientation
+    - fix TabReader shouldn't show controls
+  * add retry workaround when device lock fails
+    - add iPhone 5 launch image to examples
+    - doc updates
+  * Lion and Xcode updates
+    - fix new warnings/errors
+    - find missing buddy
+    - fix SDK bg image: force resoution to 72dpi
+  * Fix EmbedReader example rotation interaction
+
+version 1.2.2:
+  * reduce controller present and dismiss latency
+    - add simple shutter to mask video start
+
+version 1.2.1:
+  * fix overlay resizing bug
+
+version 1.2:
+  * release updates
+
+version 1.1.3:
+  * fix UITabViewController rotation interaction
+
+version 1.1.2:
+  * add maxZoom for increasing zoom range
+    - workaround camera preview initial location/size bug
+  * add emulation for UI videoQuality to adjust camera resolution
+  * fix several simulator-related bugs
+    - fix device property missing from simulated ZBarReaderView
+    - fix AVCaptureDevice referenced from ZBarReaderViewController
+    - fix simulated camera gesture multiple recognition
+
+version 1.1.1:
+  * fix ReaderSample project path to ZBarSDK
+  * README document new examples
+    - make ReaderSample scheme public
+  * documentation updates
+  * add emulation for UI camera device and flash mode properties
+  * workaround orientation bugs in parent controllers
+    - enable orientation and iPad support for all examples
+  * add orientation detection fall back
+  * fix captureReader not exposed to simulator
+  * fix camera preview stale rotation corner
+    - fix ZBarReaderViewController toolbar layout accomodation
+    - switch pre-release samples to use debug library
+  * update docs to note possible link order dependency
+  * add missing references to new samples
+  * add IB support to ZBarReaderViewController
+    - add tabbed reader sample
+  * add embedded reader sample
+    - factor out camera simulation logic
+  * fix readertest max quality result filtering
+    - thanks to John Boydon for finding this!
+  * improve support for resizing, rotating and embedding the reader
+  * add readertest fixed zoom stops
+  * add manual frame capture
+    - readertest save as PNG
+  * enhance readertest to support default/demo pre-config and distribution
+  * updates for Xcode 4
+  * expose tracking box color
+
+version 1.1:
+  * fix doc typo (bug #3139087)
+    - add modifier bit docs
+
+version 1.0.1:
+  * hotfix broken ZBarHelpController back button
+  * release updates
+    - update docs
+  * fix support for GS1 AIs
+  * fix simulated camera image orientation/scaling
+  * cleanup and expose ZBarHelpController
+  * expose enable for reader capture processing
+  * workaround iOS 4.2 hang
+    - update to use latest SDK
+  * add support for Code 93 symbology
+
+version 1.0:
+  * update to SDK 4.1, clean out LLVM warnings
+  * fix camera simulation gesture
+
+version 0.1.2:
+  * fix missing header dependency
+  * doc enhancements
+  * force controls to front when showsZBarControls is enabled
+  * fix initial zoom crop (performance bug)
+  * workaround iPhone quartz access past image data
+
+version 0.1.1:
+  * migrate to binary iPhone SDK distribution (NB backward incompatibilities!)
+    - restructure headers
+
+version 0.1:
+  * workaround for iPhone simulator builds
+    - refactor ZBarReaderView for capture/simulator specific implementations
+    - fix tracking calculations
+    - fix captured video frame color conversion
+  * fix for poor iPhone 4 performance
+  * enable torch for iPhone 4
+  * fix iPhone circular ref bug
+  * add iPhone cache flush, change new libs to weak refs
+  * fix iPhone async ref bug
+  * enhance iPhone readertest w/more options
+  * add iPhone zoom support, integrate with crop
+  * add iPhone OS 4.0 video capture support
+    - replacement view controller for new camera reader
+    - separate view for use without controller
+    - separate capture delegate for use standalone
+    - add continuous autofocus
+  * cleanup and expose iphone help display API
+  * fixes to new iphone help display
+  * migrate iphone help display to integrated web page (NB resource updates!)
+    - allows easier customization
+    - local links open directly, external links confirm and jump out to Safari
+    - JavaScript hook for help context customization
+    - also enhanced default help (note this changes the required resources)
+    - fix to disable scanning during help overlay
+    - thanks to iafanasyev and others for detailed suggestions
+  * fix iphone custom overlay response (bug #2959617)
+    - thanks to an anonymous user for the patch!
+  * iphone widget performance tuning enhancements
+    - fix crop calculation bug in ZBarImage
+    - add properties to control pre-scan image cropping and scaling
+    - add property for scanner cache control
+    - enable some scanner density control (FIXME should be property)
+    - fix ifdef for quality control (FIXME should be property)
+    - add "sequence" mode test (not actually so useful)
+  * realtime scanning for iphone widget
+    - uses UIGetScreenImage() (NB private)
+    - ZBarImage from CGImage (instead of UIImage)
+    - add crop to scaling step
+    - expose symbol set unfiltered results
+  * iphone widget back compat updates, add basic test app
+  * add Obj-C wrapper
+  * first pass working iPhone "widget"

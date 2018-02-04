@@ -1,0 +1,66 @@
+ZBar iOS SDK
+============
+
+ZBar Bar Code Reader is an open source software suite for reading bar
+codes from various sources, such as video streams, image files and raw
+intensity sensors. It supports EAN-13/UPC-A, UPC-E, EAN-8, DataBar,
+Code 128, Code 93, Code 39, Codabar, Interleaved 2 of 5 and QR Code.
+These are the Objective C wrappers and integrated widget for developing
+with the library on the iOS platform.
+
+Check the ZBar project home page for the latest release, forums, etc.
+
+* http://zbar.sourceforge.net/iphone
+
+Installation
+------------
+
+If you are migrating from a pre-SDK source version of the library,
+first make sure you remove all of the old references to zbar.xcodeproj
+and libzbar.a and revert any related build settings.
+
+To add the SDK to an Xcode project:
+
+   1. Drag ZBarSDK into your Xcode project.
+   3. Add these system frameworks to your project:
+      * AVFoundation.framework (weak)
+      * CoreMedia.framework (weak)
+      * CoreVideo.framework (weak)
+      * QuartzCore.framework
+      * libiconv.dylib
+
+Documentation
+-------------
+
+See Documentation.html for complete SDK documentation.
+
+Examples
+--------
+
+You should be able to open and build the examples directly from the
+disk image (ignore warnings about the read-only volume).  If you have
+problems with this, please copy the examples to your local drive
+instead and build from there.
+
+A tutorial that walks through installing and using the SDK is
+available in the documentation.  The SDK disk image also contains the
+resulting Xcode project at Examples/ReaderSample.
+
+Examples/readertest demonstrates most of the configuration options
+available for the reader.
+
+Examples/TabReader shows how you can use Interface Builder to add the
+reader as a tab in a UITabBarController.
+
+Examples/EmbedReader shows how a ZBarReaderView may be embedded
+directly in the application view hierarchy.
+
+Copyright and License
+---------------------
+
+Licensed under the GNU Lesser General Public License, version 2.1.
+http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
+
+Copyright 2008-2011 © Jeff Brown <spadix@users.sourceforge.net> et al
+
+See the included files COPYING and LICENSE for details

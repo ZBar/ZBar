@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2008-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -34,11 +34,6 @@
 
 #define DEFAULT_WIDTH 640
 #define DEFAULT_HEIGHT 480
-
-/* adapted from v4l2 spec */
-#define fourcc(a, b, c, d)                      \
-    ((long)(a) | ((long)(b) << 8) |             \
-     ((long)(c) << 16) | ((long)(d) << 24))
 
 enum {
     DECODED,
@@ -88,15 +83,15 @@ gboolean zbar_gtk_image_from_pixbuf (zbar_image_t *zimg,
 
     /* these are all guesses... */
     if(nchannels == 3 && bps == 8)
-        type = fourcc('R','G','B','3');
+        type = zbar_fourcc('R','G','B','3');
     else if(nchannels == 4 && bps == 8)
-        type = fourcc('B','G','R','4'); /* FIXME alpha flipped?! */
+        type = zbar_fourcc('B','G','R','4'); /* FIXME alpha flipped?! */
     else if(nchannels == 1 && bps == 8)
-        type = fourcc('Y','8','0','0');
+        type = zbar_fourcc('Y','8','0','0');
     else if(nchannels == 3 && bps == 5)
-        type = fourcc('R','G','B','R');
+        type = zbar_fourcc('R','G','B','R');
     else if(nchannels == 3 && bps == 4)
-        type = fourcc('R','4','4','4'); /* FIXME maybe? */
+        type = zbar_fourcc('R','4','4','4'); /* FIXME maybe? */
     else {
         g_warning("unsupported combination: nchannels=%d bps=%d\n",
                   nchannels, bps);
@@ -142,10 +137,6 @@ static inline gboolean zbar_gtk_video_open (ZBarGtk *self,
 
     gdk_threads_enter();
 
-    zbar->req_width = DEFAULT_WIDTH;
-    zbar->req_height = DEFAULT_HEIGHT;
-    gtk_widget_queue_resize(GTK_WIDGET(self));
-
     zbar->video_opened = FALSE;
     if(zbar->thread)
         g_object_notify(G_OBJECT(self), "video-opened");
@@ -184,6 +175,10 @@ static inline gboolean zbar_gtk_video_open (ZBarGtk *self,
          */
         gdk_threads_enter();
 
+        if(zbar->video_width && zbar->video_height)
+            zbar_video_request_size(zbar->video,
+                                    zbar->video_width, zbar->video_height);
+
         video_opened = !zbar_negotiate_format(zbar->video, zbar->window);
 
         if(video_opened) {
@@ -209,7 +204,7 @@ static inline int zbar_gtk_process_image (ZBarGtk *self,
     if(!image)
         return(-1);
 
-    zbar_image_t *tmp = zbar_image_convert(image, fourcc('Y','8','0','0'));
+    zbar_image_t *tmp = zbar_image_convert(image, zbar_fourcc('Y','8','0','0'));
     if(!tmp)
         return(-1);
 
@@ -236,7 +231,6 @@ static inline int zbar_gtk_process_image (ZBarGtk *self,
 
                 /* FIXME skip this when unconnected? */
                 gchar *text = g_strconcat(zbar_get_symbol_name(type),
-                                          zbar_get_addon_name(type),
                                           ":",
                                           data,
                                           NULL);
@@ -560,6 +554,19 @@ gboolean zbar_gtk_get_video_opened (ZBarGtk *self)
     return(zbar->video_opened);
 }
 
+void zbar_gtk_request_video_size (ZBarGtk *self,
+                                  int width,
+                                  int height)
+{
+    if(!self->_private || width < 0 || height < 0)
+        return;
+    ZBarGtkPrivate *zbar = ZBAR_GTK_PRIVATE(self->_private);
+
+    zbar->req_width = zbar->video_width = width;
+    zbar->req_height = zbar->video_height = height;
+    gtk_widget_queue_resize(GTK_WIDGET(self));
+}
+
 static void zbar_gtk_set_property (GObject *object,
                                    guint prop_id,
                                    const GValue *value,
@@ -613,8 +620,8 @@ static void zbar_gtk_init (ZBarGtk *self)
     zbar->window = zbar_window_create();
     g_assert(zbar->window);
 
-    zbar->req_width = DEFAULT_WIDTH;
-    zbar->req_height = DEFAULT_HEIGHT;
+    zbar->req_width = zbar->video_width = DEFAULT_WIDTH;
+    zbar->req_height = zbar->video_width = DEFAULT_HEIGHT;
 
     /* spawn a thread to handle decoding and video */
     zbar->queue = g_async_queue_new();

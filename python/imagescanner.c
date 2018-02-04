@@ -57,6 +57,19 @@ imagescanner_dealloc (zbarImageScanner *self)
     ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
+static zbarSymbolSet*
+imagescanner_get_results (zbarImageScanner *self,
+                          void *closure)
+{
+    const zbar_symbol_set_t *zsyms =
+        zbar_image_scanner_get_results(self->zscn);
+    return(zbarSymbolSet_FromSymbolSet(zsyms));
+}
+
+static PyGetSetDef imagescanner_getset[] = {
+    { "results", (getter)imagescanner_get_results, },
+};
+
 static PyObject*
 imagescanner_set_config (zbarImageScanner *self,
                          PyObject *args,
@@ -169,5 +182,6 @@ PyTypeObject zbarImageScanner_Type = {
     .tp_flags       = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_new         = (newfunc)imagescanner_new,
     .tp_dealloc     = (destructor)imagescanner_dealloc,
+    .tp_getset      = imagescanner_getset,
     .tp_methods     = imagescanner_methods,
 };

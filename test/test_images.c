@@ -96,30 +96,74 @@ static const format_def_t formats[] = {
     { 0 }
 };
 
+static const char *encoded_widths =
+    "9 111 212241113121211311141132 11111 311213121312121332111132 111 9";
+const char *test_image_ean13_data = "6268964977804";
+
 static int allocated_images = 0;
 
-int test_image_check_cleanup ()
+int
+test_image_check_cleanup ()
 {
     if(allocated_images)
         fprintf(stderr, "ERROR: %d image data buffers still allocated\n",
                 allocated_images);
-    else
-        fprintf(stderr, "all image data buffers freed\n");
+    /*else
+        fprintf(stderr, "all image data buffers freed\n");*/
     return(allocated_images);
 }
 
-static void test_cleanup_handler (zbar_image_t *img)
+static void
+test_cleanup_handler (zbar_image_t *img)
 {
     void *data = (void*)zbar_image_get_data(img);
-    fprintf(stderr, "cleanup image data @%p\n", data);
+    /*fprintf(stderr, "cleanup image data @%p\n", data);*/
     free(data);
     allocated_images--;
 }
 
+static inline const format_def_t*
+lookup_format (zbar_image_t *img)
+{
+    uint32_t ifmt = zbar_image_get_format(img);
+    const format_def_t *fmt;
+    for(fmt = formats; fmt->format; fmt++)
+        if(fmt->format == ifmt)
+            break;
+    if(!fmt->format) {
+        fprintf(stderr, "ERROR: no %.4s (%08"PRIx32") format\n",
+                (char*)&ifmt, ifmt);
+        return(NULL);
+    }
+    return(fmt);
+}
+
+static inline const format_def_t*
+alloc_data (zbar_image_t *img)
+{
+    allocated_images++;
+    const format_def_t *fmt = lookup_format(img);
+    if(!fmt)
+        return(NULL);
+
+    unsigned w = zbar_image_get_width(img);
+    unsigned h = zbar_image_get_height(img);
+    unsigned long planelen = w * h;
+    unsigned long datalen = planelen * fmt->bpp / 8;
+    uint8_t *data = malloc(datalen);
+
+    zbar_image_set_data(img, data, datalen, test_cleanup_handler);
+
+    /*fprintf(stderr, "create %.4s(%08"PRIx32") image data %lx bytes @%p\n",
+      (char*)&fmt->format, fmt->format, datalen, data);*/
+    return(fmt);
+}
+
 /* write intensity plane */
-static inline uint8_t *fill_bars_y (uint8_t *p,
-                                    unsigned w,
-                                    unsigned h)
+static inline uint8_t*
+fill_bars_y (uint8_t *p,
+             unsigned w,
+             unsigned h)
 {
     unsigned x, y, i;
     unsigned y0 = (h + 31) / 30;
@@ -145,10 +189,11 @@ static inline uint8_t *fill_bars_y (uint8_t *p,
 }
 
 /* write Cb (U) or Cr (V) plane */
-static inline uint8_t *fill_bars_uv (uint8_t *p,
-                                     unsigned w,
-                                     unsigned h,
-                                     const uint8_t *C)
+static inline uint8_t*
+fill_bars_uv (uint8_t *p,
+              unsigned w,
+              unsigned h,
+              const uint8_t *C)
 {
     unsigned x, y, i;
     unsigned y0 = (h + 31) / 30;
@@ -174,10 +219,11 @@ static inline uint8_t *fill_bars_uv (uint8_t *p,
 }
 
 /* write packed CbCr plane */
-static inline uint8_t *fill_bars_nv (uint8_t *p,
-                                     unsigned w,
-                                     unsigned h,
-                                     format_type_t order)
+static inline uint8_t*
+fill_bars_nv (uint8_t *p,
+              unsigned w,
+              unsigned h,
+              format_type_t order)
 {
     unsigned x, y, i;
     unsigned y0 = (h + 31) / 30;
@@ -208,10 +254,11 @@ static inline uint8_t *fill_bars_nv (uint8_t *p,
 }
 
 /* write packed YCbCr plane */
-static inline uint8_t *fill_bars_yuv (uint8_t *p,
-                                      unsigned w,
-                                      unsigned h,
-                                      format_type_t order)
+static inline uint8_t*
+fill_bars_yuv (uint8_t *p,
+               unsigned w,
+               unsigned h,
+               format_type_t order)
 {
     unsigned x, y, i;
     unsigned y0 = (h + 31) / 30;
@@ -253,11 +300,12 @@ static inline uint8_t *fill_bars_yuv (uint8_t *p,
     return((uint8_t*)q);
 }
 
-static inline uint8_t *fill_bars_rgb (uint8_t *p,
-                                      unsigned w,
-                                      unsigned h,
-                                      format_type_t order,
-                                      int bpp)
+static inline uint8_t*
+fill_bars_rgb (uint8_t *p,
+               unsigned w,
+               unsigned h,
+               format_type_t order,
+               int bpp)
 {
     unsigned x, y, i;
     unsigned y0 = (h + 31) / 30;
@@ -336,26 +384,17 @@ static inline uint8_t *fill_bars_rgb (uint8_t *p,
     return(((uint8_t*)q) + headlen);
 }
 
-int test_image_bars (zbar_image_t *img)
+int
+test_image_bars (zbar_image_t *img)
 {
-    allocated_images++;
-    unsigned w = zbar_image_get_width(img);
-    unsigned h = zbar_image_get_height(img);
-
-    const format_def_t *fmt;
-    for(fmt = formats; fmt->format; fmt++)
-        if(fmt->format == zbar_image_get_format(img))
-            break;
-    if(!fmt->format)
+    const format_def_t *fmt = alloc_data(img);
+    if(!fmt)
         return(-1);
 
-    unsigned long planelen = w * h;
-    unsigned long datalen = planelen * fmt->bpp / 8;
-    uint8_t *data = malloc(datalen);
-    zbar_image_set_data(img, data, datalen, test_cleanup_handler);
-    fprintf(stderr, "create %.4s(%08" PRIx32 ") image data %lx bytes @%p\n",
-            (char*)&fmt->format, fmt->format, datalen, data);
-
+    unsigned w = zbar_image_get_width(img);
+    unsigned h = zbar_image_get_height(img);
+    uint8_t *data = (void*)zbar_image_get_data(img);
+    assert(data);
     uint8_t *p = data;
     switch(fmt->type) {
     case GRAY:
@@ -390,6 +429,88 @@ int test_image_bars (zbar_image_t *img)
         break;
     }
 
+    assert(p == data + zbar_image_get_data_length(img));
+    return(0);
+}
+
+int
+test_image_ean13 (zbar_image_t *img)
+{
+    unsigned w = 114, h = 85;
+    zbar_image_set_size(img, w, h);
+
+    const format_def_t *fmt = alloc_data(img);
+    if(!fmt)
+        return(-1);
+
+    uint8_t *data = (void*)zbar_image_get_data(img);
+    unsigned int datalen = zbar_image_get_data_length(img);
+    assert(data && datalen);
+
+    uint8_t *p = data;
+    /* FIXME randomize? */
+    memset(data, 0x80, datalen);
+
+    int nrep = 1, nskip = 0;
+    switch(fmt->type)
+    {
+    case YUVP: /* planar YUV */
+    case YVUP:
+    case GRAY:
+        break;
+
+    case UYVY: /* packed YUV */
+        p++;
+    case YUYV:
+    case YVYU:
+        nskip = 1;
+        break;
+
+    default: /* RGB */
+        nrep = fmt->bpp / 8;
+    }
+
+    int y = 0, x, i;
+    for(; y < 10 && y < h; y++)
+        for(x = 0; x < w; x++) {
+            for(i = 0; i < nrep; i++)
+                *p++ = 0xff;
+            p += nskip;
+        }
+
+    for(; y < h - 10; y++) {
+        uint8_t color = 0xff;
+        const char *c;
+        for(x = 0, c = encoded_widths; *c; c++) {
+            int dx;
+            if(*c == ' ')
+                continue;
+            for(dx = *c - '0'; dx > 0; dx--) {
+                for(i = 0; i < nrep; i++)
+                    *p++ = color;
+                p += nskip;
+                x++;
+            }
+            color = ~color;
+        }
+        assert(!color);
+        for(; x < w; x++) {
+            for(i = 0; i < nrep; i++)
+                *p++ = 0xff;
+            p += nskip;
+        }
+        assert(x == w);
+    }
+
+    for(; y < h; y++)
+        for(x = 0; x < w; x++) {
+            for(i = 0; i < nrep; i++)
+                *p++ = 0xff;
+            p += nskip;
+        }
+
+    if(fmt->type == UYVY)
+        p--;
     assert(p == data + datalen);
     return(0);
 }

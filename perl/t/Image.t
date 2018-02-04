@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 22;
+use Test::More tests => 29;
 
 #########################
 
@@ -45,6 +45,26 @@ ok($fmt == 0x50323234, 'numeric format accessors');
 
 $image->set_size(114, 80);
 is_deeply([$image->get_size()], [114, 80], 'size accessors');
+
+#########################
+
+$image->set_crop(20, 20, 74, 40);
+is_deeply([$image->get_crop()], [20, 20, 74, 40], 'crop accessors');
+
+#########################
+
+$image->set_crop(-57, -40, 228, 160);
+is_deeply([$image->get_crop()], [0, 0, 114, 80], 'crop clipping');
+
+#########################
+
+$image->set_crop(10, 10, 94, 60);
+is_deeply([$image->get_crop()], [10, 10, 94, 60], 'crop accessors');
+
+#########################
+
+$image->set_size(114, 80);
+is_deeply([$image->get_crop()], [0, 0, 114, 80], 'crop reset');
 
 #########################
 
@@ -94,11 +114,23 @@ SKIP: {
 
     #########################
 
-    can_ok($sym, qw(get_type get_data get_quality get_count get_loc));
+    can_ok($sym, qw(get_type get_configs get_modifiers get_data get_quality
+                    get_count get_loc get_orientation));
 
     #########################
 
     is($sym->get_type(), Barcode::ZBar::Symbol::EAN13, 'result type');
+
+    #########################
+
+    is_deeply([$sym->get_configs()],
+              [Barcode::ZBar::Config::ENABLE,
+               Barcode::ZBar::Config::EMIT_CHECK],
+              'result configs');
+
+    #########################
+
+    is_deeply([$sym->get_modifiers()], [], 'result modifiers');
 
     #########################
 
@@ -130,6 +162,10 @@ SKIP: {
     }
     ok(!defined($failure), 'location structure') or
       diag($failure);
+
+    #########################
+
+    is($sym->get_orientation(), Barcode::ZBar::Orient::UP, 'orientation');
 
     #########################
 

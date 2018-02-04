@@ -14,6 +14,8 @@ zbar_color_t					T_ENUM
 zbar_error_t					T_ENUM
 zbar_symbol_type_t				T_ENUM
 zbar_config_t					T_ENUM
+zbar_modifier_t                                 T_ENUM
+zbar_orientation_t				T_ENUM
 
 # special scalars
 fourcc_t					T_FOURCC
@@ -30,14 +32,8 @@ T_ENUM
 T_FOURCC
 	{
             if(SvPOK($arg)) {
-                STRLEN len;
-                char *str = SvPV($arg, len);
-                if(len != 4)
-                    croak(\"invalid fourcc: \%s\", str);
-                $var = ((unsigned long)str[0] |
-                        ((unsigned long)str[1] << 8) |
-                        ((unsigned long)str[2] << 16) |
-                        ((unsigned long)str[3] << 24));
+                char *str = SvPV_nolen($arg);
+                $var = zbar_fourcc_parse(str);
             }
             else
                 $var = SvUV($arg);
@@ -45,6 +41,8 @@ T_FOURCC
 T_TIMEOUT
 	if(($var = ($type)(SvNV($arg) * 1000.)) < 0)
             $var = -1;
+T_PV
+	$var = SvOK($arg) ? SvPV_nolen($arg) : NULL;
 
 OUTPUT
 

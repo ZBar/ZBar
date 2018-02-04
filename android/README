@@ -1,0 +1,112 @@
+ZBar Android SDK
+================
+
+ZBar Bar Code Reader is an open source software suite for reading bar
+codes from various sources, such as video streams, image files and raw
+intensity sensors. It supports EAN-13/UPC-A, UPC-E, EAN-8, Code 128,
+Code 93, Code 39, Codabar, Interleaved 2 of 5, QR Code and
+DataBar. These are the JNI wrappers for developing the library on
+Android platform.
+
+Check the ZBar home page for the latest release, mailing lists, etc.
+    http://zbar.sourceforge.net/
+
+Copyright and License
+---------------------
+Licensed under the GNU Lesser General Public License, version 2.1.
+http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
+
+Copyright 2008-2012 © Jeff Brown <spadix@users.sourceforge.net> et al
+
+The Android distribution also includes pre-compiled binaries of
+supporting libaries, for which copyright, license and source code
+locations are as follows:
+  * The GNU libiconv character set conversion library
+    Copyright (C) 1999-2011 Free Software Foundation, Inc.
+    This distribution includes GNU libiconv version 1.14, licensed under
+    the LGPL version 2.  The source code is available from
+        http://www.gnu.org/software/libiconv
+
+See included files COPYING and LICENSE for details.
+
+
+Installation
+------------
+
+After downloading the ZBar-Android-Lib-<version>.zip file, you need to
+unzip the file and add it to your Android project. Unzip the file
+using your favorite method (ie: command-line, finder, windows
+explorer...)
+
+Follow one of the two options.
+Option 1 - via command line
+  cd <android project>
+  cp -r ZBar-Android-SDK-<version>/libs .
+
+Option 2 - via Eclipse
+  Right click on Android Project
+  Select "Import" -> "File System"
+  Select "Browse" (next to "From directory File" and select the
+    ZBar-Android-SDK-<verion>/libs directory and click "Open".
+  Click the check box next to "libs" and the "Options" "Create top-level folder"
+  check box (below).
+  Then click "Finish".
+      
+  You should then see a "libs" folder under your project.
+
+Building
+--------
+
+Via Eclipse
+You have to add the zbar.jar file to your build path
+  1) select zbar.jar under libs
+  2) right-click, select "Build Path" -> "Add to Build Path"
+  
+Via command-line
+You are all set; ant will automatcially find jar files under the "libs"
+subdirectory.
+
+Documentation
+-------------
+   TDB
+
+Examples
+--------
+
+You should be able to open and build the examples directly from the
+unzipped directory. You will need to run the android tools to setup
+the local.properties file which sets sdk.dir.
+  1) cd <unzip dir>/examples/CameraTest
+  2) android update project --path .
+  3) ant debug install
+
+If you have problems with this, please create a new Android project
+and copy the necessary files from the examples.
+
+examples/CameraTest is a simple demonstration of how to integrate the
+ZBar image scanner with the camera.
+
+Manually building ZBar JNI library
+----------------------------------
+First download and unzip the iconv library source from 
+  http://www.gnu.org/software/libiconv/
+
+Then kick off the build from the ZBar android directory. You will
+need to run the android tools to setup the local.properties file which
+setups sdk.dir.
+
+  1) cd <zbar project>/android
+  2) android update project --path . 
+  3) ant -Dndk.dir=<NDK path> -Diconv.src=<iconv library src> zbar-all
+
+This will rebuild all source files, create zbar.jar and
+ZBarAndroidSDK.zip file (which bundles the jar and shared
+libraries). From here, you can follow the steps for "Integrating ZBar
+JNI library in Android project".
+
+To clean run:
+  ant -Dndk.dir=<NDK path> zbar-clean
+
+See build-ndk.xml for additional target options.
+
+

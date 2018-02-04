@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2009-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -81,6 +81,22 @@ symbol_get_type (zbarSymbol *self,
 }
 
 static PyObject*
+symbol_get_configs (zbarSymbol *self,
+                    void *closure)
+{
+    unsigned int mask = zbar_symbol_get_configs(self->zsym);
+    return(zbarEnum_SetFromMask(config_enum, mask));
+}
+
+static PyObject*
+symbol_get_modifiers (zbarSymbol *self,
+                      void *closure)
+{
+    unsigned int mask = zbar_symbol_get_modifiers(self->zsym);
+    return(zbarEnum_SetFromMask(modifier_enum, mask));
+}
+
+static PyObject*
 symbol_get_long (zbarSymbol *self,
                  void *closure)
 {
@@ -128,12 +144,23 @@ symbol_get_location (zbarSymbol *self,
     return(self->loc);
 }
 
+static zbarEnumItem*
+symbol_get_orientation (zbarSymbol *self,
+                        void *closure)
+{
+    return(zbarEnum_LookupValue(orient_enum,
+                                zbar_symbol_get_orientation(self->zsym)));
+}
+
 static PyGetSetDef symbol_getset[] = {
     { "type",       (getter)symbol_get_type, },
+    { "configs",    (getter)symbol_get_configs, },
+    { "modifiers",  (getter)symbol_get_modifiers, },
     { "quality",    (getter)symbol_get_long, NULL, NULL, (void*)0 },
     { "count",      (getter)symbol_get_long, NULL, NULL, (void*)1 },
     { "data",       (getter)symbol_get_data, },
     { "location",   (getter)symbol_get_location, },
+    { "orientation",(getter)symbol_get_orientation, },
     { "components", (getter)symbol_get_components,  },
     { NULL, },
 };

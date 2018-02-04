@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<!--
+   Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+     All Rights Reserved
+-->
+
+<svg version="1.1" id="top"
+  width="512px" height="512px"
+  viewBox="0,0 1,1" preserveAspectRatio="xMidYMid" overflow="visible"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <title>stopwatch icon</title>
+
+  <defs>
+    <style type="text/css"><![CDATA[
+      path, line, circle, rect { fill: none; stroke-linejoin: round; stroke-linecap: round }
+      #bg { fill: #202020 }
+      #face { fill: url(#face-grad); stroke: none }
+      #button * { stroke: #fd0 }
+      #btn-top { stroke: url(#btn-grad); stroke-width: .45 }
+      #btn-stem { stroke-width: .5 }
+      #btn-base { fill: #fd0; stroke-width: .18 }
+      #ticks { stroke: #444; stroke-width: .06 }
+      #swoosh { fill: url(#swoosh-grad); stroke: none }
+      #hand { stroke: black; stroke-width: .1 }
+    ]]></style>
+
+    <radialGradient id="face-grad" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="1">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="50%" stop-color="#eef"/>
+      <stop offset="85%" stop-color="#ccd"/>
+      <stop offset="85%" stop-color="#c93"/>
+      <stop offset="91.25%" stop-color="#fd0"/>
+      <stop offset="93.75%" stop-color="#fd0"/>
+      <stop offset="100%" stop-color="#c93"/>
+    </radialGradient>
+
+    <radialGradient id="btn-grad" gradientUnits="userSpaceOnUse"
+      cx="0" cy="0" r="2" gradientTransform="scale(1,.2)">
+      <stop offset="0%" stop-color="#fd0"/>
+      <stop offset="10%" stop-color="#fd0"/>
+      <stop offset="100%" stop-color="#c93"/>
+    </radialGradient>
+
+    <linearGradient id="swoosh-grad" gradientUnits="userSpaceOnUse"
+      x1="1" x2="0" gradientTransform="translate(.22) rotate(-18)"
+      spreadMethod="pad">
+      <stop offset="0%" stop-color="#45f"/>
+      <stop offset="100%" stop-color="#45f" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!--<rect id="bg" width="1" height="1"/>-->
+
+  <g transform="translate(.5,.56) scale(.4375)">
+    <g id="button" transform="translate(0,-1.28) scale(.24) translate(0,.225)">
+      <path id="btn-stem" d="M0,.1v1"/>
+      <path id="btn-top" d="M-1,0h2"/>
+      <rect id="btn-base" x="-1" y=".8" width="2" height=".5"/>
+    </g>
+
+    <circle id="face" r="1"/>
+
+    <g id="ticks">
+      <line y2="-.15" transform="translate(0,-.6)"/>
+      <line y2="-.15" transform="rotate(36) translate(0,-.6)"/>
+      <line y2="-.15" transform="rotate(72) translate(0,-.6)"/>
+      <line y2="-.15" transform="rotate(108) translate(0,-.6)"/>
+      <line y2="-.15" transform="rotate(144) translate(0,-.6)"/>
+      <line y2="-.15" transform="rotate(180) translate(0,-.6)"/>
+      <line y2="-.15" transform="rotate(216) translate(0,-.6)"/>
+      <line y2="-.15" transform="rotate(252) translate(0,-.6)"/>
+      <line y2="-.15" transform="rotate(288) translate(0,-.6)"/>
+      <line y2="-.15" transform="rotate(324) translate(0,-.6)"/>
+    </g>
+
+    <g transform="scale(.8)">
+      <path id="swoosh"
+        d="M0,0 v-1 a1,1 0 0 1 .951,.691z"/>
+      <line id="hand" transform="scale(.975)" x2=".951" y2="-.309"/>
+    </g>
+  </g>
+
+</svg>

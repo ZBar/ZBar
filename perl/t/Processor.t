@@ -77,7 +77,7 @@ $proc->set_data_handler(sub {
 
 #########################
 
-$proc->init($ENV{VIDEO_DEVICE} || '/dev/video0');
+$proc->init($ENV{VIDEO_DEVICE});
 ok(!$proc->is_visible(), 'initial visibility');
 
 #########################
@@ -94,7 +94,7 @@ ok($proc->user_wait(1.1) >= 0, 'wait w/timeout');
 SKIP: {
     # FIXME factor out image read utility
     eval { require Image::Magick };
-    skip "Image::Magick not installed", 8 if $@;
+    skip "Image::Magick not installed", 11 if $@;
     my $im = Image::Magick->new();
     my $err = $im->Read('t/barcode.png');
     die($err) if($err);

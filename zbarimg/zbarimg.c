@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -31,18 +31,36 @@
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
 #endif
+#ifdef _WIN32
+# include <io.h>
+# include <fcntl.h>
+#endif
 #include <assert.h>
 
 #include <zbar.h>
-#include <wand/MagickWand.h>
+
+#ifdef HAVE_GRAPHICSMAGICK
+# include <wand/wand_api.h>
+#endif
+
+#ifdef HAVE_IMAGEMAGICK
+# include <wand/MagickWand.h>
+
+/* ImageMagick frequently changes API names - just use the original
+ * (more stable?) names to match GraphicsMagick
+ */
+# define InitializeMagick(f) MagickWandGenesis()
+# define DestroyMagick MagickWandTerminus
+# define MagickSetImageIndex MagickSetIteratorIndex
 
 /* in 6.4.5.4 MagickGetImagePixels changed to MagickExportImagePixels.
  * (still not sure this check is quite right...
  *  how does MagickGetAuthenticImagePixels fit in?)
  * ref http://bugs.gentoo.org/247292
  */
-#if MagickLibVersion < 0x645
-# define MagickExportImagePixels MagickGetImagePixels
+# if MagickLibVersion > 0x645
+#  define MagickGetImagePixels MagickExportImagePixels
+# endif
 #endif
 
 static const char *note_usage =
@@ -72,8 +90,9 @@ static const char *warning_not_found =
     "  things to check:\n"
     "    - is the barcode type supported?"
     "  currently supported symbologies are:\n"
-    "      EAN/UPC (EAN-13, EAN-8, UPC-A, UPC-E, ISBN-10, ISBN-13),\n"
-    "      Code 128, Code 39 and Interleaved 2 of 5\n"
+    "      EAN/UPC (EAN-13, EAN-8, EAN-2, EAN-5, UPC-A, UPC-E,\n"
+    "      ISBN-10, ISBN-13), Code 128, Code 93, Code 39, Codabar,\n"
+    "      DataBar, DataBar Expanded, and Interleaved 2 of 5\n"
     "    - is the barcode large enough in the image?\n"
     "    - is the barcode mostly in focus?\n"
     "    - is there sufficient contrast/illumination?\n"
@@ -115,6 +134,9 @@ static inline int dump_error(MagickWand *wand)
 
 static int scan_image (const char *filename)
 {
+    if(exit_code == 3)
+        return(-1);
+
     int found = 0;
     MagickWand *images = NewMagickWand();
     if(!MagickReadImage(images, filename) && dump_error(images))
@@ -122,12 +144,15 @@ static int scan_image (const char *filename)
 
     unsigned seq, n = MagickGetNumberImages(images);
     for(seq = 0; seq < n; seq++) {
-        if(!MagickSetIteratorIndex(images, seq) && dump_error(images))
+        if(exit_code == 3)
+            return(-1);
+
+        if(!MagickSetImageIndex(images, seq) && dump_error(images))
             return(-1);
 
         zbar_image_t *zimage = zbar_image_create();
         assert(zimage);
-        zbar_image_set_format(zimage, *(unsigned long*)"Y800");
+        zbar_image_set_format(zimage, zbar_fourcc('Y','8','0','0'));
 
         int width = MagickGetImageWidth(images);
         int height = MagickGetImageHeight(images);
@@ -140,9 +165,14 @@ static int scan_image (const char *filename)
         unsigned char *blob = malloc(bloblen);
         zbar_image_set_data(zimage, blob, bloblen, zbar_image_free_data);
 
-        if(!MagickExportImagePixels(images, 0, 0, width, height,
-                                    "I", CharPixel, blob))
+        if(!MagickGetImagePixels(images, 0, 0, width, height,
+                                 "I", CharPixel, blob))
             return(-1);
+
+        if(xmllvl == 1) {
+            xmllvl++;
+            printf("<source href='%s'>\n", filename);
+        }
 
         zbar_process_image(processor, zimage);
 
@@ -150,27 +180,30 @@ static int scan_image (const char *filename)
         const zbar_symbol_t *sym = zbar_image_first_symbol(zimage);
         for(; sym; sym = zbar_symbol_next(sym)) {
             zbar_symbol_type_t typ = zbar_symbol_get_type(sym);
+            unsigned len = zbar_symbol_get_data_length(sym);
             if(typ == ZBAR_PARTIAL)
                 continue;
-            else if(!xmllvl)
-                printf("%s%s:%s\n",
-                       zbar_get_symbol_name(typ),
-                       zbar_get_addon_name(typ),
-                       zbar_symbol_get_data(sym));
-            else if(xmllvl < 0)
-                printf("%s\n", zbar_symbol_get_data(sym));
-            else {
-                if(xmllvl < 2) {
-                    xmllvl++;
-                    printf("<source href='%s'>\n", filename);
+            else if(xmllvl <= 0) {
+                if(!xmllvl)
+                    printf("%s:", zbar_get_symbol_name(typ));
+                if(len &&
+                   fwrite(zbar_symbol_get_data(sym), len, 1, stdout) != 1) {
+                    exit_code = 1;
+                    return(-1);
                 }
+            }
+            else {
                 if(xmllvl < 3) {
                     xmllvl++;
                     printf("<index num='%u'>\n", seq);
                 }
                 zbar_symbol_xml(sym, &xmlbuf, &xmlbuflen);
-                printf("%s\n", xmlbuf);
+                if(fwrite(xmlbuf, xmlbuflen, 1, stdout) != 1) {
+                    exit_code = 1;
+                    return(-1);
+                }
             }
+            printf("\n");
             found++;
             num_symbols++;
         }
@@ -185,10 +218,8 @@ static int scan_image (const char *filename)
         num_images++;
         if(zbar_processor_is_visible(processor)) {
             int rc = zbar_processor_user_wait(processor, -1);
-            if(rc < 0 || rc == 'q' || rc == 'Q') {
+            if(rc < 0 || rc == 'q' || rc == 'Q')
                 exit_code = 3;
-                return(-1);
-            }
         }
     }
 
@@ -215,7 +246,7 @@ int usage (int rc,
             fprintf(out, "%s", arg);
         fprintf(out, "\n\n");
     }
-    fprintf(out, note_usage);
+    fprintf(out, "%s", note_usage);
     return(rc);
 }
 
@@ -238,7 +269,7 @@ int main (int argc, const char *argv[])
     int i, j;
     for(i = 1; i < argc; i++) {
         const char *arg = argv[i];
-        if(arg[0] != '-')
+        if(arg[0] != '-' || !arg[1])
             // first pass, skip images
             num_images++;
         else if(arg[1] != '-')
@@ -295,7 +326,7 @@ int main (int argc, const char *argv[])
         return(usage(1, "ERROR: specify image file(s) to scan", NULL));
     num_images = 0;
 
-    MagickWandGenesis();
+    InitializeMagick("zbarimg");
 
     processor = zbar_processor_create(0);
     assert(processor);
@@ -309,7 +340,7 @@ int main (int argc, const char *argv[])
         if(!arg)
             continue;
 
-        if(arg[0] != '-') {
+        if(arg[0] != '-' || !arg[1]) {
             if(scan_image(arg))
                 return(exit_code);
         }
@@ -333,18 +364,30 @@ int main (int argc, const char *argv[])
             zbar_processor_set_visible(processor, 0);
         else if(!strcmp(arg, "--xml")) {
             if(xmllvl < 1) {
-                xmllvl++;
-                printf(xml_head);
+                xmllvl = 1;
+#ifdef _WIN32
+                fflush(stdout);
+                _setmode(_fileno(stdout), _O_BINARY);
+#endif
+                printf("%s", xml_head);
             }
         }
         else if(!strcmp(arg, "--noxml") || !strcmp(arg, "--raw")) {
             if(xmllvl > 0) {
-                xmllvl--;
-                printf(xml_foot);
+                xmllvl = 0;
+                printf("%s", xml_foot);
                 fflush(stdout);
+#ifdef _WIN32
+                _setmode(_fileno(stdout), _O_TEXT);
+#endif
             }
-            if(!strcmp(arg, "--raw"))
+            if(!strcmp(arg, "--raw")) {
                 xmllvl = -1;
+#ifdef _WIN32
+                fflush(stdout);
+                _setmode(_fileno(stdout), _O_BINARY);
+#endif
+            }
         }
         else if(!strcmp(arg, "--set")) {
             if(parse_config(argv[++i], "--set"))
@@ -361,16 +404,20 @@ int main (int argc, const char *argv[])
         if(scan_image(argv[i]))
             return(exit_code);
 
+    /* ignore quit during last image */
+    if(exit_code == 3)
+        exit_code = 0;
+
     if(xmllvl > 0) {
-        xmllvl--;
-        printf(xml_foot);
+        xmllvl = -1;
+        printf("%s", xml_foot);
         fflush(stdout);
     }
 
     if(xmlbuf)
         free(xmlbuf);
 
-    if(num_images && !quiet) {
+    if(num_images && !quiet && xmllvl <= 0) {
         fprintf(stderr, "scanned %d barcode symbols from %d images",
                 num_symbols, num_images);
 #ifdef HAVE_SYS_TIMES_H
@@ -386,10 +433,12 @@ int main (int argc, const char *argv[])
 #endif
         fprintf(stderr, "\n");
         if(notfound)
-            fprintf(stderr, warning_not_found);
+            fprintf(stderr, "%s", warning_not_found);
     }
+    if(num_images && notfound && !exit_code)
+        exit_code = 4;
 
     zbar_processor_destroy(processor);
-    MagickWandTerminus();
+    DestroyMagick();
     return(exit_code);
 }

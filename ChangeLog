@@ -1,4 +1,131 @@
 current:
+  * Codabar reliability enhancements
+    - fix missing check
+    - require minimum quality
+    - bump default uncertainty
+  * tweak Codabar bar/space ratio validation
+  * finish Codabar support for python, perl, java and iPhone interfaces
+    - reduce Codabar uncertainty to minimum
+  * add core support for Codabar symbology
+    - TBD: python, perl, java and iPhone interfaces
+  * fix v4l config and build variations (bug #3348888)
+    - thanks to jarekczek for reporting this!
+    - NB v4l1 removed from kernel as of 2.6.38
+  * fix missing python thread initialization (bug #3349199)
+    - thanks to jarekczek for reporting this problem!
+  * fix missing configure check for Python.h (bug #3092663)
+    - thanks to Zoltan Kovacs for reporting this problem!
+  * fix C++ wrapper missing Symbol.quality (bug #3076524)
+    - thanks to Rudy Melli for pointing this out!
+  * fix C++ wrapper bugs (bug #3396068)
+    - thanks to anotheruser1 for reporting this!
+    - add new C++ wrapper test
+  * fix avoid compositing ISBN10 data
+  * add support for GraphicsMagick as ImageMagick alternative
+  * mention xmlto in HACKING (patch #3297039)
+    - thanks to jarekczek for the patch!
+  * disable addons by default until synchronization with main symbol is working
+  * fix image scanner min quality filtering
+  * fix i25 buffer overrun corner case
+  * fix EAN addon enables
+  * fix zbarimg to accept autodetected stdin (lone dash)
+  * fix Qt 4.6.3 compilation error (patch #3178244)
+    - thanks to hrhristov for the patch!
+  * add Python Processor support for request_size interface
+  * fix Python Processor support for GIL, allowing asynchronous scanning
+  * fix jpeg decoder skip handling
+    - thanks to jarekczek for the patch!
+  * rename dprintf macro to avoid conflicts (patch #3128538)
+    - thanks to maurochehab for the patch!
+  * add support for EAN/UPC 2 and 5 digit add-on symbols
+    - deprecate original, unfinished add-on APIs
+    - add self-checking to test_decode
+  * fix support for GS1 AIs
+    - thanks to jockusch for a patch!
+    - add decoder/symbol "modifier" flags and config read access
+    - set flags or emit GS appropriately for Code 128 FNC1
+    - add iphone, java, perl, python bindings for modifiers and configs
+  * add support for Code 93 symbology
+  * add video size request to (Py)GTK widget (req #3034522)
+    - thanks to Jerome Charaoui for the patch!
+  * add support for GS1 DataBar Expanded (RSS Expanded) symbology
+  * add language bindings for DataBar
+  * add preliminary support for GS1 DataBar (RSS-14) symbology
+  * enhance decoder reliability (EAN, Code 39, Code 128)
+    - enhance decoder test
+  * fix documentation of command exit codes (bug #3017322)
+  * fix C++ video callback bug
+    - add C and C++ processor examples
+  * add per-symbology cache consistency
+    - reliable symbologies decode immediately by default
+    - no more need to disable cache with video
+    - also fix crop bugs w/video scanning
+  * add support for scanning partial images (cropping)
+    - update c++, python, perl, java bindings and tests
+  * fix couple of leaks
+  * remove doc hints about GFDL (bug #3004411)
+    - apply LGPL to API docs
+  * relax Code 39 width ratio checks
+  * core library portability improvements
+    - remove some unnecessary C99 syntax
+    - add configure checks for errno
+    - enhance C++ Symbol interface
+  * adjust Python module README (add examples and note DLL in path)
+  * fix QR Code missing from man pages (bug #2969857)
+  * cleanup decoder assertions and locking (bug #2966916)
+  * add Java interface to library via JNI
+    - add Java tools and JNI build tests to configure
+    - fix compiler warnings from binary output changes
+  * fix output of binary data in zbarimg and zbarcam
+    - thanks to fukuchi for a patch!
+    - add base64 format for binary xml output
+  * add coarse symbol orientation information (patch #2913094)
+    - thanks to Anssi for a patch!
+    - add decode direction feedback to decoder
+    - update C++, Python, Perl and ObjC wrappers
+    - add orientation to test suites
+  * fix inconsistent fourcc endian handling bugs (bug #2918994)
+    - thanks to jdccdevel for a patch!
+    - add fourcc conversion and parse interfaces to zbar.h
+  * report QR immediately for video (no inter-frame consistency check)
+  * add python distutils build infrastructure
+
+version 0.10:
+  * hotfix add MinGW import lib to Windows installer
+  * attempt fix for Qt4 < 4.4
+  * release updates
+    - fix perl Processor init without video
+  * fix window closed notification during events
+    - add read_one example, fix xs compiler warnings, update perl docs
+  * add result query interfaces to image scanner and processor
+    - move result filtering into image scanner (from user)
+    - abort output blockers when window closed
+  * Windows updates
+    - update installer and README for distribution of dependency libraries
+    - fix applications to use binary output for xml and raw modes
+  * add regression tests to makefile
+  * cleanup warnings from newer gcc versions
+  * fix excessive i25 QZ checks
+  * add regression script
+    - add zbarimg xml output for every source (even empty)
+    - add edge detection to svg debug overlay
+  * image scanner cleanup and minor performance enhancements
+  * bug hunt and stability improvements
+    - fix broken processor locks
+    - fix X connection polling, revert previous separate thread workaround
+    - refuse to resize windows larger than screen size
+    - fix window output scaling - preserve image aspect ratio, adjust overlay
+    - fix window redraw
+    - fix crash on Xv image creation failure (still need XImage fallback)
+    - clean up zbarimg exit cases (last image window close, missing decodes)
+  * always use separate video thread when threads enabled (even v4l2)
+  * add configure check for features.h
+  * overlay enhancements
+    - add fps to overlay
+    - add overlay control to processor
+    - add windows overlay drawing
+  * tweak linear code position info
+  * trim deep qrcode hierarchy
   * fix zero length symbol data
   * fix QR structured append result handling
   * cleanup SVG debug dump (partial)

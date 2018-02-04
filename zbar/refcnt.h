@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -29,7 +29,7 @@
 #if defined(_WIN32)
 # include <windows.h>
 
-typedef volatile LONG refcnt_t;  /* FIXME where did volatile come from? */
+typedef LONG refcnt_t;
 
 static inline int _zbar_refcnt (refcnt_t *cnt,
                                 int delta)
@@ -45,6 +45,18 @@ static inline int _zbar_refcnt (refcnt_t *cnt,
     return(rc);
 }
 
+#elif defined(TARGET_OS_MAC)
+# include <libkern/OSAtomic.h>
+
+typedef int32_t refcnt_t;
+
+static inline int _zbar_refcnt (refcnt_t *cnt,
+                                int delta)
+{
+    int rc = OSAtomicAdd32Barrier(delta, cnt);
+    assert(rc >= 0);
+    return(rc);
+}
 
 #elif defined(HAVE_LIBPTHREAD)
 # include <pthread.h>

@@ -1,15 +1,16 @@
 ZBAR BAR CODE READER
 ====================
 
-ZBar Bar Code Reader is a library for scanning and decoding bar codes
-from various sources such as video streams, image files or raw intensity
-sensors.  It supports EAN/UPC, Code 128, Code 39 and Interleaved 2 of 5.
-Included with the library are basic applications for decoding captured
-bar code images and using a video device (eg, webcam) as a bar code
-scanner.  For application developers, language bindings are included for
-C, C++, Python and Perl as well as GUI widgets for Qt, GTK and PyGTK.
+ZBar Bar Code Reader is an open source software suite for reading bar
+codes from various sources, such as video streams, image files and raw
+intensity sensors. It supports EAN-13/UPC-A, UPC-E, EAN-8, Code 128,
+Code 39, Codabar, Interleaved 2 of 5 and QR Code.  Included with the
+library are basic applications for decoding captured bar code images and
+using a video device (eg, webcam) as a bar code scanner.  For application
+developers, language bindings are included for C, C++, Python and Perl
+as well as GUI widgets for Qt, GTK and PyGTK.
 
-Check the zbar home page for the latest release, mailing lists, etc.
+Check the ZBar home page for the latest release, mailing lists, etc.
     http://zbar.sourceforge.net/
 
 License information can be found in 'COPYING'.
@@ -36,26 +37,29 @@ pkg-config may be obtained from
 
 The zbarimg program uses ImageMagick to read image files in many
 different formats.  You will need at least ImageMagick version 6.2.6
-and the Magick++ development interface to ImageMagick if you want to
-scan image files.  ImageMagick may be obtained from
+if you want to scan image files.  ImageMagick may be obtained from
     http://www.imagemagick.org/
 
 The Qt widget requires Qt4.  You will need Qt4 if you would like to
-develop a Qt GUI application with an integrated bar code scanning
-widget.  Qt4 may be obtained from
-    http://www.qtsoftware.com/products
+use or develop a Qt GUI application with an integrated bar code
+scanning widget.  Qt4 may be obtained from
+    http://qt.nokia.com/products
 
 The GTK+ widget requires GTK+-2.x.  You will need GTK+ if you would
-like to develop a GTK+ GUI application with an integrated bar code
-scanning widget.  GTK+ may be obtained from
+like to use or develop a GTK+ GUI application with an integrated bar
+code scanning widget.  GTK+ may be obtained from
     http://www.gtk.org/
 
 The PyGTK wrapper for the GTK+ widget requires Python and PyGTK.  You
-will need both if you would like to develop a PyGTK GUI application
-with an integrated bar code scanning widget.  Python and PyGTK may
-respectively be obtained from
-    http://python.org/
+will need both if you would like to use or develop a PyGTK GUI
+application with an integrated bar code scanning widget.  PyGTK may be
+obtained from
     http://www.pygtk.org/
+
+The Python bindings require Python (version?).  You will need Python
+if you would like to scan images or video directly using Python.
+Python is available from
+    http://python.org/
 
 The Perl bindings require Perl (version?).  You will need Perl if you
 would like to scan images or video directly using Perl.  Perl is

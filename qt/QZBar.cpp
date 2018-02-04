@@ -38,8 +38,10 @@ QZBar::QZBar (QWidget *parent)
 {
     setAttribute(Qt::WA_OpaquePaintEvent);
     setAttribute(Qt::WA_PaintOnScreen);
+#if QT_VERSION >= 0x040400
     setAttribute(Qt::WA_NativeWindow);
     setAttribute(Qt::WA_DontCreateNativeAncestors);
+#endif
 
     QSizePolicy sizing(QSizePolicy::Preferred, QSizePolicy::Preferred);
     sizing.setHeightForWidth(true);

@@ -1,10 +1,11 @@
 Barcode::ZBar Perl module
 =========================
 
-The ZBar Bar Code Reader is a library for scanning and decoding bar
-codes from various sources such as video streams, image files or raw
-intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
-Interleaved 2 of 5.  These are the Perl bindings for the library.
+ZBar Bar Code Reader is an open source software suite for reading bar
+codes from various sources, such as video streams, image files and raw
+intensity sensors. It supports EAN-13/UPC-A, UPC-E, EAN-8, Code 128,
+Code 93, Code 39, Codabar, Interleaved 2 of 5 and QR Code.  These are
+the Perl bindings for the library.
 
 Check the ZBar project home page for the latest release, mailing
 lists, etc.
@@ -34,4 +35,4 @@ COPYRIGHT AND LICENCE
 Licensed under the GNU Lesser General Public License, version 2.1.
 http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
 
-Copyright 2008-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+Copyright 2008-2010 (c) Jeff Brown <spadix@users.sourceforge.net>

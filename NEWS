@@ -1,5 +1,17 @@
 ZBar Barcode Reader
 
+version 0.10 (2009-10-23):
+  ZBar goes 2D!  This release introduces support for QR Code, developed
+  by our new project member, Timothy Terriberry.  Timothy is an image
+  processing master, providing this sophisticated functionality using
+  only integer arithmetic and maintaining an extremely small image
+  size.  Feel free to drop in on #zbar over at freenode to welcome
+  Timothy (aka derf) to the project and congratulate him on his awesome
+  work.
+
+  Several bugs fixes and enhancements are also found in this release;
+  existing users are encouraged to upgrade.
+
 version 0.9 (2009-08-31):
   Introducing ZBar for Windows!  So far we only have straight ports of
   the command line applications, but work on a cross-platform GUI has

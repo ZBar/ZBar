@@ -46,18 +46,12 @@ static int dib_init (zbar_window_t *w,
 static int dib_draw (zbar_window_t *w,
                      zbar_image_t *img)
 {
-    HDC hdc = GetDC(w->display);
-    if(!hdc)
-        return(-1);
-
-    window_state_t *win = w->state;
-    StretchDIBits(hdc, 0, w->height - 1, w->width, -w->height,
+    StretchDIBits(w->state->hdc,
+                  w->scaled_offset.x, w->scaled_offset.y + w->scaled_size.y - 1,
+                  w->scaled_size.x, -w->scaled_size.y,
                   0, 0, w->src_width, w->src_height,
-                  (void*)img->data, (BITMAPINFO*)&win->bih,
+                  (void*)img->data, (BITMAPINFO*)&w->state->bih,
                   DIB_RGB_COLORS, SRCCOPY);
-
-    ValidateRect(w->display, NULL);
-    ReleaseDC(w->display, hdc);
     return(0);
 }
 

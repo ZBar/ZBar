@@ -17,11 +17,10 @@ sub my_handler {
     my ($proc, $image, $closure) = @_;
 
     # extract results
-    foreach my $symbol ($image->get_symbols()) {
+    foreach my $symbol ($proc->get_results()) {
         # do something useful with results
         print('decoded ' . $symbol->get_type() .
-              ' symbol "' . $symbol->get_data() . "\"\n")
-          if(!$symbol->get_count());
+              ' symbol "' . $symbol->get_data() . "\"\n");
     }
 }
 $proc->set_data_handler(\&my_handler);
@@ -31,4 +30,6 @@ $proc->set_visible();
 
 # initiate scanning
 $proc->set_active();
+
+# keep scanning until user provides key/mouse input
 $proc->user_wait();

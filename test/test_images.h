@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -23,12 +23,24 @@
 #ifndef _TEST_IMAGES_H_
 #define _TEST_IMAGES_H_
 
-/* adapted from v4l2 spec */
-#define fourcc(a, b, c, d)                      \
-    ((uint32_t)(a) | ((uint32_t)(b) << 8) |     \
-     ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
+#define fourcc zbar_fourcc
+
+#ifdef __cplusplus
+
+extern "C" {
+    int test_image_check_cleanup(void);
+    int test_image_bars(zbar::zbar_image_t*);
+    int test_image_ean13(zbar::zbar_image_t*);
+}
+
+#else
 
 int test_image_check_cleanup(void);
 int test_image_bars(zbar_image_t*);
+int test_image_ean13(zbar_image_t*);
+
+#endif
+
+extern const char *test_image_ean13_data;
 
 #endif

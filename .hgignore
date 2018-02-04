@@ -7,7 +7,7 @@ aclocal.m4
 configure
 config
 config.guess
-config.h
+config/config.h
 config.h.in
 config.log
 config.status
@@ -19,3 +19,18 @@ libtool
 ltmain.sh
 autom4te.cache
 missing
+python/MANIFEST
+build
+*.xcodeproj/*.mode1v3
+*.xcodeproj/*.pbxuser
+xcuserdata
+contents.xcworkspacedata
+.DS_Store
+android/obj
+*.class
+*.dex
+android/libs
+android/examples/*/libs
+android/*.zip
+android/local.properties
+android/examples/*/local.properties

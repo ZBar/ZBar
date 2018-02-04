@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the ZBar Bar Code Reader.
 //
@@ -67,7 +67,12 @@ public:
         {
             if(userdata) {
                 Image *image = (Image*)zbar_image_get_userdata(zimg);
-                ((Handler*)userdata)->image_callback(*image);
+                if(image)
+                    ((Handler*)userdata)->image_callback(*image);
+                else {
+                    Image tmp(zimg, 1);
+                    ((Handler*)userdata)->image_callback(tmp);
+                }
             }
         }
     };
@@ -110,6 +115,8 @@ public:
 
     ~Image ()
     {
+        if(zbar_image_get_userdata(_img) == this)
+            zbar_image_set_userdata(_img, NULL);
         zbar_image_ref(_img, -1);
     }
 
@@ -143,12 +150,7 @@ public:
     /// see zbar_image_set_format()
     void set_format (const std::string& format)
     {
-        if(format.length() != 4)
-            throw FormatError();
-        unsigned long fourcc = ((format[0] & 0xff) |
-                                ((format[1] & 0xff) << 8) |
-                                ((format[2] & 0xff) << 16) |
-                                ((format[3] & 0xff) << 24));
+        unsigned long fourcc = zbar_fourcc_parse(format.c_str());
         zbar_image_set_format(_img, fourcc);
     }
 
@@ -183,12 +185,41 @@ public:
         return(zbar_image_get_height(_img));
     }
 
+    /// retrieve both dimensions of the image.
+    /// see zbar_image_get_size()
+    /// @since 0.11
+    void get_size (unsigned &width,
+                   unsigned &height) const
+    {
+        zbar_image_get_size(_img, &width, &height);
+    }
+
     /// specify the pixel size of the image.
     /// see zbar_image_set_size()
     void set_size (unsigned width,
                    unsigned height)
     {
         zbar_image_set_size(_img, width, height);
+    }
+
+    /// retrieve the scan crop rectangle.
+    /// see zbar_image_get_crop()
+    void get_crop (unsigned &x,
+                   unsigned &y,
+                   unsigned &width,
+                   unsigned &height) const
+    {
+        zbar_image_get_crop(_img, &x, &y, &width, &height);
+    }
+
+    /// set the scan crop rectangle.
+    /// see zbar_image_set_crop()
+    void set_crop (unsigned x,
+                   unsigned y,
+                   unsigned width,
+                   unsigned height)
+    {
+        zbar_image_set_crop(_img, x, y, width, height);
     }
 
     /// return the image sample data.
@@ -222,6 +253,15 @@ public:
         if(img)
             return(Image(img));
         throw FormatError();
+    }
+
+    /// image format conversion.
+    /// see zbar_image_convert()
+    /// @since 0.11
+    Image convert (std::string format) const
+    {
+        unsigned long fourcc = zbar_fourcc_parse(format.c_str());
+        return(convert(fourcc));
     }
 
     /// image format conversion with crop/pad.
@@ -278,7 +318,6 @@ protected:
     {
         // by default nothing is cleaned
         assert(img);
-        assert(zbar_image_get_userdata(img));
     }
 
 private:

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2009-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -104,6 +104,23 @@ decoder_get_type (zbarDecoder *self,
 }
 
 static PyObject*
+decoder_get_configs (zbarDecoder *self,
+                     void *closure)
+{
+    unsigned int sym = zbar_decoder_get_type(self->zdcode);
+    unsigned int mask = zbar_decoder_get_configs(self->zdcode, sym);
+    return(zbarEnum_SetFromMask(config_enum, mask));
+}
+
+static PyObject*
+decoder_get_modifiers (zbarDecoder *self,
+                       void *closure)
+{
+    unsigned int mask = zbar_decoder_get_modifiers(self->zdcode);
+    return(zbarEnum_SetFromMask(modifier_enum, mask));
+}
+
+static PyObject*
 decoder_get_data (zbarDecoder *self,
                   void *closure)
 {
@@ -111,10 +128,20 @@ decoder_get_data (zbarDecoder *self,
                                       zbar_decoder_get_data_length(self->zdcode)));
 }
 
+static PyObject*
+decoder_get_direction (zbarDecoder *self,
+                       void *closure)
+{
+    return(PyInt_FromLong(zbar_decoder_get_direction(self->zdcode)));
+}
+
 static PyGetSetDef decoder_getset[] = {
-    { "color",    (getter)decoder_get_color, },
-    { "type",     (getter)decoder_get_type, },
-    { "data",     (getter)decoder_get_data, },
+    { "color",     (getter)decoder_get_color, },
+    { "type",      (getter)decoder_get_type, },
+    { "configs",   (getter)decoder_get_configs, },
+    { "modifiers", (getter)decoder_get_modifiers, },
+    { "data",      (getter)decoder_get_data, },
+    { "direction", (getter)decoder_get_direction },
     { NULL, },
 };
 
@@ -136,6 +163,23 @@ decoder_set_config (zbarDecoder *self,
         return(NULL);
     }
     Py_RETURN_NONE;
+}
+
+static PyObject*
+decoder_get_configs_meth (zbarDecoder *self,
+                          PyObject *args,
+                          PyObject *kwds)
+{
+    zbar_symbol_type_t sym = ZBAR_NONE;
+    static char *kwlist[] = { "symbology", NULL };
+    if(!PyArg_ParseTupleAndKeywords(args, kwds, "|i", kwlist, &sym))
+        return(NULL);
+
+    if(sym == ZBAR_NONE)
+        sym = zbar_decoder_get_type(self->zdcode);
+
+    unsigned int mask = zbar_decoder_get_configs(self->zdcode, sym);
+    return(zbarEnum_SetFromMask(config_enum, mask));
 }
 
 static PyObject*
@@ -261,6 +305,8 @@ decoder_decode_width (zbarDecoder *self,
 
 static PyMethodDef decoder_methods[] = {
     { "set_config",   (PyCFunction)decoder_set_config,
+      METH_VARARGS | METH_KEYWORDS, },
+    { "get_configs",  (PyCFunction)decoder_get_configs_meth,
       METH_VARARGS | METH_KEYWORDS, },
     { "parse_config", (PyCFunction)decoder_parse_config,
       METH_VARARGS | METH_KEYWORDS, },

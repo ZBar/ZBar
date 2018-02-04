@@ -15,8 +15,8 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 %description
 The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
-intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
-Interleaved 2 of 5. The flexible, layered architecture features a
+intensity sensors.  It supports EAN, UPC, Code 128, Code 93, Code 39
+and Interleaved 2 of 5. The flexible, layered architecture features a
 fast, streaming interface with a minimal memory footprint.
 
 %package devel
@@ -27,8 +27,8 @@ Requires: %{name} = %{version}
 %description devel
 The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
-intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
-Interleaved 2 of 5. The flexible, layered architecture features a
+intensity sensors.  It supports EAN, UPC, Code 128, Code 93, Code 39
+and Interleaved 2 of 5. The flexible, layered architecture features a
 fast, streaming interface with a minimal memory footprint.
 
 This package contains header files and additional libraries used for
@@ -42,8 +42,8 @@ Requires: %{name} = %{version}, gtk2
 %description gtk
 The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
-intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
-Interleaved 2 of 5. The flexible, layered architecture features a
+intensity sensors.  It supports EAN, UPC, Code 128, Code 93, Code 39
+and Interleaved 2 of 5. The flexible, layered architecture features a
 fast, streaming interface with a minimal memory footprint.
 
 This package contains a bar code scanning widget for use with GUI
@@ -57,8 +57,8 @@ Requires: %{name}-gtk = %{version}, %{name}-devel = %{version}, gtk2-devel
 %description gtk-devel
 The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
-intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
-Interleaved 2 of 5. The flexible, layered architecture features a
+intensity sensors.  It supports EAN, UPC, Code 128, Code 93, Code 39
+and Interleaved 2 of 5. The flexible, layered architecture features a
 fast, streaming interface with a minimal memory footprint.
 
 This package contains header files and additional libraries used for
@@ -73,8 +73,8 @@ Requires: %{name} = %{version}, pygtk2
 %description pygtk
 The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
-intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
-Interleaved 2 of 5. The flexible, layered architecture features a
+intensity sensors.  It supports EAN, UPC, Code 128, Code 93, Code 39
+and Interleaved 2 of 5. The flexible, layered architecture features a
 fast, streaming interface with a minimal memory footprint.
 
 This package contains a bar code scanning widget for use in GUI
@@ -88,8 +88,8 @@ Requires: %{name} = %{version}, qt >= 4
 %description qt
 The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
-intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
-Interleaved 2 of 5. The flexible, layered architecture features a
+intensity sensors.  It supports EAN, UPC, Code 128, Code 93, Code 39
+and Interleaved 2 of 5. The flexible, layered architecture features a
 fast, streaming interface with a minimal memory footprint.
 
 This package contains a bar code scanning widget for use with GUI
@@ -103,8 +103,8 @@ Requires: %{name}-qt = %{version}, %{name}-devel = %{version}, qt-devel >= 4
 %description qt-devel
 The ZBar Bar Code Reader is a library for scanning and decoding bar
 codes from various sources such as video streams, image files or raw
-intensity sensors.  It supports EAN, UPC, Code 128, Code 39 and
-Interleaved 2 of 5. The flexible, layered architecture features a
+intensity sensors.  It supports EAN, UPC, Code 128, Code 93, Code 39
+and Interleaved 2 of 5. The flexible, layered architecture features a
 fast, streaming interface with a minimal memory footprint.
 
 This package contains header files and additional libraries used for

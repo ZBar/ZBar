@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-//  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+//  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
 //
 //  This file is part of the ZBar Bar Code Reader.
 //
@@ -127,6 +127,13 @@ class Processor {
             throw_exception(_processor);
     }
 
+    /// retrieve decode results for last scanned image.
+    /// @see zbar_processor_get_results()
+    /// @since 0.10
+    const SymbolSet get_results () const {
+        return(SymbolSet(zbar_processor_get_results(_processor)));
+    }
+
     /// wait for input to the display window from the user.
     /// see zbar_processor_user_wait()
     int user_wait (int timeout = FOREVER)
@@ -176,8 +183,8 @@ class Processor {
     void force_format (std::string& input_format,
                        std::string& output_format)
     {
-        unsigned long ifourcc = *(unsigned long*)input_format.c_str();
-        unsigned long ofourcc = *(unsigned long*)output_format.c_str();
+        unsigned long ifourcc = zbar_fourcc_parse(input_format.c_str());
+        unsigned long ofourcc = zbar_fourcc_parse(output_format.c_str());
         if(zbar_processor_force_format(_processor, ifourcc, ofourcc))
             throw_exception(_processor);
     }

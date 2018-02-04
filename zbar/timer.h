@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -24,7 +24,9 @@
 #define _ZBAR_TIMER_H_
 
 #include <time.h>
-#include <sys/time.h>   /* gettimeofday */
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>   /* gettimeofday */
+#endif
 
 /* platform timer abstraction
  *
@@ -41,6 +43,13 @@
 
 typedef struct timespec zbar_timer_t;
 
+static inline int _zbar_timer_now ()
+{
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    return(now.tv_sec * 1000 + now.tv_nsec / 1000000);
+}
+
 static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
                                               int delay)
 {
@@ -56,13 +65,14 @@ static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
 
 static inline int _zbar_timer_check (zbar_timer_t *timer)
 {
+    struct timespec now;
+    int delay;
     if(!timer)
         return(-1);
 
-    struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
-    int delay = ((timer->tv_sec - now.tv_sec) * 1000 +
-                 (timer->tv_nsec - now.tv_nsec) / 1000000);
+    delay = ((timer->tv_sec - now.tv_sec) * 1000 +
+             (timer->tv_nsec - now.tv_nsec) / 1000000);
     return((delay >= 0) ? delay : 0);
 }
 
@@ -72,6 +82,11 @@ static inline int _zbar_timer_check (zbar_timer_t *timer)
 # include <windows.h>
 
 typedef DWORD zbar_timer_t;
+
+static inline int _zbar_timer_now ()
+{
+    return(timeGetTime());
+}
 
 static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
                                               int delay)
@@ -85,17 +100,25 @@ static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
 
 static inline int _zbar_timer_check (zbar_timer_t *timer)
 {
+    int delay;
     if(!timer)
         return(INFINITE);
 
-    int delay = *timer - timeGetTime();
+    delay = *timer - timeGetTime();
     return((delay >= 0) ? delay : 0);
 }
 
 
-#else
+#elif defined(HAVE_SYS_TIME_H)
 
 typedef struct timeval zbar_timer_t;
+
+static inline int _zbar_timer_now ()
+{
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    return(now.tv_sec * 1000 + now.tv_usec / 1000);
+}
 
 static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
                                               int delay)
@@ -112,15 +135,17 @@ static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
 
 static inline int _zbar_timer_check (zbar_timer_t *timer)
 {
+    struct timeval now;
     if(!timer)
         return(-1);
 
-    struct timeval now;
     gettimeofday(&now, NULL);
     return((timer->tv_sec - now.tv_sec) * 1000 +
            (timer->tv_usec - now.tv_usec) / 1000);
 }
 
+#else
+# error "unable to find a timer interface"
 #endif
 
 #endif

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -73,6 +73,10 @@ int _zbar_process_image (zbar_processor_t *proc,
         if(!tmp)
             goto error;
 
+        if(proc->syms) {
+            zbar_symbol_set_ref(proc->syms, -1);
+            proc->syms = NULL;
+        }
         zbar_image_scanner_recycle_image(proc->scanner, img);
         int nsyms = zbar_scan_image(proc->scanner, tmp);
         _zbar_image_swap_symbols(img, tmp);
@@ -82,16 +86,20 @@ int _zbar_process_image (zbar_processor_t *proc,
         if(nsyms < 0)
             goto error;
 
+        proc->syms = zbar_image_scanner_get_results(proc->scanner);
+        if(proc->syms)
+            zbar_symbol_set_ref(proc->syms, 1);
+
         if(_zbar_verbosity >= 8) {
             const zbar_symbol_t *sym = zbar_image_first_symbol(img);
             while(sym) {
                 zbar_symbol_type_t type = zbar_symbol_get_type(sym);
                 int count = zbar_symbol_get_count(sym);
-                zprintf(8, "%s%s: %s (%d pts) (q=%d) (%s)\n",
+                zprintf(8, "%s: %s (%d pts) (dir=%d) (q=%d) (%s)\n",
                         zbar_get_symbol_name(type),
-                        zbar_get_addon_name(type),
                         zbar_symbol_get_data(sym),
                         zbar_symbol_get_loc_size(sym),
+                        zbar_symbol_get_orientation(sym),
                         zbar_symbol_get_quality(sym),
                         (count < 0) ? "uncertain" :
                         (count > 0) ? "duplicate" : "new");
@@ -119,14 +127,16 @@ int _zbar_process_image (zbar_processor_t *proc,
     }
 
     /* display to window if enabled */
-    if(proc->window &&
-       (zbar_window_draw(proc->window, img) ||
-        _zbar_processor_invalidate(proc)))
-        return(err_copy(proc, proc->window));
+    int rc = 0;
+    if(proc->window) {
+        if((rc = zbar_window_draw(proc->window, img)))
+            err_copy(proc, proc->window);
+        _zbar_processor_invalidate(proc);
+    }
 
     if(force_fmt && img)
         zbar_image_destroy(img);
-    return(0);
+    return(rc);
 
 error:
     return(err_capture(proc, SEV_ERROR, ZBAR_ERR_UNSUPPORTED,
@@ -136,24 +146,41 @@ error:
 int _zbar_processor_handle_input (zbar_processor_t *proc,
                                   int input)
 {
+    int event = EVENT_INPUT;
     switch(input) {
     case -1:
+        event |= EVENT_CANCELED;
         _zbar_processor_set_visible(proc, 0);
         err_capture(proc, SEV_WARNING, ZBAR_ERR_CLOSED, __func__,
                     "user closed display window");
         break;
 
     case 'd':
-        /* FIXME localtime not threadsafe */
-        /* FIXME need ms resolution */
-        /*struct tm *t = localtime(time(NULL));*/
         proc->dumping = 1;
         return(0);
+
+    case '+':
+    case '=':
+        if(proc->window) {
+            int ovl = zbar_window_get_overlay(proc->window);
+            zbar_window_set_overlay(proc->window, ovl + 1);
+        }
+        break;
+
+    case '-':
+        if(proc->window) {
+            int ovl = zbar_window_get_overlay(proc->window);
+            zbar_window_set_overlay(proc->window, ovl - 1);
+        }
+        break;
     }
 
     _zbar_mutex_lock(&proc->mutex);
     proc->input = input;
-    _zbar_processor_notify(proc, EVENT_INPUT);
+    if(input == -1 && proc->visible && proc->streaming)
+        /* also cancel outstanding output waiters */
+        event |= EVENT_OUTPUT;
+    _zbar_processor_notify(proc, event);
     _zbar_mutex_unlock(&proc->mutex);
     return(input);
 }
@@ -261,6 +288,10 @@ void zbar_processor_destroy (zbar_processor_t *proc)
 {
     zbar_processor_init(proc, NULL, 0);
 
+    if(proc->syms) {
+        zbar_symbol_set_ref(proc->syms, -1);
+        proc->syms = NULL;
+    }
     if(proc->scanner) {
         zbar_image_scanner_destroy(proc->scanner);
         proc->scanner = NULL;
@@ -360,7 +391,6 @@ int zbar_processor_init (zbar_processor_t *proc,
     int input_threaded = (proc->threaded &&
                           (proc->window ||
                            (proc->video && !video_threaded)));
-
     if(input_threaded &&
        _zbar_thread_start(&proc->input_thread, proc_input_thread, proc,
                           &proc->mutex)) {
@@ -429,9 +459,10 @@ void zbar_processor_set_userdata (zbar_processor_t *proc,
 
 void *zbar_processor_get_userdata (const zbar_processor_t *proc)
 {
-    _zbar_mutex_lock(&((zbar_processor_t*)proc)->mutex);
-    void *userdata = (void*)proc->userdata;
-    _zbar_mutex_unlock(&((zbar_processor_t*)proc)->mutex);
+    zbar_processor_t *ncproc = (zbar_processor_t*)proc;
+    _zbar_mutex_lock(&ncproc->mutex);
+    void *userdata = (void*)ncproc->userdata;
+    _zbar_mutex_unlock(&ncproc->mutex);
     return(userdata);
 }
 
@@ -521,6 +552,18 @@ int zbar_processor_set_visible (zbar_processor_t *proc,
     return(rc);
 }
 
+const zbar_symbol_set_t*
+zbar_processor_get_results (const zbar_processor_t *proc)
+{
+    zbar_processor_t *ncproc = (zbar_processor_t*)proc;
+    proc_enter(ncproc);
+    const zbar_symbol_set_t *syms = proc->syms;
+    if(syms)
+        zbar_symbol_set_ref(syms, 1);
+    proc_leave(ncproc);
+    return(syms);
+}
+
 int zbar_processor_user_wait (zbar_processor_t *proc,
                               int timeout)
 {
@@ -533,12 +576,13 @@ int zbar_processor_user_wait (zbar_processor_t *proc,
         rc = _zbar_processor_wait(proc, EVENT_INPUT,
                                   _zbar_timer_init(&timer, timeout));
     }
-    if(rc > 0)
-        rc = proc->input;
 
     if(!proc->visible)
         rc = err_capture(proc, SEV_WARNING, ZBAR_ERR_CLOSED, __func__,
                          "display window not available for input");
+
+    if(rc > 0)
+        rc = proc->input;
 
     _zbar_mutex_lock(&proc->mutex);
     proc_leave(proc);
@@ -589,6 +633,7 @@ int zbar_process_one (zbar_processor_t *proc,
                       int timeout)
 {
     proc_enter(proc);
+    int streaming = proc->streaming;
     _zbar_mutex_unlock(&proc->mutex);
 
     int rc = 0;
@@ -598,15 +643,17 @@ int zbar_process_one (zbar_processor_t *proc,
         goto done;
     }
 
-    rc = zbar_processor_set_active(proc, 1);
-    if(rc)
-        goto done;
+    if(!streaming) {
+        rc = zbar_processor_set_active(proc, 1);
+        if(rc)
+            goto done;
+    }
 
     zbar_timer_t timer;
     rc = _zbar_processor_wait(proc, EVENT_OUTPUT,
                               _zbar_timer_init(&timer, timeout));
 
-    if(zbar_processor_set_active(proc, 0))
+    if(!streaming && zbar_processor_set_active(proc, 0))
         rc = -1;
 
  done:

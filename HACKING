@@ -13,6 +13,12 @@ be fine):
     GNU autoconf 2.61
     GNU automake 1.10.1
     GNU libtool 2.2.6
+    GNU gettext 0.18.1.1
+    GNU pkg-config 0.25
+    xmlto 0.0.20-5 (for docs building)
+all above mentioned tools (except xmlto) must be installed in the same
+prefix. mixing prefixes (i.g. /usr/bin and /usr/local/bin) may lead to
+errors in configuration stages
 
 when you're done hacking and want to make your patch, run:
 

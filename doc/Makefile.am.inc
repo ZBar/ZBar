@@ -2,6 +2,7 @@
 DOCSOURCES = doc/manual.xml doc/version.xml doc/reldate.xml \
     doc/ref/zbarimg.xml doc/ref/zbarcam.xml doc/ref/commonoptions.xml
 
+MAINTAINERCLEANFILES += doc/man/man.stamp doc/version.xml doc/reldate.xml
 
 # man page targets to distribute and install
 dist_man_MANS =

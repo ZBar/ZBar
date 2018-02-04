@@ -54,12 +54,20 @@ struct zbar_window_s {
     unsigned dst_width;         /* conversion target */
     unsigned dst_height;
 
+    unsigned scale_num;         /* output scaling */
+    unsigned scale_den;
+
+    point_t scaled_offset;      /* output position and size */
+    point_t scaled_size;
+
     uint32_t *formats;          /* supported formats (zero terminated) */
 
     zbar_mutex_t imglock;       /* lock displayed image */
 
     void *display;
     unsigned long xwin;
+    unsigned long time;         /* last image display in milliseconds */
+    unsigned long time_avg;     /* average of inter-frame times */
 
     window_state_t *state;      /* platform/interface specific state */
 
@@ -110,21 +118,27 @@ static inline int _zbar_window_add_format (zbar_window_t *w,
     return(i);
 }
 
+static inline point_t window_scale_pt (zbar_window_t *w,
+                                       point_t p)
+{
+    p.x = ((long)p.x * w->scale_num + w->scale_den - 1) / w->scale_den;
+    p.y = ((long)p.y * w->scale_num + w->scale_den - 1) / w->scale_den;
+    return(p);
+}
+
 
 /* PAL interface */
 extern int _zbar_window_attach(zbar_window_t*, void*, unsigned long);
 extern int _zbar_window_expose(zbar_window_t*, int, int, int, int);
 extern int _zbar_window_resize(zbar_window_t*);
 extern int _zbar_window_clear(zbar_window_t*);
-extern int _zbar_window_flush(zbar_window_t*);
-extern int _zbar_window_draw_logo(zbar_window_t*);
-extern int _zbar_window_draw_marker(zbar_window_t*, uint32_t, const point_t*);
+extern int _zbar_window_begin(zbar_window_t*);
+extern int _zbar_window_end(zbar_window_t*);
+extern int _zbar_window_draw_marker(zbar_window_t*, uint32_t, point_t);
 extern int _zbar_window_draw_polygon(zbar_window_t*, uint32_t, const point_t*, int);
-#if 0
-extern int _zbar_window_draw_line(zbar_window_t*, uint32_t,
-                                  const point_t*, const point_t*);
 extern int _zbar_window_draw_text(zbar_window_t*, uint32_t,
-                                  const point_t*, const char*);
-#endif
+                                  point_t, const char*);
+extern int _zbar_window_fill_rect(zbar_window_t*, uint32_t, point_t, point_t);
+extern int _zbar_window_draw_logo(zbar_window_t*);
 
 #endif

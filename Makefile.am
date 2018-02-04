@@ -1,6 +1,3 @@
-AM_CPPFLAGS = -I$(srcdir)/include
-AM_CFLAGS = -Wall -Werror -Wno-parentheses
-AM_CXXFLAGS = $(AM_CFLAGS)
 ACLOCAL_AMFLAGS = -I config
 bin_PROGRAMS =
 check_PROGRAMS =
@@ -9,8 +6,10 @@ lib_LTLIBRARIES =
 pyexec_LTLIBRARIES =
 CLEANFILES =
 DISTCLEANFILES =
+MAINTAINERCLEANFILES =
 BUILT_SOURCES =
 EXTRA_DIST =
+SUBDIRS = .
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = zbar.pc
@@ -39,6 +38,9 @@ if HAVE_QT
 include $(srcdir)/qt/Makefile.am.inc
 pkgconfig_DATA += zbar-qt.pc
 endif
+if HAVE_JAVA
+SUBDIRS += java
+endif
 if HAVE_NPAPI
 include $(srcdir)/plugin/Makefile.am.inc
 endif
@@ -47,17 +49,15 @@ include $(srcdir)/doc/Makefile.am.inc
 
 EXTRA_DIST += zbar.ico zbar.nsi
 
-EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py examples/paginate.pl \
-    examples/barcode.png examples/processor.pl examples/processor.py \
-    examples/scan_image.c examples/scan_image.cpp examples/scan_image.pl \
-    examples/scan_image.py examples/scan_image.vcproj
+EXTRA_DIST += examples/barcode.png examples/upcrpc.py examples/upcrpc.pl \
+    examples/scan_image.c examples/scan_image.cpp examples/scan_image.vcproj
 
 EXTRA_DIST += perl/MANIFEST perl/README perl/Changes perl/COPYING.LIB \
     perl/Makefile.PL perl/typemap perl/ZBar.xs perl/ppport.h \
     perl/ZBar.pm perl/inc/Devel/CheckLib.pm perl/ZBar/Image.pod \
     perl/ZBar/ImageScanner.pod perl/ZBar/Processor.pod perl/ZBar/Symbol.pod \
     perl/examples/paginate.pl perl/examples/processor.pl \
-    perl/examples/scan_image.pl \
+    perl/examples/read_one.pl perl/examples/scan_image.pl \
     perl/t/barcode.png perl/t/ZBar.t perl/t/Decoder.t perl/t/Image.t \
     perl/t/Processor.t perl/t/Scanner.t perl/t/pod.t perl/t/pod-coverage.t
 
@@ -85,4 +85,5 @@ dist-nsis: html-local
 	$(WINEXEC) lib.exe /machine:x86 /def:_nsis/lib/libzbar-0.def /out:_nsis/lib/libzbar-0.lib
 	cd _nsis && \
 	  makensis -NOCD -V2 -DVERSION=$(VERSION) $(abs_srcdir)/zbar.nsi
+	@ls -l _nsis/zbar-$(VERSION)-setup.exe
 endif

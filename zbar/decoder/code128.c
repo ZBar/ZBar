@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------
- *  Copyright 2007-2009 (c) Jeff Brown <spadix@users.sourceforge.net>
+ *  Copyright 2007-2010 (c) Jeff Brown <spadix@users.sourceforge.net>
  *
  *  This file is part of the ZBar Bar Code Reader.
  *
@@ -25,12 +25,12 @@
 #include <string.h>     /* memmove */
 
 #include <zbar.h>
-#include "decoder.h"
 
 #ifdef DEBUG_CODE128
 # define DEBUG_LEVEL (DEBUG_CODE128)
 #endif
 #include "debug.h"
+#include "decoder.h"
 
 #define NUM_CHARS 108           /* total number of character codes */
 
@@ -120,6 +120,8 @@ static inline signed char decode_lo (int sig)
                             ((sig >> 5) & 0x18) |
                             ((sig >> 7) & 0x60));
     unsigned char idx = lo_offset[offset];
+    unsigned char base, c;
+
     if(sig & 1)
         idx &= 0xf;
     else
@@ -127,31 +129,31 @@ static inline signed char decode_lo (int sig)
     if(idx == 0xf)
         return(-1);
 
-    unsigned char base = (sig >> 11) | ((sig >> 9) & 1);
+    base = (sig >> 11) | ((sig >> 9) & 1);
     zassert(base < 8, -1, "sig=%x offset=%x idx=%x base=%x\n",
             sig, offset, idx, base);
     idx += lo_base[base];
 
     zassert(idx <= 0x50, -1, "sig=%x offset=%x base=%x idx=%x\n",
             sig, offset, base, idx);
-    unsigned char c = characters[idx];
-    dprintf(2, " %02x(%x(%02x)/%x(%02x)) => %02x",
-            idx, base, lo_base[base], offset, lo_offset[offset],
-            (unsigned char)c);
+    c = characters[idx];
+    dbprintf(2, " %02x(%x(%02x)/%x(%02x)) => %02x",
+             idx, base, lo_base[base], offset, lo_offset[offset],
+             (unsigned char)c);
     return(c);
 }
 
 static inline signed char decode_hi (int sig)
 {
     unsigned char rev = (sig & 0x4400) != 0;
+    unsigned char idx, c;
     if(rev)
         sig = (((sig >> 12) & 0x000f) |
                ((sig >>  4) & 0x00f0) |
                ((sig <<  4) & 0x0f00) |
                ((sig << 12) & 0xf000));
-    dprintf(2, " rev=%x", rev != 0);
+    dbprintf(2, " rev=%x", rev != 0);
 
-    unsigned char idx;
     switch(sig) {
     case 0x0014: idx = 0x0; break;
     case 0x0025: idx = 0x1; break;
@@ -171,8 +173,8 @@ static inline signed char decode_hi (int sig)
     }
     if(rev)
         idx += 0xe;
-    unsigned char c = characters[0x51 + idx];
-    dprintf(2, " %02x => %02x", idx, c);
+    c = characters[0x51 + idx];
+    dbprintf(2, " %02x => %02x", idx, c);
     return(c);
 }
 
@@ -190,13 +192,18 @@ static inline unsigned char calc_check (unsigned char c)
 
 static inline signed char decode6 (zbar_decoder_t *dcode)
 {
+    int sig;
+    signed char c, chk;
+    unsigned bars;
+
     /* build edge signature of character */
     unsigned s = dcode->code128.s6;
-    dprintf(2, " s=%d", s);
+
+    dbprintf(2, " s=%d", s);
     if(s < 5)
         return(-1);
     /* calculate similar edge measurements */
-    int sig = (get_color(dcode) == ZBAR_BAR)
+    sig = (get_color(dcode) == ZBAR_BAR)
         ? ((decode_e(get_width(dcode, 0) + get_width(dcode, 1), s, 11) << 12) |
            (decode_e(get_width(dcode, 1) + get_width(dcode, 2), s, 11) << 8) |
            (decode_e(get_width(dcode, 2) + get_width(dcode, 3), s, 11) << 4) |
@@ -207,19 +214,19 @@ static inline signed char decode6 (zbar_decoder_t *dcode)
            (decode_e(get_width(dcode, 2) + get_width(dcode, 1), s, 11)));
     if(sig < 0)
         return(-1);
-    dprintf(2, " sig=%04x", sig);
+    dbprintf(2, " sig=%04x", sig);
     /* lookup edge signature */
-    signed char c = (sig & 0x4444) ? decode_hi(sig) : decode_lo(sig);
+    c = (sig & 0x4444) ? decode_hi(sig) : decode_lo(sig);
     if(c == -1)
         return(-1);
 
     /* character validation */
-    unsigned bars = (get_color(dcode) == ZBAR_BAR)
+    bars = (get_color(dcode) == ZBAR_BAR)
         ? (get_width(dcode, 0) + get_width(dcode, 2) + get_width(dcode, 4))
         : (get_width(dcode, 1) + get_width(dcode, 3) + get_width(dcode, 5));
     bars = bars * 11 * 4 / s;
-    unsigned char chk = calc_check(c);
-    dprintf(2, " bars=%d chk=%d", bars, chk);
+    chk = calc_check(c);
+    dbprintf(2, " bars=%d chk=%d", bars, chk);
     if(chk - 7 > bars || bars > chk + 7)
         return(-1);
 
@@ -228,18 +235,20 @@ static inline signed char decode6 (zbar_decoder_t *dcode)
 
 static inline unsigned char validate_checksum (zbar_decoder_t *dcode)
 {
+    unsigned idx, sum, i, acc = 0;
+    unsigned char check, err;
+
     code128_decoder_t *dcode128 = &dcode->code128;
     if(dcode128->character < 3)
         return(1);
 
     /* add in irregularly weighted start character */
-    unsigned idx = (dcode128->direction) ? dcode128->character - 1 : 0;
-    unsigned sum = dcode->buf[idx];
+    idx = (dcode128->direction) ? dcode128->character - 1 : 0;
+    sum = dcode->buf[idx];
     if(sum >= 103)
         sum -= 103;
 
     /* calculate sum in reverse to avoid multiply operations */
-    unsigned i, acc = 0;
     for(i = dcode128->character - 3; i; i--) {
         zassert(sum < 103, -1, "dir=%x i=%x sum=%x acc=%x %s\n",
                 dcode128->direction, i, sum, acc,
@@ -258,11 +267,11 @@ static inline unsigned char validate_checksum (zbar_decoder_t *dcode)
 
     /* and compare to check character */
     idx = (dcode128->direction) ? 1 : dcode128->character - 2;
-    unsigned char check = dcode->buf[idx];
-    dprintf(2, " chk=%02x(%02x)", sum, check);
-    unsigned char err = (sum != check);
+    check = dcode->buf[idx];
+    dbprintf(2, " chk=%02x(%02x)", sum, check);
+    err = (sum != check);
     if(err)
-        dprintf(1, " [checksum error]\n");
+        dbprintf(1, " [checksum error]\n");
     return(err);
 }
 
@@ -272,6 +281,8 @@ static inline unsigned postprocess_c (zbar_decoder_t *dcode,
                                       unsigned end,
                                       unsigned dst)
 {
+    unsigned i, j;
+
     /* expand buffer to accomodate 2x set C characters (2 digits per-char) */
     unsigned delta = end - start;
     unsigned newlen = dcode->code128.character + delta;
@@ -282,7 +293,6 @@ static inline unsigned postprocess_c (zbar_decoder_t *dcode,
             dcode->code128.character - start);
     dcode->code128.character = newlen;
 
-    unsigned i, j;
     for(i = 0, j = dst; i < delta; i++, j += 2) {
         /* convert each set C character into two ASCII digits */
         unsigned char code = dcode->buf[start + delta + i];
@@ -317,13 +327,15 @@ static inline unsigned postprocess_c (zbar_decoder_t *dcode,
 /* resolve scan direction and convert to ASCII */
 static inline unsigned char postprocess (zbar_decoder_t *dcode)
 {
+    unsigned i, j, cexp;
+    unsigned char code = 0, charset;
     code128_decoder_t *dcode128 = &dcode->code128;
-    dprintf(2, "\n    postproc len=%d", dcode128->character);
-    unsigned i, j;
-    unsigned char code = 0;
+    dbprintf(2, "\n    postproc len=%d", dcode128->character);
+    dcode->modifiers = 0;
+    dcode->direction = 1 - 2 * dcode128->direction;
     if(dcode128->direction) {
         /* reverse buffer */
-        dprintf(2, " (rev)");
+        dbprintf(2, " (rev)");
         for(i = 0; i < dcode128->character / 2; i++) {
             unsigned j = dcode128->character - 1 - i;
             code = dcode->buf[i];
@@ -343,9 +355,9 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
     zassert(code >= START_A && code <= START_C, 1, "%s\n",
             _zbar_decoder_buf_dump(dcode->buf, dcode->code128.character));
 
-    unsigned char charset = code - START_A;
-    unsigned cexp = (code == START_C) ? 1 : 0;
-    dprintf(2, " start=%c", 'A' + charset);
+    charset = code - START_A;
+    cexp = (code == START_C) ? 1 : 0;
+    dbprintf(2, " start=%c", 'A' + charset);
 
     for(i = 1, j = 0; i < dcode128->character - 2; i++) {
         unsigned char code = dcode->buf[i];
@@ -368,14 +380,15 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
                 charset &= 0x7f;
         }
         else {
-            dprintf(2, " %02x", code);
+            dbprintf(2, " %02x", code);
             if(charset & 0x2) {
+                unsigned delta;
                 /* expand character set C to ASCII */
                 zassert(cexp, 1, "i=%x j=%x code=%02x charset=%x cexp=%x %s\n",
                         i, j, code, charset, cexp,
                         _zbar_decoder_buf_dump(dcode->buf,
                                                 dcode->code128.character));
-                unsigned delta = postprocess_c(dcode, cexp, i, j);
+                delta = postprocess_c(dcode, cexp, i, j);
                 i += delta;
                 j += delta * 2;
                 cexp = 0;
@@ -383,28 +396,39 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
             if(code < CODE_C) {
                 if(code == SHIFT)
                     charset |= 0x80;
-                else if(code == FNC2)
-                    /* FIXME FNC2 - message append */;
-                else if(code == FNC3)
-                    /* FIXME FNC3 - initialize */;
+                else if(code == FNC2) {
+                    /* FIXME FNC2 - message append */
+                }
+                else if(code == FNC3) {
+                    /* FIXME FNC3 - initialize */
+                }
             }
-            else if(code == FNC1)
-                /* FIXME FNC1 - Code 128 subsets or ASCII 0x1d */;
+            else if(code == FNC1) {
+                /* FNC1 - Code 128 subsets or ASCII 0x1d */
+                if(i == 1)
+                    dcode->modifiers |= MOD(ZBAR_MOD_GS1);
+                else if(i == 2)
+                    dcode->modifiers |= MOD(ZBAR_MOD_AIM);
+                else if(i < dcode->code128.character - 3)
+                    dcode->buf[j++] = 0x1d;
+                /*else drop trailing FNC1 */
+            }
             else if(code >= START_A) {
-                dprintf(1, " [truncated]\n");
+                dbprintf(1, " [truncated]\n");
                 return(1);
             }
             else {
+                unsigned char newset = CODE_A - code;
                 zassert(code >= CODE_C && code <= CODE_A, 1,
                         "i=%x j=%x code=%02x charset=%x cexp=%x %s\n",
                         i, j, code, charset, cexp,
                         _zbar_decoder_buf_dump(dcode->buf,
                                                 dcode->code128.character));
-                unsigned char newset = CODE_A - code;
                 if(newset != charset)
                     charset = newset;
-                else
-                    /* FIXME FNC4 - extended ASCII */;
+                else {
+                    /* FIXME FNC4 - extended ASCII */
+                }
             }
             if(charset & 0x2)
                 cexp = i + 1;
@@ -417,6 +441,8 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
                                         dcode->code128.character));
         j += postprocess_c(dcode, cexp, i, j) * 2;
     }
+    zassert(j < dcode->buf_alloc, 1, "j=%02x %s\n", j,
+            _zbar_decoder_buf_dump(dcode->buf, dcode->code128.character));
     dcode->buflen = j;
     dcode->buf[j] = '\0';
     dcode->code128.character = j;
@@ -426,65 +452,89 @@ static inline unsigned char postprocess (zbar_decoder_t *dcode)
 zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
 {
     code128_decoder_t *dcode128 = &dcode->code128;
+    signed char c;
 
     /* update latest character width */
     dcode128->s6 -= get_width(dcode, 6);
     dcode128->s6 += get_width(dcode, 0);
 
-    if(/* process every 6th element of active symbol */
-       (dcode128->character >= 0 &&
-        (++dcode128->element) != 6) ||
-       /* decode color based on direction */
-       (get_color(dcode) != dcode128->direction))
+    if((dcode128->character < 0)
+       ? get_color(dcode) != ZBAR_SPACE
+       : (/* process every 6th element of active symbol */
+          ++dcode128->element != 6 ||
+          /* decode color based on direction */
+          get_color(dcode) != dcode128->direction))
         return(0);
     dcode128->element = 0;
 
-    dprintf(2, "      code128[%c%02d+%x]:",
-            (dcode128->direction) ? '<' : '>',
-            dcode128->character, dcode128->element);
+    dbprintf(2, "      code128[%c%02d+%x]:",
+             (dcode128->direction) ? '<' : '>',
+             dcode128->character, dcode128->element);
 
-    signed char c = decode6(dcode);
+    c = decode6(dcode);
     if(dcode128->character < 0) {
-        dprintf(2, " c=%02x", c);
+        unsigned qz;
+        dbprintf(2, " c=%02x", c);
         if(c < START_A || c > STOP_REV || c == STOP_FWD) {
-            dprintf(2, " [invalid]\n");
+            dbprintf(2, " [invalid]\n");
             return(0);
         }
-        unsigned qz = get_width(dcode, 6);
-        if(qz && qz < (dcode->code128.s6 * 3) / 4) {
-            dprintf(2, " [invalid qz %d]\n");
-            return(0);
-        }
-        /* lock shared resources */
-        if(get_lock(dcode, ZBAR_CODE128)) {
-            dprintf(2, " [locked %d]\n", dcode->lock);
-            dcode128->character = -1;
+        qz = get_width(dcode, 6);
+        if(qz && qz < (dcode128->s6 * 3) / 4) {
+            dbprintf(2, " [invalid qz %d]\n", qz);
             return(0);
         }
         /* decoded valid start/stop */
         /* initialize state */
-        dcode128->character = 0;
+        dcode128->character = 1;
         if(c == STOP_REV) {
             dcode128->direction = ZBAR_BAR;
             dcode128->element = 7;
         }
         else
             dcode128->direction = ZBAR_SPACE;
-        dprintf(2, " dir=%x [valid start]", dcode128->direction);
+        dcode128->start = c;
+        dcode128->width = dcode128->s6;
+        dbprintf(2, " dir=%x [valid start]\n", dcode128->direction);
+        return(0);
     }
-    else if((c < 0) ||
-            ((dcode128->character >= BUFFER_MIN) &&
-             size_buf(dcode, dcode128->character + 1))) {
-        dprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
-        dcode->lock = 0;
+    else if(c < 0 || size_buf(dcode, dcode128->character + 1)) {
+        dbprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
+        if(dcode128->character > 1)
+            release_lock(dcode, ZBAR_CODE128);
         dcode128->character = -1;
         return(0);
     }
+    else {
+        unsigned dw;
+        if(dcode128->width > dcode128->s6)
+            dw = dcode128->width - dcode128->s6;
+        else
+            dw = dcode128->s6 - dcode128->width;
+        dw *= 4;
+        if(dw > dcode128->width) {
+            dbprintf(1, " [width var]\n");
+            if(dcode128->character > 1)
+                release_lock(dcode, ZBAR_CODE128);
+            dcode128->character = -1;
+            return(0);
+        }
+    }
+    dcode128->width = dcode128->s6;
 
     zassert(dcode->buf_alloc > dcode128->character, 0,
             "alloc=%x idx=%x c=%02x %s\n",
             dcode->buf_alloc, dcode128->character, c,
             _zbar_decoder_buf_dump(dcode->buf, dcode->buf_alloc));
+
+    if(dcode128->character == 1) {
+        /* lock shared resources */
+        if(acquire_lock(dcode, ZBAR_CODE128)) {
+            dcode128->character = -1;
+            return(0);
+        }
+        dcode->buf[0] = dcode128->start;
+    }
 
     dcode->buf[dcode128->character++] = c;
 
@@ -499,17 +549,17 @@ zbar_symbol_type_t _zbar_decode_code128 (zbar_decoder_t *dcode)
         else if(dcode128->character < CFG(*dcode128, ZBAR_CFG_MIN_LEN) ||
                 (CFG(*dcode128, ZBAR_CFG_MAX_LEN) > 0 &&
                  dcode128->character > CFG(*dcode128, ZBAR_CFG_MAX_LEN))) {
-            dprintf(2, " [invalid len]\n");
+            dbprintf(2, " [invalid len]\n");
             sym = ZBAR_NONE;
         }
         else
-            dprintf(2, " [valid end]\n");
+            dbprintf(2, " [valid end]\n");
         dcode128->character = -1;
         if(!sym)
-            dcode->lock = 0;
+            release_lock(dcode, ZBAR_CODE128);
         return(sym);
     }
 
-    dprintf(2, "\n");
+    dbprintf(2, "\n");
     return(0);
 }
