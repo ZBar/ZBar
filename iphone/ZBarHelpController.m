@@ -119,7 +119,7 @@ enum { BTN_TRYAGAIN = 1 };
 
     [view addSubview: toolbar];
 
-    NSString *path = [[NSBundle mainBundle]
+    NSString *path = [[NSBundle bundleForClass:self.class]
                          pathForResource: @"zbar-help"
                          ofType: @"html"];
 
