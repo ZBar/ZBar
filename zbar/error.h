@@ -23,7 +23,6 @@
 #ifndef _ERROR_H_
 #define _ERROR_H_
 
-#include <config.h>
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #endif

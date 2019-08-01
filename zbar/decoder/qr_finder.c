@@ -21,10 +21,10 @@
  *  http://sourceforge.net/projects/zbar
  *------------------------------------------------------------------------*/
 
-#include <config.h>
 #include <assert.h>
 
 #include <zbar.h>
+#include <qrcode.h>
 
 #ifdef DEBUG_QR_FINDER
 # define DEBUG_LEVEL (DEBUG_QR_FINDER)
