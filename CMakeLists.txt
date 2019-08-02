@@ -73,3 +73,7 @@ install(
     DIRECTORY include/zbar
     DESTINATION include
 )
+install(
+    FILES Findzbar.cmake
+    DESTINATION share/cmake
+)
