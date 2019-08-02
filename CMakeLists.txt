@@ -1,17 +1,17 @@
-project(zbar_qrcode C)
+project(zbar_qrcode)
 cmake_minimum_required(VERSION 3.10)
 
-set(LIBRARY_NAME zbar)
-
-set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-include_directories(
-    include
-    zbar
-    zbar/qrcode
-    zbar/decoder
-)
+option(BUILD_SHARED_LIBS "Build shared library" ON)
+
+set(CMAKE_THREAD_PREFER_PTHREAD ON)
+find_package(Threads QUIET)
+
+FIND_FILE(HAVE_INTTYPES_H "inttypes.h" DOC "inttypes.h exists")
+FIND_FILE(HAVE_FEATURES_H "features.h" DOC "features.h exists")
 
 set(SOURCE_FILES
     zbar/decoder/qr_finder.c
@@ -23,7 +23,6 @@ set(SOURCE_FILES
     zbar/qrcode/binarize.c
     zbar/qrcode/util.c
 )
-
 set(HEADER_FILES
     include/zbar.h
     zbar/decoder/qr_finder.h
@@ -36,43 +35,41 @@ set(HEADER_FILES
     zbar/qrcode/util.h
 )
 
-option(BUILD_SHARED_LIBS "Build shared library" ON)
-
-add_definitions(-DENABLE_QRCODE)
-
-FIND_FILE(HAVE_INTTYPES_H "inttypes.h" DOC "inttypes.h exists")
+add_library(zbar ${SOURCE_FILES} ${HEADER_FILES})
+target_compile_definitions(zbar PRIVATE ENABLE_QRCODE)
 if (HAVE_INTTYPES_H)
-    add_definitions(-DHAVE_INTTYPES_H=1)
+    target_compile_definitions(zbar PRIVATE HAVE_INTTYPES_H=1)
 endif()
-
-FIND_FILE(HAVE_FEATURES_H "features.h" DOC "features.h exists")
 if (HAVE_FEATURES_H)
-    add_definitions(-DHAVE_FEATURES_H=1)
+    target_compile_definitions(zbar PRIVATE HAVE_FEATURES_H=1)
 endif()
-
-add_library(${LIBRARY_NAME} ${SOURCE_FILES} ${HEADER_FILES})
-
-set(CMAKE_THREAD_PREFER_PTHREAD ON)
-find_package(Threads QUIET)
 if(THREADS_FOUND)
-    add_definitions(-DHAVE_LIBPTHREAD=1)
-    target_link_libraries(
-        ${LIBRARY_NAME} 
+    target_compile_definitions(zbar PRIVATE HAVE_LIBPTHREAD=1)
+    target_link_libraries(zbar
         PRIVATE
             Threads::Threads
     )
 endif()
 
-
-include(GenerateExportHeader)
-generate_export_header(${LIBRARY_NAME} EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/zbar_export.h)
-target_include_directories(${LIBRARY_NAME}
+target_include_directories(zbar
     PUBLIC
-        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    PRIVATE
+        zbar
+        zbar/qrcode
+        zbar/decoder
 )
 
-install(TARGETS ${LIBRARY_NAME}
-    RUNTIME  DESTINATION "bin"
-    LIBRARY  DESTINATION "lib"
-    ARCHIVE  DESTINATION "lib"
+install(TARGETS zbar
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
+install(
+    FILES include/zbar.h
+    DESTINATION include
+)
+install(
+    DIRECTORY include/zbar
+    DESTINATION include
 )
