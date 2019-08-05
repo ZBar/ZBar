@@ -26,7 +26,6 @@
 /* simple platform thread abstraction
  */
 
-#include <config.h>
 #include "event.h"
 
 #if defined(_WIN32)
