@@ -23,6 +23,7 @@
 #ifndef _ZBAR_TIMER_H_
 #define _ZBAR_TIMER_H_
 
+#include <unistd.h>
 #include <time.h>
 #ifdef HAVE_SYS_TIME_H
 # include <sys/time.h>   /* gettimeofday */
