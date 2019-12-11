@@ -282,12 +282,26 @@ static const CGFloat const zoom_choices[] = {
 {
     self.title = @"ZBar Reader Test";
 
+    window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
+    
+    //解决该问题的代码
+//    NSArray *windows = [[UIApplication sharedApplication] windows];
+//    for(UIWindow *window in windows) {
+//        if(window.rootViewController == nil){
+//
+//        }
+//    }
+    //解决该问题的代码
+    UIViewController *vc = [[UIViewController alloc]initWithNibName:nil
+                                                         bundle:nil];
     nav = [[UINavigationController alloc]
               initWithRootViewController: self];
+//    [vc addChildViewController:nav];
+    [vc.view addSubview: nav.view];
     nav.delegate = self;
-
-    window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
-    [window addSubview: nav.view];
+    
+    window.rootViewController = vc;
+//    [window addSubview: vc.view];
     [window makeKeyAndVisible];
 
     [self initReader: @"ZBarReaderViewController"];
