@@ -123,8 +123,8 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
 + (BOOL) isSourceTypeAvailable: (UIImagePickerControllerSourceType) sourceType
 {
-    if(sourceType != UIImagePickerControllerSourceTypeCamera)
-        return(NO);
+//    if(sourceType != UIImagePickerControllerSourceTypeCamera)
+//        return(NO);
     return(TARGET_IPHONE_SIMULATOR ||
            [UIImagePickerController isSourceTypeAvailable: sourceType]);
 }
@@ -687,7 +687,7 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
                   @" for %@ property", val, @#getter); \
     }
 
-DEPRECATED_PROPERTY(sourceType, setSourceType, UIImagePickerControllerSourceType, UIImagePickerControllerSourceTypeCamera, NO)
+DEPRECATED_PROPERTY(sourceType, setSourceType, UIImagePickerControllerSourceType, UIImagePickerControllerSourceTypeCamera, YES) ///!!!
 DEPRECATED_PROPERTY(allowsEditing, setAllowsEditing, BOOL, NO, NO)
 DEPRECATED_PROPERTY(allowsImageEditing, setAllowsImageEditing, BOOL, NO, NO)
 DEPRECATED_PROPERTY(showsCameraControls, setShowsCameraControls, BOOL, NO, NO)
