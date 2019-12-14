@@ -230,7 +230,7 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
                                       unsigned w)
 {
     zbar_symbol_type_t tmp, sym = ZBAR_NONE;
-    fprintf(stderr, "#Barcodes# zbar_decode_width: %d\n", w);
+//    fprintf(stderr, "#Barcodes# zbar_decode_width: %d\n", w);
     dcode->w[dcode->idx & (DECODE_WINDOW - 1)] = w;
     dbprintf(1, "    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
 
@@ -276,7 +276,7 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
         sym = tmp;
 #endif
 #ifdef ENABLE_I25
-    fprintf(stderr, "#Barcodes# I25: %d\n", TEST_CFG(dcode->i25.config, ZBAR_CFG_ENABLE));
+//    fprintf(stderr, "#Barcodes# I25: %d\n", TEST_CFG(dcode->i25.config, ZBAR_CFG_ENABLE));
     if(TEST_CFG(dcode->i25.config, ZBAR_CFG_ENABLE) &&
        (tmp = _zbar_decode_i25(dcode)) > ZBAR_PARTIAL)
         sym = tmp;

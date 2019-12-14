@@ -201,7 +201,12 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
 zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
 {
     i25_decoder_t *dcode25 = &dcode->i25;
-    fprintf(stderr, "#Barcodes# get_width(dcode, 0)=%d\n", get_width(dcode, 0));
+//    fprintf(stderr, "#Barcodes# get_width(dcode, 0)=");
+//    for (int i = 0; i < DECODE_WINDOW; ++i)
+//    {
+//        fprintf(stderr, "%d-", get_width(dcode, i));
+//    }
+//    fprintf(stderr, "\n");
     /* update latest character width */
     dcode25->s10 -= get_width(dcode, 10);
     dcode25->s10 += get_width(dcode, 0);
