@@ -50,6 +50,7 @@ const char *zbar_get_symbol_name (zbar_symbol_type_t sym)
     case ZBAR_CODE128: return("CODE-128");
     case ZBAR_PDF417: return("PDF417");
     case ZBAR_QRCODE: return("QR-Code");
+    case ZBAR_CYCLIC: return("CYCLIC");
     default: return("UNKNOWN");
     }
 }

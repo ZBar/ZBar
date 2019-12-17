@@ -40,6 +40,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		BB829A8923A8AD26003FCDB2 /* cyclic.c in Sources */ = {isa = PBXBuildFile; fileRef = BB829A8823A8AD26003FCDB2 /* cyclic.c */; };
 		DC26004C118631C200FA987B /* ZBarCaptureReader.m in Sources */ = {isa = PBXBuildFile; fileRef = DC26004B118631C200FA987B /* ZBarCaptureReader.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		DC290E281351496400A9B857 /* codabar.c in Sources */ = {isa = PBXBuildFile; fileRef = DC290E261351496400A9B857 /* codabar.c */; };
 		DC299A9D1208B5E8006A023C /* libzbar.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D2AAC07E0554694100DB518D /* libzbar.a */; };
@@ -239,6 +240,8 @@
 
 /* Begin PBXFileReference section */
 		AACBBE490F95108600F1A2B1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		BB829A8723A8AD25003FCDB2 /* cyclic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cyclic.h; sourceTree = "<group>"; };
+		BB829A8823A8AD26003FCDB2 /* cyclic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cyclic.c; sourceTree = "<group>"; };
 		D2AAC07E0554694100DB518D /* libzbar.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libzbar.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC1A49A211FF33B300BCDA30 /* zbar-help.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = "zbar-help.html"; path = "res/zbar-help.html"; sourceTree = "<group>"; };
 		DC1A49A311FF33B300BCDA30 /* zbar-helpicons.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "zbar-helpicons.png"; path = "res/zbar-helpicons.png"; sourceTree = "<group>"; };
@@ -541,6 +544,8 @@
 		DC67C12210A07AD30033B702 /* decoder */ = {
 			isa = PBXGroup;
 			children = (
+				BB829A8823A8AD26003FCDB2 /* cyclic.c */,
+				BB829A8723A8AD25003FCDB2 /* cyclic.h */,
 				DCF5C9AB11EA3AD100E7DC21 /* databar.c */,
 				DCF5C9AC11EA3AD100E7DC21 /* databar.h */,
 				DC67C12310A07AD30033B702 /* code128.c */,
@@ -725,6 +730,7 @@
 				DC67C17F10A07AD30033B702 /* qr_finder.c in Sources */,
 				DC67C18110A07AD30033B702 /* decoder.c in Sources */,
 				DC67C18310A07AD30033B702 /* error.c in Sources */,
+				BB829A8923A8AD26003FCDB2 /* cyclic.c in Sources */,
 				DC67C18610A07AD30033B702 /* image.c in Sources */,
 				DC67C18810A07AD30033B702 /* img_scanner.c in Sources */,
 				DC67C19510A07AD30033B702 /* bch15_5.c in Sources */,

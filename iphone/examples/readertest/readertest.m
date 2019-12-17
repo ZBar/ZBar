@@ -458,7 +458,7 @@ static const CGFloat const zoom_choices[] = {
         ZBAR_EAN13, ZBAR_EAN8, 
         ZBAR_EAN2, ZBAR_EAN5, ZBAR_COMPOSITE,
         ZBAR_UPCA, ZBAR_UPCE,
-        ZBAR_ISBN13, ZBAR_ISBN10,
+        ZBAR_ISBN13, ZBAR_ISBN10, ZBAR_CYCLIC,
         0
     };
     NSMutableArray *symbols = [NSMutableArray array];

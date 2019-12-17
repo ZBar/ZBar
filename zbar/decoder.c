@@ -137,6 +137,9 @@ void zbar_decoder_reset (zbar_decoder_t *dcode)
 #ifdef ENABLE_QRCODE
     qr_finder_reset(&dcode->qrf);
 #endif
+#ifdef ENABLE_CYCLIC
+    cyclic_reset(&dcode->cyclic);
+#endif
 }
 
 void zbar_decoder_new_scan (zbar_decoder_t *dcode)
@@ -230,7 +233,7 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
                                       unsigned w)
 {
     zbar_symbol_type_t tmp, sym = ZBAR_NONE;
-//    fprintf(stderr, "#Barcodes# zbar_decode_width: %d\n", w);
+    fprintf(stderr, "#Barcodes# zbar_decode_width: %d\n", w);
     dcode->w[dcode->idx & (DECODE_WINDOW - 1)] = w;
     dbprintf(1, "    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
 
@@ -284,6 +287,11 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
 #ifdef ENABLE_PDF417
     if(TEST_CFG(dcode->pdf417.config, ZBAR_CFG_ENABLE) &&
        (tmp = _zbar_decode_pdf417(dcode)) > ZBAR_PARTIAL)
+        sym = tmp;
+#endif
+#ifdef ENABLE_CYCLIC
+    if(TEST_CFG(dcode->cyclic.config, ZBAR_CFG_ENABLE) &&
+       (tmp = _zbar_decode_cyclic(dcode)) > ZBAR_PARTIAL)
         sym = tmp;
 #endif
 
@@ -389,6 +397,12 @@ decoder_get_configp (const zbar_decoder_t *dcode,
         break;
 #endif
 
+#ifdef ENABLE_CYCLIC
+    case ZBAR_CYCLIC:
+        config = &dcode->cyclic.config;
+        break;
+#endif
+
     default:
         config = NULL;
     }
@@ -490,7 +504,7 @@ int zbar_decoder_set_config (zbar_decoder_t *dcode,
             ZBAR_UPCA, ZBAR_UPCE, ZBAR_ISBN10, ZBAR_ISBN13,
             ZBAR_I25, ZBAR_DATABAR, ZBAR_DATABAR_EXP, ZBAR_CODABAR,
 	    ZBAR_CODE39, ZBAR_CODE93, ZBAR_CODE128, ZBAR_QRCODE, 
-	    ZBAR_PDF417, 0
+	    ZBAR_PDF417, ZBAR_CYCLIC, 0
         };
         const zbar_symbol_type_t *symp;
         for(symp = all; *symp; symp++)

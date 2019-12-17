@@ -98,6 +98,8 @@ int zbar_parse_config (const char *cfgstr,
             *sym = ZBAR_DATABAR;
         else if(!strncmp(cfgstr, "databar-exp", len))
             *sym = ZBAR_DATABAR_EXP;
+        else if(!strncmp(cfgstr, "cyclic", len))
+            *sym = ZBAR_CYCLIC;
         else
             return(1);
         cfgstr = dot + 1;

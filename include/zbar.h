@@ -104,6 +104,7 @@ typedef enum zbar_symbol_type_e {
     ZBAR_QRCODE      =     64,  /**< QR Code. @since 0.10 */
     ZBAR_CODE93      =     93,  /**< Code 93. @since 0.11 */
     ZBAR_CODE128     =    128,  /**< Code 128 */
+    ZBAR_CYCLIC      =    176,  /**< Cyclic code  */
 
     /** mask for base symbol type.
      * @deprecated in 0.11, remove this from existing code

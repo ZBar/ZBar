@@ -27,6 +27,9 @@
 /* whether to build support for QR Code */
 #define ENABLE_QRCODE 1
 
+/* whether to build support for Cyclic symbology */
+#define ENABLE_CYCLIC 1
+
 /* Define to 1 if you have the `atexit' function. */
 #undef HAVE_ATEXIT
 
