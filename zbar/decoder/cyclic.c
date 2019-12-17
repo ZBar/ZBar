@@ -81,10 +81,11 @@ void cyclic_destroy (cyclic_decoder_t *dcodeCyclic)
     {
         for (int i = 0; i < 3; ++i)
         {
-            if (!head->children[i]) continue;
+            CyclicCharacterTreeNode* parent = head->children[0];
+            if (!parent->children[i]) continue;
             
             tail->children[1] = CyclicCharacterTreeNodeCreate();
-            tail->children[1]->children[0] = head->children[i];
+            tail->children[1]->children[0] = parent->children[i];
             tail = tail->children[1];
         }
         
