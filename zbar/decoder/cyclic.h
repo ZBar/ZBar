@@ -30,12 +30,12 @@ typedef struct CyclicCharacterTreeNode_s {
     int32_t leafValue;
 } CyclicCharacterTreeNode;
 
-inline void CyclicCharacterTreeNodeReset(CyclicCharacterTreeNode* node) {
+static inline void CyclicCharacterTreeNodeReset(CyclicCharacterTreeNode* node) {
     memset(node, 0, sizeof(CyclicCharacterTreeNode));
     node->leafValue = -1;
 }
 
-inline CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate() {
+static inline CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate() {
     CyclicCharacterTreeNode* ret = (CyclicCharacterTreeNode*) malloc(sizeof(CyclicCharacterTreeNode));
     CyclicCharacterTreeNodeReset(ret);
     return ret;
@@ -59,7 +59,7 @@ typedef struct cyclic_decoder_s {
 /* reset Cyclic specific state */
 void cyclic_reset (cyclic_decoder_t *dcodeCyclic);
 
-void cyclic_destroyf (cyclic_decoder_t *dcodeCyclic);
+void cyclic_destroy (cyclic_decoder_t *dcodeCyclic);
 
 /* decode Code 128 symbols */
 zbar_symbol_type_t _zbar_decode_cyclic(zbar_decoder_t *dcode);
