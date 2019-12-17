@@ -40,9 +40,80 @@ static uint8_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
     {1,1,1,1,2,1,2,2,1,2,1,2},//黑5
 };
 
+static uint8_t CharacterCodes[Cyclic12CharactersCount] = {
+    1,//黑1
+    2,//黑2
+    5,//黑5
+};
+
+void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, uint8_t* path, int length) {
+    if (!root) return;
+    
+    if (0 == length)
+    {
+        root->leafValue = leafValue;
+        return;
+    }
+    
+    uint8_t c = path[0] + path[1] - 2;
+    if (c < 0 || c > 2) return;
+    
+    CyclicCharacterTreeNode* child = root->children[c];
+    if (!child)
+    {
+        child = CyclicCharacterTreeNodeCreate();
+        root->children[c] = child;
+    }
+    
+    CyclicCharacterTreeAdd(child, leafValue, path + 1, length - 1);
+}
+
+void cyclic_destroy (cyclic_decoder_t *dcodeCyclic)
+{//TODO:
+//    dcode128->direction = 0;
+//    dcode128->element = 0;
+//    dcode128->character = -1;
+//    dcode128->s6 = 0;
+    CyclicCharacterTreeNode* head = CyclicCharacterTreeNodeCreate();
+    CyclicCharacterTreeNode* tail = head;
+    head->children[0] = dcodeCyclic->charTree; // children[0] as value, children[1] as next
+    while (head)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            if (!head->children[i]) continue;
+            
+            tail->children[1] = CyclicCharacterTreeNodeCreate();
+            tail->children[1]->children[0] = head->children[i];
+            tail = tail->children[1];
+        }
+        
+        free(head->children[0]);
+        
+        CyclicCharacterTreeNode* next = head->children[1];
+        free(head);
+        head = next;
+    }
+}
+
+void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
+{//TODO:
+//    dcode128->direction = 0;
+//    dcode128->element = 0;
+//    dcode128->character = -1;
+//    dcode128->s6 = 0;
+    dcodeCyclic->charTree = CyclicCharacterTreeNodeCreate();
+    for (int i = 0; i < Cyclic12CharactersCount; ++i)
+    {
+        uint8_t* seq = ElementWidthSequences[i];
+        int length = sizeof(ElementWidthSequences[i]) / sizeof(ElementWidthSequences[i][0]) - 1;
+        CyclicCharacterTreeAdd(dcodeCyclic->charTree, CharacterCodes[i], seq, length);
+    }
+}
+
 zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 {
-    cyclic_decoder_t *dcodeCyclic = &dcode->cyclic;
+    cyclic_decoder_t* dcodeCyclic = &dcode->cyclic;
     //TODO:
 //    signed char c;
 //

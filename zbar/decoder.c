@@ -102,6 +102,9 @@ void zbar_decoder_destroy (zbar_decoder_t *dcode)
     if(dcode->databar.segs)
         free(dcode->databar.segs);
 #endif
+#ifdef ENABLE_CYCLIC
+    cyclic_destroy(&dcode->cyclic);
+#endif
     if(dcode->buf)
         free(dcode->buf);
     free(dcode);

@@ -23,8 +23,28 @@
 #ifndef _CYCLIC_H_
 #define _CYCLIC_H_
 
+#include <string.h>
+
+typedef struct CyclicCharacterTreeNode_s {
+    struct CyclicCharacterTreeNode_s* children[3];
+    int32_t leafValue;
+} CyclicCharacterTreeNode;
+
+inline void CyclicCharacterTreeNodeReset(CyclicCharacterTreeNode* node) {
+    memset(node, 0, sizeof(CyclicCharacterTreeNode));
+    node->leafValue = -1;
+}
+
+inline CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate() {
+    CyclicCharacterTreeNode* ret = (CyclicCharacterTreeNode*) malloc(sizeof(CyclicCharacterTreeNode));
+    CyclicCharacterTreeNodeReset(ret);
+    return ret;
+}
+
 /* Cyclic specific decode state */
 typedef struct cyclic_decoder_s {
+    CyclicCharacterTreeNode* charTree;
+    
     unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
     unsigned element : 3;       /* element offset 0-5 */
     int character : 12;         /* character position in symbol */
@@ -37,13 +57,9 @@ typedef struct cyclic_decoder_s {
 } cyclic_decoder_t;
 
 /* reset Cyclic specific state */
-static inline void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
-{//TODO:
-//    dcode128->direction = 0;
-//    dcode128->element = 0;
-//    dcode128->character = -1;
-//    dcode128->s6 = 0;
-}
+void cyclic_reset (cyclic_decoder_t *dcodeCyclic);
+
+void cyclic_destroyf (cyclic_decoder_t *dcodeCyclic);
 
 /* decode Code 128 symbols */
 zbar_symbol_type_t _zbar_decode_cyclic(zbar_decoder_t *dcode);
