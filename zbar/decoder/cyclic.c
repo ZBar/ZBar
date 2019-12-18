@@ -34,10 +34,20 @@
 
 #define Cyclic12CharactersCount 5
 
+static int g_mallocedNodesCount = 0;
+
 static uint8_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
     {1,1,1,1,1,2,1,1,1,2,1,2},//黑1
     {1,1,1,1,1,2,2,1,2,1,1,2},//黑2
     {1,1,1,1,2,1,2,2,1,2,1,2},//黑5
+};
+
+static uint8_t TestSequence[] = {
+//    0,0,0,0,1,1,0,0,1,1,1,
+//    0,0,0,0,1,2,1,1,1,0,1,
+//    0,0,0,1,1,1,2,1,1,1,1,
+    0,0,0,0,1,1,0,0,0,0,1,2,1,1,1,0,0,0,0,1,1,0,0,1,1,1,
+    0,0,0,1,1,1,2,1,1,1,1,
 };
 
 static uint8_t CharacterCodes[Cyclic12CharactersCount] = {
@@ -68,6 +78,21 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, ui
     CyclicCharacterTreeAdd(child, leafValue, path + 1, length - 1);
 }
 
+CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate() {
+    CyclicCharacterTreeNode* ret = (CyclicCharacterTreeNode*) malloc(sizeof(CyclicCharacterTreeNode));
+    fprintf(stderr, "#Cyclic# New node: %d\n", ++g_mallocedNodesCount);
+    CyclicCharacterTreeNodeReset(ret);
+    return ret;
+}
+
+CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNode* current, uint8_t c) {
+    if (!current) return NULL;
+    
+    if (c < 0 || c > 2) return NULL;
+    
+    return current->children[c];
+}
+
 void cyclic_destroy (cyclic_decoder_t *dcodeCyclic)
 {//TODO:
 //    dcode128->direction = 0;
@@ -90,9 +115,10 @@ void cyclic_destroy (cyclic_decoder_t *dcodeCyclic)
         }
         
         free(head->children[0]);
-        
+        fprintf(stderr, "#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
         CyclicCharacterTreeNode* next = head->children[1];
         free(head);
+        fprintf(stderr, "#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
         head = next;
     }
 }
@@ -103,6 +129,7 @@ void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
 //    dcode128->element = 0;
 //    dcode128->character = -1;
 //    dcode128->s6 = 0;
+    fprintf(stderr, "#Cyclic# cyclic_reset\n");///!!!For Debug
     dcodeCyclic->charTree = CyclicCharacterTreeNodeCreate();
     for (int i = 0; i < Cyclic12CharactersCount; ++i)
     {
@@ -110,6 +137,16 @@ void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
         int length = sizeof(ElementWidthSequences[i]) / sizeof(ElementWidthSequences[i][0]) - 1;
         CyclicCharacterTreeAdd(dcodeCyclic->charTree, CharacterCodes[i], seq, length);
     }
+    
+    dcodeCyclic->currentNode = dcodeCyclic->charTree;
+    int TestSequenceLength = sizeof(TestSequence) / sizeof(TestSequence[0]);
+    for (int i = 0; i < TestSequenceLength; ++i)
+    {
+        dcodeCyclic->currentNode = CyclicCharacterTreeNodeNext(dcodeCyclic->currentNode, TestSequence[i]);
+        //TODO:
+    }
+    
+    cyclic_destroy(dcodeCyclic);///!!!For Debug
 }
 
 zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)

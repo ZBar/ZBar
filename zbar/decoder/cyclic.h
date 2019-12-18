@@ -35,15 +35,12 @@ static inline void CyclicCharacterTreeNodeReset(CyclicCharacterTreeNode* node) {
     node->leafValue = -1;
 }
 
-static inline CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate() {
-    CyclicCharacterTreeNode* ret = (CyclicCharacterTreeNode*) malloc(sizeof(CyclicCharacterTreeNode));
-    CyclicCharacterTreeNodeReset(ret);
-    return ret;
-}
+CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate();
 
 /* Cyclic specific decode state */
 typedef struct cyclic_decoder_s {
     CyclicCharacterTreeNode* charTree;
+    CyclicCharacterTreeNode* currentNode;
     
     unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
     unsigned element : 3;       /* element offset 0-5 */
