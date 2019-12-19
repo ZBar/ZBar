@@ -69,7 +69,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, ui
     if (!root) return;
     
     if (0 == length)
-    {printf("#Cyclic# leafValue=%d\n", leafValue);
+    {//printf("#Cyclic# leafValue=%d\n", leafValue);
         root->leafValue = leafValue;
         return;
     }
@@ -81,7 +81,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, ui
     if (!child)
     {
         child = CyclicCharacterTreeNodeCreate();
-        printf("#Cyclic# Add child as #%d\n", c);
+        //printf("#Cyclic# Add child as #%d\n", c);
         root->children[c] = child;
     }
     
@@ -90,7 +90,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, ui
 
 CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate() {
     CyclicCharacterTreeNode* ret = (CyclicCharacterTreeNode*) malloc(sizeof(CyclicCharacterTreeNode));
-    printf("#Cyclic# New node: %d\n", ++g_mallocedNodesCount);
+    //printf("#Cyclic# New node: %d\n", ++g_mallocedNodesCount);
     CyclicCharacterTreeNodeReset(ret);
     return ret;
 }
@@ -122,7 +122,7 @@ void cyclic_feed_element(cyclic_decoder_t* decoder, uint8_t element)
             decoder->charSeekers[i] = decoder->charSeekers[i]->children[element];
             if (decoder->charSeekers[i] && decoder->charSeekers[i]->leafValue != -1)
             {
-                printf("#Cyclic# A character found: %d\n", decoder->charSeekers[i]->leafValue);
+                //printf("#Cyclic# A character found: %d\n", decoder->charSeekers[i]->leafValue);
                 decoder->charSeekers[i] = NULL;
             }
         }
@@ -155,10 +155,10 @@ void cyclic_destroy (cyclic_decoder_t *dcodeCyclic)
         }
         
         free(head->children[0]);
-        printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
+        //printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
         CyclicCharacterTreeNode* next = head->children[1];
         free(head);
-        printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
+        //printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
         head = next;
     }
     
@@ -171,7 +171,7 @@ void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
 //    dcode128->element = 0;
 //    dcode128->character = -1;
 //    dcode128->s6 = 0;
-    printf("#Cyclic# cyclic_reset\n");///!!!For Debug
+    //printf("#Cyclic# cyclic_reset\n");///!!!For Debug
     dcodeCyclic->charTree = CyclicCharacterTreeNodeCreate();
     dcodeCyclic->maxCharacterLength = 0;
     for (int i = 0; i < Cyclic12CharactersCount; ++i)
@@ -182,10 +182,10 @@ void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
         {
             dcodeCyclic->maxCharacterLength = length;
         }
-        printf("\n---------------------\n");
+        //printf("\n---------------------\n");
         CyclicCharacterTreeAdd(dcodeCyclic->charTree, CharacterCodes[i], seq, length);
     }
-    printf("#Cyclic# maxCharacterLength: %d\n", dcodeCyclic->maxCharacterLength);
+    //printf("#Cyclic# maxCharacterLength: %d\n", dcodeCyclic->maxCharacterLength);
     dcodeCyclic->charSeekers = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * dcodeCyclic->maxCharacterLength);
     memset(dcodeCyclic->charSeekers, 0, sizeof(CyclicCharacterTreeNode*) * dcodeCyclic->maxCharacterLength);
     dcodeCyclic->characterPhase = 0;
@@ -200,7 +200,9 @@ void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
 
 zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 {
-    cyclic_decoder_t* dcodeCyclic = &dcode->cyclic;
+    cyclic_decoder_t* decoder = &dcode->cyclic;
+//    int e = decode_e(pair_width(decoder, 0), s, );
+    
     //TODO:
 //    signed char c;
 //
@@ -217,21 +219,21 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 //        return(0);
 //    dcode128->element = 0;
 //
-//    dbprintf(2, "      code128[%c%02d+%x]:",
+//    db//printf(2, "      code128[%c%02d+%x]:",
 //             (dcode128->direction) ? '<' : '>',
 //             dcode128->character, dcode128->element);
 //
 //    c = decode6(dcode);
 //    if(dcode128->character < 0) {
 //        unsigned qz;
-//        dbprintf(2, " c=%02x", c);
+//        db//printf(2, " c=%02x", c);
 //        if(c < START_A || c > STOP_REV || c == STOP_FWD) {
-//            dbprintf(2, " [invalid]\n");
+//            db//printf(2, " [invalid]\n");
 //            return(0);
 //        }
 //        qz = get_width(dcode, 6);
 //        if(qz && qz < (dcode128->s6 * 3) / 4) {
-//            dbprintf(2, " [invalid qz %d]\n", qz);
+//            db//printf(2, " [invalid qz %d]\n", qz);
 //            return(0);
 //        }
 //        /* decoded valid start/stop */
@@ -245,11 +247,11 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 //            dcode128->direction = ZBAR_SPACE;
 //        dcode128->start = c;
 //        dcode128->width = dcode128->s6;
-//        dbprintf(2, " dir=%x [valid start]\n", dcode128->direction);
+//        db//printf(2, " dir=%x [valid start]\n", dcode128->direction);
 //        return(0);
 //    }
 //    else if(c < 0 || size_buf(dcode, dcode128->character + 1)) {
-//        dbprintf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
+//        db//printf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
 //        if(dcode128->character > 1)
 //            release_lock(dcode, ZBAR_CODE128);
 //        dcode128->character = -1;
@@ -263,7 +265,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 //            dw = dcode128->s6 - dcode128->width;
 //        dw *= 4;
 //        if(dw > dcode128->width) {
-//            dbprintf(1, " [width var]\n");
+//            db//printf(1, " [width var]\n");
 //            if(dcode128->character > 1)
 //                release_lock(dcode, ZBAR_CODE128);
 //            dcode128->character = -1;
@@ -299,17 +301,17 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 //        else if(dcode128->character < CFG(*dcode128, ZBAR_CFG_MIN_LEN) ||
 //                (CFG(*dcode128, ZBAR_CFG_MAX_LEN) > 0 &&
 //                 dcode128->character > CFG(*dcode128, ZBAR_CFG_MAX_LEN))) {
-//            dbprintf(2, " [invalid len]\n");
+//            db//printf(2, " [invalid len]\n");
 //            sym = ZBAR_NONE;
 //        }
 //        else
-//            dbprintf(2, " [valid end]\n");
+//            db//printf(2, " [valid end]\n");
 //        dcode128->character = -1;
 //        if(!sym)
 //            release_lock(dcode, ZBAR_CODE128);
 //        return(sym);
 //    }
 //
-//    dbprintf(2, "\n");
+//    db//printf(2, "\n");
     return(0);
 }

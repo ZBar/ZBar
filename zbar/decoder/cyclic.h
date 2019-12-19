@@ -40,15 +40,17 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate();
 /* Cyclic specific decode state */
 typedef struct cyclic_decoder_s {
     CyclicCharacterTreeNode* charTree;
-    CyclicCharacterTreeNode** charSeekers;
+    CyclicCharacterTreeNode** charSeekers;//Should have one group for each elements-of-character number
     uint8_t maxCharacterLength;
     uint8_t characterPhase;// This means sum of 2 elements - 2
+    uint8_t* elementsOfChar;
+    
+    unsigned s12;                /* character width */
     
     unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
     unsigned element : 3;       /* element offset 0-5 */
     int character : 12;         /* character position in symbol */
     unsigned char start;        /* start character */
-    unsigned s6;                /* character width */
     unsigned width;             /* last character width */
 
     unsigned config;
