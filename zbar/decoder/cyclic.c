@@ -36,14 +36,14 @@
 
 static int g_mallocedNodesCount = 0;
 
-static uint8_t ElementWidthSequences[Cyclic12CharactersCount][5] = {
-//    {1,1,1,1,1,2,1,1,1,2,1,2},//黑1
-//    {1,1,1,1,1,2,2,1,2,1,1,2},//黑2
-//    {1,1,1,1,2,1,2,2,1,2,1,2},//黑5
+static uint8_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
+    {1,1,1,1,1,2,1,1,1,2,1,2},//黑1
+    {1,1,1,1,1,2,2,1,2,1,1,2},//黑2
+    {1,1,1,1,2,1,2,2,1,2,1,2},//黑5
     
-    {1,1,2,1,2},//黑1
-    {1,2,1,1,2},//黑2
-    {2,1,2,1,2},//黑5
+//    {1,1,2,1,2},//黑1
+//    {1,2,1,1,2},//黑2
+//    {2,1,2,1,2},//黑5
 };
 
 static uint8_t TestSequence[] = {
@@ -51,10 +51,10 @@ static uint8_t TestSequence[] = {
 //    0,0,0,0,1,2,1,1,1,0,1,
 //    0,0,0,1,1,1,2,1,1,1,1,
 
-//    0,0,0,0,1,1,0,0,0,0,1,2,1,1,1,0,0,0,0,1,1,0,0,1,1,1,
-//    0,0,0,1,1,1,2,1,1,1,1,
+    0,0,0,0,1,1,0,0,0,0,1,2,1,1,1,0,0,0,0,1,1,0,0,1,1,1,
+    0,0,0,1,1,1,2,1,1,1,1,
     
-    0,1,1,1,
+//    0,1,1,1,
 //    1,1,0,1,
 //    1,1,1,1,
 };
@@ -69,7 +69,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, ui
     if (!root) return;
     
     if (0 == length)
-    {fprintf(stderr, "#Cyclic# leafValue=%d\n", leafValue);
+    {printf("#Cyclic# leafValue=%d\n", leafValue);
         root->leafValue = leafValue;
         return;
     }
@@ -81,7 +81,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, ui
     if (!child)
     {
         child = CyclicCharacterTreeNodeCreate();
-        fprintf(stderr, "#Cyclic# Add child as #%d\n", c);
+        printf("#Cyclic# Add child as #%d\n", c);
         root->children[c] = child;
     }
     
@@ -90,7 +90,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, ui
 
 CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate() {
     CyclicCharacterTreeNode* ret = (CyclicCharacterTreeNode*) malloc(sizeof(CyclicCharacterTreeNode));
-    fprintf(stderr, "#Cyclic# New node: %d\n", ++g_mallocedNodesCount);
+    printf("#Cyclic# New node: %d\n", ++g_mallocedNodesCount);
     CyclicCharacterTreeNodeReset(ret);
     return ret;
 }
@@ -114,7 +114,7 @@ void cyclic_feed_element(cyclic_decoder_t* decoder, uint8_t element)
         {
             if (decoder->characterPhase == i)
             {
-                decoder->charSeekers[i] = decoder->charTree;
+                decoder->charSeekers[i] = decoder->charTree->children[element];
             }
         }
         else
@@ -122,7 +122,7 @@ void cyclic_feed_element(cyclic_decoder_t* decoder, uint8_t element)
             decoder->charSeekers[i] = decoder->charSeekers[i]->children[element];
             if (decoder->charSeekers[i] && decoder->charSeekers[i]->leafValue != -1)
             {
-                fprintf(stderr, "#Cyclic# A character found: %d\n", decoder->charSeekers[i]->leafValue);
+                printf("#Cyclic# A character found: %d\n", decoder->charSeekers[i]->leafValue);
                 decoder->charSeekers[i] = NULL;
             }
         }
@@ -155,10 +155,10 @@ void cyclic_destroy (cyclic_decoder_t *dcodeCyclic)
         }
         
         free(head->children[0]);
-        fprintf(stderr, "#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
+        printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
         CyclicCharacterTreeNode* next = head->children[1];
         free(head);
-        fprintf(stderr, "#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
+        printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
         head = next;
     }
     
@@ -171,7 +171,7 @@ void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
 //    dcode128->element = 0;
 //    dcode128->character = -1;
 //    dcode128->s6 = 0;
-    fprintf(stderr, "#Cyclic# cyclic_reset\n");///!!!For Debug
+    printf("#Cyclic# cyclic_reset\n");///!!!For Debug
     dcodeCyclic->charTree = CyclicCharacterTreeNodeCreate();
     dcodeCyclic->maxCharacterLength = 0;
     for (int i = 0; i < Cyclic12CharactersCount; ++i)
@@ -182,10 +182,10 @@ void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
         {
             dcodeCyclic->maxCharacterLength = length;
         }
-        fprintf(stderr, "\n---------------------\n");
+        printf("\n---------------------\n");
         CyclicCharacterTreeAdd(dcodeCyclic->charTree, CharacterCodes[i], seq, length);
     }
-    fprintf(stderr, "#Cyclic# maxCharacterLength: %d\n", dcodeCyclic->maxCharacterLength);
+    printf("#Cyclic# maxCharacterLength: %d\n", dcodeCyclic->maxCharacterLength);
     dcodeCyclic->charSeekers = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * dcodeCyclic->maxCharacterLength);
     memset(dcodeCyclic->charSeekers, 0, sizeof(CyclicCharacterTreeNode*) * dcodeCyclic->maxCharacterLength);
     dcodeCyclic->characterPhase = 0;
@@ -195,7 +195,6 @@ void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
     {
         cyclic_feed_element(dcodeCyclic, TestSequence[i]);
     }
-    cyclic_destroy(dcodeCyclic);
     ///!!!:For Test
 }
 
