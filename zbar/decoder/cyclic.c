@@ -44,10 +44,11 @@ static uint8_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
 
 static uint8_t TestSequence[] = {
 //    0,0,0,0,1,1,0,0,1,1,1,
-//    0,0,0,0,1,2,1,1,1,0,1,
+    0,0,0,0,1,2,1,1,1,0,1,
 //    0,0,0,1,1,1,2,1,1,1,1,
-    0,0,0,0,1,1,0,0,0,0,1,2,1,1,1,0,0,0,0,1,1,0,0,1,1,1,
-    0,0,0,1,1,1,2,1,1,1,1,
+
+//    0,0,0,0,1,1,0,0,0,0,1,2,1,1,1,0,0,0,0,1,1,0,0,1,1,1,
+//    0,0,0,1,1,1,2,1,1,1,1,
 };
 
 static uint8_t CharacterCodes[Cyclic12CharactersCount] = {
@@ -91,6 +92,36 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
     if (c < 0 || c > 2) return NULL;
     
     return current->children[c];
+}
+
+void cyclic_feed_element(cyclic_decoder_t* decoder, uint8_t element)
+{
+    if (!decoder) return;
+    if (element < 0 || element > 2) return;
+
+    for (int i = decoder->maxCharacterLength - 1; i >= 0; --i)
+    {
+        if (!decoder->charSeekers[i])
+        {
+            if (decoder->characterPhase == i)
+            {
+                decoder->charSeekers[i] = decoder->charTree;
+            }
+        }
+        else
+        {
+            decoder->charSeekers[i] = decoder->charSeekers[i]->children[element];
+            if (decoder->charSeekers[i] && decoder->charSeekers[i]->leafValue != -1)
+            {
+                fprintf(stderr, "#Cyclic# A character found: %d\n", decoder->charSeekers[i]->leafValue);
+                decoder->charSeekers[i] = NULL;
+            }
+        }
+    }
+    if (++decoder->characterPhase == decoder->maxCharacterLength)
+    {
+        decoder->characterPhase = 0;
+    }
 }
 
 void cyclic_destroy (cyclic_decoder_t *dcodeCyclic)
@@ -144,45 +175,18 @@ void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
         }
         CyclicCharacterTreeAdd(dcodeCyclic->charTree, CharacterCodes[i], seq, length);
     }
-
+    fprintf(stderr, "#Cyclic# maxCharacterLength: %d\n", dcodeCyclic->maxCharacterLength);
     dcodeCyclic->charSeekers = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * dcodeCyclic->maxCharacterLength);
-//    for (int i = dcodeCyclic->maxCharacterLength - 1; i >= 0; --i)
-//    {
-//        dcodeCyclic->charSeekers[i] = dcodeCyclic->charTree;
-//    }
     memset(dcodeCyclic->charSeekers, 0, sizeof(CyclicCharacterTreeNode*) * dcodeCyclic->maxCharacterLength);
     dcodeCyclic->characterPhase = 0;
-}
-
-void cyclic_feed_element(cyclic_decoder_t* decoder, uint8_t element)
-{
-    if (!decoder) return;
-    if (element < 0 || element > 2) return;
-
-    for (int i = decoder->maxCharacterLength - 1; i >= 0; --i)
+    
+    ///!!!For Test:
+    for (int i = 0; i < sizeof(TestSequence) / sizeof(TestSequence[0]); ++i)
     {
-        if (!decoder->charSeekers[i])
-        {
-            if (decoder->characterPhase == i)
-            {
-                decoder->charSeekers[i] = decoder->charTree;
-            }
-        }
-        else
-        {
-            decoder->charSeekers[i] = decoder->charSeekers[i]->children[element];
-            if (decoder->charSeekers[i]->leafValue != -1)
-            {
-                fprintf(stderr, "#Cyclic# A character found: %d\n", decoder->charSeekers[i]->leafValue);
-                decoder->charSeekers[i] = NULL;
-            }
-        }
-        
+        cyclic_feed_element(dcodeCyclic, TestSequence[i]);
     }
-    if (++decoder->characterPhase == decoder->maxCharacterLength)
-    {
-        decoder->characterPhase = 0;
-    }
+    cyclic_destroy(dcodeCyclic);
+    ///!!!:For Test
 }
 
 zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
