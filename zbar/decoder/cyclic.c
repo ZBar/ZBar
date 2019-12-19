@@ -32,23 +32,31 @@
 #include "debug.h"
 #include "decoder.h"
 
-#define Cyclic12CharactersCount 5
+#define Cyclic12CharactersCount 3
 
 static int g_mallocedNodesCount = 0;
 
-static uint8_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
-    {1,1,1,1,1,2,1,1,1,2,1,2},//黑1
-    {1,1,1,1,1,2,2,1,2,1,1,2},//黑2
-    {1,1,1,1,2,1,2,2,1,2,1,2},//黑5
+static uint8_t ElementWidthSequences[Cyclic12CharactersCount][5] = {
+//    {1,1,1,1,1,2,1,1,1,2,1,2},//黑1
+//    {1,1,1,1,1,2,2,1,2,1,1,2},//黑2
+//    {1,1,1,1,2,1,2,2,1,2,1,2},//黑5
+    
+    {1,1,2,1,2},//黑1
+    {1,2,1,1,2},//黑2
+    {2,1,2,1,2},//黑5
 };
 
 static uint8_t TestSequence[] = {
 //    0,0,0,0,1,1,0,0,1,1,1,
-    0,0,0,0,1,2,1,1,1,0,1,
+//    0,0,0,0,1,2,1,1,1,0,1,
 //    0,0,0,1,1,1,2,1,1,1,1,
 
 //    0,0,0,0,1,1,0,0,0,0,1,2,1,1,1,0,0,0,0,1,1,0,0,1,1,1,
 //    0,0,0,1,1,1,2,1,1,1,1,
+    
+    0,1,1,1,
+//    1,1,0,1,
+//    1,1,1,1,
 };
 
 static uint8_t CharacterCodes[Cyclic12CharactersCount] = {
@@ -61,7 +69,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, ui
     if (!root) return;
     
     if (0 == length)
-    {
+    {fprintf(stderr, "#Cyclic# leafValue=%d\n", leafValue);
         root->leafValue = leafValue;
         return;
     }
@@ -73,6 +81,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, ui
     if (!child)
     {
         child = CyclicCharacterTreeNodeCreate();
+        fprintf(stderr, "#Cyclic# Add child as #%d\n", c);
         root->children[c] = child;
     }
     
@@ -173,6 +182,7 @@ void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
         {
             dcodeCyclic->maxCharacterLength = length;
         }
+        fprintf(stderr, "\n---------------------\n");
         CyclicCharacterTreeAdd(dcodeCyclic->charTree, CharacterCodes[i], seq, length);
     }
     fprintf(stderr, "#Cyclic# maxCharacterLength: %d\n", dcodeCyclic->maxCharacterLength);
