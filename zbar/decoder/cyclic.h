@@ -44,6 +44,9 @@ static inline CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate() {
 /* Cyclic specific decode state */
 typedef struct cyclic_decoder_s {
     CyclicCharacterTreeNode* charTree;
+    CyclicCharacterTreeNode** charSeekers;
+    uint8_t maxCharacterLength;
+    uint8_t characterPhase;// This means sum of 2 elements - 2
     
     unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
     unsigned element : 3;       /* element offset 0-5 */

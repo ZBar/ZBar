@@ -95,6 +95,8 @@ void cyclic_destroy (cyclic_decoder_t *dcodeCyclic)
         free(head);
         head = next;
     }
+    
+    free(dcodeCyclic->charSeekers);
 }
 
 void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
@@ -104,11 +106,55 @@ void cyclic_reset (cyclic_decoder_t *dcodeCyclic)
 //    dcode128->character = -1;
 //    dcode128->s6 = 0;
     dcodeCyclic->charTree = CyclicCharacterTreeNodeCreate();
+    dcodeCyclic->maxCharacterLength = 0;
     for (int i = 0; i < Cyclic12CharactersCount; ++i)
     {
         uint8_t* seq = ElementWidthSequences[i];
         int length = sizeof(ElementWidthSequences[i]) / sizeof(ElementWidthSequences[i][0]) - 1;
+        if (length > dcodeCyclic->maxCharacterLength)
+        {
+            dcodeCyclic->maxCharacterLength = length;
+        }
         CyclicCharacterTreeAdd(dcodeCyclic->charTree, CharacterCodes[i], seq, length);
+    }
+
+    dcodeCyclic->charSeekers = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * dcodeCyclic->maxCharacterLength);
+//    for (int i = dcodeCyclic->maxCharacterLength - 1; i >= 0; --i)
+//    {
+//        dcodeCyclic->charSeekers[i] = dcodeCyclic->charTree;
+//    }
+    memset(dcodeCyclic->charSeekers, 0, sizeof(CyclicCharacterTreeNode*) * dcodeCyclic->maxCharacterLength);
+    dcodeCyclic->characterPhase = 0;
+}
+
+void cyclic_feed_element(cyclic_decoder_t* decoder, uint8_t element)
+{
+    if (!decoder) return;
+    if (element < 0 || element > 2) return;
+
+    for (int i = decoder->maxCharacterLength - 1; i >= 0; --i)
+    {
+        if (!decoder->charSeekers[i])
+        {
+            if (decoder->characterPhase == i)
+            {
+                decoder->charSeekers[i] = decoder->charTree;
+            }
+        }
+        else
+        {
+            decoder->charSeekers[i] = decoder->charSeekers[i]->children[element];
+            if (decoder->charSeekers[i]->leafValue != -1)
+            {
+                fprintf(stderr, "#Cyclic# A character found: %d\n", decoder->charSeekers[i]->leafValue);
+                decoder->charSeekers[i] = NULL;
+            }
+        }
+        
+    }
+    if (++decoder->characterPhase == decoder->maxCharacterLength)
+    {
+        decoder->characterPhase = 0;
     }
 }
 
