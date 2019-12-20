@@ -34,6 +34,8 @@
 
 #define Cyclic12CharactersCount 3
 
+#define MinRepeatingRequired 3
+
 //#define TestCyclic
 
 static int g_mallocedNodesCount = 0;
@@ -46,6 +48,12 @@ static int16_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
 //    {1,1,2,1,2},//黑1
 //    {1,2,1,1,2},//黑2
 //    {2,1,2,1,2},//黑5
+};
+
+static const char* Characters[Cyclic12CharactersCount] = {
+    "S1",//黑1
+    "S2",//黑2
+    "S5",//黑5
 };
 
 static int16_t TestPairWidths[] = {
@@ -61,17 +69,11 @@ static int16_t TestPairWidths[] = {
 //    1,1,1,1,
 };
 
-static const char* CharacterCodes[Cyclic12CharactersCount] = {
-    "S1",//黑1
-    "S2",//黑2
-    "S5",//黑5
-};
-
-void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, const char* leafValue, int16_t* path, int length) {
+void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int16_t leafValue, int16_t* path, int length) {
     if (!root) return;
     
     if (0 == length)
-    {//printf("#Cyclic# leafValue=%s\n", leafValue);
+    {//printf("#Cyclic# leafValue=%d\n", leafValue);
         root->leafValue = leafValue;
         return;
     }
@@ -105,9 +107,9 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
     return current->children[c];
 }
 
-const char* cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
+int16_t cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
 {
-    const char* ret = NULL;
+    int16_t ret = -1;
     if (!decoder) return ret;
 #ifdef TestCyclic
     if (pairWidth < 0 || pairWidth > 2) return ret;
@@ -137,10 +139,10 @@ const char* cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
             else
             {
                 charSeekers[i] = charSeekers[i]->children[e];
-                if (charSeekers[i] && charSeekers[i]->leafValue)
+                if (charSeekers[i] && charSeekers[i]->leafValue > -1)
                 {
                     ret = charSeekers[i]->leafValue;
-                    printf("#Cyclic# A character found: %s\n", charSeekers[i]->leafValue);
+                    printf("#Cyclic# A character found: %s\n", Characters[charSeekers[i]->leafValue]);
                     charSeekers[i] = NULL;
                 }
             }
@@ -238,7 +240,7 @@ void cyclic_reset (cyclic_decoder_t *decoder)
         }
         
         //printf("\n---------------------\n");
-        CyclicCharacterTreeAdd(decoder->charTree, CharacterCodes[i], seq, length);
+        CyclicCharacterTreeAdd(decoder->charTree, i, seq, length);
     }
     //printf("#Cyclic# maxCharacterLength: %d\n", decoder->maxCharacterLength);
     decoder->charSeekers = (CyclicCharacterTreeNode***) malloc(sizeof(CyclicCharacterTreeNode**) * (decoder->maxS12OfChar - decoder->minS12OfChar + 1));
@@ -249,6 +251,10 @@ void cyclic_reset (cyclic_decoder_t *decoder)
     }
 
     decoder->characterPhase = 0;
+    
+    decoder->candidate = -1;
+    decoder->repeatingCount = 0;
+    decoder->nonRepeatingSpan = 0;
 #ifdef TestCyclic
     ///!!!For Test:
     for (int i = 0; i < sizeof(TestPairWidths) / sizeof(TestPairWidths[0]); ++i)
@@ -266,14 +272,48 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
     decoder->s12 -= get_width(dcode, 12);
     decoder->s12 += get_width(dcode, 0);
     
-    const char* c = cyclic_feed_element(decoder, pair_width(dcode, 0));
-    if (c)
+    int16_t c = cyclic_feed_element(decoder, pair_width(dcode, 0));
+    if (c > -1)
     {
-        int length = (int)(strlen(c) + 1);
-        size_buf(dcode, length);
-        memcpy(dcode->buf, c, length);
-        dcode->buflen = length;
-        return (ZBAR_CYCLIC);
+        if (c == decoder->candidate)
+        {
+            decoder->nonRepeatingSpan = 0;
+            if (++decoder->repeatingCount == MinRepeatingRequired)
+            {
+                release_lock(dcode, ZBAR_CYCLIC);
+                
+                decoder->candidate = -1;
+                decoder->repeatingCount = 0;
+
+                int length = (int)(strlen(Characters[c]) + 1);
+                size_buf(dcode, length);
+                memcpy(dcode->buf, Characters[c], length);
+                dcode->buflen = length;
+                
+                return(ZBAR_CYCLIC);
+            }
+        }
+        else
+        {
+            decoder->repeatingCount = 1;
+            decoder->candidate = c;
+            decoder->nonRepeatingSpan = 0;
+            
+            acquire_lock(dcode, ZBAR_CYCLIC);
+            
+            return(ZBAR_PARTIAL);
+        }
+    }
+    else if (decoder->candidate > -1)
+    {
+        if (++decoder->nonRepeatingSpan > sizeof(ElementWidthSequences[decoder->candidate]) / sizeof(ElementWidthSequences[decoder->candidate][0]))
+        {
+            decoder->candidate = -1;
+            decoder->repeatingCount = 0;
+            decoder->nonRepeatingSpan = 0;
+            
+            release_lock(dcode, ZBAR_CYCLIC);
+        }
     }
 //    int e = decode_e(pair_width(decoder, 0), s, );
     

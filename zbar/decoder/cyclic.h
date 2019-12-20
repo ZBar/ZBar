@@ -27,12 +27,12 @@
 
 typedef struct CyclicCharacterTreeNode_s {
     struct CyclicCharacterTreeNode_s* children[3];
-    const char* leafValue;
+    int16_t leafValue;
 } CyclicCharacterTreeNode;
 
 static inline void CyclicCharacterTreeNodeReset(CyclicCharacterTreeNode* node) {
     memset(node, 0, sizeof(CyclicCharacterTreeNode));
-    node->leafValue = NULL;
+    node->leafValue = -1;
 }
 
 CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate();
@@ -49,11 +49,15 @@ typedef struct cyclic_decoder_s {
     
     unsigned s12;                /* character width */
     
-    unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
-    unsigned element : 3;       /* element offset 0-5 */
-    int character : 12;         /* character position in symbol */
-    unsigned char start;        /* start character */
-    unsigned width;             /* last character width */
+    int16_t candidate;
+    int16_t repeatingCount;
+    int16_t nonRepeatingSpan;
+
+//    unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
+//    unsigned element : 3;       /* element offset 0-5 */
+//    int character : 12;         /* character position in symbol */
+//    unsigned char start;        /* start character */
+//    unsigned width;             /* last character width */
 
     unsigned config;
     int configs[NUM_CFGS];      /* int valued configurations */
