@@ -61,17 +61,17 @@ static int16_t TestPairWidths[] = {
 //    1,1,1,1,
 };
 
-static int16_t CharacterCodes[Cyclic12CharactersCount] = {
-    1,//黑1
-    2,//黑2
-    5,//黑5
+static const char* CharacterCodes[Cyclic12CharactersCount] = {
+    "S1",//黑1
+    "S2",//黑2
+    "S5",//黑5
 };
 
-void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, int16_t* path, int length) {
+void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, const char* leafValue, int16_t* path, int length) {
     if (!root) return;
     
     if (0 == length)
-    {//printf("#Cyclic# leafValue=%d\n", leafValue);
+    {//printf("#Cyclic# leafValue=%s\n", leafValue);
         root->leafValue = leafValue;
         return;
     }
@@ -105,11 +105,12 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
     return current->children[c];
 }
 
-void cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
+const char* cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
 {
-    if (!decoder) return;
+    const char* ret = NULL;
+    if (!decoder) return ret;
 #ifdef TestCyclic
-    if (pairWidth < 0 || pairWidth > 2) return;
+    if (pairWidth < 0 || pairWidth > 2) return ret;
 #endif
     for (int iS12OfChar = decoder->maxS12OfChar - decoder->minS12OfChar;
          iS12OfChar >= 0; --iS12OfChar)
@@ -136,9 +137,10 @@ void cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
             else
             {
                 charSeekers[i] = charSeekers[i]->children[e];
-                if (charSeekers[i] && charSeekers[i]->leafValue != -1)
+                if (charSeekers[i] && charSeekers[i]->leafValue)
                 {
-                    printf("#Cyclic# A character found: %d\n", charSeekers[i]->leafValue);
+                    ret = charSeekers[i]->leafValue;
+                    printf("#Cyclic# A character found: %s\n", charSeekers[i]->leafValue);
                     charSeekers[i] = NULL;
                 }
             }
@@ -149,6 +151,8 @@ void cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
     {
         decoder->characterPhase = 0;
     }
+    
+    return ret;
 }
 
 void cyclic_destroy (cyclic_decoder_t *decoder)
@@ -262,7 +266,15 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
     decoder->s12 -= get_width(dcode, 12);
     decoder->s12 += get_width(dcode, 0);
     
-    cyclic_feed_element(decoder, pair_width(dcode, 0));
+    const char* c = cyclic_feed_element(decoder, pair_width(dcode, 0));
+    if (c)
+    {
+        int length = (int)(strlen(c) + 1);
+        size_buf(dcode, length);
+        memcpy(dcode->buf, c, length);
+        dcode->buflen = length;
+        return (ZBAR_CYCLIC);
+    }
 //    int e = decode_e(pair_width(decoder, 0), s, );
     
     //TODO:

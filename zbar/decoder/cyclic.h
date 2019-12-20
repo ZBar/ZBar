@@ -27,12 +27,12 @@
 
 typedef struct CyclicCharacterTreeNode_s {
     struct CyclicCharacterTreeNode_s* children[3];
-    int32_t leafValue;
+    const char* leafValue;
 } CyclicCharacterTreeNode;
 
 static inline void CyclicCharacterTreeNodeReset(CyclicCharacterTreeNode* node) {
     memset(node, 0, sizeof(CyclicCharacterTreeNode));
-    node->leafValue = -1;
+    node->leafValue = NULL;
 }
 
 CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate();
