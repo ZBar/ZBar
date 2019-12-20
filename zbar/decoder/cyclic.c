@@ -34,6 +34,8 @@
 
 #define Cyclic12CharactersCount 3
 
+//#define TestCyclic
+
 static int g_mallocedNodesCount = 0;
 
 static uint8_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
@@ -111,9 +113,12 @@ void cyclic_feed_element(cyclic_decoder_t* decoder, uint8_t pairWidth)
     for (int iS12OfChar = decoder->maxS12OfChar - decoder->minS12OfChar;
          iS12OfChar >= 0; --iS12OfChar)
     {
-//        uint8_t s12OfChar = decoder->minS12OfChar + iS12OfChar;
-        //TODO: pairWidth -> decode_e(pairWidth, decoder->s12, s12OfChar)
-        uint8_t e = pairWidth;
+#ifdef TestCyclic
+        uint8_t e = pairWidth;///!!!For Test
+#else
+        uint8_t s12OfChar = decoder->minS12OfChar + iS12OfChar;
+        uint8_t e = decode_e(pairWidth, decoder->s12, s12OfChar);
+#endif
         CyclicCharacterTreeNode** charSeekers = decoder->charSeekers[iS12OfChar];
         for (int i = decoder->maxCharacterLength - 1; i >= 0; --i)
         {
@@ -236,18 +241,24 @@ void cyclic_reset (cyclic_decoder_t *decoder)
     }
 
     decoder->characterPhase = 0;
-    
+#ifdef TestCyclic
     ///!!!For Test:
     for (int i = 0; i < sizeof(TestPairWidths) / sizeof(TestPairWidths[0]); ++i)
     {
         cyclic_feed_element(decoder, TestPairWidths[i]);
     }
     ///!!!:For Test
+#endif
 }
 
 zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 {
     cyclic_decoder_t* decoder = &dcode->cyclic;
+    
+    decoder->s12 -= get_width(dcode, 12);
+    decoder->s12 += get_width(dcode, 0);
+    
+    cyclic_feed_element(decoder, pair_width(dcode, 0));
 //    int e = decode_e(pair_width(decoder, 0), s, );
     
     //TODO:
