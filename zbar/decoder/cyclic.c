@@ -107,13 +107,10 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
 
 void cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
 {
-    printf("#Barcodes# at %d in %s\n", __LINE__, __PRETTY_FUNCTION__);
     if (!decoder) return;
-    printf("#Barcodes# at %d in %s\n", __LINE__, __PRETTY_FUNCTION__);
 #ifdef TestCyclic
     if (pairWidth < 0 || pairWidth > 2) return;
 #endif
-    printf("#Barcodes# at %d in %s\n", __LINE__, __PRETTY_FUNCTION__);
     for (int iS12OfChar = decoder->maxS12OfChar - decoder->minS12OfChar;
          iS12OfChar >= 0; --iS12OfChar)
     {
@@ -122,7 +119,7 @@ void cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
 #else
         int16_t s12OfChar = decoder->minS12OfChar + iS12OfChar;
         int e = decode_e(pairWidth, decoder->s12, s12OfChar);
-        printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
+//        printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
 #endif
         if (e < 0 || e > 2) continue;
 

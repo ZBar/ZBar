@@ -242,7 +242,7 @@ zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
                                       unsigned w)
 {
     zbar_symbol_type_t tmp, sym = ZBAR_NONE;
-    fprintf(stderr, "#Barcodes# zbar_decode_width: %d\n", w);
+//    fprintf(stderr, "#Barcodes# zbar_decode_width: %d\n", w);
     dcode->w[dcode->idx & (DECODE_WINDOW - 1)] = w;
     dbprintf(1, "    decode[%x]: w=%d (%g)\n", dcode->idx, w, (w / 32.));
 
