@@ -38,7 +38,7 @@
 
 static int g_mallocedNodesCount = 0;
 
-static uint8_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
+static int16_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
     {1,1,1,1,1,2,1,1,1,2,1,2},//s12=15 黑1
     {1,1,1,1,1,2,2,1,2,1,1,2},//s12=16 黑2
     {1,1,1,1,2,1,2,2,1,2,1,2},//s12=17 黑5
@@ -48,7 +48,7 @@ static uint8_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
 //    {2,1,2,1,2},//黑5
 };
 
-static uint8_t TestPairWidths[] = {
+static int16_t TestPairWidths[] = {
 //    0,0,0,0,1,1,0,0,1,1,1,
 //    0,0,0,0,1,2,1,1,1,0,1,
 //    0,0,0,1,1,1,2,1,1,1,1,
@@ -61,13 +61,13 @@ static uint8_t TestPairWidths[] = {
 //    1,1,1,1,
 };
 
-static uint8_t CharacterCodes[Cyclic12CharactersCount] = {
+static int16_t CharacterCodes[Cyclic12CharactersCount] = {
     1,//黑1
     2,//黑2
     5,//黑5
 };
 
-void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, uint8_t* path, int length) {
+void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, int16_t* path, int length) {
     if (!root) return;
     
     if (0 == length)
@@ -76,7 +76,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int32_t leafValue, ui
         return;
     }
     
-    uint8_t c = path[0] + path[1] - 2;
+    int16_t c = path[0] + path[1] - 2;
     if (c < 0 || c > 2) return;
     
     CyclicCharacterTreeNode* child = root->children[c];
@@ -97,7 +97,7 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate() {
     return ret;
 }
 
-CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNode* current, uint8_t c) {
+CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNode* current, int16_t c) {
     if (!current) return NULL;
     
     if (c < 0 || c > 2) return NULL;
@@ -105,7 +105,7 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
     return current->children[c];
 }
 
-void cyclic_feed_element(cyclic_decoder_t* decoder, uint8_t pairWidth)
+void cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
 {
     printf("#Barcodes# at %d in %s\n", __LINE__, __PRETTY_FUNCTION__);
     if (!decoder) return;
@@ -118,12 +118,14 @@ void cyclic_feed_element(cyclic_decoder_t* decoder, uint8_t pairWidth)
          iS12OfChar >= 0; --iS12OfChar)
     {
 #ifdef TestCyclic
-        uint8_t e = pairWidth;///!!!For Test
+        int16_t e = pairWidth;///!!!For Test
 #else
-        uint8_t s12OfChar = decoder->minS12OfChar + iS12OfChar;
-        uint8_t e = decode_e(pairWidth, decoder->s12, s12OfChar);
+        int16_t s12OfChar = decoder->minS12OfChar + iS12OfChar;
+        int e = decode_e(pairWidth, decoder->s12, s12OfChar);
         printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
 #endif
+        if (e < 0 || e > 2) continue;
+
         CyclicCharacterTreeNode** charSeekers = decoder->charSeekers[iS12OfChar];
         for (int i = decoder->maxCharacterLength - 1; i >= 0; --i)
         {
@@ -200,26 +202,26 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 //    dcode128->s6 = 0;
     decoder->s12 = 0;
 //    CyclicCharacterTreeNode*** charSeekers;//One group for each elements-of-character number
-//    uint8_t maxCharacterLength;
-//    uint8_t characterPhase;// This means sum of 2 elements - 2
-//    uint8_t* s12OfChar;
-//    uint8_t minS12OfChar;
-//    uint8_t maxS12OfChar;
+//    int16_t maxCharacterLength;
+//    int16_t characterPhase;// This means sum of 2 elements - 2
+//    int16_t* s12OfChar;
+//    int16_t minS12OfChar;
+//    int16_t maxS12OfChar;
     decoder->charTree = CyclicCharacterTreeNodeCreate();
     decoder->maxCharacterLength = 0;
-//    decoder->s12OfChar = (uint8_t*) malloc(Cyclic12CharactersCount);
+//    decoder->s12OfChar = (int16_t*) malloc(Cyclic12CharactersCount);
     decoder->minS12OfChar = 127;
     decoder->maxS12OfChar = 0;
     for (int i = 0; i < Cyclic12CharactersCount; ++i)
     {
-        uint8_t* seq = ElementWidthSequences[i];
+        int16_t* seq = ElementWidthSequences[i];
         int length = sizeof(ElementWidthSequences[i]) / sizeof(ElementWidthSequences[i][0]) - 1;
         if (length > decoder->maxCharacterLength)
         {
             decoder->maxCharacterLength = length;
         }
         
-        uint8_t s12OfChar = 0;
+        int16_t s12OfChar = 0;
         for (int j = length; j >= 0; --j)
         {
             s12OfChar += ElementWidthSequences[i][j];
