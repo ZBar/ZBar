@@ -37,9 +37,9 @@
 static int g_mallocedNodesCount = 0;
 
 static uint8_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
-    {1,1,1,1,1,2,1,1,1,2,1,2},//黑1
-    {1,1,1,1,1,2,2,1,2,1,1,2},//黑2
-    {1,1,1,1,2,1,2,2,1,2,1,2},//黑5
+    {1,1,1,1,1,2,1,1,1,2,1,2},//s12=15 黑1
+    {1,1,1,1,1,2,2,1,2,1,1,2},//s12=16 黑2
+    {1,1,1,1,2,1,2,2,1,2,1,2},//s12=17 黑5
     
 //    {1,1,2,1,2},//黑1
 //    {1,2,1,1,2},//黑2
@@ -129,7 +129,7 @@ void cyclic_feed_element(cyclic_decoder_t* decoder, uint8_t pairWidth)
                 charSeekers[i] = charSeekers[i]->children[e];
                 if (charSeekers[i] && charSeekers[i]->leafValue != -1)
                 {
-                    //printf("#Cyclic# A character found: %d\n", decoder->charSeekers[i]->leafValue);
+                    printf("#Cyclic# A character found: %d\n", charSeekers[i]->leafValue);
                     charSeekers[i] = NULL;
                 }
             }
