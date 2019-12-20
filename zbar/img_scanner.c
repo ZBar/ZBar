@@ -644,6 +644,11 @@ static inline void quiet_border (zbar_image_scanner_t *iscn)
 int zbar_scan_image (zbar_image_scanner_t *iscn,
                      zbar_image_t *img)
 {
+//    for (int i = ZBAR_EAN2; i < ZBAR_CYCLIC; ++i)
+//    {
+//        int hash = _zbar_get_symbol_hash(i);
+//        printf("#Barcodes# hash(%d)=%d\n", i, hash);
+//    }
     zbar_symbol_set_t *syms;
     const uint8_t *data;
     zbar_scanner_t *scn = iscn->scn;

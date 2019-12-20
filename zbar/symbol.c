@@ -107,6 +107,8 @@ int _zbar_get_symbol_hash (zbar_symbol_type_t sym)
      };
     int g0 = hash[sym & 0x1f];
     int g1 = hash[~(sym >> 4) & 0x1f];
+    ///!!!For Debug
+//    if (g0 < 0 || g1 < 0) return -1;
     assert(g0 >= 0 && g1 >= 0);
     if(g0 < 0 || g1 < 0)
         return(0);
