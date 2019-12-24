@@ -171,7 +171,7 @@ int16_t cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
 #else
         int16_t s12OfChar = decoder->minS12OfChar + iS12OfChar;
         int e = decode_e(pairWidth, decoder->s12, s12OfChar);
-//        printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
+        printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
 #endif
         CyclicCharacterTreeNode** charSeekers = decoder->charSeekers[iS12OfChar];
         for (int i = decoder->maxCharacterLength - 1; i >= 0; --i)
@@ -193,7 +193,7 @@ int16_t cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
                 if (charSeekers[i] && charSeekers[i]->leafValue > -1)
                 {
                     ret = charSeekers[i]->leafValue;
-                    printf("#Cyclic# A character found: %s\n", Codes[charSeekers[i]->leafValue].name);
+                    printf("#Cyclic# A character found: %s, n=%d\n", Codes[charSeekers[i]->leafValue].name, s12OfChar);
                     charSeekers[i] = NULL;
                 }
             }
