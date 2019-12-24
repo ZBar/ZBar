@@ -32,28 +32,76 @@
 #include "debug.h"
 #include "decoder.h"
 
-#define Cyclic12CharactersCount 3
+#define Cyclic12CharactersCount 4
 
 #define MinRepeatingRequired 3
 
 //#define TestCyclic
 
-static int g_mallocedNodesCount = 0;
+//static int g_mallocedNodesCount = 0;
 
-static int16_t ElementWidthSequences[Cyclic12CharactersCount][12] = {
-    {1,1,1,1,1,2,1,1,1,2,1,2},//s12=15 黑1
-    {1,1,1,1,1,2,2,1,2,1,1,2},//s12=16 黑2
-    {1,1,1,1,2,1,2,2,1,2,1,2},//s12=17 黑5
-    
-//    {1,1,2,1,2},//黑1
-//    {1,2,1,1,2},//黑2
-//    {2,1,2,1,2},//黑5
-};
+typedef struct {
+    const char* name;
+    int16_t elementSequence[12];
+} CyclicCode;
 
-static const char* Characters[Cyclic12CharactersCount] = {
-    "S1",//黑1
-    "S2",//黑2
-    "S5",//黑5
+static CyclicCode Codes[Cyclic12CharactersCount] = {
+//    {"DA", {1,1,1,1,1,2,2,1,1,1,1,2}},
+//    {"D7", {1,1,1,1,2,1,1,2,2,2,1,2}},
+//    {"D6", {1,1,1,1,2,1,2,2,1,1,2,2}},
+//    {"D4", {1,1,1,1,2,2,1,2,2,1,1,2}},
+//    {"D5", {1,1,1,1,2,2,1,1,2,1,2,2}},
+//    {"SX", {1,1,1,1,2,1,1,1,2,2,1,2}},
+//    {"DQ", {1,1,1,1,1,2,1,2,1,1,2,2}},
+//    {"D2", {1,1,1,1,2,1,1,1,2,1,2,2}},
+//    {"HX", {1,1,1,1,2,1,1,2,1,1,2,2}},
+//    {"D3", {1,1,1,1,2,2,2,2,1,1,1,2}},
+//    {"CX", {1,1,1,1,2,1,1,1,1,1,1,1}},
+//    {"HK", {1,1,1,1,2,1,1,1,2,1,1,2}},
+//    {"C8", {1,1,1,1,2,2,1,2,1,1,1,2}},
+//    {"S3", {1,1,1,1,2,2,2,1,1,1,2,2}},
+    {"S2", {1,1,1,1,1,2,2,1,2,1,1,2}},
+//    {"C9", {1,1,1,1,2,1,2,1,2,1,1,2}},
+//    {"HJ", {1,1,1,1,1,2,1,2,2,1,1,2}},
+//    {"DX", {1,1,1,1,2,1,1,2,2,1,1,2}},
+//    {"SQ", {1,1,1,1,1,2,1,1,1,1,1,2}},
+    {"JB", {1,1,1,1,1,2,2,2,2,1,1,2}},
+//    {"S5", {1,1,1,1,2,1,2,1,2,2,1,2}},
+//    {"S4", {1,1,1,1,2,2,2,2,1,2,2,1}},
+//    {"S6", {1,1,1,1,2,1,2,1,1,1,1,2}},
+//    {"H8", {1,1,1,1,2,1,1,1,1,2,1,2}},
+//    {"CK", {1,1,1,1,2,1,1,2,1,1,1,2}},
+//    {"SA", {1,1,1,1,1,2,1,1,1,2,1,2}},
+//    {"CJ", {1,1,1,1,1,1,1,2,1,1,1,2}},
+//    {"S7", {1,1,1,1,2,1,1,1,2,2,2,2}},
+//    {"H9", {1,1,1,1,2,1,2,1,2,1,1,2}},
+//    {"H4", {1,1,1,1,2,2,1,2,1,1,2,2}},
+//    {"CQ", {1,1,1,1,1,2,1,1,2,2,1,2}},
+//    {"H5", {1,1,1,1,2,1,2,2,2,1,1,2}},
+    {"H7", {1,1,1,1,2,1,1,1,1,1,1,1}},
+//    {"S9", {1,1,1,1,2,1,2,1,1,1,2,2}},
+//    {"HA", {1,1,1,1,1,2,1,1,2,1,1,1}},
+//    {"C2", {1,1,1,1,2,1,1,1,1,2,2,2}},
+//    {"C3", {1,1,1,1,2,2,2,1,2,1,1,2}},
+//    {"H6", {1,1,1,1,2,1,2,1,2,1,2,2}},
+//    {"S8", {1,1,1,1,2,2,1,1,1,2,1,2}},
+//    {"SJ", {1,1,1,1,1,1,1,1,1,1,1,2}},
+//    {"C7", {1,1,1,1,2,1,1,2,2,1,2,2}},
+//    {"H2", {1,1,1,1,1,2,2,2,1,1,1,1}},
+//    {"CA", {1,1,1,1,1,2,1,2,1,1,1,2}},
+//    {"H3", {1,1,1,1,2,2,2,1,1,2,1,2}},
+//    {"C6", {1,1,1,1,2,1,2,1,2,1,1,1}},
+//    {"SK", {1,1,1,1,2,1,1,1,1,2,2,1}},
+//    {"C4", {1,1,1,1,2,2,1,2,1,2,1,2}},
+//    {"HQ", {1,1,1,1,1,2,1,1,2,2,1,1}},
+//    {"C5", {1,1,1,1,2,2,1,1,1,2,2,2}},
+    {"JS", {1,1,1,1,1,2,2,2,1,2,1,2}},
+//    {"DK", {1,1,1,1,2,1,2,1,1,1,1,2}},
+//    {"DJ", {1,1,1,1,2,1,2,1,2,1,1,2}},
+//    {"D8", {1,1,1,1,2,2,2,1,1,1,1,2}},
+//    {"D9", {1,1,1,1,2,1,2,2,1,1,1,2}},
+//    {"AD", {1,1,1,1,2,1,2,1,1,2,2,1}},
+
 };
 
 static int16_t TestPairWidths[] = {
@@ -142,7 +190,7 @@ int16_t cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
                 if (charSeekers[i] && charSeekers[i]->leafValue > -1)
                 {
                     ret = charSeekers[i]->leafValue;
-                    printf("#Cyclic# A character found: %s\n", Characters[charSeekers[i]->leafValue]);
+                    printf("#Cyclic# A character found: %s\n", Codes[charSeekers[i]->leafValue].name);
                     charSeekers[i] = NULL;
                 }
             }
@@ -217,8 +265,8 @@ void cyclic_reset (cyclic_decoder_t *decoder)
     decoder->maxS12OfChar = 0;
     for (int i = 0; i < Cyclic12CharactersCount; ++i)
     {
-        int16_t* seq = ElementWidthSequences[i];
-        int length = sizeof(ElementWidthSequences[i]) / sizeof(ElementWidthSequences[i][0]) - 1;
+        int16_t* seq = Codes[i].elementSequence;
+        int length = sizeof(Codes[i].elementSequence) / sizeof(Codes[i].elementSequence[0]) - 1;
         if (length > decoder->maxCharacterLength)
         {
             decoder->maxCharacterLength = length;
@@ -227,7 +275,7 @@ void cyclic_reset (cyclic_decoder_t *decoder)
         int16_t s12OfChar = 0;
         for (int j = length; j >= 0; --j)
         {
-            s12OfChar += ElementWidthSequences[i][j];
+            s12OfChar += Codes[i].elementSequence[j];
         }
 //        decoder->s12OfChar[i] = s12OfChar;
         if (s12OfChar > decoder->maxS12OfChar)
@@ -285,9 +333,9 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                 decoder->candidate = -1;
                 decoder->repeatingCount = 0;
 
-                int length = (int)(strlen(Characters[c]) + 1);
+                int length = (int)(strlen(Codes[c].name) + 1);
                 size_buf(dcode, length);
-                memcpy(dcode->buf, Characters[c], length);
+                memcpy(dcode->buf, Codes[c].name, length);
                 dcode->buflen = length;
                 
                 return(ZBAR_CYCLIC);
@@ -306,7 +354,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
     }
     else if (decoder->candidate > -1)
     {
-        if (++decoder->nonRepeatingSpan > sizeof(ElementWidthSequences[decoder->candidate]) / sizeof(ElementWidthSequences[decoder->candidate][0]))
+        if (++decoder->nonRepeatingSpan > sizeof(Codes[decoder->candidate].elementSequence) / sizeof(Codes[decoder->candidate].elementSequence[0]))
         {
             decoder->candidate = -1;
             decoder->repeatingCount = 0;
