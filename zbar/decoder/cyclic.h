@@ -41,7 +41,7 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate();
 typedef struct cyclic_decoder_s {
     CyclicCharacterTreeNode* charTree;
     CyclicCharacterTreeNode*** charSeekers;//One group for each elements-of-character number
-    int16_t maxCharacterLength;
+    int16_t charSeekersCount;
     int16_t characterPhase;// This means sum of 2 elements - 2
 //    int16_t* s12OfChar;
     int16_t minS12OfChar;

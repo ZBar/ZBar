@@ -34,6 +34,8 @@
 
 #define MinRepeatingRequired 3
 
+//#define USE_SINGLE_ELEMENT_WIDTH
+
 //#define TestCyclic
 
 //static int g_mallocedNodesCount = 0;
@@ -126,10 +128,13 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int16_t leafValue, in
         root->leafValue = leafValue;
         return;
     }
-    
+#ifdef USE_SINGLE_ELEMENT_WIDTH
+    int16_t c = path[0] - 1;
+    if (c < 0 || c > 1) return;
+#else
     int16_t c = path[0] + path[1] - 2;
     if (c < 0 || c > 2) return;
-    
+#endif
     CyclicCharacterTreeNode* child = root->children[c];
     if (!child)
     {
@@ -170,13 +175,21 @@ int16_t cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
         int16_t e = pairWidth;///!!!For Test
 #else
         int16_t s12OfChar = decoder->minS12OfChar + iS12OfChar;
+#ifdef USE_SINGLE_ELEMENT_WIDTH
+        int e = decode_e(pairWidth, decoder->s12, s12OfChar) + 1;
+#else
         int e = decode_e(pairWidth, decoder->s12, s12OfChar);
-        printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
+#endif
+//        printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
 #endif
         CyclicCharacterTreeNode** charSeekers = decoder->charSeekers[iS12OfChar];
-        for (int i = decoder->maxCharacterLength - 1; i >= 0; --i)
+        for (int i = decoder->charSeekersCount - 1; i >= 0; --i)
         {
+#ifdef USE_SINGLE_ELEMENT_WIDTH
+            if (e < 0 || e > 1)
+#else
             if (e < 0 || e > 2)
+#endif
             {
                 charSeekers[i] = NULL;
             }
@@ -193,14 +206,14 @@ int16_t cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
                 if (charSeekers[i] && charSeekers[i]->leafValue > -1)
                 {
                     ret = charSeekers[i]->leafValue;
-                    printf("#Cyclic# A character found: %s, n=%d\n", Codes[charSeekers[i]->leafValue].name, s12OfChar);
+                    printf("#Barcodes# A character found: %s, n=%d\n", Codes[charSeekers[i]->leafValue].name, s12OfChar);
                     charSeekers[i] = NULL;
                 }
             }
         }
     }
     
-    if (++decoder->characterPhase == decoder->maxCharacterLength)
+    if (++decoder->characterPhase == decoder->charSeekersCount)
     {
         decoder->characterPhase = 0;
     }
@@ -262,23 +275,23 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 //    int16_t minS12OfChar;
 //    int16_t maxS12OfChar;
     decoder->charTree = CyclicCharacterTreeNodeCreate();
-    decoder->maxCharacterLength = 0;
+    decoder->charSeekersCount = 0;
 //    decoder->s12OfChar = (int16_t*) malloc(Cyclic12CharactersCount);
     decoder->minS12OfChar = 127;
     decoder->maxS12OfChar = 0;
     for (int i = sizeof(Codes) / sizeof(Codes[0]) - 1; i >= 0; --i)
     {
         int16_t* seq = Codes[i].elementSequence;
-        int length = sizeof(Codes[i].elementSequence) / sizeof(Codes[i].elementSequence[0]) - 1;
-        if (length > decoder->maxCharacterLength)
+        int length = sizeof(Codes[i].elementSequence) / sizeof(Codes[i].elementSequence[0]);
+        if (length > decoder->charSeekersCount)
         {
-            decoder->maxCharacterLength = length;
+            decoder->charSeekersCount = length;
         }
         
         int16_t s12OfChar = 0;
-        for (int j = length; j >= 0; --j)
+        for (int j = length - 1; j >= 0; --j)
         {
-            s12OfChar += Codes[i].elementSequence[j];
+            s12OfChar += seq[j];
         }
 //        decoder->s12OfChar[i] = s12OfChar;
         if (s12OfChar > decoder->maxS12OfChar)
@@ -289,16 +302,21 @@ void cyclic_reset (cyclic_decoder_t *decoder)
         {
             decoder->minS12OfChar = s12OfChar;
         }
-        
-        //printf("\n---------------------\n");
+#ifdef USE_SINGLE_ELEMENT_WIDTH
         CyclicCharacterTreeAdd(decoder->charTree, i, seq, length);
+#else
+        CyclicCharacterTreeAdd(decoder->charTree, i, seq, length - 1);
+#endif
     }
+#ifndef USE_SINGLE_ELEMENT_WIDTH
+    decoder->charSeekersCount--;
+#endif
     //printf("#Cyclic# maxCharacterLength: %d\n", decoder->maxCharacterLength);
     decoder->charSeekers = (CyclicCharacterTreeNode***) malloc(sizeof(CyclicCharacterTreeNode**) * (decoder->maxS12OfChar - decoder->minS12OfChar + 1));
     for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
     {
-        decoder->charSeekers[i] = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * decoder->maxCharacterLength);
-        memset(decoder->charSeekers[i], 0, sizeof(CyclicCharacterTreeNode*) * decoder->maxCharacterLength);
+        decoder->charSeekers[i] = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * decoder->charSeekersCount);
+        memset(decoder->charSeekers[i], 0, sizeof(CyclicCharacterTreeNode*) * decoder->charSeekersCount);
     }
 
     decoder->characterPhase = 0;
@@ -322,8 +340,11 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
     
     decoder->s12 -= get_width(dcode, 12);
     decoder->s12 += get_width(dcode, 0);
-    
+#ifdef USE_SINGLE_ELEMENT_WIDTH
+    int16_t c = cyclic_feed_element(decoder, get_width(dcode, 0));
+#else
     int16_t c = cyclic_feed_element(decoder, pair_width(dcode, 0));
+#endif
     if (c > -1)
     {
         if (c == decoder->candidate)
