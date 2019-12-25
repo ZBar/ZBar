@@ -34,7 +34,7 @@
 
 #define MinRepeatingRequired 3
 
-//#define USE_SINGLE_ELEMENT_WIDTH
+#define USE_SINGLE_ELEMENT_WIDTH
 
 //#define TestCyclic
 
@@ -46,47 +46,47 @@ typedef struct {
 } CyclicCode;
 
 static CyclicCode Codes[] = {
-//    {"DK", {1,1,1,1,2,1,2,1,1,1,1,2}},
-//    {"DQ", {1,1,1,1,1,2,1,2,1,1,2,2}},
-//    {"DJ", {1,1,1,1,2,1,2,1,2,1,1,2}},
-//    {"DX", {1,1,1,1,2,1,1,2,2,1,1,2}},
-//    {"D9", {1,1,1,1,2,1,2,2,1,1,1,2}},
-//    {"D8", {1,1,1,1,2,2,2,1,1,1,1,2}},
-//    {"D7", {1,1,1,1,2,1,1,2,2,2,1,2}},
-//    {"D6", {1,1,1,1,2,1,2,2,1,1,2,2}},
-//    {"D5", {1,1,1,1,2,2,1,1,2,1,2,2}},
-//    {"D4", {1,1,1,1,2,2,1,2,2,1,1,2}},
-//    {"D3", {1,1,1,1,2,2,2,2,1,1,1,2}},
-//    {"D2", {1,1,1,1,2,1,1,1,2,1,2,2}},
-//    {"DA", {1,1,1,1,1,2,2,1,1,1,1,2}},
+    {"DK", {1,1,1,1,2,1,2,1,1,1,1,2}},
+    {"DQ", {1,1,1,1,1,2,1,2,1,1,2,2}},
+    {"DJ", {1,1,1,1,2,1,2,1,2,1,1,2}},
+    {"DX", {1,1,1,1,2,1,1,2,2,1,1,2}},
+    {"D9", {1,1,1,1,2,1,2,2,1,1,1,2}},
+    {"D8", {1,1,1,1,2,2,2,1,1,1,1,2}},
+    {"D7", {1,1,1,1,2,1,1,2,2,2,1,2}},
+    {"D6", {1,1,1,1,2,1,2,2,1,1,2,2}},
+    {"D5", {1,1,1,1,2,2,1,1,2,1,2,2}},
+    {"D4", {1,1,1,1,2,2,1,2,2,1,1,2}},
+    {"D3", {1,1,1,1,2,2,2,2,1,1,1,2}},
+    {"D2", {1,1,1,1,2,1,1,1,2,1,2,2}},
+    {"DA", {1,1,1,1,1,2,2,1,1,1,1,2}},
 
-//    {"SK", {1,1,1,1,2,1,1,1,1,2,2,1}},
-//    {"SQ", {1,1,1,1,1,2,1,1,1,1,1,2}},
-//    {"SJ", {1,1,1,1,1,1,1,1,1,1,1,2}},
-//    {"SX", {1,1,1,1,2,1,1,1,2,2,1,2}},
-//    {"S9", {1,1,1,1,2,1,2,1,1,1,2,2}},
-//    {"S8", {1,1,1,1,2,2,1,1,1,2,1,2}},
-//    {"S7", {1,1,1,1,2,1,1,1,2,2,2,2}},
-//    {"S6", {1,1,1,1,2,1,2,1,1,1,1,2}},
-//    {"S5", {1,1,1,1,2,1,2,1,2,2,1,2}},
-//    {"S4", {1,1,1,1,2,2,2,2,1,2,2,1}},
-//    {"S3", {1,1,1,1,2,2,2,1,1,1,2,2}},
-//    {"S2", {1,1,1,1,1,2,2,1,2,1,1,2}},
-//    {"SA", {1,1,1,1,1,2,1,1,1,2,1,2}},
+    {"SK", {1,1,1,1,2,1,1,1,1,2,2,1}},
+    {"SQ", {1,1,1,1,1,2,1,1,1,1,1,2}},
+    {"SJ", {1,1,1,1,1,1,1,1,1,1,1,2}},
+    {"SX", {1,1,1,1,2,1,1,1,2,2,1,2}},
+    {"S9", {1,1,1,1,2,1,2,1,1,1,2,2}},
+    {"S8", {1,1,1,1,2,2,1,1,1,2,1,2}},
+    {"S7", {1,1,1,1,2,1,1,1,2,2,2,2}},
+    {"S6", {1,1,1,1,2,1,2,1,1,1,1,2}},
+    {"S5", {1,1,1,1,2,1,2,1,2,2,1,2}},
+    {"S4", {1,1,1,1,2,2,2,2,1,2,2,1}},
+    {"S3", {1,1,1,1,2,2,2,1,1,1,2,2}},
+    {"S2", {1,1,1,1,1,2,2,1,2,1,1,2}},
+    {"SA", {1,1,1,1,1,2,1,1,1,2,1,2}},
 
-//    {"HK", {1,1,1,1,2,1,1,1,2,1,1,2}},
-//    {"HQ", {1,1,1,1,1,2,1,1,2,2,1,1}},
-//    {"HJ", {1,1,1,1,1,2,1,2,2,1,1,2}},
-//    {"HX", {1,1,1,1,2,1,1,2,1,1,2,2}},
-//    {"H9", {1,1,1,1,2,1,2,1,2,1,1,2}},
-//    {"H8", {1,1,1,1,2,1,1,1,1,2,1,2}},
-//    {"H7", {1,1,1,1,2,1,1,1,1,1,1,1}},
-//    {"H6", {1,1,1,1,2,1,2,1,2,1,2,2}},
-//    {"H5", {1,1,1,1,2,1,2,2,2,1,1,2}},
-//    {"H4", {1,1,1,1,2,2,1,2,1,1,2,2}},
-//    {"H3", {1,1,1,1,2,2,2,1,1,2,1,2}},
-//    {"H2", {1,1,1,1,1,2,2,2,1,1,1,1}},
-//    {"HA", {1,1,1,1,1,2,1,1,2,1,1,1}},
+    {"HK", {1,1,1,1,2,1,1,1,2,1,1,2}},
+    {"HQ", {1,1,1,1,1,2,1,1,2,2,1,1}},
+    {"HJ", {1,1,1,1,1,2,1,2,2,1,1,2}},
+    {"HX", {1,1,1,1,2,1,1,2,1,1,2,2}},
+    {"H9", {1,1,1,1,2,1,2,1,2,1,1,2}},
+    {"H8", {1,1,1,1,2,1,1,1,1,2,1,2}},
+    {"H7", {1,1,1,1,2,1,1,1,1,1,1,1}},
+    {"H6", {1,1,1,1,2,1,2,1,2,1,2,2}},
+    {"H5", {1,1,1,1,2,1,2,2,2,1,1,2}},
+    {"H4", {1,1,1,1,2,2,1,2,1,1,2,2}},
+    {"H3", {1,1,1,1,2,2,2,1,1,2,1,2}},
+    {"H2", {1,1,1,1,1,2,2,2,1,1,1,1}},
+    {"HA", {1,1,1,1,1,2,1,1,2,1,1,1}},
 
     {"CK", {1,1,1,1,2,1,1,2,1,1,1,2}},
     {"CQ", {1,1,1,1,1,2,1,1,2,2,1,2}},
@@ -101,10 +101,10 @@ static CyclicCode Codes[] = {
     {"C3", {1,1,1,1,2,2,2,1,2,1,1,2}},
     {"C2", {1,1,1,1,2,1,1,1,1,2,2,2}},
     {"CA", {1,1,1,1,1,2,1,2,1,1,1,2}},
-//
-//    {"JB", {1,1,1,1,1,2,2,2,2,1,1,2}},
-//    {"JS", {1,1,1,1,1,2,2,2,1,2,1,2}},
-//    {"AD", {1,1,1,1,2,1,2,1,1,2,2,1}},
+
+    {"JB", {1,1,1,1,1,2,2,2,2,1,1,2}},
+    {"JS", {1,1,1,1,1,2,2,2,1,2,1,2}},
+    {"AD", {1,1,1,1,2,1,2,1,1,2,2,1}},
 };
 
 static int16_t TestPairWidths[] = {
@@ -124,7 +124,11 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int16_t leafValue, in
     if (!root) return;
     
     if (0 == length)
-    {//printf("#Cyclic# leafValue=%d\n", leafValue);
+    {printf("#Barcodes# leafValue=%d\n", leafValue);
+        if (-1 != root->leafValue)
+        {
+            printf("#Barcodes# Collides between '%s' and '%s'\n", Codes[root->leafValue].name, Codes[leafValue].name);
+        }
         root->leafValue = leafValue;
         return;
     }
@@ -197,7 +201,7 @@ int16_t cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
             {
                 if (decoder->characterPhase == i)
                 {
-                    charSeekers[i] = decoder->charTree->children[e];
+                    charSeekers[i] = decoder->charTrees[iS12OfChar]->children[e];
                 }
             }
             else
@@ -227,27 +231,35 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
 //    dcode128->element = 0;
 //    dcode128->character = -1;
 //    dcode128->s6 = 0;
-    CyclicCharacterTreeNode* head = CyclicCharacterTreeNodeCreate();
-    CyclicCharacterTreeNode* tail = head;
-    head->children[0] = decoder->charTree; // children[0] as value, children[1] as next
-    while (head)
+    if (decoder->charTrees)
     {
-        for (int i = 0; i < 3; ++i)
+        for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
         {
-            CyclicCharacterTreeNode* parent = head->children[0];
-            if (!parent->children[i]) continue;
-            
-            tail->children[1] = CyclicCharacterTreeNodeCreate();
-            tail->children[1]->children[0] = parent->children[i];
-            tail = tail->children[1];
+            CyclicCharacterTreeNode* head = CyclicCharacterTreeNodeCreate();
+            CyclicCharacterTreeNode* tail = head;
+            head->children[0] = decoder->charTrees[i]; // children[0] as value, children[1] as next
+            while (head)
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    CyclicCharacterTreeNode* parent = head->children[0];
+                    if (!parent->children[i]) continue;
+                    
+                    tail->children[1] = CyclicCharacterTreeNodeCreate();
+                    tail->children[1]->children[0] = parent->children[i];
+                    tail = tail->children[1];
+                }
+                
+                free(head->children[0]);
+                //printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
+                CyclicCharacterTreeNode* next = head->children[1];
+                free(head);
+                //printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
+                head = next;
+            }
         }
-        
-        free(head->children[0]);
-        //printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
-        CyclicCharacterTreeNode* next = head->children[1];
-        free(head);
-        //printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
-        head = next;
+        free(decoder->charTrees);
+        decoder->charTrees = NULL;
     }
     
     if (decoder->charSeekers)
@@ -257,8 +269,13 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
             free(decoder->charSeekers[i]);
         }
         free(decoder->charSeekers);
+        decoder->charSeekers = NULL;
     }
-//    if (decoder->s12OfChar) free(decoder->s12OfChar);
+    if (decoder->s12OfChars)
+    {
+        free(decoder->s12OfChars);
+        decoder->s12OfChars = NULL;
+    }
 }
 
 void cyclic_reset (cyclic_decoder_t *decoder)
@@ -267,6 +284,9 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 //    dcode128->element = 0;
 //    dcode128->character = -1;
 //    dcode128->s6 = 0;
+    cyclic_destroy(decoder);
+
+    const int CodesCount = sizeof(Codes) / sizeof(Codes[0]);
     decoder->s12 = 0;
 //    CyclicCharacterTreeNode*** charSeekers;//One group for each elements-of-character number
 //    int16_t maxCharacterLength;
@@ -274,12 +294,11 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 //    int16_t* s12OfChar;
 //    int16_t minS12OfChar;
 //    int16_t maxS12OfChar;
-    decoder->charTree = CyclicCharacterTreeNodeCreate();
     decoder->charSeekersCount = 0;
-//    decoder->s12OfChar = (int16_t*) malloc(Cyclic12CharactersCount);
+    decoder->s12OfChars = (int16_t*) malloc(sizeof(int16_t) * CodesCount);
     decoder->minS12OfChar = 127;
     decoder->maxS12OfChar = 0;
-    for (int i = sizeof(Codes) / sizeof(Codes[0]) - 1; i >= 0; --i)
+    for (int i = CodesCount - 1; i >= 0; --i)
     {
         int16_t* seq = Codes[i].elementSequence;
         int length = sizeof(Codes[i].elementSequence) / sizeof(Codes[i].elementSequence[0]);
@@ -293,7 +312,7 @@ void cyclic_reset (cyclic_decoder_t *decoder)
         {
             s12OfChar += seq[j];
         }
-//        decoder->s12OfChar[i] = s12OfChar;
+        decoder->s12OfChars[i] = s12OfChar;
         if (s12OfChar > decoder->maxS12OfChar)
         {
             decoder->maxS12OfChar = s12OfChar;
@@ -302,16 +321,11 @@ void cyclic_reset (cyclic_decoder_t *decoder)
         {
             decoder->minS12OfChar = s12OfChar;
         }
-#ifdef USE_SINGLE_ELEMENT_WIDTH
-        CyclicCharacterTreeAdd(decoder->charTree, i, seq, length);
-#else
-        CyclicCharacterTreeAdd(decoder->charTree, i, seq, length - 1);
-#endif
     }
 #ifndef USE_SINGLE_ELEMENT_WIDTH
     decoder->charSeekersCount--;
 #endif
-    //printf("#Cyclic# maxCharacterLength: %d\n", decoder->maxCharacterLength);
+    printf("#Barcodes# minS12OfChar:%d, maxS12OfChar:%d, charSeekersCount:%d\n", decoder->minS12OfChar, decoder->maxS12OfChar, decoder->charSeekersCount);
     decoder->charSeekers = (CyclicCharacterTreeNode***) malloc(sizeof(CyclicCharacterTreeNode**) * (decoder->maxS12OfChar - decoder->minS12OfChar + 1));
     for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
     {
@@ -319,6 +333,22 @@ void cyclic_reset (cyclic_decoder_t *decoder)
         memset(decoder->charSeekers[i], 0, sizeof(CyclicCharacterTreeNode*) * decoder->charSeekersCount);
     }
 
+    decoder->charTrees = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * (decoder->maxS12OfChar - decoder->minS12OfChar + 1));
+    for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
+    {
+        decoder->charTrees[i] = CyclicCharacterTreeNodeCreate();
+    }
+    for (int i = CodesCount - 1; i >= 0; --i)
+    {
+        int16_t* seq = Codes[i].elementSequence;
+        int length = sizeof(Codes[i].elementSequence) / sizeof(Codes[i].elementSequence[0]);
+#ifdef USE_SINGLE_ELEMENT_WIDTH
+        CyclicCharacterTreeAdd(decoder->charTrees[decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length);
+#else
+        CyclicCharacterTreeAdd(decoder->charTrees[decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length - 1);
+#endif
+    }
+    
     decoder->characterPhase = 0;
     
     decoder->candidate = -1;
