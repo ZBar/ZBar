@@ -205,3 +205,18 @@ zbarEnum_LookupValue (zbarEnum *self,
     Py_DECREF(key);
     return(e);
 }
+
+PyObject*
+zbarEnum_SetFromMask (zbarEnum *self,
+                      unsigned int mask)
+{
+    PyObject *result = PySet_New(NULL);
+    PyObject *key, *item;
+    Py_ssize_t i = 0;
+    while(PyDict_Next(self->byvalue, &i, &key, &item)) {
+        int val = PyInt_AsLong(item);
+        if(val < sizeof(mask) * 8 && ((mask >> val) & 1))
+            PySet_Add(result, item);
+    }
+    return(result);
+}

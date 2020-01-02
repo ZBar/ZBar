@@ -22,7 +22,7 @@
 //------------------------------------------------------------------------
 
 #import <ZBarSDK/ZBarReaderController.h>
-#import "ZBarHelpController.h"
+#import <ZBarSDK/ZBarHelpController.h>
 #import "debug.h"
 
 /* the use of UIGetScreenImage() may no longer be sanctioned, even
@@ -585,7 +585,7 @@ CGImageRef UIGetScreenImage(void);
     }
     help = [[ZBarHelpController alloc]
                initWithReason: reason];
-    help.delegate = self;
+    help.delegate = (id<ZBarHelpDelegate>)self;
 
     if(self.sourceType != UIImagePickerControllerSourceTypeCamera) {
         [self presentModalViewController: help
@@ -679,8 +679,9 @@ CGImageRef UIGetScreenImage(void);
         [self dismissModalViewControllerAnimated: YES];
 }
 
-- (void) helpController: (ZBarHelpController*) hlp
-   clickedButtonAtIndex: (NSInteger) idx
+// ZBarHelpDelegate
+
+- (void) helpControllerDidFinish: (ZBarHelpController*) hlp
 {
     if(self.sourceType == UIImagePickerControllerSourceTypeCamera) {
         [UIView beginAnimations: @"ZBarHelp"

@@ -95,9 +95,8 @@ int _zbar_process_image (zbar_processor_t *proc,
             while(sym) {
                 zbar_symbol_type_t type = zbar_symbol_get_type(sym);
                 int count = zbar_symbol_get_count(sym);
-                zprintf(8, "%s%s: %s (%d pts) (dir=%d) (q=%d) (%s)\n",
+                zprintf(8, "%s: %s (%d pts) (dir=%d) (q=%d) (%s)\n",
                         zbar_get_symbol_name(type),
-                        zbar_get_addon_name(type),
                         zbar_symbol_get_data(sym),
                         zbar_symbol_get_loc_size(sym),
                         zbar_symbol_get_orientation(sym),

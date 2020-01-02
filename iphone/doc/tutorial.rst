@@ -21,7 +21,7 @@ The completed project is also available with the distributed SDK under
 Create the App
 --------------
 
-1. Open Xcode; you must have version 3.2.3 or later.
+1. Open Xcode; you must have version 4.5.1 or later.
 
 2. Create a new project using the "View-based Application" template.  Name the
    project "ReaderSample".  Save it wherever you like.
@@ -72,10 +72,16 @@ Create the App
           NSLog(@"TBD: scan barcode here...");
       }
       
-      - (void) dealloc {
+      - (void) dealloc
+      {
           self.resultImage = nil;
           self.resultText = nil;
           [super dealloc];
+      }
+      
+      - (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation) interfaceOrientation
+      {
+          return(YES);
       }
 
    This stub for scanButtonTapped is temporary, we'll fix it in a minute...
@@ -97,9 +103,8 @@ Now for the exciting part - let's add a barcode reader!
 3. Drag the :file:`ZBarSDK` folder into your Xcode project.  Make sure that
    the "Copy Items into destination group's folder" checkbox is checked.
 
-4. Right-click the ``Frameworks`` group in your project.  Select
-   ``Add -> Existing Frameworks...``  Make sure "All" are listed and add each
-   of these from the ``Device`` list (NB hold down command for multiple
+4. Open the target build settings and find ``Link Binary With Libraries``.
+   Click the ``+`` and add each of these (NB hold down command for multiple
    selection):
 
    * AVFoundation.framework
@@ -108,8 +113,14 @@ Now for the exciting part - let's add a barcode reader!
    * QuartzCore.framework
    * libiconv.dylib
 
+   .. warning::
+
+      Link order may be important for some versions of Xcode; the libraries
+      referenced above should be listed *before* :file:`libzbar.a` in the
+      link order.
+
 5. Import the SDK header.  You will usually want to prefix it, so add it to
-   :file:`ReaderSample_prefix.pch`::
+   :file:`ReaderSample-prefix.pch`::
 
       // ADD: import barcode reader APIs
       #import "ZBarSDK.h"
@@ -129,8 +140,9 @@ Now for the exciting part - let's add a barcode reader!
       - (IBAction) scanButtonTapped
       {
           // ADD: present a barcode reader that scans from the camera feed
-          ZBarReaderViewController *reader = [ZBarReaderViewController new];
+          ZBarReaderViewController *reader = [[ZBarReaderViewController alloc] init];
           reader.readerDelegate = self;
+          reader.supportedOrientationsMask = ZBarOrientationMaskAll;
       
           ZBarImageScanner *scanner = reader.scanner;
           // TODO: (optional) additional reader configuration here
@@ -179,7 +191,7 @@ Testing
 
 1. Save everything (don't forget to save MyAppViewController.xib).
 
-2. Select "Build and Run".
+2. Build and Run the project.
 
 3. Tap the Scan button.
 

@@ -25,8 +25,11 @@
 
 #include <config.h>
 #include <stdlib.h>     /* realloc */
+#include <limits.h>
 
 #include <zbar.h>
+
+#include "debug.h"
 
 #define NUM_CFGS (ZBAR_CFG_MAX_LEN - ZBAR_CFG_MIN_LEN + 1)
 
@@ -39,8 +42,14 @@
 #ifdef ENABLE_DATABAR
 # include "decoder/databar.h"
 #endif
+#ifdef ENABLE_CODABAR
+# include "decoder/codabar.h"
+#endif
 #ifdef ENABLE_CODE39
 # include "decoder/code39.h"
+#endif
+#ifdef ENABLE_CODE93
+# include "decoder/code93.h"
 #endif
 #ifdef ENABLE_CODE128
 # include "decoder/code128.h"
@@ -50,6 +59,9 @@
 #endif
 #ifdef ENABLE_QRCODE
 # include "decoder/qr_finder.h"
+#endif
+#ifdef ENABLE_CYCLIC
+# include "decoder/cyclic.h"
 #endif
 
 /* size of bar width history (implementation assumes power of two) */
@@ -76,6 +88,7 @@
 
 #define CFG(dcode, cfg) ((dcode).configs[(cfg) - ZBAR_CFG_MIN_LEN])
 #define TEST_CFG(config, cfg) (((config) >> (cfg)) & 1)
+#define MOD(mod) (1 << (mod))
 
 /* symbology independent decoder state */
 struct zbar_decoder_s {
@@ -83,7 +96,9 @@ struct zbar_decoder_s {
     unsigned w[DECODE_WINDOW];          /* window of last N bar widths */
     zbar_symbol_type_t type;            /* type of last decoded data */
     zbar_symbol_type_t lock;            /* buffer lock */
+    unsigned modifiers;                 /* symbology modifier */
     int direction;                      /* direction of last decoded data */
+    unsigned s6;                        /* 6-element character width */
 
     /* everything above here is automatically reset */
     unsigned buf_alloc;                 /* dynamic buffer allocation */
@@ -102,8 +117,14 @@ struct zbar_decoder_s {
 #ifdef ENABLE_DATABAR
     databar_decoder_t databar;          /* DataBar decode state */
 #endif
+#ifdef ENABLE_CODABAR
+    codabar_decoder_t codabar;          /* Codabar decode state */
+#endif
 #ifdef ENABLE_CODE39
     code39_decoder_t code39;            /* Code 39 decode state */
+#endif
+#ifdef ENABLE_CODE93
+    code93_decoder_t code93;            /* Code 93 decode state */
 #endif
 #ifdef ENABLE_CODE128
     code128_decoder_t code128;          /* Code 128 decode state */
@@ -113,6 +134,9 @@ struct zbar_decoder_s {
 #endif
 #ifdef ENABLE_QRCODE
     qr_finder_t qrf;                    /* QR Code finder state */
+#endif
+#ifdef ENABLE_CYCLIC
+    cyclic_decoder_t cyclic;          /* Cyclic decode state */
 #endif
 };
 
@@ -174,12 +198,63 @@ static inline int decode_e (unsigned e,
     return((E >= n - 3) ? -1 : E);
 }
 
+/* sort three like-colored elements and return ordering
+ */
+static inline unsigned decode_sort3 (zbar_decoder_t *dcode,
+                                     int i0)
+{
+    unsigned w0 = get_width(dcode, i0);
+    unsigned w2 = get_width(dcode, i0 + 2);
+    unsigned w4 = get_width(dcode, i0 + 4);
+    if(w0 < w2) {
+        if(w2 < w4)
+            return((i0 << 8) | ((i0 + 2) << 4) | (i0 + 4));
+        if(w0 < w4)
+            return((i0 << 8) | ((i0 + 4) << 4) | (i0 + 2));
+        return(((i0 + 4) << 8) | (i0 << 4) | (i0 + 2));
+    }
+    if(w4 < w2)
+        return(((i0 + 4) << 8) | ((i0 + 2) << 4) | i0);
+    if(w0 < w4)
+        return(((i0 + 2) << 8) | (i0 << 4) | (i0 + 4));
+    return(((i0 + 2) << 8) | ((i0 + 4) << 4) | i0);
+}
+
+/* sort N like-colored elements and return ordering
+ */
+static inline unsigned decode_sortn (zbar_decoder_t *dcode,
+                                     int n,
+                                     int i0)
+{
+    unsigned mask = 0, sort = 0;
+    int i;
+    for(i = n - 1; i >= 0; i--) {
+        unsigned wmin = UINT_MAX;
+        int jmin = -1, j;
+        for(j = n - 1; j >= 0; j--) {
+            if((mask >> j) & 1)
+                continue;
+            unsigned w = get_width(dcode, i0 + j * 2);
+            if(wmin >= w) {
+                wmin = w;
+                jmin = j;
+            }
+        }
+        zassert(jmin >= 0, 0, "sortn(%d,%d) jmin=%d",
+                n, i0, jmin);
+        sort <<= 4;
+        mask |= 1 << jmin;
+        sort |= i0 + jmin * 2;
+    }
+    return(sort);
+}
+
 /* acquire shared state lock */
 static inline char acquire_lock (zbar_decoder_t *dcode,
                                  zbar_symbol_type_t req)
 {
     if(dcode->lock) {
-        dprintf(2, " [locked %d]\n", dcode->lock);
+        dbprintf(2, " [locked %d]\n", dcode->lock);
         return(1);
     }
     dcode->lock = req;
@@ -201,6 +276,8 @@ static inline char size_buf (zbar_decoder_t *dcode,
                              unsigned len)
 {
     unsigned char *buf;
+    if(len <= BUFFER_MIN)
+        return(0);
     if(len < dcode->buf_alloc)
         /* FIXME size reduction heuristic? */
         return(0);
@@ -220,6 +297,6 @@ static inline char size_buf (zbar_decoder_t *dcode,
 }
 
 extern const char *_zbar_decoder_buf_dump (unsigned char *buf,
-                                            unsigned int buflen);
+                                           unsigned int buflen);
 
 #endif

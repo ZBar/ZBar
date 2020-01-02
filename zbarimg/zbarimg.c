@@ -38,15 +38,29 @@
 #include <assert.h>
 
 #include <zbar.h>
-#include <wand/MagickWand.h>
+
+#ifdef HAVE_GRAPHICSMAGICK
+# include <wand/wand_api.h>
+#endif
+
+#ifdef HAVE_IMAGEMAGICK
+# include <wand/MagickWand.h>
+
+/* ImageMagick frequently changes API names - just use the original
+ * (more stable?) names to match GraphicsMagick
+ */
+# define InitializeMagick(f) MagickWandGenesis()
+# define DestroyMagick MagickWandTerminus
+# define MagickSetImageIndex MagickSetIteratorIndex
 
 /* in 6.4.5.4 MagickGetImagePixels changed to MagickExportImagePixels.
  * (still not sure this check is quite right...
  *  how does MagickGetAuthenticImagePixels fit in?)
  * ref http://bugs.gentoo.org/247292
  */
-#if MagickLibVersion < 0x645
-# define MagickExportImagePixels MagickGetImagePixels
+# if MagickLibVersion > 0x645
+#  define MagickGetImagePixels MagickExportImagePixels
+# endif
 #endif
 
 static const char *note_usage =
@@ -76,8 +90,9 @@ static const char *warning_not_found =
     "  things to check:\n"
     "    - is the barcode type supported?"
     "  currently supported symbologies are:\n"
-    "      EAN/UPC (EAN-13, EAN-8, UPC-A, UPC-E, ISBN-10, ISBN-13),\n"
-    "      Code 128, Code 39, DataBar, DataBar Expanded, and Interleaved 2 of 5\n"
+    "      EAN/UPC (EAN-13, EAN-8, EAN-2, EAN-5, UPC-A, UPC-E,\n"
+    "      ISBN-10, ISBN-13), Code 128, Code 93, Code 39, Codabar,\n"
+    "      DataBar, DataBar Expanded, and Interleaved 2 of 5\n"
     "    - is the barcode large enough in the image?\n"
     "    - is the barcode mostly in focus?\n"
     "    - is there sufficient contrast/illumination?\n"
@@ -132,7 +147,7 @@ static int scan_image (const char *filename)
         if(exit_code == 3)
             return(-1);
 
-        if(!MagickSetIteratorIndex(images, seq) && dump_error(images))
+        if(!MagickSetImageIndex(images, seq) && dump_error(images))
             return(-1);
 
         zbar_image_t *zimage = zbar_image_create();
@@ -150,8 +165,8 @@ static int scan_image (const char *filename)
         unsigned char *blob = malloc(bloblen);
         zbar_image_set_data(zimage, blob, bloblen, zbar_image_free_data);
 
-        if(!MagickExportImagePixels(images, 0, 0, width, height,
-                                    "I", CharPixel, blob))
+        if(!MagickGetImagePixels(images, 0, 0, width, height,
+                                 "I", CharPixel, blob))
             return(-1);
 
         if(xmllvl == 1) {
@@ -165,21 +180,14 @@ static int scan_image (const char *filename)
         const zbar_symbol_t *sym = zbar_image_first_symbol(zimage);
         for(; sym; sym = zbar_symbol_next(sym)) {
             zbar_symbol_type_t typ = zbar_symbol_get_type(sym);
+            unsigned len = zbar_symbol_get_data_length(sym);
             if(typ == ZBAR_PARTIAL)
                 continue;
-            else if(!xmllvl) {
-                printf("%s:", zbar_get_symbol_name(typ));
-                if(fwrite(zbar_symbol_get_data(sym),
-                          zbar_symbol_get_data_length(sym),
-                          1, stdout) != 1) {
-                    exit_code = 1;
-                    return(-1);
-                }
-            }
-            else if(xmllvl < 0) {
-                if(fwrite(zbar_symbol_get_data(sym),
-                          zbar_symbol_get_data_length(sym),
-                          1, stdout) != 1) {
+            else if(xmllvl <= 0) {
+                if(!xmllvl)
+                    printf("%s:", zbar_get_symbol_name(typ));
+                if(len &&
+                   fwrite(zbar_symbol_get_data(sym), len, 1, stdout) != 1) {
                     exit_code = 1;
                     return(-1);
                 }
@@ -261,7 +269,7 @@ int main (int argc, const char *argv[])
     int i, j;
     for(i = 1; i < argc; i++) {
         const char *arg = argv[i];
-        if(arg[0] != '-')
+        if(arg[0] != '-' || !arg[1])
             // first pass, skip images
             num_images++;
         else if(arg[1] != '-')
@@ -318,7 +326,7 @@ int main (int argc, const char *argv[])
         return(usage(1, "ERROR: specify image file(s) to scan", NULL));
     num_images = 0;
 
-    MagickWandGenesis();
+    InitializeMagick("zbarimg");
 
     processor = zbar_processor_create(0);
     assert(processor);
@@ -332,7 +340,7 @@ int main (int argc, const char *argv[])
         if(!arg)
             continue;
 
-        if(arg[0] != '-') {
+        if(arg[0] != '-' || !arg[1]) {
             if(scan_image(arg))
                 return(exit_code);
         }
@@ -431,6 +439,6 @@ int main (int argc, const char *argv[])
         exit_code = 4;
 
     zbar_processor_destroy(processor);
-    MagickWandTerminus();
+    DestroyMagick();
     return(exit_code);
 }

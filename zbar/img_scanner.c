@@ -107,8 +107,9 @@ struct zbar_image_scanner_s {
 
     /* configuration settings */
     unsigned config;            /* config flags */
+    unsigned ean_config;
     int configs[NUM_SCN_CFGS];  /* int valued configurations */
-    int sym_configs[1][16];     /* per-symbology configurations */
+    int sym_configs[1][NUM_SYMS]; /* per-symbology configurations */
 
 #ifndef NO_STATS
     int stat_syms_new;
@@ -296,6 +297,8 @@ static inline void cache_sym (zbar_image_scanner_t *iscn,
             /* FIXME reuse sym */
             entry = _zbar_image_scanner_alloc_sym(iscn, sym->type,
                                                   sym->datalen + 1);
+            entry->configs = sym->configs;
+            entry->modifiers = sym->modifiers;
             memcpy(entry->data, sym->data, sym->datalen);
             entry->time = sym->time - CACHE_HYSTERESIS;
             entry->cache_count = 0;
@@ -312,7 +315,7 @@ static inline void cache_sym (zbar_image_scanner_t *iscn,
         dup = (entry->cache_count >= 0);
         if((!dup && !near_thresh) || far_thresh) {
             int type = sym->type;
-            int h = ((type - (type >> 3)) ^ (type >> 5)) & 0xf;
+            int h = _zbar_get_symbol_hash(type);
             entry->cache_count = -iscn->sym_configs[0][h];
         }
         else if(dup || near_thresh)
@@ -444,6 +447,8 @@ static void symbol_handler (zbar_decoder_t *dcode)
         }
 
     sym = _zbar_image_scanner_alloc_sym(iscn, type, datalen + 1);
+    sym->configs = zbar_decoder_get_configs(dcode, type);
+    sym->modifiers = zbar_decoder_get_modifiers(dcode);
     /* FIXME grab decoder buffer */
     memcpy(sym->data, data, datalen + 1);
 
@@ -486,7 +491,10 @@ zbar_image_scanner_t *zbar_image_scanner_create ()
     zbar_image_scanner_set_config(iscn, 0, ZBAR_CFG_UNCERTAINTY, 2);
     zbar_image_scanner_set_config(iscn, ZBAR_QRCODE, ZBAR_CFG_UNCERTAINTY, 0);
     zbar_image_scanner_set_config(iscn, ZBAR_CODE128, ZBAR_CFG_UNCERTAINTY, 0);
+    zbar_image_scanner_set_config(iscn, ZBAR_CODE93, ZBAR_CFG_UNCERTAINTY, 0);
     zbar_image_scanner_set_config(iscn, ZBAR_CODE39, ZBAR_CFG_UNCERTAINTY, 0);
+    zbar_image_scanner_set_config(iscn, ZBAR_CODABAR, ZBAR_CFG_UNCERTAINTY, 1);
+    zbar_image_scanner_set_config(iscn, ZBAR_COMPOSITE, ZBAR_CFG_UNCERTAINTY, 0);
     return(iscn);
 }
 
@@ -555,6 +563,12 @@ int zbar_image_scanner_set_config (zbar_image_scanner_t *iscn,
                                    zbar_config_t cfg,
                                    int val)
 {
+    if((sym == 0 || sym == ZBAR_COMPOSITE) && cfg == ZBAR_CFG_ENABLE) {
+        iscn->ean_config = !!val;
+        if(sym)
+            return(0);
+    }
+
     if(cfg < ZBAR_CFG_UNCERTAINTY)
         return(zbar_decoder_set_config(iscn->dcode, sym, cfg, val));
 
@@ -564,11 +578,11 @@ int zbar_image_scanner_set_config (zbar_image_scanner_t *iscn,
             return(1);
         c = cfg - ZBAR_CFG_UNCERTAINTY;
         if(sym > ZBAR_PARTIAL) {
-            i = ((sym - (sym >> 3)) ^ (sym >> 5)) & 0xf;
+            i = _zbar_get_symbol_hash(sym);
             iscn->sym_configs[c][i] = val;
         }
         else
-            for(i = 0; i < 16; i++)
+            for(i = 0; i < NUM_SYMS; i++)
                 iscn->sym_configs[c][i] = val;
         return(0);
     }
@@ -577,7 +591,6 @@ int zbar_image_scanner_set_config (zbar_image_scanner_t *iscn,
         return(1);
 
     if(cfg >= ZBAR_CFG_X_DENSITY && cfg <= ZBAR_CFG_Y_DENSITY) {
-
         CFG(iscn, cfg) = val;
         return(0);
     }
@@ -631,6 +644,11 @@ static inline void quiet_border (zbar_image_scanner_t *iscn)
 int zbar_scan_image (zbar_image_scanner_t *iscn,
                      zbar_image_t *img)
 {
+//    for (int i = ZBAR_EAN2; i < ZBAR_CYCLIC; ++i)
+//    {
+//        int hash = _zbar_get_symbol_hash(i);
+//        printf("#Barcodes# hash(%d)=%d\n", i, hash);
+//    }
     zbar_symbol_set_t *syms;
     const uint8_t *data;
     zbar_scanner_t *scn = iscn->scn;
@@ -794,21 +812,82 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
 #endif
 
     /* FIXME tmp hack to filter bad EAN results */
-    if(syms->nsyms && !iscn->enable_cache &&
-       (density == 1 || CFG(iscn, ZBAR_CFG_Y_DENSITY) == 1)) {
-        zbar_symbol_t **symp = &syms->head, *sym;
-        while((sym = *symp)) {
-            if(((sym->type < ZBAR_I25 && sym->type > ZBAR_PARTIAL) ||
-                sym->type == ZBAR_DATABAR || sym->type == ZBAR_DATABAR_EXP) &&
-               sym->quality < 4) {
-                /* recycle */
-                *symp = sym->next;
-                syms->nsyms--;
-                sym->next = NULL;
-                _zbar_image_scanner_recycle_syms(iscn, sym);
+    /* FIXME tmp hack to merge simple case EAN add-ons */
+    char filter = (!iscn->enable_cache &&
+                   (density == 1 || CFG(iscn, ZBAR_CFG_Y_DENSITY) == 1));
+    int nean = 0, naddon = 0;
+    if(syms->nsyms) {
+        zbar_symbol_t **symp;
+        for(symp = &syms->head; *symp; ) {
+            zbar_symbol_t *sym = *symp;
+            if(sym->cache_count <= 0 &&
+               ((sym->type < ZBAR_COMPOSITE && sym->type > ZBAR_PARTIAL) ||
+                sym->type == ZBAR_DATABAR ||
+                sym->type == ZBAR_DATABAR_EXP ||
+                sym->type == ZBAR_CODABAR))
+            {
+	        if((sym->type == ZBAR_CODABAR || filter) && sym->quality < 4) {
+                    if(iscn->enable_cache) {
+                        /* revert cache update */
+                        zbar_symbol_t *entry = cache_lookup(iscn, sym);
+                        if(entry)
+                            entry->cache_count--;
+                        else
+                            assert(0);
+                    }
+
+                    /* recycle */
+                    *symp = sym->next;
+                    syms->nsyms--;
+                    sym->next = NULL;
+                    _zbar_image_scanner_recycle_syms(iscn, sym);
+                    continue;
+                }
+                else if(sym->type < ZBAR_COMPOSITE &&
+                        sym->type != ZBAR_ISBN10)
+                {
+                    if(sym->type > ZBAR_EAN5)
+                        nean++;
+                    else
+                        naddon++;
+                }
             }
-            else
-                symp = &sym->next;
+            symp = &sym->next;
+        }
+
+        if(nean == 1 && naddon == 1 && iscn->ean_config) {
+            /* create container symbol for composite result */
+            zbar_symbol_t *ean = NULL, *addon = NULL;
+            for(symp = &syms->head; *symp; ) {
+                zbar_symbol_t *sym = *symp;
+                if(sym->type < ZBAR_COMPOSITE && sym->type > ZBAR_PARTIAL) {
+                    /* move to composite */
+                    *symp = sym->next;
+                    syms->nsyms--;
+                    sym->next = NULL;
+                    if(sym->type <= ZBAR_EAN5)
+                        addon = sym;
+                    else
+                        ean = sym;
+                }
+                else
+                    symp = &sym->next;
+            }
+            assert(ean);
+            assert(addon);
+
+            int datalen = ean->datalen + addon->datalen + 1;
+            zbar_symbol_t *ean_sym =
+                _zbar_image_scanner_alloc_sym(iscn, ZBAR_COMPOSITE, datalen);
+            ean_sym->orient = ean->orient;
+            ean_sym->syms = _zbar_symbol_set_create();
+            memcpy(ean_sym->data, ean->data, ean->datalen);
+            memcpy(ean_sym->data + ean->datalen,
+                   addon->data, addon->datalen + 1);
+            ean_sym->syms->head = ean;
+            ean->next = addon;
+            ean_sym->syms->nsyms = 2;
+            _zbar_image_scanner_add_sym(iscn, ean_sym);
         }
     }
 

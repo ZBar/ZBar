@@ -126,7 +126,11 @@ Bar code type "symbology" constants:
 
 =item I25
 
+=item CODABAR
+
 =item CODE39
+
+=item CODE93
 
 =item CODE128
 

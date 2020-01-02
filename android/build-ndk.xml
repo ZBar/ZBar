@@ -1,0 +1,66 @@
+<!-- 
+Ant build file to compile the ZBar JNI files using Android NDK tool
+targets:
+  zbar-clean     - removes build generated files, build dir, jar and zip files
+  zbar-ndk-build - builds the zbarjni and iconv shared libraries
+  zbar-compile   - builds the zbar java files
+  zbar-jar       - builds and jars the zbar java files
+  zbar-zip       - Creates ZBarAndroidSDK-x.y.zip of jar, .so, etc
+  zbar-all       - performs all the above :)
+-->
+<project name="zbar">
+  <property name="project.name" value="zbar" />
+  <property name="project.sdk.name" value="ZBarAndroidSDK" />
+
+  <target name="zbar-clean">
+      <delete dir="../java/build"/>
+      <delete file="libs/${project.name}.jar"/>
+      <delete file="${ant.project.name}.zip"/>
+      <exec executable="${ndk.dir}/ndk-build" failonerror="true">
+          <arg value="clean"/>
+      </exec>
+  </target>
+
+  <target name="zbar-ndk-build">
+      <exec executable="${ndk.dir}/ndk-build" failonerror="true">
+          <arg value="ICONV_SRC=${iconv.src}" />
+      </exec>
+  </target>
+
+  <target name="zbar-compile" depends="zbar-ndk-build">
+      <mkdir dir="../java/build" />
+      <javac srcdir="../java/net" destdir="../java/build" />
+  </target>
+
+  <target name="zbar-jar" depends="zbar-compile">
+      <jar destfile="libs/${project.name}.jar" basedir="../java/build">
+      </jar>
+  </target>
+
+  <target name="zbar-zip">
+      <if><condition><not><isset property="version"/></not></condition><then>
+         <property name="version" value="0.2" />
+      </then></if>
+      <zip destfile="${project.sdk.name}-${version}.zip" >
+          <zipfileset dir="../" prefix="${project.sdk.name}-${version}" includes="COPYING, LICENSE"/>
+          <zipfileset dir="." prefix="${project.sdk.name}-${version}" includes="README"/>
+          <zipfileset dir="libs" prefix="${project.sdk.name}-${version}/libs"/>
+          <zipfileset dir="examples" prefix="${project.sdk.name}-${version}/examples"/>
+          <zipfileset dir="libs" prefix="${project.sdk.name}-${version}/examples/CameraTest/libs"/>
+      </zip>
+  </target>
+
+  <target name="zbar-all" depends="zbar-jar">
+      <if><condition><not><isset property="version"/></not></condition><then>
+         <property name="version" value="0.2" />
+      </then></if>
+      <zip destfile="${project.sdk.name}-${version}.zip" >
+          <zipfileset dir="../" prefix="${project.sdk.name}-${version}" includes="COPYING, LICENSE"/>
+          <zipfileset dir="." prefix="${project.sdk.name}-${version}" includes="README"/>
+          <zipfileset dir="libs" prefix="${project.sdk.name}-${version}/libs"/>
+          <zipfileset dir="examples" prefix="${project.sdk.name}-${version}/examples"/>
+          <zipfileset dir="libs" prefix="${project.sdk.name}-${version}/examples/CameraTest/libs"/>
+      </zip>
+  </target>
+</project>
+

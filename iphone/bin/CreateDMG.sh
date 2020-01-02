@@ -3,8 +3,11 @@ set -ux
 VOLNAME=${1:?}
 shift
 RES=$SOURCE_ROOT/res
-BUDDY=$(xcrun -find PlistBuddy) \
-    || exit 1
+BUDDY=/usr/libexec/PlistBuddy
+if [ ! -x "$BUDDY" ]; then
+    BUDDY=$(xcrun -find PlistBuddy) \
+        || exit 1
+fi
 VERSION=$($BUDDY -c 'Print :CFBundleVersion' $RES/$VOLNAME-Info.plist) \
     || exit 1
 DMG=$VOLNAME-$VERSION
@@ -22,10 +25,16 @@ do
 done
 
 # prepare examples for distribution
-for example in $(find $TARGET_BUILD_DIR/Examples -depth 1)
+for example in $(find $TARGET_BUILD_DIR/Examples -depth 1 -not -name '.*')
 do
-    rm -rf $example/{*.xcodeproj/*.{mode1v3,pbxuser},ZBarSDK}
+    rm -rf $example/{build,*.xcodeproj/{*.{mode1v3,pbxuser},project.xcworkspace,xcuserdata},ZBarSDK}
     cp -af $BUILT_PRODUCTS_DIR/ZBarSDK $example/
+done
+
+# override subdir .DS_Stores
+for dir in $(find $TARGET_BUILD_DIR -type d -depth 1)
+do
+    cp -af $RES/Columns.DS_Store $dir/.DS_Store
 done
 
 hdiutil create -ov -fs HFS+ -format UDZO -imagekey zlib-level=9 \

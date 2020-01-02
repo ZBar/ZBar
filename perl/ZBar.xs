@@ -53,6 +53,7 @@ static AV *LOOKUP_zbar_color_t = NULL;
 static AV *LOOKUP_zbar_symbol_type_t = NULL;
 static AV *LOOKUP_zbar_error_t = NULL;
 static AV *LOOKUP_zbar_config_t = NULL;
+static AV *LOOKUP_zbar_modifier_t = NULL;
 static AV *LOOKUP_zbar_orientation_t = NULL;
 
 #define CONSTANT(typ, prefix, sym, name)                \
@@ -92,6 +93,15 @@ static inline void check_error (int rc, void *obj)
             XPUSHs(sv_setref_pv(sv_newmortal(), "Barcode::ZBar::Symbol", \
                                 (void*)sym));                           \
         }                                                               \
+    } while(0);
+
+#define PUSH_ENUM_MASK(typ, TYP, val)                         \
+    do {                                                      \
+        unsigned mask = (val);                                \
+        int i;                                                \
+        for(i = 0; i < ZBAR_ ## TYP ## _NUM; i++, mask >>= 1) \
+            if(mask & 1)                                      \
+                XPUSHs(LOOKUP_ENUM(typ, i));                  \
     } while(0);
 
 static void image_cleanup_handler (zbar_image_t *image)
@@ -152,7 +162,7 @@ static inline void activate_handler (handler_wrapper_t *wrap,
     SAVETMPS;
 
     PUSHMARK(SP);
-    EXTEND(SP, 2);
+    EXTEND(SP, 3);
     PUSHs(sv_mortalcopy(wrap->instance));
     if(param)
         PUSHs(param);
@@ -284,6 +294,16 @@ BOOT:
         CONSTANT(config, CFG_, Y_DENSITY, "y-density");
     }
 
+MODULE = Barcode::ZBar  PACKAGE = Barcode::ZBar::Modifier  PREFIX = zbar_mod_
+
+BOOT:
+    {
+        HV *stash = gv_stashpv("Barcode::ZBar::Modifier", TRUE);
+
+        LOOKUP_zbar_modifier_t = newAV();
+        CONSTANT(modifier, MOD_, GS1, "GS1");
+        CONSTANT(modifier, MOD_, AIM, "AIM");
+    }
 
 MODULE = Barcode::ZBar	PACKAGE = Barcode::ZBar::Orient	PREFIX = zbar_orientation_
 
@@ -319,9 +339,11 @@ BOOT:
         CONSTANT(symbol_type, , DATABAR_EXP,
                  zbar_get_symbol_name(ZBAR_DATABAR_EXP));
         CONSTANT(symbol_type, , I25, zbar_get_symbol_name(ZBAR_I25));
+        CONSTANT(symbol_type, , CODABAR, zbar_get_symbol_name(ZBAR_CODABAR));
         CONSTANT(symbol_type, , CODE39, zbar_get_symbol_name(ZBAR_CODE39));
         CONSTANT(symbol_type, , PDF417, zbar_get_symbol_name(ZBAR_PDF417));
         CONSTANT(symbol_type, , QRCODE, zbar_get_symbol_name(ZBAR_QRCODE));
+        CONSTANT(symbol_type, , CODE93, zbar_get_symbol_name(ZBAR_CODE93));
         CONSTANT(symbol_type, , CODE128, zbar_get_symbol_name(ZBAR_CODE128));
     }
 
@@ -334,6 +356,18 @@ DESTROY(symbol)
 zbar_symbol_type_t
 zbar_symbol_get_type(symbol)
 	Barcode::ZBar::Symbol symbol
+
+SV *
+zbar_symbol_get_configs(symbol)
+	Barcode::ZBar::Symbol	symbol
+    PPCODE:
+        PUSH_ENUM_MASK(config, CFG, zbar_symbol_get_configs(symbol));
+
+SV *
+zbar_symbol_get_modifiers(symbol)
+	Barcode::ZBar::Symbol	symbol
+    PPCODE:
+        PUSH_ENUM_MASK(modifier, MOD, zbar_symbol_get_modifiers(symbol));
 
 SV *
 zbar_symbol_get_data(symbol)
@@ -756,6 +790,21 @@ zbar_decoder_get_data(decoder)
 zbar_symbol_type_t
 zbar_decoder_get_type(decoder)
 	Barcode::ZBar::Decoder	decoder
+
+SV *
+zbar_decoder_get_configs(decoder, symbology)
+	Barcode::ZBar::Decoder	decoder
+        zbar_symbol_type_t	symbology
+    PPCODE:
+        if(symbology == ZBAR_NONE)
+            symbology = zbar_decoder_get_type(decoder);
+        PUSH_ENUM_MASK(config, CFG, zbar_decoder_get_configs(decoder, symbology));
+
+SV *
+zbar_decoder_get_modifiers(decoder)
+	Barcode::ZBar::Decoder	decoder
+    PPCODE:
+        PUSH_ENUM_MASK(modifier, MOD, zbar_decoder_get_modifiers(decoder));
 
 int
 zbar_decoder_get_direction(decoder)

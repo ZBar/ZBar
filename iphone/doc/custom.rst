@@ -18,16 +18,16 @@ Note that if you are scanning images from the photo library, there is no
 customization - you are limited to the system picker interface provided by the
 :class:`UIImagePickerController`.
 
-If you are using a :class:`ZBarReaderViewController`, are *only* planning to
-support iOS 4 and just want to add to the existing controls, you can simply
-set your overlay to include the additional view hierarchy::
+If you are using a :class:`ZBarReaderViewController` and just want to add to
+the existing controls, you can simply set your overlay to include the
+additional view hierarchy::
 
    reader.cameraOverlayView = myLogoImageView;
 
-Otherwise, if you are using a :class:`ZBarReaderController`, still need the
-iOS 3.1 fallback or prefer to completely replace the default controls, you
-should disable those first.  Note that you will need to provide your own
-controls, which should at least include a way to dismiss the reader::
+Otherwise, if you are using a :class:`ZBarReaderController` or prefer to
+completely replace the default controls, you should disable those first.  Note
+that you will need to provide your own controls, which should at least include
+a way to dismiss the reader::
 
    reader.showsCameraControls = NO;  // for UIImagePickerController
    reader.showsZBarControls = NO;
@@ -35,8 +35,6 @@ controls, which should at least include a way to dismiss the reader::
 
 For manual capture with :class:`ZBarReaderController`, you should also include
 a control connected to :member:`~ZBarReaderController::takePicture`.
-
-See :doc:`compat` for more information about iOS 3.1 fallbacks.
 
 In either case, the overlay view may be loaded from a NIB, or simply created
 programmatically.

@@ -2,8 +2,8 @@ Scanning a User-Selected Image
 ==============================
 
 Some applications may need the full resolution offered by camera snapshots, or
-need to scan an image from the user's photo library.  In these cases you use a
-:class:`ZBarReaderController`.  This reader is a *subclass* of
+need to scan an image or document from the user's photo library.  In these
+cases you use a :class:`ZBarReaderController`.  This reader is a *subclass* of
 :class:`UIImagePickerController`, and you use it the same way.  See the
 documentation for :class:`UIImagePickerController` for more detais.
 
@@ -11,7 +11,7 @@ documentation for :class:`UIImagePickerController` for more detais.
 
    This is as simple as creating a new :class:`ZBarReaderController`::
 
-      ZBarReaderController *reader = [ZBarReaderController new];
+      ZBarReaderController *reader = [[ZBarReaderController alloc] init];
 
 2. Setup a delegate to receive the results.
 
@@ -28,8 +28,8 @@ documentation for :class:`UIImagePickerController` for more detais.
    property::
 
       if([ZBarReaderController isSourceTypeAvailable:
-                                   UIImagePickerControllerSoureTypeCamera])
-          reader.sourceType = UIImagePickerControllerSoureTypeCamera;
+                                   UIImagePickerControllerSourceTypeCamera])
+          reader.sourceType = UIImagePickerControllerSourceTypeCamera;
       [reader.scanner setSymbology: ZBAR_I25
                       config: ZBAR_CFG_ENABLE
                       to: 0];
@@ -46,7 +46,7 @@ documentation for :class:`UIImagePickerController` for more detais.
 5. Process the results.
 
    The controller will call the
-   :member:`imagePickerController:didFinishPickingMediaWithInfo:` method of
+   ``imagePickerController:didFinishPickingMediaWithInfo:`` method of
    your delegate for a successful decode (NB *not* every time the user takes a
    picture or selects an image).  The barcode data can be obtained using the
    :c:data:`ZBarReaderControllerResults` key of the info dictionary.  This key

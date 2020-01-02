@@ -46,6 +46,7 @@
 @interface ZBarCaptureReader
     : NSObject
 {
+#if !TARGET_IPHONE_SIMULATOR
     AVCaptureVideoDataOutput *captureOutput;
     id<ZBarCaptureDelegate> captureDelegate;
     ZBarImageScanner *scanner;
@@ -57,11 +58,12 @@
     dispatch_queue_t queue;
     ZBarImage *image;
     ZBarCVImage *result;
-    int32_t running;
+    volatile uint32_t state;
     int framecnt;
     unsigned width, height;
     uint64_t t_frame, t_fps, t_scan;
     CGFloat dt_frame;
+#endif
 }
 
 // supply a pre-configured image scanner
@@ -75,6 +77,10 @@
 
 // clear the internal result cache
 - (void) flushCache;
+
+// capture the next frame after processing.  the captured image will
+// follow the same delegate path as an image with decoded symbols.
+- (void) captureFrame;
 
 // the capture output.  add this to an instance of AVCaptureSession
 @property (nonatomic, readonly) AVCaptureOutput *captureOutput;
@@ -91,6 +97,10 @@
 
 // size of video frames.
 @property (nonatomic, readonly) CGSize size;
+
+// (quickly) gate the reader function without interrupting the video
+// stream.  also flushes the cache when enabled.  defaults to *NO*
+@property (nonatomic) BOOL enableReader;
 
 // current frame rate (for debug/optimization).
 // only valid when running

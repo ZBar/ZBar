@@ -23,7 +23,7 @@ Properties
    .. member:: unsigned long format
 
       The image format four-charcter code (fourcc) as a 4-byte integer.  Use
-      :ref:`fourcc:` to create a fourcc value from a string.
+      :ref:`fourcc:<fourcc:>` to create a fourcc value from a string.
 
    .. member:: unsigned sequence
 
@@ -47,12 +47,12 @@ Properties
    .. member:: const void *data
 
       Obtain a pointer to the raw image data.  This property is read-only, use
-      :ref:`setData:withLength:` to set the image data.
+      :ref:`setData:withLength:<setData:withLength:>` to set the image data.
 
    .. member:: unsigned long dataLength
 
       Byte length of the raw image data.  This property is read-only, use 
-      :ref:`setData:withLength:` to set the image data.
+      :ref:`setData:withLength:<setData:withLength:>` to set the image data.
 
    .. member:: ZBarSymbolSet *symbols
 
@@ -67,7 +67,7 @@ Properties
       Convert the image to a UIImage.  Only certain image formats are
       supported for conversion (read-only)
 
-      :See also: :ref:`UIImageWithOrientation:`
+      :See also: :ref:`UIImageWithOrientation:<UIImageWithOrientation:>`
 
 
 Class Methods
@@ -102,7 +102,7 @@ Instance Methods
 
       :image: A `CGImage` to source the data and metadata.
       :Returns: The initialized :class:`ZBarImage`.
-      :See also: :ref:`initWithCGImage:size:`
+      :See also: :ref:`initWithCGImage:size:<initWithCGImage:size:>`
 
    .. _`initWithCGImage:size:`:
    .. describe:: - (id) initWithCGImage:(CGImageRef)image size:(CGSize)size
@@ -114,7 +114,7 @@ Instance Methods
       :image: A `CGImage` to source the data and metadata.
       :size: The pixel size of the resulting ZBarImage.
       :Returns: The initialized :class:`ZBarImage`.
-      :See also: :ref:`initWithCGImage:crop:size:`
+      :See also: :ref:`initWithCGImage:crop:size:<initWithCGImage:crop:size:>`
 
    .. _`initWithCGImage:crop:size:`:
    .. describe:: - (id) initWithCGImage:(CGImageRef)image crop:(CGRect)crop size:(CGSize)size

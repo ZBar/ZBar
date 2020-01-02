@@ -49,11 +49,8 @@ include $(srcdir)/doc/Makefile.am.inc
 
 EXTRA_DIST += zbar.ico zbar.nsi
 
-EXTRA_DIST += examples/upcrpc.pl examples/upcrpc.py examples/paginate.pl \
-    examples/barcode.png examples/processor.pl examples/processor.py \
-    examples/read_one.py examples/read_one.pl \
-    examples/scan_image.c examples/scan_image.cpp examples/scan_image.pl \
-    examples/scan_image.py examples/scan_image.vcproj
+EXTRA_DIST += examples/barcode.png examples/upcrpc.py examples/upcrpc.pl \
+    examples/scan_image.c examples/scan_image.cpp examples/scan_image.vcproj
 
 EXTRA_DIST += perl/MANIFEST perl/README perl/Changes perl/COPYING.LIB \
     perl/Makefile.PL perl/typemap perl/ZBar.xs perl/ppport.h \

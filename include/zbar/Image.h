@@ -115,8 +115,8 @@ public:
 
     ~Image ()
     {
-        set_data(NULL, 0);
-        zbar_image_set_userdata(_img, NULL);
+        if(zbar_image_get_userdata(_img) == this)
+            zbar_image_set_userdata(_img, NULL);
         zbar_image_ref(_img, -1);
     }
 
@@ -255,6 +255,15 @@ public:
         throw FormatError();
     }
 
+    /// image format conversion.
+    /// see zbar_image_convert()
+    /// @since 0.11
+    Image convert (std::string format) const
+    {
+        unsigned long fourcc = zbar_fourcc_parse(format.c_str());
+        return(convert(fourcc));
+    }
+
     /// image format conversion with crop/pad.
     /// see zbar_image_convert_resize()
     /// @since 0.4
@@ -309,7 +318,6 @@ protected:
     {
         // by default nothing is cleaned
         assert(img);
-        assert(zbar_image_get_userdata(img));
     }
 
 private:

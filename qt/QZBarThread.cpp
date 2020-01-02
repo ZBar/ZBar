@@ -26,7 +26,7 @@
 
 using namespace zbar;
 
-static const QString textFormat("%1%2:%3");
+static const QString textFormat("%1:%2");
 
 QZBarThread::QZBarThread ()
     : _videoOpened(false),
@@ -52,7 +52,6 @@ void QZBarThread::image_callback (Image &image)
 
             emit decodedText(textFormat.arg(
                 QString::fromStdString(sym->get_type_name()),
-                QString::fromStdString(sym->get_addon_name()),
                 data));
         }
 }
@@ -168,7 +167,7 @@ void QZBarThread::scanImageEvent (ScanImageEvent *e)
 
 bool QZBarThread::event (QEvent *e)
 {
-    switch(e->type()) {
+    switch((EventType)e->type()) {
     case VideoDevice:
         videoDeviceEvent((VideoDeviceEvent*)e);
         break;

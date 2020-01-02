@@ -151,7 +151,8 @@ public:
             : _sym(sym),
               _index(index)
         {
-            sym->ref(1);
+            if(sym)
+                sym->ref(1);
             if(!sym ||
                (unsigned)_index >= zbar_symbol_get_loc_size(*_sym))
                 _index = -1;
@@ -162,20 +163,24 @@ public:
             : _sym(iter._sym),
               _index(iter._index)
         {
-            _sym->ref();
+            if(_sym)
+                _sym->ref();
         }
 
         /// destructor.
         ~PointIterator ()
         {
-            _sym->ref(-1);
+            if(_sym)
+                _sym->ref(-1);
         }
 
         /// assignment.
         PointIterator& operator= (const PointIterator& iter)
         {
-            iter._sym->ref();
-            _sym->ref(-1);
+            if(iter._sym)
+                iter._sym->ref();
+            if(_sym)
+                _sym->ref(-1);
             _sym = iter._sym;
             _index = iter._index;
             return(*this);
@@ -191,7 +196,7 @@ public:
         PointIterator& operator++ ()
         {
             unsigned int i = ++_index;
-            if(i >= zbar_symbol_get_loc_size(*_sym))
+            if(!_sym || i >= zbar_symbol_get_loc_size(*_sym))
                 _index = -1;
             return(*this);
         }
@@ -316,6 +321,7 @@ public:
     }
 
     /// retrieve the string name for any addon.
+    /// @deprecated in 0.11
     const std::string get_addon_name () const
     {
         return(zbar_get_addon_name(_type));
@@ -335,10 +341,18 @@ public:
 
     /// retrieve inter-frame coherency count.
     /// see zbar_symbol_get_count()
-    /// @since 1.5
+    /// @since 0.5
     int get_count () const
     {
         return((_sym) ? zbar_symbol_get_count(_sym) : -1);
+    }
+
+    /// retrieve loosely defined relative quality metric.
+    /// see zbar_symbol_get_quality()
+    /// @since 0.11
+    int get_quality () const
+    {
+        return((_sym) ? zbar_symbol_get_quality(_sym) : 0);
     }
 
     SymbolSet get_components () const
@@ -518,9 +532,7 @@ inline const SymbolIterator SymbolSet::symbol_end () const {
 static inline std::ostream& operator<< (std::ostream& out,
                                         const Symbol& sym)
 {
-    out << sym.get_type_name()
-        << sym.get_addon_name()
-        << ":" << sym.get_data();
+    out << sym.get_type_name() << ":" << sym.get_data();
     return(out);
 }
 

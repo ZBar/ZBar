@@ -12,7 +12,7 @@ BUILT_SOURCES = zbarjni.h
 MAINTAINERCLEANFILES = zbarjni.h
 
 zbar_jar_SRCS = \
-    $(PKG)/Config.java $(PKG)/Orientation.java \
+    $(PKG)/Config.java $(PKG)/Modifier.java $(PKG)/Orientation.java \
     $(PKG)/Symbol.java $(PKG)/SymbolIterator.java $(PKG)/SymbolSet.java \
     $(PKG)/Image.java $(PKG)/ImageScanner.java
 
@@ -35,5 +35,5 @@ zbar.jar: $(zbar_jar_SRCS)
 
 check-local:
 	echo "making check in java"
-	cd $(abs_srcdir); $(JAVAC) -classpath $(CLASSPATH):$(abs_builddir)/zbar.jar -d $(abs_builddir) $(test_SRCS)
-	$(top_builddir)/libtool -dlopen libzbarjni.la --mode=execute $(JAVA) -classpath zbar.jar:$(CLASSPATH):. -Xcheck:jni org.junit.runner.JUnitCore $(test_CLASSES)
+	cd $(abs_srcdir); $(JAVAC) -classpath $(abs_builddir)/zbar.jar:.:$(CLASSPATH) -d $(abs_builddir) $(test_SRCS)
+	$(top_builddir)/libtool -dlopen $(top_builddir)/zbar/libzbar.la -dlopen libzbarjni.la --mode=execute $(JAVA) -Xcheck:jni -classpath zbar.jar:.:$(CLASSPATH) org.junit.runner.JUnitCore $(test_CLASSES)

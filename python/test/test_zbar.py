@@ -70,6 +70,13 @@ class TestZBarFunctions(ut.TestCase):
             self.assert_(int(cfg) >= 0)
             self.assert_(is_identifier.match(str(cfg)))
 
+    def test_modifiers(self):
+        for mod in (zbar.Modifier.GS1,
+                    zbar.Modifier.AIM):
+            self.assert_(isinstance(mod, zbar.EnumItem))
+            self.assert_(int(mod) >= 0)
+            self.assert_(is_identifier.match(str(mod)))
+
     def test_symbologies(self):
         for sym in (zbar.Symbol.NONE,
                     zbar.Symbol.PARTIAL,
@@ -82,9 +89,11 @@ class TestZBarFunctions(ut.TestCase):
                     zbar.Symbol.DATABAR,
                     zbar.Symbol.DATABAR_EXP,
                     zbar.Symbol.I25,
+                    zbar.Symbol.CODABAR,
                     zbar.Symbol.CODE39,
                     zbar.Symbol.PDF417,
                     zbar.Symbol.QRCODE,
+                    zbar.Symbol.CODE93,
                     zbar.Symbol.CODE128):
             self.assert_(isinstance(sym, zbar.EnumItem))
             self.assert_(int(sym) >= 0)
@@ -192,6 +201,9 @@ class TestDecoder(ut.TestCase):
             else:
                 self.assert_(sym is zbar.Symbol.EAN13)
 
+        self.assertEqual(self.dcode.configs,
+                         set((zbar.Config.ENABLE, zbar.Config.EMIT_CHECK)))
+        self.assertEqual(self.dcode.modifiers, set())
         self.assertEqual(self.dcode.data, '6268964977804')
         self.assert_(self.dcode.color is zbar.BAR)
         self.assertEqual(self.dcode.direction, 1)
@@ -209,6 +221,9 @@ class TestDecoder(ut.TestCase):
                              sym is zbar.Symbol.PARTIAL)
 
         self.assert_(sym is zbar.Symbol.DATABAR)
+        self.assertEqual(self.dcode.get_configs(zbar.Symbol.EAN13),
+                         set((zbar.Config.ENABLE, zbar.Config.EMIT_CHECK)))
+        self.assertEqual(self.dcode.modifiers, set((zbar.Modifier.GS1,)))
         self.assertEqual(self.dcode.data, '0124012345678905')
         self.assert_(self.dcode.color is zbar.BAR)
         self.assertEqual(self.dcode.direction, 1)
@@ -343,6 +358,20 @@ class TestImageScan(ut.TestCase):
             self.assert_(sym.type is zbar.Symbol.EAN13)
             self.assert_(sym.type is sym.EAN13)
             self.assertEqual(str(sym.type), 'EAN13')
+
+            cfgs = sym.configs
+            self.assert_(isinstance(cfgs, set))
+            for cfg in cfgs:
+                self.assert_(isinstance(cfg, zbar.EnumItem))
+            self.assertEqual(cfgs,
+                             set((zbar.Config.ENABLE, zbar.Config.EMIT_CHECK)))
+
+            mods = sym.modifiers
+            self.assert_(isinstance(mods, set))
+            for mod in mods:
+                self.assert_(isinstance(mod, zbar.EnumItem))
+            self.assertEqual(mods, set())
+
             self.assert_(sym.quality > 0)
             self.assertEqual(sym.count, 0)
 
@@ -420,6 +449,15 @@ class TestProcessor(ut.TestCase):
         self.proc.parse_config("disable")
         self.assertRaises(ValueError, self.proc.set_config, -1)
         self.proc.set_config()
+
+    def test_request_size(self):
+        def set_size(sz):
+            self.proc.request_size = sz
+        self.assertRaises(ValueError, set_size, (1,))
+        self.assertRaises(ValueError, set_size, 1)
+        self.proc.request_size = (12, 6)
+        self.assertRaises(ValueError, set_size, (1, 2, 3))
+        self.assertRaises(ValueError, set_size, "foo")
 
     def test_processing(self):
         self.proc.init(VIDEO_DEVICE)

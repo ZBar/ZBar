@@ -21,17 +21,10 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
-#import "ZBarHelpController.h"
+#import <ZBarSDK/ZBarHelpController.h>
 
-@interface NSObject (ZBarHelpControllerDelegate)
-
-- (void) helpController: (ZBarHelpController*) help
-   clickedButtonAtIndex: (NSInteger) index;
-
-@end
-
-
-enum { BTN_TRYAGAIN = 1 };
+#define MODULE ZBarHelpController
+#import "debug.h"
 
 @implementation ZBarHelpController
 
@@ -39,11 +32,13 @@ enum { BTN_TRYAGAIN = 1 };
 
 - (id) initWithReason: (NSString*) _reason
 {
-    if(self = [super init]) {
-        if(!_reason)
-            _reason = @"INFO";
-        reason = [_reason retain];
-    }
+    self = [super init];
+    if(!self)
+        return(nil);
+
+    if(!_reason)
+        _reason = @"INFO";
+    reason = [_reason retain];
     return(self);
 }
 
@@ -81,22 +76,34 @@ enum { BTN_TRYAGAIN = 1 };
     [super viewDidLoad];
 
     UIView *view = self.view;
+    CGRect bounds = self.view.bounds;
+    if(!bounds.size.width || !bounds.size.height)
+        view.frame = bounds = CGRectMake(0, 0, 320, 480);
     view.backgroundColor = [UIColor colorWithWhite: .125f
-                                    alpha: 1 ];
+                                    alpha: 1];
+    view.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                             UIViewAutoresizingFlexibleHeight);
 
-    CGRect r = view.bounds;
-    r.size.height -= 54;
     webView = [[UIWebView alloc]
-                  initWithFrame: r];
+                  initWithFrame: CGRectMake(0, 0,
+                                            bounds.size.width,
+                                            bounds.size.height - 44)];
     webView.delegate = self;
     webView.backgroundColor = [UIColor colorWithWhite: .125f
-                                       alpha: 1 ];
+                                       alpha: 1];
+    webView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                UIViewAutoresizingFlexibleHeight |
+                                UIViewAutoresizingFlexibleBottomMargin);
+    webView.hidden = YES;
+    [view addSubview: webView];
 
-    toolbar = [UIToolbar new];
+    toolbar = [[UIToolbar alloc]
+                  initWithFrame: CGRectMake(0, bounds.size.height - 44,
+                                            bounds.size.width, 44)];
     toolbar.barStyle = UIBarStyleBlackOpaque;
-    r.origin.y = r.size.height;
-    r.size.height = 54;
-    toolbar.frame = r;
+    toolbar.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
+                                UIViewAutoresizingFlexibleHeight |
+                                UIViewAutoresizingFlexibleTopMargin);
 
     doneBtn = [[UIBarButtonItem alloc]
                   initWithBarButtonSystemItem: UIBarButtonSystemItemDone
@@ -146,7 +153,8 @@ enum { BTN_TRYAGAIN = 1 };
 {
     assert(webView);
     if(webView.loading)
-        [webView removeFromSuperview];
+        webView.hidden = YES;
+    webView.delegate = self;
     [super viewWillAppear: animated];
 }
 
@@ -157,21 +165,60 @@ enum { BTN_TRYAGAIN = 1 };
     [super viewWillDisappear: animated];
 }
 
+- (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation) orient
+{
+    return([self isInterfaceOrientationSupported: orient]);
+}
+
+- (void) willAnimateRotationToInterfaceOrientation: (UIInterfaceOrientation) orient
+                                          duration: (NSTimeInterval) duration
+{
+    [webView reload];
+}
+
+- (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation) orient
+{
+    zlog(@"frame=%@ webView.frame=%@ toolbar.frame=%@",
+         NSStringFromCGRect(self.view.frame),
+         NSStringFromCGRect(webView.frame),
+         NSStringFromCGRect(toolbar.frame));
+}
+
+- (BOOL) isInterfaceOrientationSupported: (UIInterfaceOrientation) orient
+{
+    UIViewController *parent = self.parentViewController;
+    if(parent && !orientations)
+        return([parent shouldAutorotateToInterfaceOrientation: orient]);
+    return((orientations >> orient) & 1);
+}
+
+- (void) setInterfaceOrientation: (UIInterfaceOrientation) orient
+                       supported: (BOOL) supported
+{
+    NSUInteger mask = 1 << orient;
+    if(supported)
+        orientations |= mask;
+    else
+        orientations &= ~mask;
+}
+
 - (void) dismiss
 {
-    [delegate helpController: self
-              clickedButtonAtIndex: BTN_TRYAGAIN];
+    if([delegate respondsToSelector: @selector(helpControllerDidFinish:)])
+        [delegate helpControllerDidFinish: self];
+    else
+        [self dismissModalViewControllerAnimated: YES];
 }
 
 - (void) webViewDidFinishLoad: (UIWebView*) view
 {
-    if(!view.superview) {
+    if(view.hidden) {
         [view stringByEvaluatingJavaScriptFromString:
             [NSString stringWithFormat:
                 @"onZBarHelp({reason:\"%@\"});", reason]];
         [UIView beginAnimations: @"ZBarHelp"
                 context: nil];
-        [self.view addSubview: webView];
+        view.hidden = NO;
         [UIView commitAnimations];
     }
 

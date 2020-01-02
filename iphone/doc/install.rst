@@ -15,16 +15,17 @@ You will need *all* of the following to develop iPhone applications
 using this SDK:
 
 * Mac OS X >= 10.6.x (Snow Leopard)
-* Xcode >= 3.2.3
+* Xcode >= 4.5.1
 * iPhone SDK >= 4.0
-* An iPhone 3GS or iPhone 4
-* iOS >= 3.1 running on the device (>= 4.0 is preferred)
+* An iPhone 3GS, iPhone 4 or newer iOS device with an auto-focus camera
+* iOS >= 4.0 running on the device
 
 .. warning::
 
-   *Only* the iPhone 3GS and iPhone 4 are supported, as they have a camera
-   with auto-focus.  The ZBar library does not support the iPhone 3G and is
-   unlikely to ever support it.
+   *Only* the iPhone 3GS, iPhone 4 and newer models are supported, as they
+   have a camera with auto-focus.  The iPad 2 and iPad 3 will also work, *iff*
+   the barcode is printed large enough to achieve good focus.  The ZBar
+   library does not support the iPhone 3G and is unlikely to ever support it.
 
 
 Downloading
@@ -48,10 +49,10 @@ Xcode project:
    checking the box.  The target that you want to link with the library should
    also be selected in the target list.
 
-4. Link the following additional frameworks to any targets that link with the
+3. Link the following additional frameworks to any targets that link with the
    ZBarSDK.  You should set the first three to use weak references and
    configure an appropriate deployment target if you still need to support
-   iOS 3.1:
+   iOS 3:
 
    * :file:`AVFoundation.framework` (weak)
    * :file:`CoreMedia.framework` (weak)
@@ -60,9 +61,14 @@ Xcode project:
    * :file:`libiconv.dylib`
 
    If you check "Link Binary With Libraries" for the target(s), you should see
-   all of these frameworks along with :file:`libzbar.a`.
+   all of these frameworks followed by :file:`libzbar.a`.
 
-5. Import the SDK header from your prefix header to make the barcode reader
+   .. note::
+
+      Link order may be important for some versions of Xcode; the referenced
+      libraries should be listed *before* :file:`libzbar.a` in the link order.
+
+4. Import the SDK header from your prefix header to make the barcode reader
    APIs available::
 
       #import "ZBarSDK.h"
@@ -88,10 +94,10 @@ Upgrading a Pre-SDK Integration
 -------------------------------
 
 If your project was using the library directly from the Mercurial repository,
-before the SDK was introduced, there are a few incompatibilities that
-you must resolve in order to upgrade.  Don't worry - all of you source stays
-the same, you just need to update how the library is included in the project
-and how the headers are imported.
+before the SDK was introduced, there are a few incompatibilities that you must
+resolve in order to upgrade.  Don't worry - all of your source stays the same,
+you just need to update how the library is included in the project and how the
+headers are imported.
 
 Switching to the Binary Distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

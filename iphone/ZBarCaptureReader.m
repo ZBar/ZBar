@@ -32,10 +32,18 @@
 #define MODULE ZBarCaptureReader
 #import "debug.h"
 
+enum {
+    STOPPED = 0,
+    RUNNING = 1,
+    PAUSED = 2,
+    CAPTURE = 4,
+};
+
 @implementation ZBarCaptureReader
 
 @synthesize captureOutput, captureDelegate, scanner, scanCrop, size,
     framesPerSecond, enableCache;
+@dynamic enableReader;
 
 - (void) initResult
 {
@@ -61,12 +69,23 @@
 
     captureOutput = [AVCaptureVideoDataOutput new];
     captureOutput.alwaysDiscardsLateVideoFrames = YES;
+
+#ifdef FIXED_8697526
+    /* iOS 4.2 introduced a bug that causes [session startRunning] to
+     * hang if the session has a preview layer and this property is
+     * specified at the output.  As this happens to be the default
+     * setting for the currently supported devices, it can be omitted
+     * without causing a functional problem (for now...).  Of course,
+     * we still have no idea what the real problem is, or how robust
+     * this is as a workaround...
+     */
     captureOutput.videoSettings = 
         [NSDictionary
             dictionaryWithObject:
                 [NSNumber numberWithInt:
                     kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange]
             forKey: (NSString*)kCVPixelBufferPixelFormatTypeKey];
+#endif
 
     queue = dispatch_queue_create("ZBarCaptureReader", NULL);
     [captureOutput setSampleBufferDelegate:
@@ -115,19 +134,31 @@
     [super dealloc];
 }
 
+- (BOOL) enableReader
+{
+    return(OSAtomicOr32Barrier(0, &state) & RUNNING);
+}
+
+- (void) setEnableReader: (BOOL) enable
+{
+    if(!enable)
+        OSAtomicAnd32Barrier(STOPPED, &state);
+    else if(!(OSAtomicOr32OrigBarrier(RUNNING, &state) & RUNNING)) {
+        OSAtomicAnd32Barrier(~PAUSED, &state);
+        @synchronized(scanner) {
+            scanner.enableCache = enableCache;
+        }
+    }
+}
+
 - (void) willStartRunning
 {
-    if(!OSAtomicCompareAndSwap32Barrier(0, 1, &running))
-        return;
-    @synchronized(scanner) {
-        scanner.enableCache = enableCache;
-    }
+    self.enableReader = YES;
 }
 
 - (void) willStopRunning
 {
-    if(!OSAtomicAnd32OrigBarrier(0, (void*)&running))
-        return;
+    self.enableReader = NO;
 }
 
 - (void) flushCache
@@ -135,6 +166,11 @@
     @synchronized(scanner) {
         scanner.enableCache = enableCache;
     }
+}
+
+- (void) captureFrame
+{
+    OSAtomicOr32(CAPTURE, &state);
 }
 
 - (void) setCaptureDelegate: (id<ZBarCaptureDelegate>) delegate
@@ -175,7 +211,7 @@
     [captureDelegate
         captureReader: self
         didReadNewSymbolsFromImage: img];
-    OSAtomicCompareAndSwap32Barrier(2, 1, &running);
+    OSAtomicAnd32Barrier(~PAUSED, &state);
     zlog(@"latency: delegate=%gs total=%gs",
          timer_elapsed(t_start, timer_now()),
          timer_elapsed(t_scan, timer_now()));
@@ -209,7 +245,8 @@
 {
     // queue is apparently not flushed when stopping;
     // only process when running
-    if(!OSAtomicCompareAndSwap32Barrier(1, 1, &running))
+    uint32_t _state = OSAtomicOr32Barrier(0, &state);
+    if((_state & (PAUSED | RUNNING)) != RUNNING)
         return;
 
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
@@ -295,17 +332,17 @@
             // return unfiltered results for tracking feedback
             syms.filterSymbols = NO;
             int nraw = syms.count;
-            if(nraw > 0)
-                zlog(@"scan image: %dx%d crop=%@ ngood=%d nraw=%d",
-                     w, h, NSStringFromCGRect(image.crop), ngood, nraw);
+            if(nraw > 0 || (_state & CAPTURE))
+                zlog(@"scan image: %dx%d crop=%@ ngood=%d nraw=%d st=%d",
+                     w, h, NSStringFromCGRect(image.crop), ngood, nraw, _state);
 
-            if(ngood) {
+            if(ngood || (_state & CAPTURE)) {
                 // copy image data so we can release the buffer
                 result.size = CGSizeMake(w, h);
                 result.pixelBuffer = buf;
                 result.symbols = syms;
                 t_scan = now;
-                OSAtomicCompareAndSwap32Barrier(1, 2, &running);
+                OSAtomicXor32Barrier((_state & CAPTURE) | PAUSED, &state);
                 [self performSelectorOnMainThread:
                           @selector(didReadNewSymbolsFromImage:)
                       withObject: result

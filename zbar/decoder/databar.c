@@ -126,7 +126,7 @@ decode10 (unsigned char *buf,
         d = (d << 12) | (*(data++) & 0xfff); \
         i += 12;                             \
         len--;                               \
-        dprintf(2, " %03lx", d & 0xfff);     \
+        dbprintf(2, " %03lx", d & 0xfff);     \
     }
 
 #define PUSH_CHAR(c) \
@@ -151,7 +151,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
 
     /* grok encodation method */
     d = *(data++);
-    dprintf(2, "\n    len=%d %03lx", len, d & 0xfff);
+    dbprintf(2, "\n    len=%d %03lx", len, d & 0xfff);
     n = (d >> 4) & 0x7f;
     if(n >= 0x40) {
         i = 10;
@@ -178,7 +178,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
         enc = 0;
         buflen = VAR_MAX(len, 9 - 2) + 2;
     }
-    dprintf(2, " buflen=%d enc=%d", buflen, enc);
+    dbprintf(2, " buflen=%d enc=%d", buflen, enc);
     zassert(buflen > 2, -1, "buflen=%d\n", buflen);
 
     if(enc < 4) {
@@ -191,7 +191,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
             return(-1);
     }
     len -= 2;
-    dprintf(2, " [%d+%d]", i, len);
+    dbprintf(2, " [%d+%d]", i, len);
 
     if(size_buf(dcode, buflen))
         return(-1);
@@ -263,7 +263,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
         FEED_BITS(15);
         i -= 15;
         n = (d >> i) & 0x7fff;
-        dprintf(2, " v=%d", n);
+        dbprintf(2, " v=%d", n);
         PUSH_CHAR4('3', '2', '0', (n >= 10000) ? '3' : '2' );
         if(n >= 10000)
             n -= 10000;
@@ -277,7 +277,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
         FEED_BITS(20);
         i -= 20;
         n = (d >> i) & 0xfffff;
-        dprintf(2, " [%d+%d] %d", i, len, n);
+        dbprintf(2, " [%d+%d] %d", i, len, n);
         if(n >= 1000000)
             return(-1);
         decode10(buf, n, 6);
@@ -296,7 +296,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
             n /= 12;
             yy = n;
             PUSH_CHAR('1');
-            PUSH_CHAR('0' + (enc - 6) | 1);
+            PUSH_CHAR('0' + ((enc - 6) | 1));
             decode10(buf, yy, 2);
             buf += 2;
             decode10(buf, mm, 2);
@@ -313,7 +313,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
         int scheme = SCH_NUM;
         while(i > 0 || len > 0) {
             FEED_BITS(8);
-            dprintf(2, " [%d+%d]", i, len);
+            dbprintf(2, " [%d+%d]", i, len);
 
             if(scheme == SCH_NUM) {
                 int n1;
@@ -322,7 +322,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
                     break;
                 if(!((d >> i) & 0xf)) {
                     scheme = SCH_ALNUM;
-                    dprintf(2, ">A");
+                    dbprintf(2, ">A");
                     continue;
                 }
                 if(!len && i < 3) {
@@ -338,7 +338,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
                 n = ((d >> i) & 0x7f) - 8;
                 n1 = n % 11;
                 n = n / 11;
-                dprintf(2, "N%d%d", n, n1);
+                dbprintf(2, "N%d%d", n, n1);
                 *(buf++) = (n < 10) ? '0' + n : GS;
                 *(buf++) = (n1 < 10) ? '0' + n1 : GS;
             }
@@ -357,7 +357,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
                 n = (d >> i) & 0x1f;
                 if(n == 0x04) {
                     scheme ^= 0x3;
-                    dprintf(2, ">%d", scheme);
+                    dbprintf(2, ">%d", scheme);
                 }
                 else if(n == 0x0f)
                     c = GS;
@@ -394,7 +394,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
                     if(i < 0)
                         return(-1);
                     n = ((d >> i) & 0x1f);
-                    dprintf(2, "(%02x)", n);
+                    dbprintf(2, "(%02x)", n);
                     if(n < 0xa)
                         c = '!' + n - 8;
                     else if(n < 0x15)
@@ -412,7 +412,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
                     return(-1);
 
                 if(c) {
-                    dprintf(2, "%d%c", scheme, c);
+                    dbprintf(2, "%d%c", scheme, c);
                     *(buf++) = c;
                 }
             }
@@ -420,15 +420,18 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
         /* FIXME check pad? */
     }
 
-    *buf = 0;
     i = buf - dcode->buf;
+    zassert(i < dcode->buf_alloc, -1, "i=%02x %s\n", i,
+            _zbar_decoder_buf_dump(dcode->buf, i));
+
+    *buf = 0;
     dcode->buflen = i;
     if(i && *--buf == GS) {
         *buf = 0;
         dcode->buflen--;
     }
 
-    dprintf(2, "\n    %s", _zbar_decoder_buf_dump(dcode->buf, dcode->buflen));
+    dbprintf(2, "\n    %s", _zbar_decoder_buf_dump(dcode->buf, dcode->buflen));
     return(0);
 }
 #undef FEED_BITS
@@ -450,7 +453,7 @@ databar_postprocess (zbar_decoder_t *dcode,
     *--buf = '\0';
     *--buf = '\0';
 
-    dprintf(2, "\n    d={%d,%d,%d,%d}", d[0], d[1], d[2], d[3]);
+    dbprintf(2, "\n    d={%d,%d,%d,%d}", d[0], d[1], d[2], d[3]);
     unsigned long r = d[0] * 1597 + d[1];
     d[1] = r / 10000;
     r %= 10000;
@@ -459,7 +462,7 @@ databar_postprocess (zbar_decoder_t *dcode,
     r %= 10000;
     r = r * 1597 + d[3];
     d[3] = r / 10000;
-    dprintf(2, " r=%ld", r);
+    dbprintf(2, " r=%ld", r);
 
     for(i = 4; --i >= 0; ) {
         c = r % 10;
@@ -471,13 +474,13 @@ databar_postprocess (zbar_decoder_t *dcode,
             r /= 10;
     }
 
-    dprintf(2, " d={%d,%d,%d}", d[1], d[2], d[3]);
+    dbprintf(2, " d={%d,%d,%d}", d[1], d[2], d[3]);
     r = d[1] * 2841 + d[2];
     d[2] = r / 10000;
     r %= 10000;
     r = r * 1597 + d[3];
     d[3] = r / 10000;
-    dprintf(2, " r=%ld", r);
+    dbprintf(2, " r=%ld", r);
 
     for(i = 4; --i >= 0; ) {
         c = r % 10;
@@ -490,7 +493,7 @@ databar_postprocess (zbar_decoder_t *dcode,
     }
 
     r = d[2] * 1597 + d[3];
-    dprintf(2, " d={%d,%d} r=%ld", d[2], d[3], r);
+    dbprintf(2, " d={%d,%d} r=%ld", d[2], d[3], r);
 
     for(i = 5; --i >= 0; ) {
         c = r % 10;
@@ -513,7 +516,7 @@ databar_postprocess (zbar_decoder_t *dcode,
     else
         dcode->buflen = buf - dcode->buf + 13;
 
-    dprintf(2, "\n    %s", _zbar_decoder_buf_dump(dcode->buf, 16));
+    dbprintf(2, "\n    %s", _zbar_decoder_buf_dump(dcode->buf, 16));
 }
 
 static inline int
@@ -547,8 +550,8 @@ merge_segment (databar_decoder_t *db,
             seg->partial &= s->partial;
             seg->width = (3 * seg->width + s->width + 2) / 4;
             s->finder = -1;
-            dprintf(2, " dup@%d(%d,%d)",
-                    i, cnt, (db->epoch - seg->epoch) & 0xff);
+            dbprintf(2, " dup@%d(%d,%d)",
+                     i, cnt, (db->epoch - seg->epoch) & 0xff);
         }
         else if(s->finder >= 0) {
             unsigned age = (db->epoch - s->epoch) & 0xff;
@@ -587,9 +590,9 @@ match_segment (zbar_decoder_t *dcode,
                (s1->partial && s1->count < 4) ||
                !check_width(seg->width, s1->width, 14))
                 continue;
-            dprintf(2, "\n\t[%d,%d] f=%d(0%xx)/%d(%x%x%x)",
-                    i0, i1, seg->finder, seg->color,
-                    s1->finder, s1->exp, s1->color, s1->side);
+            dbprintf(2, "\n\t[%d,%d] f=%d(0%xx)/%d(%x%x%x)",
+                     i0, i1, seg->finder, seg->color,
+                     s1->finder, s1->exp, s1->color, s1->side);
 
             if(seg->color)
                 chkf = seg->finder + s1->finder * 9;
@@ -607,9 +610,9 @@ match_segment (zbar_decoder_t *dcode,
             else
                 chk = 79 + chkf - chks;
 
-            dprintf(2, " chk=(%d,%d) => %d", chkf, chks, chk);
-            age1 = ((db->epoch - s0->epoch) & 0xff +
-                    (db->epoch - s1->epoch) & 0xff);
+            dbprintf(2, " chk=(%d,%d) => %d", chkf, chks, chk);
+            age1 = (((db->epoch - s0->epoch) & 0xff) +
+                    ((db->epoch - s1->epoch) & 0xff));
 
             for(i2 = i1 + 1; i2 < csegs; i2++) {
                 databar_segment_t *s2 = db->segs + i2;
@@ -623,7 +626,7 @@ match_segment (zbar_decoder_t *dcode,
                 age2 = (db->epoch - s2->epoch) & 0xff;
                 age = age1 + age2;
                 cnt = s0->count + s1->count + s2->count;
-                dprintf(2, " [%d] MATCH cnt=%d age=%d", i2, cnt, age);
+                dbprintf(2, " [%d] MATCH cnt=%d age=%d", i2, cnt, age);
                 if(maxcnt < cnt ||
                    (maxcnt == cnt && maxage > age)) {
                     maxcnt = cnt;
@@ -655,6 +658,7 @@ match_segment (zbar_decoder_t *dcode,
         return(ZBAR_PARTIAL);
 
     databar_postprocess(dcode, d);
+    dcode->modifiers = MOD(ZBAR_MOD_GS1);
     dcode->direction = 1 - 2 * (seg->side ^ seg->color ^ 1);
     return(ZBAR_DATABAR);
 }
@@ -669,7 +673,7 @@ lookup_sequence (databar_segment_t *seg,
     i = (n + 1) / 2 + 1;
     n += 4;
     i = (i * i) / 4;
-    dprintf(2, " {%d,%d:", i, n);
+    dbprintf(2, " {%d,%d:", i, n);
     p = exp_sequences + i;
 
     fixed >>= 1;
@@ -686,11 +690,11 @@ lookup_sequence (databar_segment_t *seg,
         if(s == fixed)
             fixed = -1;
         s <<= 1;
-        dprintf(2, "%x", s);
+        dbprintf(2, "%x", s);
         seq[i++] = s++;
         seq[i++] = s;
     }
-    dprintf(2, "}");
+    dbprintf(2, "}");
     seq[n] = -1;
     return(fixed < 1);
 }
@@ -712,27 +716,27 @@ match_segment_exp (zbar_decoder_t *dcode,
     bestsegs[0] = segs[0] = seq[1] = -1;
     seq[0] = 0;
 
-    dprintf(2, "\n    fixed=%d@%d: ", fixed, ifixed);
+    dbprintf(2, "\n    fixed=%d@%d: ", fixed, ifixed);
     for(i = csegs, seg = db->segs + csegs - 1; --i >= 0; seg--) {
         if(seg->exp && seg->finder >= 0 &&
            (!seg->partial || seg->count >= 4))
             iseg[i] = IDX(seg);
         else
             iseg[i] = -1;
-        dprintf(2, " %d", iseg[i]);
+        dbprintf(2, " %d", iseg[i]);
     }
 
     for(i = 0; ; i--) {
         if(!i)
-            dprintf(2, "\n   ");
+            dbprintf(2, "\n   ");
         for(; i >= 0 && seq[i] >= 0; i--) {
             int j;
-            dprintf(2, " [%d]%d", i, seq[i]);
+            dbprintf(2, " [%d]%d", i, seq[i]);
 
             if(seq[i] == fixed) {
                 seg = db->segs + ifixed;
                 if(segs[i] < 0 && check_width(width, seg->width, 14)) {
-                    dprintf(2, "*");
+                    dbprintf(2, "*");
                     j = ifixed;
                 }
                 else
@@ -752,16 +756,16 @@ match_segment_exp (zbar_decoder_t *dcode,
 
             if(!i) {
                 if(!lookup_sequence(seg, fixed, seq)) {
-                    dprintf(2, "[nf]");
+                    dbprintf(2, "[nf]");
                     continue;
                 }
                 width = seg->width;
-                dprintf(2, " A00@%d", j);
+                dbprintf(2, " A00@%d", j);
             }
             else {
                 width = (width + seg->width) / 2;
-                dprintf(2, " %c%x%x@%d",
-                        'A' + seg->finder, seg->color, seg->side, j);
+                dbprintf(2, " %c%x%x@%d",
+                         'A' + seg->finder, seg->color, seg->side, j);
             }
             segs[i++] = j;
             segs[i++] = -1;
@@ -782,15 +786,15 @@ match_segment_exp (zbar_decoder_t *dcode,
         unsigned chk0 = data0 % 211;
         chk %= 211;
 
-        dprintf(2, " chk=%d ?= %d", chk, chk0);
+        dbprintf(2, " chk=%d ?= %d", chk, chk0);
         if(chk != chk0)
             continue;
 
-        dprintf(2, " cnt=%d age=%d", cnt, age);
+        dbprintf(2, " cnt=%d age=%d", cnt, age);
         if(maxcnt > cnt || (maxcnt == cnt && maxage <= age))
             continue;
 
-        dprintf(2, " !");
+        dbprintf(2, " !");
         maxcnt = cnt;
         maxage = age;
         for(i = 0; segs[i] >= 0; i++)
@@ -823,6 +827,7 @@ match_segment_exp (zbar_decoder_t *dcode,
      * so direction is impossible to determine at this level
      */
     dcode->direction = (1 - 2 * (seg->side ^ seg->color)) * dir;
+    dcode->modifiers = MOD(ZBAR_MOD_GS1);
     return(ZBAR_DATABAR_EXP);
 }
 #undef IDX
@@ -842,7 +847,7 @@ calc_check (unsigned sig0,
         if(!(i & 1))
             chk %= mod;
     }
-    dprintf(2, " chk=%d", chk);
+    dbprintf(2, " chk=%d", chk);
 
     if(side)
         chk = (chk * (6561 % mod)) % mod;
@@ -956,8 +961,8 @@ decode_char (zbar_decoder_t *dcode,
         n = 16;
     emin[1] = -n;
 
-    dprintf(2, "\n        char[%c%d]: n=%d s=%d w=%d sig=",
-            (dir < 0) ? '>' : '<', off, n, s, seg->width);
+    dbprintf(2, "\n        char[%c%d]: n=%d s=%d w=%d sig=",
+             (dir < 0) ? '>' : '<', off, n, s, seg->width);
     if(s < 13 || !check_width(seg->width, s, n))
         return(ZBAR_NONE);
 
@@ -965,7 +970,7 @@ decode_char (zbar_decoder_t *dcode,
         int e = decode_e(pair_width(dcode, off), s, n);
         if(e < 0)
             return(ZBAR_NONE);
-        dprintf(2, "%d", e);
+        dbprintf(2, "%d", e);
         sum = e - sum;
         off += dir;
         sig1 <<= 4;
@@ -978,7 +983,7 @@ decode_char (zbar_decoder_t *dcode,
         e = decode_e(pair_width(dcode, off), s, n);
         if(e < 0)
             return(ZBAR_NONE);
-        dprintf(2, "%d", e);
+        dbprintf(2, "%d", e);
         sum = e - sum;
         off += dir;
         sig0 <<= 4;
@@ -994,7 +999,7 @@ decode_char (zbar_decoder_t *dcode,
     sig0 -= diff;
     sig1 += diff;
 
-    dprintf(2, " emin=%d,%d el=%04x/%04x", emin[0], emin[1], sig0, sig1);
+    dbprintf(2, " emin=%d,%d el=%04x/%04x", emin[0], emin[1], sig0, sig1);
 
     unsigned sum0 = sig0 + (sig0 >> 8);
     unsigned sum1 = sig1 + (sig1 >> 8);
@@ -1003,15 +1008,15 @@ decode_char (zbar_decoder_t *dcode,
     sum0 &= 0xf;
     sum1 &= 0xf;
 
-    dprintf(2, " sum=%d/%d", sum0, sum1);
+    dbprintf(2, " sum=%d/%d", sum0, sum1);
 
     if(sum0 + sum1 + 8 != n) {
-        dprintf(2, " [SUM]");
+        dbprintf(2, " [SUM]");
         return(ZBAR_NONE);
     }
 
     if(((sum0 ^ (n >> 1)) | (sum1 ^ (n >> 1) ^ n)) & 1) {
-        dprintf(2, " [ODD]");
+        dbprintf(2, " [ODD]");
         return(ZBAR_NONE);
     }
 
@@ -1020,16 +1025,16 @@ decode_char (zbar_decoder_t *dcode,
             "n=%d sum=%d/%d sig=%04x/%04x g=%d",
             n, sum0, sum1, sig0, sig1, i);
     struct group_s *g = groups + i;
-    dprintf(2, "\n            g=%d(%d,%d,%d/%d)",
-            i, g->sum, g->wmax, g->todd, g->teven);
+    dbprintf(2, "\n            g=%d(%d,%d,%d/%d)",
+             i, g->sum, g->wmax, g->todd, g->teven);
 
     int vodd = calc_value4(sig0 + 0x1111, sum0 + 4, g->wmax, ~n & 1);
-    dprintf(2, " v=%d", vodd);
+    dbprintf(2, " v=%d", vodd);
     if(vodd < 0 || vodd > g->todd)
         return(ZBAR_NONE);
 
     int veven = calc_value4(sig1 + 0x1111, sum1 + 4, 9 - g->wmax, n & 1);
-    dprintf(2, "/%d", veven);
+    dbprintf(2, "/%d", veven);
     if(veven < 0 || veven > g->teven)
         return(ZBAR_NONE);
 
@@ -1039,7 +1044,7 @@ decode_char (zbar_decoder_t *dcode,
     else
         v += veven + vodd * g->teven;
 
-    dprintf(2, " f=%d(%x%x%x)", seg->finder, seg->exp, seg->color, seg->side);
+    dbprintf(2, " f=%d(%x%x%x)", seg->finder, seg->exp, seg->color, seg->side);
 
     unsigned chk = 0;
     if(seg->exp) {
@@ -1065,7 +1070,7 @@ decode_char (zbar_decoder_t *dcode,
         if(seg->color)
             chk = (chk * 16) % 79;
     }
-    dprintf(2, " => %d val=%d", chk, v);
+    dbprintf(2, " => %d val=%d", chk, v);
 
     seg->check = chk;
     seg->data = v;
@@ -1088,14 +1093,14 @@ alloc_segment (databar_decoder_t *db)
         databar_segment_t *seg = db->segs + i;
         unsigned age;
         if(seg->finder < 0) {
-            dprintf(2, " free@%d", i);
+            dbprintf(2, " free@%d", i);
             return(i);
         }
         age = (db->epoch - seg->epoch) & 0xff;
         if(age >= 128 && seg->count < 2) {
             seg->finder = -1;
-            dprintf(2, " stale@%d (%d - %d = %d)",
-                    i, db->epoch, seg->epoch, age);
+            dbprintf(2, " stale@%d (%d - %d = %d)",
+                     i, db->epoch, seg->epoch, age);
             return(i);
         }
 
@@ -1108,12 +1113,12 @@ alloc_segment (databar_decoder_t *db)
         if(maxage < age) {
             maxage = age;
             old = i;
-            dprintf(2, " old@%d(%u)", i, age);
+            dbprintf(2, " old@%d(%u)", i, age);
         }
     }
 
     if(csegs < DATABAR_MAX_SEGMENTS) {
-        dprintf(2, " new@%d", i);
+        dbprintf(2, " new@%d", i);
         i = csegs;
         csegs *= 2;
         if(csegs > DATABAR_MAX_SEGMENTS)
@@ -1151,7 +1156,7 @@ decode_finder (zbar_decoder_t *dcode)
     unsigned e2 = pair_width(dcode, 3);
     unsigned e1, e3, s, finder, dir;
     int sig, iseg;
-    dprintf(2, "      databar: e0=%d e2=%d", e0, e2);
+    dbprintf(2, "      databar: e0=%d e2=%d", e0, e2);
     if(e0 < e2) {
         unsigned e = e2 * 4;
         if(e < 15 * e0 || e > 34 * e0)
@@ -1170,13 +1175,13 @@ decode_finder (zbar_decoder_t *dcode)
     e1 = pair_width(dcode, 2);
 
     s = e1 + e3;
-    dprintf(2, " e1=%d e3=%d dir=%d s=%d", e1, e3, dir, s);
+    dbprintf(2, " e1=%d e3=%d dir=%d s=%d", e1, e3, dir, s);
     if(s < 12)
         return(ZBAR_NONE);
 
     sig = ((decode_e(e3, s, 14) << 8) | (decode_e(e2, s, 14) << 4) |
            decode_e(e1, s, 14));
-    dprintf(2, " sig=%04x", sig & 0xfff);
+    dbprintf(2, " sig=%04x", sig & 0xfff);
     if(sig < 0 ||
        ((sig >> 4) & 0xf) < 8 ||
        ((sig >> 4) & 0xf) > 10 ||
@@ -1187,7 +1192,7 @@ decode_finder (zbar_decoder_t *dcode)
 
     finder = (finder_hash[(sig - (sig >> 5)) & 0x1f] +
               finder_hash[(sig >> 1) & 0x1f]) & 0x1f;
-    dprintf(2, " finder=%d", finder);
+    dbprintf(2, " finder=%d", finder);
     if(finder == 0x1f ||
        !TEST_CFG((finder < 9) ? db->config : db->config_exp, ZBAR_CFG_ENABLE))
         return(ZBAR_NONE);
@@ -1230,7 +1235,7 @@ _zbar_decode_databar (zbar_decoder_t *dcode)
     int iseg, i = dcode->idx & 0xf;
 
     sym = decode_finder(dcode);
-    dprintf(2, "\n");
+    dbprintf(2, "\n");
 
     iseg = db->chars[i];
     if(iseg < 0)
@@ -1238,8 +1243,8 @@ _zbar_decode_databar (zbar_decoder_t *dcode)
 
     db->chars[i] = -1;
     seg = db->segs + iseg;
-    dprintf(2, "        databar: i=%d part=%d f=%d(%x%x%x)",
-            iseg, seg->partial, seg->finder, seg->exp, seg->color, seg->side);
+    dbprintf(2, "        databar: i=%d part=%d f=%d(%x%x%x)",
+             iseg, seg->partial, seg->finder, seg->exp, seg->color, seg->side);
     zassert(seg->finder >= 0, ZBAR_NONE, "i=%d f=%d(%x%x%x) part=%x\n",
             iseg, seg->finder, seg->exp, seg->color, seg->side, seg->partial);
 
@@ -1269,7 +1274,7 @@ _zbar_decode_databar (zbar_decoder_t *dcode)
     }
     else
         db->epoch++;
-    dprintf(2, "\n");
+    dbprintf(2, "\n");
 
     return(sym);
 }

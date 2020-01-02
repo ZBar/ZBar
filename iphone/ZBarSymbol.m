@@ -25,7 +25,8 @@
 
 @implementation ZBarSymbol
 
-@dynamic type, typeName, data, quality, count, zbarSymbol;
+@dynamic type, typeName, configMask, modifierMask, data, quality, count,
+    zbarSymbol;
 
 + (NSString*) nameForType: (zbar_symbol_type_t) type
 {
@@ -58,6 +59,16 @@
 - (NSString*) typeName
 {
     return([[self class] nameForType: zbar_symbol_get_type(symbol)]);
+}
+
+- (NSUInteger) configMask
+{
+    return(zbar_symbol_get_configs(symbol));
+}
+
+- (NSUInteger) modifierMask
+{
+    return(zbar_symbol_get_modifiers(symbol));
 }
 
 - (NSString*) data

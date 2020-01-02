@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 15;
+use Test::More tests => 17;
 
 #########################
 
@@ -19,7 +19,8 @@ $decoder->parse_config('enable');
 #########################
 
 can_ok($decoder, qw(set_config parse_config reset new_scan decode_width
-                    get_color get_direction get_data get_type set_handler));
+                    get_color get_configs get_direction get_data get_modifiers
+                    get_type set_handler));
 
 #########################
 
@@ -75,6 +76,17 @@ foreach my $width (split(/ */, $encoded)) {
     }
 }
 is($sym, Barcode::ZBar::Symbol::EAN13, 'EAN-13 type');
+
+#########################
+
+is_deeply([$decoder->get_configs($sym)],
+          [Barcode::ZBar::Config::ENABLE,
+           Barcode::ZBar::Config::EMIT_CHECK],
+          'read configs');
+
+#########################
+
+is_deeply([$decoder->get_modifiers()], [], 'read modifiers');
 
 #########################
 

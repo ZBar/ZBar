@@ -32,16 +32,16 @@
 
 @implementation ZBarReaderView
 
-@synthesize readerDelegate, tracksSymbols, torchMode, showsFPS, zoom, scanCrop,
-    previewTransform;
-@dynamic scanner, allowsPinchZoom, enableCache, device, session, captureReader;
+@synthesize readerDelegate, tracksSymbols, trackingColor, torchMode, showsFPS,
+    zoom, maxZoom, scanCrop, previewTransform, captureReader;
+@dynamic scanner, allowsPinchZoom, enableCache, device, session;
 
 + (id) alloc
 {
     if(self == [ZBarReaderView class]) {
         // this is an abstract wrapper for implementation selected
         // at compile time.  replace with concrete subclass.
-        return([ZBarReaderViewImpl alloc]);
+        return((id)[ZBarReaderViewImpl alloc]);
     }
     return([super alloc]);
 }
@@ -50,26 +50,37 @@
 {
     assert(preview);
 
-    CGRect r = preview.bounds;
     overlay = [CALayer new];
-    overlay.frame = r;
     overlay.backgroundColor = [UIColor clearColor].CGColor;
     [preview addSublayer: overlay];
 
+#ifndef NDEBUG
+    overlay.borderWidth = 2;
+    overlay.borderColor = [UIColor colorWithRed: 1
+                                   green: 0
+                                   blue: 0
+                                   alpha: .5].CGColor;
+    cropLayer = [CALayer new];
+    cropLayer.backgroundColor = [UIColor clearColor].CGColor;
+    cropLayer.borderWidth = 2;
+    cropLayer.borderColor = [UIColor colorWithRed: 0
+                                     green: 0
+                                     blue: 1
+                                     alpha: .5].CGColor;
+    [overlay addSublayer: cropLayer];
+#endif
+
     tracking = [CALayer new];
-    tracking.frame = r;
     tracking.opacity = 0;
     tracking.borderWidth = 1;
     tracking.backgroundColor = [UIColor clearColor].CGColor;
-    tracking.borderColor = [UIColor greenColor].CGColor;
     [overlay addSublayer: tracking];
 
-    r.origin.x = 3 * r.size.width / 4;
-    r.origin.y = r.size.height - 32;
-    r.size.width = r.size.width - r.origin.x + 12;
-    r.size.height = 32 + 12;
-    fpsView = [[UIView alloc]
-                   initWithFrame: r];
+    trackingColor = [[UIColor greenColor]
+                        retain];
+    tracking.borderColor = trackingColor.CGColor;
+
+    fpsView = [UIView new];
     fpsView.backgroundColor = [UIColor colorWithWhite: 0
                                        alpha: .333];
     fpsView.layer.cornerRadius = 12;
@@ -77,9 +88,7 @@
     [self addSubview: fpsView];
 
     fpsLabel = [[UILabel alloc]
-                   initWithFrame: CGRectMake(0, 0,
-                                             r.size.width - 12,
-                                             r.size.height - 12)];
+                   initWithFrame: CGRectMake(0, 0, 80, 32)];
     fpsLabel.backgroundColor = [UIColor clearColor];
     fpsLabel.textColor = [UIColor colorWithRed: .333
                                   green: .666
@@ -88,6 +97,26 @@
     fpsLabel.font = [UIFont systemFontOfSize: 18];
     fpsLabel.textAlignment = UITextAlignmentRight;
     [fpsView addSubview: fpsLabel];
+
+    self.zoom = 1.25;
+}
+
+- (void) _initWithImageScanner: (ZBarImageScanner*) scanner
+{
+    assert(scanner);
+
+    tracksSymbols = YES;
+    interfaceOrientation = UIInterfaceOrientationPortrait;
+    torchMode = 2; // AVCaptureTorchModeAuto
+    scanCrop = effectiveCrop = CGRectMake(0, 0, 1, 1);
+    imageScale = 1;
+    previewTransform = CGAffineTransformIdentity;
+    maxZoom = 2;
+
+    pinch = [[UIPinchGestureRecognizer alloc]
+                initWithTarget: self
+                action: @selector(handlePinch)];
+    [self addGestureRecognizer: pinch];
 }
 
 - (id) initWithImageScanner: (ZBarImageScanner*) scanner
@@ -98,22 +127,12 @@
 
     self.backgroundColor = [UIColor blackColor];
     self.contentMode = UIViewContentModeScaleAspectFill;
+    self.clipsToBounds = YES;
     self.autoresizingMask =
         UIViewAutoresizingFlexibleWidth |
         UIViewAutoresizingFlexibleHeight;
 
-    tracksSymbols = YES;
-    torchMode = 2; // AVCaptureTorchModeAuto
-    scanCrop = zoomCrop = CGRectMake(0, 0, 1, 1);
-    imageScale = 1;
-    previewTransform = CGAffineTransformIdentity;
-
-    pinch = [[UIPinchGestureRecognizer alloc]
-                initWithTarget: self
-                action: @selector(handlePinch)];
-    [self addGestureRecognizer: pinch];
-
-    self.zoom = 1.25;
+    [self _initWithImageScanner: scanner];
     return(self);
 }
 
@@ -135,6 +154,25 @@
     return(self);
 }
 
+- (id) initWithCoder: (NSCoder*) decoder
+{
+    self = [super initWithCoder: decoder];
+    if(!self)
+        return(nil);
+    ZBarImageScanner *scanner =
+        [[ZBarImageScanner new]
+            autorelease];
+    [self _initWithImageScanner: scanner];
+
+    [scanner setSymbology: 0
+             config: ZBAR_CFG_X_DENSITY
+             to: 3];
+    [scanner setSymbology: 0
+             config: ZBAR_CFG_Y_DENSITY
+             to: 3];
+    return(self);
+}
+
 - (void) dealloc
 {
     [preview removeFromSuperlayer];
@@ -142,8 +180,12 @@
     preview = nil;
     [overlay release];
     overlay = nil;
+    [cropLayer release];
+    cropLayer = nil;
     [tracking release];
     tracking = nil;
+    [trackingColor release];
+    trackingColor = nil;
     [fpsLabel release];
     fpsLabel = nil;
     [fpsView release];
@@ -159,7 +201,7 @@
     [CATransaction begin];
     [CATransaction setDisableActions: YES];
     CGSize size = overlay.bounds.size;
-    CGRect crop = zoomCrop;
+    CGRect crop = effectiveCrop;
     tracking.frame = CGRectMake(crop.origin.x * size.width,
                                 crop.origin.y * size.height,
                                 crop.size.width * size.width,
@@ -168,30 +210,164 @@
     [CATransaction commit];
 }
 
-- (void) setImageSize: (CGSize) size
+- (void) updateCrop
 {
-    CGSize psize = preview.bounds.size;
-    CGFloat scalex = size.width / psize.width;
-    CGFloat scaley = size.height / psize.height;
-    imageScale = (scalex > scaley) ? scalex : scaley;
-
-    tracking.borderWidth = imageScale / zoom;
-
-    zlog(@"scaling: layer=%@ image=%@ scale=%g %c %g = 1/%g",
-         NSStringFromCGSize(psize), NSStringFromCGSize(size),
-         scalex, (scalex > scaley) ? '>' : '<', scaley, 1 / imageScale);
-    [self resetTracking];
 }
 
-- (void) cropUpdate
+static inline CGFloat rotationForInterfaceOrientation (int orient)
 {
-    CGAffineTransform xfrm =
-        CGAffineTransformMakeTranslation(.5, .5);
+    // resolve camera/device image orientation to view/interface orientation
+    switch(orient)
+    {
+    case UIInterfaceOrientationLandscapeLeft:
+        return(M_PI_2);
+    case UIInterfaceOrientationPortraitUpsideDown:
+        return(M_PI);
+    case UIInterfaceOrientationLandscapeRight:
+        return(3 * M_PI_2);
+    case UIInterfaceOrientationPortrait:
+        return(2 * M_PI);
+    }
+    return(0);
+}
+
+- (void) layoutSubviews
+{
+    CGRect bounds = self.bounds;
+    if(!bounds.size.width || !bounds.size.height)
+        return;
+
+    [CATransaction begin];
+    if(animationDuration) {
+        [CATransaction setAnimationDuration: animationDuration];
+        [CATransaction setAnimationTimingFunction:
+            [CAMediaTimingFunction functionWithName:
+                kCAMediaTimingFunctionEaseInEaseOut]];
+    }
+    else
+        [CATransaction setDisableActions: YES];
+
+    [super layoutSubviews];
+    fpsView.frame = CGRectMake(bounds.size.width - 80, bounds.size.height - 32,
+                               80 + 12, 32 + 12);
+
+    // orient view bounds to match camera image
+    CGSize psize;
+    if(UIInterfaceOrientationIsPortrait(interfaceOrientation))
+        psize = CGSizeMake(bounds.size.height, bounds.size.width);
+    else
+        psize = bounds.size;
+
+    // calculate scale from view coordinates to image coordinates
+    // FIXME assumes AVLayerVideoGravityResizeAspectFill
+    CGFloat scalex = imageSize.width / psize.width;
+    CGFloat scaley = imageSize.height / psize.height;
+    imageScale = (scalex < scaley) ? scalex : scaley;
+    if(!imageScale)
+        imageScale = 1;
+    // apply zoom
+    imageScale /= zoom;
+
+    // scale crop by zoom factor
     CGFloat z = 1 / zoom;
-    xfrm = CGAffineTransformScale(xfrm, z, z);
-    xfrm = CGAffineTransformTranslate(xfrm, -.5, -.5);
-    zoomCrop = CGRectApplyAffineTransform(scanCrop, xfrm);
+    CGFloat t = (1 - z) / 2;
+    CGRect zoomCrop =
+        CGRectMake(scanCrop.origin.x * z + t,
+                   scanCrop.origin.y * z + t,
+                   scanCrop.size.width * z,
+                   scanCrop.size.height * z);
+
+    // convert effective preview area to normalized image coordinates
+    CGRect previewCrop;
+    if(scalex < scaley && imageSize.height)
+        previewCrop.size =
+            CGSizeMake(z, psize.height * imageScale / imageSize.height);
+    else if(imageSize.width)
+        previewCrop.size =
+            CGSizeMake(psize.width * imageScale / imageSize.width, z);
+    else
+        previewCrop.size = CGSizeMake(1, 1);
+    previewCrop.origin = CGPointMake((1 - previewCrop.size.width) / 2,
+                                     (1 - previewCrop.size.height) / 2);
+
+    // clip crop to visible preview area
+    effectiveCrop = CGRectIntersection(zoomCrop, previewCrop);
+    if(CGRectIsNull(effectiveCrop))
+        effectiveCrop = zoomCrop;
+
+    // size preview to match image in view coordinates
+    CGFloat viewScale = 1 / imageScale;
+    if(imageSize.width && imageSize.height)
+        psize = CGSizeMake(imageSize.width * viewScale,
+                           imageSize.height * viewScale);
+
+    preview.bounds = CGRectMake(0, 0, psize.height, psize.width);
+    // center preview in view
+    preview.position = CGPointMake(bounds.size.width / 2,
+                                   bounds.size.height / 2);
+
+    CGFloat angle = rotationForInterfaceOrientation(interfaceOrientation);
+    CATransform3D xform =
+        CATransform3DMakeAffineTransform(previewTransform);
+    preview.transform = CATransform3DRotate(xform, angle, 0, 0, 1);
+
+    // scale overlay to match actual image
+    if(imageSize.width && imageSize.height)
+        overlay.bounds = CGRectMake(0, 0, imageSize.width, imageSize.height);
+    else
+        overlay.bounds = CGRectMake(0, 0, psize.width, psize.height);
+    // center overlay in preview
+    overlay.position = CGPointMake(psize.height / 2, psize.width / 2);
+
+    // image coordinates rotated from preview
+    xform = CATransform3DMakeRotation(M_PI_2, 0, 0, 1);
+    overlay.transform = CATransform3DScale(xform, viewScale, viewScale, 1);
+    tracking.borderWidth = imageScale;
+
+#ifndef NDEBUG
+    preview.backgroundColor = [UIColor yellowColor].CGColor;
+    overlay.borderWidth = 2 * imageScale;
+    cropLayer.borderWidth = 2 * imageScale;
+    cropLayer.frame = CGRectMake(effectiveCrop.origin.x * imageSize.width,
+                                 effectiveCrop.origin.y * imageSize.height,
+                                 effectiveCrop.size.width * imageSize.width,
+                                 effectiveCrop.size.height * imageSize.height);
+    zlog(@"layoutSubviews: bounds=%@ orient=%d image=%@ crop=%@ zoom=%g\n"
+         @"=> preview=%@ crop=(z%@ p%@ %@ i%@) scale=%g %c %g = 1/%g",
+         NSStringFromCGSize(bounds.size), interfaceOrientation,
+         NSStringFromCGSize(imageSize), NSStringFromCGRect(scanCrop), zoom,
+         NSStringFromCGSize(psize), NSStringFromCGRect(zoomCrop),
+         NSStringFromCGRect(previewCrop), NSStringFromCGRect(effectiveCrop),
+         NSStringFromCGRect(cropLayer.frame),
+         scalex, (scalex > scaley) ? '>' : '<', scaley, viewScale);
+#endif
+
     [self resetTracking];
+    [self updateCrop];
+
+    [CATransaction commit];
+    animationDuration = 0;
+}
+
+- (void) setImageSize: (CGSize) size
+{
+    zlog(@"imageSize=%@", NSStringFromCGSize(size));
+    imageSize = size;
+
+    // FIXME bug in AVCaptureVideoPreviewLayer fails to update preview location
+    preview.bounds = CGRectMake(0, 0, size.width, size.height);
+
+    [self setNeedsLayout];
+}
+
+- (void) willRotateToInterfaceOrientation: (UIInterfaceOrientation) orient
+                                 duration: (NSTimeInterval) duration
+{
+    if(interfaceOrientation != orient) {
+        zlog(@"orient=%d #%g", orient, duration);
+        interfaceOrientation = orient;
+        animationDuration = duration;
+    }
 }
 
 - (void) setScanCrop: (CGRect) r
@@ -199,7 +375,7 @@
     if(CGRectEqualToRect(scanCrop, r))
         return;
     scanCrop = r;
-    [self cropUpdate];
+    [self setNeedsLayout];
 }
 
 - (void) setTracksSymbols: (BOOL) track
@@ -220,6 +396,16 @@
     pinch.enabled = enabled;
 }
 
+- (void) setTrackingColor: (UIColor*) color
+{
+    if(!color)
+        return;
+    [color retain];
+    [trackingColor release];
+    trackingColor = color;
+    tracking.borderColor = color.CGColor;
+}
+
 - (void) setShowsFPS: (BOOL) show
 {
     if(show == showsFPS)
@@ -231,30 +417,37 @@
 {
     if(z < 1.0)
         z = 1.0;
-    if(z > 2.0)
-        z = 2.0;
+    if(z > maxZoom)
+        z = maxZoom;
     if(z == zoom)
         return;
     zoom = z;
 
-    [CATransaction begin];
-    [CATransaction setAnimationDuration: .1];
-    [CATransaction setAnimationTimingFunction:
-        [CAMediaTimingFunction functionWithName:
-            kCAMediaTimingFunctionLinear]];
-    [preview setAffineTransform:
-        CGAffineTransformScale(previewTransform, z, z)];
-    tracking.borderWidth = imageScale / zoom;
-    [CATransaction commit];
+    [self setNeedsLayout];
+}
 
-    [self cropUpdate];
+- (void) setZoom: (CGFloat) z
+        animated: (BOOL) animated
+{
+    [CATransaction begin];
+    if(animated) {
+        [CATransaction setAnimationDuration: .1];
+        [CATransaction setAnimationTimingFunction:
+            [CAMediaTimingFunction functionWithName:
+                kCAMediaTimingFunctionLinear]];
+    }
+    else
+        [CATransaction setDisableActions: YES];
+    // FIXME animate from current value
+    self.zoom = z;
+    [self layoutIfNeeded];
+    [CATransaction commit];
 }
 
 - (void) setPreviewTransform: (CGAffineTransform) xfrm
 {
     previewTransform = xfrm;
-    [preview setAffineTransform:
-        CGAffineTransformScale(previewTransform, zoom, zoom)];
+    [self setNeedsLayout];
 }
 
 - (void) start
@@ -291,7 +484,8 @@
     if(pinch.state == UIGestureRecognizerStateBegan)
         zoom0 = zoom;
     CGFloat z = zoom0 * pinch.scale;
-    self.zoom = z;
+    [self setZoom: z
+          animated: YES];
 
     if((zoom < 1.5) != (z < 1.5)) {
         int d = (z < 1.5) ? 3 : 2;

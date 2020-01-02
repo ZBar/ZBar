@@ -27,6 +27,10 @@ Properties
 
       Whether to display the tracking annotation (default ``YES``).
 
+   .. member:: UIColor *trackingColor
+
+      The color of the tracking annotation (default green).
+
    .. member:: BOOL allowsPinchZoom
 
       Enable pinch gesture recognition for manually zooming the preview/decode
@@ -47,7 +51,12 @@ Properties
 
       Zoom scale factor applied to the video preview *and* scanCrop.  This
       value is also updated by the pinch-zoom gesture.  Valid values are in
-      the range [1,2].  (default 1.25)
+      the range [1,maxZoom].  (default 1.25)
+
+   .. member:: CGFloat maxZoom
+
+      Maximum settable zoom level.  The zoom property will be clipped to this
+      value.
 
    .. member:: CGRect scanCrop
 
@@ -102,3 +111,16 @@ Instance Methods
 
       Flush the inter-frame consistency cache.  Any barcodes in the frame will
       be re-recognized in subsequent frames.
+
+   .. _`setZoom:animated:`:
+   .. describe:: - (void) setZoom:(CGFloat)zoom animated:(BOOL)animated
+
+      Set the zoom property with optional animation.
+
+   .. _`willRotateTointerfaceOrientation:duration:`:
+   .. describe:: - (void) willRotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation duration:(NSTimeInterval)duration
+
+      Compensate for device / camera / interface orientation.  Must be called
+      by containing view controller that supports any non-portrait orientation
+      to restore the camera preview to the correct orientation.  Call from
+      view controller method of the same name for correct animation.

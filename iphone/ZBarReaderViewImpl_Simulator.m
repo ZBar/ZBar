@@ -29,58 +29,9 @@
 
 // hack around missing simulator support for AVCapture interfaces
 
-@interface ZBarReaderViewController(Simulator)
-@end
-
-@implementation ZBarReaderViewController(Simulator)
-
-- (void) initSimulator
-{
-    UILongPressGestureRecognizer *press =
-        [[UILongPressGestureRecognizer alloc]
-            initWithTarget: self
-            action: @selector(didLongPress:)];
-    [self.view addGestureRecognizer: press];
-    press.numberOfTouchesRequired = 2;
-    [press release];
-}
-
-- (void) takePicture
-{
-    UIImagePickerController *picker =
-        [UIImagePickerController new];
-    picker.delegate = (id<UINavigationControllerDelegate,
-                          UIImagePickerControllerDelegate>)self;
-    [self presentModalViewController: picker
-          animated: YES];
-    [picker release];
-}
-
-- (void) didLongPress: (UIGestureRecognizer*) press
-{
-    if(press.state == UIGestureRecognizerStateBegan)
-        [self takePicture];
-}
-
-- (void)  imagePickerController: (UIImagePickerController*) picker
-  didFinishPickingMediaWithInfo: (NSDictionary*) info
-{
-    UIImage *image = [info objectForKey: UIImagePickerControllerOriginalImage];
-    [picker dismissModalViewControllerAnimated: YES];
-    [readerView performSelector: @selector(scanImage:)
-                withObject: image
-                afterDelay: .1];
-}
-
-- (void) imagePickerControllerDidCancel: (UIImagePickerController*) picker
-{
-    [picker dismissModalViewControllerAnimated: YES];
-}
-
-@end
-
 // protected APIs
 @interface ZBarReaderView()
+- (void) _initWithImageScanner: (ZBarImageScanner*) _scanner;
 - (void) initSubviews;
 - (void) setImageSize: (CGSize) size;
 - (void) didTrackSymbols: (ZBarSymbolSet*) syms;
@@ -90,7 +41,9 @@
     : ZBarReaderView
 {
     ZBarImageScanner *scanner;
+    UILabel *simLabel;
     UIImage *scanImage;
+    CALayer *previewImage;
     BOOL enableCache;
 }
 @end
@@ -99,36 +52,34 @@
 
 @synthesize scanner, enableCache;
 
-- (id) initWithImageScanner: (ZBarImageScanner*) _scanner
+- (void) _initWithImageScanner: (ZBarImageScanner*) _scanner
 {
-    self = [super initWithImageScanner: _scanner];
-    if(!self)
-        return(nil);
-
+    [super _initWithImageScanner: _scanner];
     scanner = [_scanner retain];
 
     [self initSubviews];
-    return(self);
 }
 
 - (void) initSubviews
 {
-    UILabel *label =
-        [[UILabel alloc]
-            initWithFrame: CGRectMake(16, 165, 288, 96)];
-    label.backgroundColor = [UIColor clearColor];
-    label.textColor = [UIColor whiteColor];
-    label.font = [UIFont boldSystemFontOfSize: 20];
-    label.numberOfLines = 4;
-    label.textAlignment = UITextAlignmentCenter;
-    label.text = @"Camera Simulation\n\n"
+    simLabel = [UILabel new];
+    simLabel.backgroundColor = [UIColor clearColor];
+    simLabel.textColor = [UIColor whiteColor];
+    simLabel.font = [UIFont boldSystemFontOfSize: 20];
+    simLabel.numberOfLines = 4;
+    simLabel.textAlignment = UITextAlignmentCenter;
+    simLabel.text = @"Camera Simulation\n\n"
         @"Tap and hold with two \"fingers\" to select image";
-    [self addSubview: label];
-    [label release];
+    simLabel.autoresizingMask =
+        UIViewAutoresizingFlexibleWidth |
+        UIViewAutoresizingFlexibleHeight;
+    [self addSubview: simLabel];
 
     preview = [CALayer new];
-    preview.frame = self.bounds;
     [self.layer addSublayer: preview];
+
+    previewImage = [CALayer new];
+    [preview addSublayer: previewImage];
 
     [super initSubviews];
 }
@@ -137,7 +88,35 @@
 {
     [scanner release];
     scanner = nil;
+    [simLabel release];
+    simLabel = nil;
+    [previewImage release];
+    previewImage = nil;
     [super dealloc];
+}
+
+- (AVCaptureDevice*) device
+{
+    return(nil);
+}
+
+- (void) setDevice: (AVCaptureDevice*) device
+{
+    // simulated camera does nothing with this
+}
+
+- (AVCaptureSession*) session
+{
+    return(nil);
+}
+
+- (void) updateCrop
+{
+    previewImage.frame = preview.bounds;
+    CGRect bounds = self.bounds;
+    simLabel.frame = CGRectInset(bounds,
+                                 bounds.size.width * .05,
+                                 bounds.size.height * .05);
 }
 
 - (void) start
@@ -146,6 +125,10 @@
         return;
     [super start];
     running = YES;
+
+    [self performSelector: @selector(onVideoStart)
+          withObject: nil
+          afterDelay: 0.5];
 }
 
 - (void) stop
@@ -154,6 +137,10 @@
         return;
     [super stop];
     running = NO;
+
+    [self performSelector: @selector(onVideoStop)
+          withObject: nil
+          afterDelay: 0.5];
 }
 
 - (void) scanImage: (UIImage*) image
@@ -165,27 +152,25 @@
                 scale: 1.0
                 orientation: UIImageOrientationUp];
 
-    CGSize size = image.size;
-    overlay.bounds = CGRectMake(0, 0, size.width, size.height);
-    [self setImageSize: size];
+    [self setImageSize: image.size];
+    [self layoutIfNeeded];
 
-    preview.contentsScale = imageScale;
-    preview.contentsGravity = kCAGravityCenter;
-    preview.contents = (id)cgimage;
-
-    // match overlay to image
-    CGFloat scale = 1 / imageScale;
-    overlay.transform = CATransform3DMakeScale(scale, scale, 1);
+    [CATransaction begin];
+    [CATransaction setDisableActions: YES];
+    previewImage.contentsGravity = kCAGravityResizeAspectFill;
+    previewImage.transform = CATransform3DMakeRotation(M_PI_2, 0, 0, 1);
+    previewImage.contents = (id)cgimage;
+    [CATransaction commit];
 
     ZBarImage *zimg =
         [[ZBarImage alloc]
             initWithCGImage: cgimage];
 
-    size = zimg.size;
-    zimg.crop = CGRectMake(zoomCrop.origin.y * size.width,
-                           zoomCrop.origin.x * size.height,
-                           zoomCrop.size.height * size.width,
-                           zoomCrop.size.width * size.height);
+    CGSize size = zimg.size;
+    zimg.crop = CGRectMake(effectiveCrop.origin.x * size.width,
+                           effectiveCrop.origin.y * size.height,
+                           effectiveCrop.size.width * size.width,
+                           effectiveCrop.size.height * size.height);
 
     int nsyms = [scanner scanImage: zimg];
     zlog(@"scan image: %@ crop=%@ nsyms=%d",
@@ -213,6 +198,22 @@
         fromImage: scanImage];
     [scanImage release];
     scanImage = nil;
+}
+
+- (void) onVideoStart
+{
+    if(running &&
+       [readerDelegate respondsToSelector: @selector(readerViewDidStart:)])
+        [readerDelegate readerViewDidStart: self];
+}
+
+- (void) onVideoStop
+{
+    if(!running &&
+       [readerDelegate respondsToSelector:
+                           @selector(readerView:didStopWithError:)])
+        [readerDelegate readerView: self
+                        didStopWithError: nil];
 }
 
 @end

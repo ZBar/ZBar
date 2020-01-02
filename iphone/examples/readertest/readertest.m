@@ -1,11 +1,10 @@
-#if 0
-# define VALGRIND "/usr/local/bin/valgrind"
-#endif
-
 enum {
     CLASS_SECTION = 0,
     SOURCE_SECTION,
     CAMODE_SECTION,
+    DEVICE_SECTION,
+    FLASH_SECTION,
+    QUALITY_SECTION,
     CONFIG_SECTION,
     CUSTOM_SECTION,
     SYMBOL_SECTION,
@@ -17,6 +16,9 @@ static NSString* const section_titles[] = {
     @"Classes",
     @"SourceType",
     @"CameraMode",
+    @"CaptureDevice",
+    @"CameraFlashMode",
+    @"VideoQuality",
     @"Reader Configuration",
     nil,
     @"Enabled Symbologies",
@@ -34,6 +36,10 @@ static const NSInteger const density_choices[] = {
     3, 2, 1, 0, 4, -1
 };
 
+static const CGFloat const zoom_choices[] = {
+    1, 10/9., 10/8., 8/6., 10/7., 9/6., 10/6., 7/4., 2, 0, -1
+};
+
 @interface AppDelegate
     : UITableViewController
     < UIApplicationDelegate,
@@ -46,7 +52,11 @@ static const NSInteger const density_choices[] = {
     UIWindow *window;
     UINavigationController *nav;
 
+    NSSet *defaultSymbologies;
+    CGFloat zoom;
+
     NSMutableArray *sections, *symbolEnables;
+    NSInteger xDensity, yDensity;
 
     BOOL found, paused, continuous;
     NSInteger dataHeight;
@@ -67,18 +77,49 @@ static const NSInteger const density_choices[] = {
 
 - (id) init
 {
-    // force these classes to load
-    [ZBarReaderViewController class];
-    [ZBarReaderController class];
-
     return([super initWithStyle: UITableViewStyleGrouped]);
 }
 
 - (void) initReader: (NSString*) clsName
 {
     [reader release];
-    reader = [NSClassFromString(clsName) new];
+    Class cls = [[NSBundle mainBundle]
+                    classNamed: clsName];
+    assert(cls);
+    reader = [cls new];
+    assert(reader);
     reader.readerDelegate = self;
+    xDensity = yDensity = 3;
+
+#if 0
+    // apply defaults for demo
+    ZBarImageScanner *scanner = reader.scanner;
+    continuous = NO;
+    zoom = 1;
+    reader.showsZBarControls = NO;
+    reader.scanCrop = CGRectMake(0, .35, 1, .3);
+
+    [defaultSymbologies release];
+    defaultSymbologies =
+        [[NSSet alloc]
+            initWithObjects:
+                [NSNumber numberWithInteger: ZBAR_CODE128],
+                nil];
+    [scanner setSymbology: 0
+             config: ZBAR_CFG_ENABLE
+             to: 0];
+    for(NSNumber *sym in defaultSymbologies)
+        [scanner setSymbology: sym.integerValue
+                 config: ZBAR_CFG_ENABLE
+                 to: 1];
+
+    [scanner setSymbology: 0
+             config: ZBAR_CFG_X_DENSITY
+             to: (xDensity = 0)];
+    [scanner setSymbology: 0
+             config: ZBAR_CFG_Y_DENSITY
+             to: (yDensity = 1)];
+#endif
 }
 
 - (void) initOverlay
@@ -146,6 +187,13 @@ static const NSInteger const density_choices[] = {
                     target: self
                     action: @selector(manualCapture)];
 
+
+    UIButton *info =
+        [UIButton buttonWithType: UIButtonTypeInfoLight];
+    [info addTarget: self
+          action: @selector(info)
+          forControlEvents: UIControlEventTouchUpInside];
+
     toolbar.items =
         [NSArray arrayWithObjects:
             [[[UIBarButtonItem alloc]
@@ -175,18 +223,34 @@ static const NSInteger const density_choices[] = {
                  target: nil
                  action: nil]
                 autorelease],
+            [[[UIBarButtonItem alloc]
+                 initWithCustomView: info]
+                autorelease],
             nil];
     [overlay addSubview: toolbar];
     [toolbar release];
+}
 
+- (void) updateCropMask
+{
+    CGRect r = reader.scanCrop;
+    r.origin.x *= 426;
+    r.origin.y *= 320;
+    r.size.width *= 426;
+    r.size.height *= 320;
+    UIView *mask = [masks objectAtIndex: 0];
+    mask.frame = CGRectMake(0, -426, 320, r.origin.x);
+    mask = [masks objectAtIndex: 1];
+    mask.frame = CGRectMake(0, r.origin.x - 426, r.origin.y, r.size.width);
 
-    UIButton *info =
-        [UIButton buttonWithType: UIButtonTypeInfoLight];
-    info.frame = CGRectMake(266, 0, 54, 54);
-    [info addTarget: self
-             action: @selector(info)
-             forControlEvents: UIControlEventTouchUpInside];
-    [overlay addSubview: info];
+    r.origin.y += r.size.height;
+    mask = [masks objectAtIndex: 2];
+    mask.frame = CGRectMake(r.origin.y, r.origin.x - 426,
+                            320 - r.origin.y, r.size.width);
+
+    r.origin.x += r.size.width;
+    mask = [masks objectAtIndex: 3];
+    mask.frame = CGRectMake(0, r.origin.x - 426, 320, 426 - r.origin.x);
 }
 
 - (void) setCheck: (BOOL) state
@@ -218,12 +282,26 @@ static const NSInteger const density_choices[] = {
 {
     self.title = @"ZBar Reader Test";
 
+    window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
+    
+    //解决该问题的代码
+//    NSArray *windows = [[UIApplication sharedApplication] windows];
+//    for(UIWindow *window in windows) {
+//        if(window.rootViewController == nil){
+//
+//        }
+//    }
+    //解决该问题的代码
+    UIViewController *vc = [[UIViewController alloc]initWithNibName:nil
+                                                         bundle:nil];
     nav = [[UINavigationController alloc]
               initWithRootViewController: self];
+//    [vc addChildViewController:nav];
+    [vc.view addSubview: nav.view];
     nav.delegate = self;
-
-    window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
-    [window addSubview: nav.view];
+    
+    window.rootViewController = vc;
+//    [window addSubview: vc.view];
     [window makeKeyAndVisible];
 
     [self initReader: @"ZBarReaderViewController"];
@@ -269,6 +347,45 @@ static const NSInteger const density_choices[] = {
     [sections replaceObjectAtIndex: CAMODE_SECTION
               withObject: modes];
 
+    static NSString *const deviceNames[] = {
+        @"Rear", @"Front", nil
+    };
+    NSMutableArray *devices = [NSMutableArray array];
+    for(int i = 0; deviceNames[i]; i++)
+        if([[reader class]
+               isCameraDeviceAvailable: i])
+            [devices addObject:
+                [self cellWithTitle: deviceNames[i]
+                      tag: i
+                      checked: (reader.cameraDevice == i)]];
+    assert(devices.count);
+    [sections replaceObjectAtIndex: DEVICE_SECTION
+              withObject: devices];
+
+    static NSString *const flashNames[] = {
+        @"Off", @"Auto", @"On", nil
+    };
+    NSMutableArray *flashModes = [NSMutableArray array];
+    for(int i = 0; flashNames[i]; i++)
+        [flashModes addObject:
+            [self cellWithTitle: flashNames[i]
+                  tag: i - 1
+                  checked: (reader.cameraFlashMode == i - 1)]];
+    [sections replaceObjectAtIndex: FLASH_SECTION
+              withObject: flashModes];
+
+    static NSString *const qualityNames[] = {
+        @"High", @"Medium", @"Low", @"640x480", nil
+    };
+    NSMutableArray *qualities = [NSMutableArray array];
+    for(int i = 0; qualityNames[i]; i++)
+        [qualities addObject:
+            [self cellWithTitle: qualityNames[i]
+                  tag: i
+                  checked: (reader.videoQuality == i)]];
+    [sections replaceObjectAtIndex: QUALITY_SECTION
+              withObject: qualities];
+
     static NSString* const configNames[] = {
         @"showsCameraControls", @"showsZBarControls", @"tracksSymbols",
         @"enableCache", @"showsHelpOnFail", @"takesPicture",
@@ -287,14 +404,6 @@ static const NSInteger const density_choices[] = {
     [sections replaceObjectAtIndex: CONFIG_SECTION
               withObject: configs];
 
-    UITableViewCell *cropCell =
-        [[[UITableViewCell alloc]
-             initWithStyle: UITableViewCellStyleValue1
-             reuseIdentifier: nil]
-            autorelease];
-    cropCell.textLabel.text = @"scanCrop";
-    cropCell.detailTextLabel.text = NSStringFromCGRect(crop_choices[0]);
-
     UITableViewCell *xDensityCell =
         [[[UITableViewCell alloc]
              initWithStyle: UITableViewCellStyleValue1
@@ -303,7 +412,7 @@ static const NSInteger const density_choices[] = {
     xDensityCell.textLabel.text = @"CFG_X_DENSITY";
     xDensityCell.detailTextLabel.tag = ZBAR_CFG_X_DENSITY;
     xDensityCell.detailTextLabel.text =
-        [NSString stringWithFormat: @"%d", density_choices[0]];
+        [NSString stringWithFormat: @"%d", xDensity];
 
     UITableViewCell *yDensityCell =
         [[[UITableViewCell alloc]
@@ -313,33 +422,60 @@ static const NSInteger const density_choices[] = {
     yDensityCell.textLabel.text = @"CFG_Y_DENSITY";
     yDensityCell.detailTextLabel.tag = ZBAR_CFG_Y_DENSITY;
     yDensityCell.detailTextLabel.text =
-        [NSString stringWithFormat: @"%d", density_choices[0]];
+        [NSString stringWithFormat: @"%d", yDensity];
+
+    UITableViewCell *cropCell =
+        [[[UITableViewCell alloc]
+             initWithStyle: UITableViewCellStyleValue1
+             reuseIdentifier: nil]
+            autorelease];
+    cropCell.textLabel.text = @"scanCrop";
+    cropCell.detailTextLabel.text = NSStringFromCGRect(reader.scanCrop);
+
+    UITableViewCell *zoomCell =
+        [[[UITableViewCell alloc]
+             initWithStyle: UITableViewCellStyleValue1
+             reuseIdentifier: nil]
+            autorelease];
+    zoomCell.textLabel.text = @"zoom";
+    zoomCell.detailTextLabel.text =
+        [NSString stringWithFormat: @"%g", zoom];
 
     [sections replaceObjectAtIndex: CUSTOM_SECTION
               withObject: [NSArray arrayWithObjects:
                               xDensityCell,
                               yDensityCell,
                               cropCell,
+                              zoomCell,
                               [self cellWithTitle: @"continuous"
                                     tag: 1
                                     checked: continuous],
                               nil]];
 
-    static const int symbolValues[] = {
-        ZBAR_QRCODE, ZBAR_CODE128, ZBAR_CODE39, ZBAR_I25,
-        ZBAR_DATABAR, ZBAR_DATABAR_EXP,
-        ZBAR_EAN13, ZBAR_EAN8, ZBAR_UPCA, ZBAR_UPCE, ZBAR_ISBN13, ZBAR_ISBN10,
+    static const zbar_symbol_type_t allSymbologies[] = {
+        ZBAR_QRCODE, ZBAR_CODE128, ZBAR_CODE93, ZBAR_CODE39, ZBAR_CODABAR,
+        ZBAR_I25, ZBAR_DATABAR, ZBAR_DATABAR_EXP,
+        ZBAR_EAN13, ZBAR_EAN8, 
+        ZBAR_EAN2, ZBAR_EAN5, ZBAR_COMPOSITE,
+        ZBAR_UPCA, ZBAR_UPCE,
+        ZBAR_ISBN13, ZBAR_ISBN10, ZBAR_CYCLIC,
         0
     };
     NSMutableArray *symbols = [NSMutableArray array];
     [symbolEnables release];
-    symbolEnables = [[NSMutableArray alloc] init];
+    symbolEnables = [NSMutableArray new];
     BOOL en = YES;
-    for(int i = 0; symbolValues[i]; i++) {
-        en = en && (symbolValues[i] != ZBAR_UPCA);
+    for(int i = 0; allSymbologies[i]; i++) {
+        zbar_symbol_type_t sym = allSymbologies[i];
+        if(defaultSymbologies)
+            en = !![defaultSymbologies member:
+                       [NSNumber numberWithInteger: sym]];
+        else
+            /* symbologies after ZBAR_EAN5 are disabled by default */
+            en = en && (sym != ZBAR_EAN2);
         [symbols addObject:
-            [self cellWithTitle: [ZBarSymbol nameForType: symbolValues[i]]
-                  tag: symbolValues[i]
+            [self cellWithTitle: [ZBarSymbol nameForType: sym]
+                  tag: sym
                   checked: en]];
         [symbolEnables addObject: [NSNumber numberWithBool: en]];
     }
@@ -358,6 +494,7 @@ static const NSInteger const density_choices[] = {
     view.dataSource = self;
 
     [self initOverlay];
+    [self updateCropMask];
 
     sections = [[NSMutableArray alloc]
                    initWithCapacity: NUM_SECTIONS];
@@ -435,6 +572,11 @@ static const NSInteger const density_choices[] = {
     [super dealloc];
 }
 
+- (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation) orient
+{
+    return(YES);
+}
+
 - (void) scan
 {
     found = paused = NO;
@@ -444,14 +586,36 @@ static const NSInteger const density_choices[] = {
     typeOvl.text = nil;
     dataOvl.text = nil;
     [self.tableView reloadData];
-    if([reader respondsToSelector: @selector(readerView)])
-        reader.readerView.showsFPS = YES;
     if(reader.sourceType == UIImagePickerControllerSourceTypeCamera)
         reader.cameraOverlayView = (reader.showsZBarControls) ? nil : overlay;
+    if([reader respondsToSelector: @selector(readerView)]) {
+        reader.readerView.showsFPS = YES;
+        if(zoom)
+            reader.readerView.zoom = zoom;
+        reader.supportedOrientationsMask = (reader.showsZBarControls)
+            ? ZBarOrientationMaskAll
+            : ZBarOrientationMask(UIInterfaceOrientationPortrait); // tmp disable
+    }
     manualBtn.enabled = TARGET_IPHONE_SIMULATOR ||
-        (reader.cameraMode == ZBarReaderControllerCameraModeDefault);
+        (reader.cameraMode == ZBarReaderControllerCameraModeDefault) ||
+        [reader isKindOfClass: [ZBarReaderViewController class]];
     [self presentModalViewController: reader
           animated: YES];
+}
+
+- (void) help
+{
+    ZBarHelpController *help =
+        [[ZBarHelpController alloc]
+            initWithReason: @"TEST"];
+    [self presentModalViewController: help
+          animated: YES];
+    [help release];
+}
+
+- (void) info
+{
+    [reader showHelpWithReason: @"INFO"];
 }
 
 - (void) pause
@@ -476,6 +640,13 @@ static const NSInteger const density_choices[] = {
        willShowViewController: (UIViewController*) vc
                      animated: (BOOL) animated
 {
+    self.navigationItem.leftBarButtonItem =
+        [[[UIBarButtonItem alloc]
+             initWithTitle: @"Help"
+             style: UIBarButtonItemStyleDone
+             target: self
+             action: @selector(help)]
+            autorelease];
     self.navigationItem.rightBarButtonItem =
         [[[UIBarButtonItem alloc]
              initWithTitle: @"Scan!"
@@ -550,35 +721,33 @@ static const NSInteger const density_choices[] = {
     reader.scanCrop = r;
     label.text = NSStringFromCGRect(r);
 
-    r.origin.x *= 426;
-    r.origin.y *= 320;
-    r.size.width *= 426;
-    r.size.height *= 320;
-    UIView *mask = [masks objectAtIndex: 0];
-    mask.frame = CGRectMake(0, -426, 320, r.origin.x);
-    mask = [masks objectAtIndex: 1];
-    mask.frame = CGRectMake(0, r.origin.x - 426, r.origin.y, r.size.width);
+    [self updateCropMask];
+}
 
-    r.origin.y += r.size.height;
-    mask = [masks objectAtIndex: 2];
-    mask.frame = CGRectMake(r.origin.y, r.origin.x - 426,
-                            320 - r.origin.y, r.size.width);
-
-    r.origin.x += r.size.width;
-    mask = [masks objectAtIndex: 3];
-    mask.frame = CGRectMake(0, r.origin.x - 426, 320, 426 - r.origin.x);
+- (void) advanceZoom: (UILabel*) label
+{
+    int i;
+    for(i = 0; zoom_choices[i] >= 0;)
+        if(zoom == zoom_choices[i++])
+            break;
+    if(zoom_choices[i] < 0)
+        i = 0;
+    zoom = zoom_choices[i];
+    assert(zoom >= 0);
+    label.text = [NSString stringWithFormat: @"%g", zoom];
 }
 
 - (void) advanceDensity: (UILabel*) label
+                  value: (NSInteger*) value
 {
-    NSInteger d = [label.text integerValue];
+    NSInteger d = *value;
     int i;
     for(i = 0; density_choices[i] >= 0;)
         if(d == density_choices[i++])
             break;
     if(density_choices[i] < 0)
         i = 0;
-    d = density_choices[i];
+    *value = d = density_choices[i];
     assert(d >= 0);
     [reader.scanner setSymbology: 0
            config: label.tag
@@ -599,6 +768,7 @@ static const NSInteger const density_choices[] = {
     case CLASS_SECTION: {
         NSString *name = cell.textLabel.text;
         [self initReader: name];
+        [self updateCropMask];
         [self initControlCells];
         [self setCheckForName: name
               inSection: CLASS_SECTION];
@@ -619,6 +789,24 @@ static const NSInteger const density_choices[] = {
         }
         [self setCheckForTag: reader.cameraMode
               inSection: CAMODE_SECTION];
+        break;
+
+    case DEVICE_SECTION:
+        reader.cameraDevice = cell.tag;
+        [self setCheckForTag: reader.cameraDevice
+              inSection: DEVICE_SECTION];
+        break;
+
+    case FLASH_SECTION:
+        reader.cameraFlashMode = cell.tag;
+        [self setCheckForTag: reader.cameraFlashMode
+              inSection: FLASH_SECTION];
+        break;
+
+    case QUALITY_SECTION:
+        reader.videoQuality = cell.tag;
+        [self setCheckForTag: reader.videoQuality
+              inSection: QUALITY_SECTION];
         break;
 
     case CONFIG_SECTION: {
@@ -644,13 +832,20 @@ static const NSInteger const density_choices[] = {
         switch(path.row)
         {
         case 0:
+            [self advanceDensity: cell.detailTextLabel
+                  value: &xDensity];
+            break;
         case 1:
-            [self advanceDensity: cell.detailTextLabel];
+            [self advanceDensity: cell.detailTextLabel
+                  value: &yDensity];
             break;
         case 2:
             [self advanceCrop: cell.detailTextLabel];
             break;
         case 3:
+            [self advanceZoom: cell.detailTextLabel];
+            break;
+        case 4:
             [self setCheck: continuous = !continuous
                   forCell: cell];
             break;
@@ -709,8 +904,12 @@ static const NSInteger const density_choices[] = {
     if(idx == sheet.cancelButtonIndex)
         return;
     idx -= sheet.firstOtherButtonIndex;
-    if(!idx)
-        UIImageWriteToSavedPhotosAlbum(imageView.image, nil, NULL, NULL);
+    if(!idx) {
+        UIImage *img =
+            [UIImage imageWithData:
+                         UIImagePNGRepresentation(imageView.image)];
+        UIImageWriteToSavedPhotosAlbum(img, nil, NULL, NULL);
+    }
 }
 
 // ZBarReaderDelegate
@@ -729,10 +928,13 @@ static const NSInteger const density_choices[] = {
 
     int quality = 0;
     ZBarSymbol *bestResult = nil;
-    for(ZBarSymbol *sym in results)
-        if(sym.quality > quality)
+    for(ZBarSymbol *sym in results) {
+        int q = sym.quality;
+        if(quality < q) {
+            quality = q;
             bestResult = sym;
-    assert(!!bestResult);
+        }
+    }
 
     [self performSelector: @selector(presentResult:)
           withObject: bestResult
@@ -743,10 +945,14 @@ static const NSInteger const density_choices[] = {
 
 - (void) presentResult: (ZBarSymbol*) sym
 {
-    found = !!sym;
-    NSString *typeName = sym.typeName;
+    found = sym || imageView.image;
+    NSString *typeName = @"NONE";
+    NSString *data = @"";
+    if(sym) {
+        typeName = sym.typeName;
+        data = sym.data;
+    }
     typeLabel.text = typeName;
-    NSString *data = sym.data;
     dataLabel.text = data;
 
     if(continuous) {
@@ -755,7 +961,7 @@ static const NSInteger const density_choices[] = {
     }
 
     NSLog(@"imagePickerController:didFinishPickingMediaWithInfo:\n");
-    NSLog(@"    type=%@ data=%@\n", sym.typeName, data);
+    NSLog(@"    type=%@ data=%@\n", typeName, data);
 
     CGSize size = [data sizeWithFont: [UIFont systemFontOfSize: 17]
                         constrainedToSize: CGSizeMake(288, 2000)
@@ -787,24 +993,11 @@ static const NSInteger const density_choices[] = {
         [_reader dismissModalViewControllerAnimated: YES];
 }
 
-- (void) info
-{
-    [reader showHelpWithReason: @"INFO"];
-}
-
 @end
 
 
 int main (int argc, char *argv[])
 {
-#ifdef VALGRIND
-    if(argc < 2 || (argc >= 2 && strcmp(argv[1], "-valgrind")))
-        execl(VALGRIND, VALGRIND,
-              "--log-file=/tmp/memcheck.log", "--leak-check=full",
-              argv[0], "-valgrind",
-              NULL);
-#endif
-
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
     int rc = UIApplicationMain(argc, argv, nil, @"AppDelegate");
     [pool release];

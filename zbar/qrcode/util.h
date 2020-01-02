@@ -17,6 +17,14 @@
 #define QR_DIVROUND(_x,_y)  (((_x)+QR_FLIPSIGNI(_y>>1,_x))/(_y))
 #define QR_CLAMPI(_a,_b,_c) (QR_MAXI(_a,QR_MINI(_b,_c)))
 #define QR_CLAMP255(_x)     ((unsigned char)((((_x)<0)-1)&((_x)|-((_x)>255))))
+#define QR_SWAP2I(_a,_b) \
+  do{ \
+    int t__; \
+    t__=(_a); \
+    (_a)=(_b); \
+    (_b)=t__; \
+  } \
+  while(0)
 /*Swaps two integers _a and _b if _a>_b.*/
 #define QR_SORT2I(_a,_b) \
   do{ \

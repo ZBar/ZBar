@@ -1,4 +1,51 @@
 current:
+  * Codabar reliability enhancements
+    - fix missing check
+    - require minimum quality
+    - bump default uncertainty
+  * tweak Codabar bar/space ratio validation
+  * finish Codabar support for python, perl, java and iPhone interfaces
+    - reduce Codabar uncertainty to minimum
+  * add core support for Codabar symbology
+    - TBD: python, perl, java and iPhone interfaces
+  * fix v4l config and build variations (bug #3348888)
+    - thanks to jarekczek for reporting this!
+    - NB v4l1 removed from kernel as of 2.6.38
+  * fix missing python thread initialization (bug #3349199)
+    - thanks to jarekczek for reporting this problem!
+  * fix missing configure check for Python.h (bug #3092663)
+    - thanks to Zoltan Kovacs for reporting this problem!
+  * fix C++ wrapper missing Symbol.quality (bug #3076524)
+    - thanks to Rudy Melli for pointing this out!
+  * fix C++ wrapper bugs (bug #3396068)
+    - thanks to anotheruser1 for reporting this!
+    - add new C++ wrapper test
+  * fix avoid compositing ISBN10 data
+  * add support for GraphicsMagick as ImageMagick alternative
+  * mention xmlto in HACKING (patch #3297039)
+    - thanks to jarekczek for the patch!
+  * disable addons by default until synchronization with main symbol is working
+  * fix image scanner min quality filtering
+  * fix i25 buffer overrun corner case
+  * fix EAN addon enables
+  * fix zbarimg to accept autodetected stdin (lone dash)
+  * fix Qt 4.6.3 compilation error (patch #3178244)
+    - thanks to hrhristov for the patch!
+  * add Python Processor support for request_size interface
+  * fix Python Processor support for GIL, allowing asynchronous scanning
+  * fix jpeg decoder skip handling
+    - thanks to jarekczek for the patch!
+  * rename dprintf macro to avoid conflicts (patch #3128538)
+    - thanks to maurochehab for the patch!
+  * add support for EAN/UPC 2 and 5 digit add-on symbols
+    - deprecate original, unfinished add-on APIs
+    - add self-checking to test_decode
+  * fix support for GS1 AIs
+    - thanks to jockusch for a patch!
+    - add decoder/symbol "modifier" flags and config read access
+    - set flags or emit GS appropriately for Code 128 FNC1
+    - add iphone, java, perl, python bindings for modifiers and configs
+  * add support for Code 93 symbology
   * add video size request to (Py)GTK widget (req #3034522)
     - thanks to Jerome Charaoui for the patch!
   * add support for GS1 DataBar Expanded (RSS Expanded) symbology

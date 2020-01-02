@@ -32,6 +32,12 @@ Properties
 
       Whether to display the tracking rectangle around detected barcodes.
 
+   .. member:: NSUInteger supportedOrientationsMask
+
+      Set of interface orientations that the controller should support.  Use
+      :func:`ZBarOrientationMask` or ``ZBarOrientationMaskAll`` to
+      generate the mask.
+
    .. member:: CGRect scanCrop
 
       Crop images before scanning.  The original image will be cropped to this
@@ -46,6 +52,21 @@ Properties
    .. member:: CGAffineTransform cameraViewTransform
 
       A transform to apply to the camera preview.  Ignored by the reader.
+
+   .. member:: UIImagePickerControllerCameraDevice cameraDevice
+
+      The camera device to use for scanning.  Defaults to the system default
+      camera.
+
+   .. member:: UIImagePickerControllerCameraFlashMode cameraFlashMode
+
+      The "flash" (aka torch) mode to use while scanning.  Defaults to
+      UIImagePickerControllerCameraFlashModeAuto.
+
+   .. member:: UIImagePickerControllerQualityType videoQuality
+
+      The resolution to use while scanning.  Defaults to
+      UIImagePickerControllerQuality640x480.
 
    .. member:: ZBarReaderView *readerView
 
@@ -72,6 +93,11 @@ Properties
       Raises an exception if anything other than
       ``UIImagePickerControllerSourceTypeCamera`` is set.  If you want to scan
       images, use a :class:`ZBarReaderController` instead of this class.
+
+   .. member:: UIImagePickerControllerCameraCaptureMode cameraCaptureMode
+
+      Raises an exception if anything other than
+      ``UIImagePickerControllerCameraCaptureModeVideo`` is set.
 
    .. member:: BOOL allowsEditing
 
@@ -114,6 +140,21 @@ Class Methods
       :class:`UImagePickerController` method of the same name also returns
       ``YES``.
 
+   .. describe:: + (BOOL) isCameraDeviceAvailable:(UIImagePickerControllerCameraDevice)cameraDevice
+
+      See the :class:`UImagePickerController` method of the same name.
+
+   .. describe:: + (BOOL) isFlashAvailableForCameraDevice:(UIImagePickerControllerCameraDevice)cameraDevice
+
+      See the :class:`UImagePickerController` method of the same name.
+
+   .. describe:: + (NSArray*) availableCaptureModesForCameraDevice:(UIImagePickerControllerCameraDevice)cameraDevice
+
+      Returns an array with the single element
+      ``UIImagePickerControllerCameraCaptureModeVideo`` if the device is
+      avilable, otherwise returns an empty array.
+
+
 Instance Methods
 ----------------
 
@@ -126,3 +167,24 @@ Instance Methods
       the :func:`onZBarHelp` javascript function.
 
       :reason: A string parameter passed to javascript.
+
+   .. _`takePicture`:
+   .. describe:: - (void) takePicture
+
+      Capture the next available frame and send it over the usual delegate
+      path.
+
+
+Macros
+------
+
+   .. function:: ZBarOrientationMask(interfaceOrientation)
+
+      Generate a bit-mask for the specified interface orientation, suitable
+      for setting :member:`supportedOrientationsMask`.
+
+   .. describe:: ZBarOrientationMaskAll
+
+      Combination of :func:`ZBarOrientationMask` for all interface
+      orientations (Portrait, PortraitUpsideDown, LandscapeLeft and
+      LandscapeRight)

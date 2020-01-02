@@ -36,6 +36,11 @@
      didReadSymbols: (ZBarSymbolSet*) symbols
           fromImage: (UIImage*) image;
 
+@optional
+- (void) readerViewDidStart: (ZBarReaderView*) readerView;
+- (void) readerView: (ZBarReaderView*) readerView
+   didStopWithError: (NSError*) error;
+
 @end
 
 // read barcodes from the displayed video preview.  the view maintains
@@ -46,18 +51,23 @@
     : UIView
 {
     id<ZBarReaderViewDelegate> readerDelegate;
-    CGRect scanCrop, zoomCrop;
+    ZBarCaptureReader *captureReader;
+    CGRect scanCrop, effectiveCrop;
     CGAffineTransform previewTransform;
-    CGFloat zoom, zoom0;
+    CGFloat zoom, zoom0, maxZoom;
+    UIColor *trackingColor;
     BOOL tracksSymbols, showsFPS;
     NSInteger torchMode;
+    UIInterfaceOrientation interfaceOrientation;
+    NSTimeInterval animationDuration;
 
-    CALayer *preview, *overlay, *tracking;
+    CALayer *preview, *overlay, *tracking, *cropLayer;
     UIView *fpsView;
     UILabel *fpsLabel;
     UIPinchGestureRecognizer *pinch;
     CGFloat imageScale;
-    BOOL started, running;
+    CGSize imageSize;
+    BOOL started, running, locked;
 }
 
 // supply a pre-configured image scanner.
@@ -72,6 +82,10 @@
 // clear the internal result cache
 - (void) flushCache;
 
+// compensate for device/camera/interface orientation
+- (void) willRotateToInterfaceOrientation: (UIInterfaceOrientation) orient
+                                 duration: (NSTimeInterval) duration;
+
 // delegate is notified of decode results.
 @property (nonatomic, assign) id<ZBarReaderViewDelegate> readerDelegate;
 
@@ -81,6 +95,9 @@
 // whether to display the tracking annotation for uncertain barcodes
 // (default YES).
 @property (nonatomic) BOOL tracksSymbols;
+
+// color of the tracking box (default green)
+@property (nonatomic, retain) UIColor *trackingColor;
 
 // enable pinch gesture recognition for zooming the preview/decode
 // (default YES).
@@ -94,9 +111,14 @@
 @property (nonatomic) BOOL showsFPS;
 
 // zoom scale factor applied to video preview *and* scanCrop.
-// also updated by pinch-zoom gesture.  clipped to range [1,2],
+// also updated by pinch-zoom gesture.  clipped to range [1,maxZoom],
 // defaults to 1.25
 @property (nonatomic) CGFloat zoom;
+- (void) setZoom: (CGFloat) zoom
+        animated: (BOOL) animated;
+
+// maximum settable zoom factor.
+@property (nonatomic) CGFloat maxZoom;
 
 // the region of the image that will be scanned.  normalized coordinates.
 @property (nonatomic) CGRect scanCrop;
