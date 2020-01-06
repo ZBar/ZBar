@@ -196,7 +196,11 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
     if(!self)
         return(nil);
 
-    self.wantsFullScreenLayout = YES;
+    self.modalPresentationStyle = UIModalPresentationFullScreen;
+    if (@available(iOS 13.0, *))
+    {
+        self.modalInPresentation = YES;
+    }
     [self _init];
     return(self);
 }
@@ -342,7 +346,7 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
         UIViewAutoresizingFlexibleHeight;
 
     if(showsZBarControls ||
-       self.parentViewController.modalViewController == self)
+       self.parentViewController.presentedViewController == self)
     {
         autoresize |= UIViewAutoresizingFlexibleBottomMargin;
         r.size.height -= 54;
@@ -407,37 +411,11 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
                 afterDelay: .001];
     shutter.alpha = 1;
     shutter.hidden = NO;
-
-    UIApplication *app = [UIApplication sharedApplication];
-    BOOL willHideStatusBar =
-        !didHideStatusBar && self.wantsFullScreenLayout && !app.statusBarHidden;
-    if(willHideStatusBar)
-        [app setStatusBarHidden: YES
-             withAnimation: UIStatusBarAnimationFade];
-    didHideStatusBar = didHideStatusBar || willHideStatusBar;
-}
-
-- (void) dismissModalViewControllerAnimated: (BOOL) animated
-{
-    if(didHideStatusBar) {
-        [[UIApplication sharedApplication]
-            setStatusBarHidden: NO
-            withAnimation: UIStatusBarAnimationFade];
-        didHideStatusBar = NO;
-    }
-    [super dismissModalViewControllerAnimated: animated];
 }
 
 - (void) viewWillDisappear: (BOOL) animated
 {
     readerView.captureReader.enableReader = NO;
-
-    if(didHideStatusBar) {
-        [[UIApplication sharedApplication]
-            setStatusBarHidden: NO
-            withAnimation: UIStatusBarAnimationFade];
-        didHideStatusBar = NO;
-    }
 
     [super viewWillDisappear: animated];
 }
@@ -447,6 +425,11 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
     // stopRunning can take a really long time (>1s observed),
     // so defer until the view transitions are complete
     [readerView stop];
+}
+
+- (BOOL)prefersStatusBarHidden
+{
+    return YES;
 }
 
 - (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation) orient
@@ -545,7 +528,7 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
         [readerDelegate
             imagePickerControllerDidCancel: (UIImagePickerController*)self];
     else
-        [self dismissModalViewControllerAnimated: YES];
+        [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void) info

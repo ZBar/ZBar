@@ -667,7 +667,7 @@ CGImageRef UIGetScreenImage(void);
                         withRetry: retry];
     else if(!retry)
         // must dismiss stock controller
-        [self dismissModalViewControllerAnimated: YES];
+        [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void) imagePickerControllerDidCancel: (UIImagePickerController*) picker
@@ -676,7 +676,7 @@ CGImageRef UIGetScreenImage(void);
     if([readerDelegate respondsToSelector: cb])
         [readerDelegate imagePickerControllerDidCancel: self];
     else
-        [self dismissModalViewControllerAnimated: YES];
+        [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 // ZBarHelpDelegate

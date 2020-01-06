@@ -57,7 +57,7 @@
 
     ZBarHelpController *helpController;
     UIView *controls, *shutter;
-    BOOL didHideStatusBar, rotating;
+    BOOL rotating;
     ZBarCameraSimulator *cameraSim;
 }
 

@@ -67,7 +67,7 @@
     simLabel.textColor = [UIColor whiteColor];
     simLabel.font = [UIFont boldSystemFontOfSize: 20];
     simLabel.numberOfLines = 4;
-    simLabel.textAlignment = UITextAlignmentCenter;
+    simLabel.textAlignment = NSTextAlignmentCenter;
     simLabel.text = @"Camera Simulation\n\n"
         @"Tap and hold with two \"fingers\" to select image";
     simLabel.autoresizingMask =

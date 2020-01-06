@@ -164,7 +164,7 @@ static const CGFloat const zoom_choices[] = {
     typeOvl.backgroundColor = [UIColor clearColor];
     typeOvl.textColor = [UIColor whiteColor];
     typeOvl.font = [UIFont systemFontOfSize: 16];
-    typeOvl.textAlignment = UITextAlignmentCenter;
+    typeOvl.textAlignment = NSTextAlignmentCenter;
     [overlay addSubview: typeOvl];
 
     dataOvl = [[UILabel alloc]

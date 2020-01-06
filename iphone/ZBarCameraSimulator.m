@@ -51,8 +51,6 @@
     readerView = nil;
     [picker release];
     picker = nil;
-    [pickerPopover release];
-    pickerPopover = nil;
     [super dealloc];
 }
 
@@ -77,44 +75,29 @@
         [self takePicture];
 }
 
-- (void) takePicture
+- (void)takePicture
 {
     if(!picker) {
         picker = [UIImagePickerController new];
         picker.delegate = self;
     }
-    if(UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
-        if(!pickerPopover)
-            pickerPopover = [[UIPopoverController alloc]
-                                initWithContentViewController: picker];
-        [pickerPopover presentPopoverFromRect: CGRectZero
-                       inView: readerView
-                       permittedArrowDirections: UIPopoverArrowDirectionAny
-                       animated: YES];
-    }
-    else
-        [viewController presentModalViewController: picker
-                        animated: YES];
+    [viewController presentViewController:picker animated:YES completion:nil];
 }
 
-- (void)  imagePickerController: (UIImagePickerController*) _picker
-  didFinishPickingMediaWithInfo: (NSDictionary*) info
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<UIImagePickerControllerInfoKey,id> *)info
 {
-    UIImage *image = [info objectForKey: UIImagePickerControllerOriginalImage];
-
-    if(UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
-        [pickerPopover dismissPopoverAnimated: YES];
-    else
-        [_picker dismissModalViewControllerAnimated: YES];
-
+    UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
+    
+    [picker dismissViewControllerAnimated:YES completion:nil];
+    
     [readerView performSelector: @selector(scanImage:)
-                withObject: image
-                afterDelay: .1];
+                     withObject: image
+                     afterDelay: .1];
 }
 
-- (void) imagePickerControllerDidCancel: (UIImagePickerController*) _picker
+- (void)imagePickerControllerDidCancel: (UIImagePickerController *)picker
 {
-    [_picker dismissModalViewControllerAnimated: YES];
+    [picker dismissViewControllerAnimated:YES completion:nil];
 }
 
 @end

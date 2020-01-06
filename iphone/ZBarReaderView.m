@@ -95,7 +95,7 @@
                                   blue: 1
                                   alpha: 1];
     fpsLabel.font = [UIFont systemFontOfSize: 18];
-    fpsLabel.textAlignment = UITextAlignmentRight;
+    fpsLabel.textAlignment = NSTextAlignmentRight;
     [fpsView addSubview: fpsLabel];
 
     self.zoom = 1.25;
