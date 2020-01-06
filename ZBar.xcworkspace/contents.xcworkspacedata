@@ -5,9 +5,6 @@
       location = "group:README.md">
    </FileRef>
    <FileRef
-      location = "group:ChangeLog">
-   </FileRef>
-   <FileRef
       location = "container:iphone/zbar.xcodeproj">
    </FileRef>
 </Workspace>
