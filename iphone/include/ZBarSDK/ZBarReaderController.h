@@ -47,7 +47,7 @@ typedef enum {
 } ZBarReaderControllerCameraMode;
 
 
-@class ZBarReaderController, ZBarHelpController;
+@class ZBarReaderController;
 
 @protocol ZBarReaderDelegate <UIImagePickerControllerDelegate>
 @optional
@@ -66,7 +66,6 @@ typedef enum {
       UIImagePickerControllerDelegate >
 {
     ZBarImageScanner *scanner;
-    ZBarHelpController *help;
     UIView *overlay, *boxView;
     CALayer *boxLayer;
 
