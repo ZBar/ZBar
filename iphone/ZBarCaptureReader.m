@@ -32,6 +32,8 @@
 #define MODULE ZBarCaptureReader
 #import "debug.h"
 
+#if !TARGET_OS_SIMULATOR
+
 enum {
     STOPPED = 0,
     RUNNING = 1,
@@ -350,3 +352,5 @@ enum {
 }
 
 @end
+
+#endif

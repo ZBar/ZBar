@@ -27,6 +27,8 @@
 #define MODULE ZBarReaderView
 #import "debug.h"
 
+#if TARGET_OS_SIMULATOR
+
 // hack around missing simulator support for AVCapture interfaces
 
 // protected APIs
@@ -203,3 +205,5 @@
 }
 
 @end
+
+#endif

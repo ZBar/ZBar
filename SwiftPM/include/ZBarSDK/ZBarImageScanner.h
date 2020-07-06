@@ -1,0 +1,1 @@
+../../../iphone/include/ZBarSDK//ZBarImageScanner.h

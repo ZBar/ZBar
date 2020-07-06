@@ -21,6 +21,8 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
+#import <UIKit/UIKit.h>
+
 @class ZBarReaderView;
 
 // hack around missing simulator support for AVCapture interfaces

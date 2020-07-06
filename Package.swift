@@ -4,12 +4,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "zbar",
+    name: "ZBar",
+    platforms: [
+        .iOS(.v8),
+    ],
     products: [
-        // Products define the executables and libraries produced by a package, and make them visible to other packages.
         .library(
-            name: "zbar",
-            targets: ["zbar-core", "zbar-ios"]),
+            name: "ZBarSDK",
+            targets: [
+                "ZBarSDK",
+                ]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -17,41 +21,48 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "zbar-core",
+            name: "ZBarSDK",
             dependencies: [],
-            path: "zbar",
+            path: ".",
             exclude: [
-                "convert.c",
-                "jpeg.c",
-                "svg.c",
-                "processor.c",
-                "video.c",
-                "window.c",
-                "processor",
-                "video",
-                "window",
-                "decoder/pdf417.c",
-            ],
-            cxxSettings:[
-                .headerSearchPath("../include"),
-                .headerSearchPath("../iphone/include"),
-                .headerSearchPath("../zbar"),
-            ]),
-        .target(
-            name: "zbar-ios",
-            dependencies: [],
-            path: "iphone",
-            exclude: [
-                "ZBarCameraSimulator.m",
-                "bin",
+                "android",
+                "config",
                 "doc",
                 "examples",
-                "res",
+                "gtk",
+                "iphone/bin",
+                "iphone/doc",
+                "iphone/examples",
+                "iphone/res",
+                "java",
+                "perl",
+                "plugin",
+                "pygtk",
+                "python",
+                "qt",
+                "test",
+                "zbar/convert.c",
+                "zbar/jpeg.c",
+                "zbar/svg.c",
+                "zbar/processor.c",
+                "zbar/video.c",
+                "zbar/window.c",
+                "zbar/processor",
+                "zbar/video",
+                "zbar/window",
+                "zbar/decoder/pdf417.c",
+                "zbarcam",
+                "zbarimg",
+                "Package.swift",
             ],
+            publicHeadersPath: "SwiftPM/include/",
             cxxSettings:[
-                .headerSearchPath("../include"),
-                .headerSearchPath("../iphone/include"),
-                .headerSearchPath("../zbar"),
+                .headerSearchPath("include"),
+                .headerSearchPath("iphone/include"),
+                .headerSearchPath("zbar"),
+            ],
+            linkerSettings: [
+                .linkedFramework("AVFoundation"),
             ]),
     ]
 )

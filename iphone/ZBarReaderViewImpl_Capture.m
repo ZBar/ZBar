@@ -30,6 +30,9 @@
 #define MODULE ZBarReaderView
 #import "debug.h"
 
+
+#if !TARGET_OS_SIMULATOR
+
 // protected APIs
 @interface ZBarReaderView()
 - (void) _initWithImageScanner: (ZBarImageScanner*) _scanner;
@@ -386,3 +389,5 @@
 }
 
 @end
+
+#endif
