@@ -103,9 +103,8 @@
 - (void) initSubviews
 {
     AVCaptureVideoPreviewLayer *videoPreview =
-        [[AVCaptureVideoPreviewLayer
-             layerWithSession: session]
-            retain];
+        [AVCaptureVideoPreviewLayer
+             layerWithSession: session];
     preview = videoPreview;
     CGRect bounds = self.bounds;
     bounds.origin = CGPointZero;
@@ -134,16 +133,6 @@
                        forKeyPath: @"size"];
     }
     @catch(...) { }
-    captureReader.captureDelegate = nil;
-    [captureReader release];
-    captureReader = nil;
-    [device release];
-    device = nil;
-    [input release];
-    input = nil;
-    [session release];
-    session = nil;
-    [super dealloc];
 }
 
 - (void) updateCrop
@@ -164,7 +153,7 @@
     assert(!olddev == !oldinput);
 
     NSError *error = nil;
-    device = [newdev retain];
+    device = newdev;
     if(device) {
         assert([device hasMediaType: AVMediaTypeVideo]);
         input = [[AVCaptureDeviceInput alloc]
@@ -181,9 +170,6 @@
     if(input)
         [session addInput: input];
     [session commitConfiguration];
-
-    [olddev release];
-    [oldinput release];
 }
 
 - (BOOL) enableCache
@@ -290,8 +276,8 @@
 
     [self lockDevice];
 
-    if([readerDelegate respondsToSelector: @selector(readerViewDidStart:)])
-        [readerDelegate readerViewDidStart: self];
+    if([self.readerDelegate respondsToSelector: @selector(readerViewDidStart:)])
+        [self.readerDelegate readerViewDidStart: self];
 }
 
 - (void) onVideoStop: (NSNotification*) note
@@ -309,9 +295,9 @@
                   object: nil];
     locked = NO;
 
-    if([readerDelegate respondsToSelector:
+    if([self.readerDelegate respondsToSelector:
                            @selector(readerView:didStopWithError:)])
-        [readerDelegate readerView: self
+        [self.readerDelegate readerView: self
                         didStopWithError: nil];
 }
 
@@ -326,9 +312,9 @@
     NSError *err =
         [note.userInfo objectForKey: AVCaptureSessionErrorKey];
 
-    if([readerDelegate respondsToSelector:
+    if([self.readerDelegate respondsToSelector:
                            @selector(readerView:didStopWithError:)])
-        [readerDelegate readerView: self
+        [self.readerDelegate readerView: self
                         didStopWithError: err];
     else
         NSLog(@"ZBarReaderView: ERROR during capture: %@: %@",
@@ -365,7 +351,7 @@
   didReadNewSymbolsFromImage: (ZBarImage*) zimg
 {
     zlog(@"scanned %d symbols: %@", zimg.symbols.count, zimg);
-    if(!readerDelegate)
+    if(!self.readerDelegate)
         return;
 
     UIImageOrientation orient = [UIDevice currentDevice].orientation;
@@ -393,7 +379,7 @@
     }
 
     UIImage *uiimg = [zimg UIImageWithOrientation: orient];
-    [readerDelegate
+    [self.readerDelegate
         readerView: self
         didReadSymbols: zimg.symbols
         fromImage: uiimg];

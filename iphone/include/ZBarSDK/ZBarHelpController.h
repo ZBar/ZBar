@@ -25,7 +25,7 @@
 
 @class ZBarHelpController;
 
-@protocol ZBarHelpDelegate
+@protocol ZBarHelpDelegate <NSObject>
 @optional
 
 - (void) helpControllerDidFinish: (ZBarHelpController*) help;
@@ -40,7 +40,6 @@
                                 UIAlertViewDelegate >
 {
     NSString *reason;
-    id delegate;
     UIWebView *webView;
     UIToolbar *toolbar;
     UIBarButtonItem *doneBtn, *backBtn, *space;
@@ -48,7 +47,7 @@
     NSUInteger orientations;
 }
 
-@property (nonatomic, assign) id<ZBarHelpDelegate> delegate;
+@property (nonatomic, weak) id<ZBarHelpDelegate> delegate;
 
 // designated initializer
 - (id) initWithReason: (NSString*) reason;

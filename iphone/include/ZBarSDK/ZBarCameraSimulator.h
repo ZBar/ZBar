@@ -40,6 +40,6 @@
 - (id) initWithViewController: (UIViewController*) viewController;
 - (void) takePicture;
 
-@property (nonatomic, assign) ZBarReaderView *readerView;
+@property (nonatomic, strong) ZBarReaderView *readerView;
 
 @end

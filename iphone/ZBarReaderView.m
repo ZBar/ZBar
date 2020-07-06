@@ -32,7 +32,7 @@
 
 @implementation ZBarReaderView
 
-@synthesize readerDelegate, tracksSymbols, trackingColor, torchMode, showsFPS,
+@synthesize tracksSymbols, trackingColor, torchMode, showsFPS,
     zoom, maxZoom, scanCrop, previewTransform, captureReader;
 @dynamic scanner, allowsPinchZoom, enableCache, device, session;
 
@@ -76,8 +76,7 @@
     tracking.backgroundColor = [UIColor clearColor].CGColor;
     [overlay addSublayer: tracking];
 
-    trackingColor = [[UIColor greenColor]
-                        retain];
+    trackingColor = [UIColor greenColor];
     tracking.borderColor = trackingColor.CGColor;
 
     fpsView = [UIView new];
@@ -138,9 +137,7 @@
 
 - (id) init
 {
-    ZBarImageScanner *scanner =
-        [[ZBarImageScanner new]
-            autorelease];
+    ZBarImageScanner *scanner = [ZBarImageScanner new];
     self = [self initWithImageScanner: scanner];
     if(!self)
         return(nil);
@@ -159,9 +156,7 @@
     self = [super initWithCoder: decoder];
     if(!self)
         return(nil);
-    ZBarImageScanner *scanner =
-        [[ZBarImageScanner new]
-            autorelease];
+    ZBarImageScanner *scanner = [ZBarImageScanner new];
     [self _initWithImageScanner: scanner];
 
     [scanner setSymbology: 0
@@ -176,23 +171,6 @@
 - (void) dealloc
 {
     [preview removeFromSuperlayer];
-    [preview release];
-    preview = nil;
-    [overlay release];
-    overlay = nil;
-    [cropLayer release];
-    cropLayer = nil;
-    [tracking release];
-    tracking = nil;
-    [trackingColor release];
-    trackingColor = nil;
-    [fpsLabel release];
-    fpsLabel = nil;
-    [fpsView release];
-    fpsView = nil;
-    [pinch release];
-    pinch = nil;
-    [super dealloc];
 }
 
 - (void) resetTracking
@@ -400,8 +378,6 @@ static inline CGFloat rotationForInterfaceOrientation (int orient)
 {
     if(!color)
         return;
-    [color retain];
-    [trackingColor release];
     trackingColor = color;
     tracking.borderColor = color.CGColor;
 }

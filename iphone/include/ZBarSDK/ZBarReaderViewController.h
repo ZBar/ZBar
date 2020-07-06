@@ -44,7 +44,6 @@
     : UIViewController
 {
     ZBarImageScanner *scanner;
-    id <ZBarReaderDelegate> readerDelegate;
     ZBarReaderView *readerView;
     UIView *cameraOverlayView;
     CGAffineTransform cameraViewTransform;
@@ -65,7 +64,7 @@
 @property (nonatomic, readonly) ZBarImageScanner *scanner;
 
 // barcode result recipient
-@property (nonatomic, assign) id <ZBarReaderDelegate> readerDelegate;
+@property (nonatomic, weak) id <ZBarReaderDelegate> readerDelegate;
 
 // whether to use alternate control set
 @property (nonatomic) BOOL showsZBarControls;

@@ -33,7 +33,6 @@
 - (id) initWithViewController: (UIViewController*) vc
 {
     if(!TARGET_IPHONE_SIMULATOR) {
-        [self release];
         return(nil);
     }
     self = [super init];
@@ -45,22 +44,9 @@
     return(self);
 }
 
-- (void) dealloc
-{
-    viewController = nil;
-    readerView = nil;
-    [picker release];
-    picker = nil;
-    [pickerPopover release];
-    pickerPopover = nil;
-    [super dealloc];
-}
-
 - (void) setReaderView: (ZBarReaderView*) view
 {
-    ZBarReaderView *oldView = readerView;
-    readerView = [view retain];
-    [oldView release];
+    readerView = view;
 
     UILongPressGestureRecognizer *gesture =
         [[UILongPressGestureRecognizer alloc]
@@ -68,7 +54,6 @@
             action: @selector(didLongPress:)];
     gesture.numberOfTouchesRequired = 2;
     [view addGestureRecognizer: gesture];
-    [gesture release];
 }
 
 - (void) didLongPress: (UILongPressGestureRecognizer*) gesture
