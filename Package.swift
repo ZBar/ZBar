@@ -63,6 +63,8 @@ let package = Package(
             ],
             linkerSettings: [
                 .linkedFramework("AVFoundation"),
+                .linkedFramework("UIKit"),
+                .linkedLibrary("iconv"),
             ]),
     ]
 )

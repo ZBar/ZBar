@@ -218,13 +218,6 @@ enum {
     size = _size;
 }
 
-- (void) updateSize: (CFDictionaryRef) val
-{
-    CGSize _size;
-    if(CGSizeMakeWithDictionaryRepresentation(val, &_size))
-        [self setSize: _size];
-}
-
 - (void)  captureOutput: (AVCaptureOutput*) output
   didOutputSampleBuffer: (CMSampleBufferRef) samp
          fromConnection: (AVCaptureConnection*) conn
@@ -295,14 +288,11 @@ enum {
                        width = w;
                        height = h;
                        CGSize _size = CGSizeMake(w, h);
-                       CFDictionaryRef sized =
-                           CGSizeCreateDictionaryRepresentation(_size);
-                       if(sized) {
-                           [[NSOperationQueue mainQueue] addOperationWithBlock:^{
-                               [self updateSize:sized];
-                           }];
-                           CFRelease(sized);
-                       }
+
+                       [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+                           [self setSize:_size];
+                       }];
+
                        image.size = _size;
                        [self cropUpdate];
                    }

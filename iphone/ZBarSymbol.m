@@ -181,7 +181,7 @@
 
     if(sym) {
        ZBarSymbol* symbol = [[ZBarSymbol alloc] initWithSymbol: sym];
-        *stackbuf = symbol;
+        stackbuf[0] = CFAutorelease(CFBridgingRetain(symbol));
     }
 
     state->state = (unsigned long)sym; // FIXME
