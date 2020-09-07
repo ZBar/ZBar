@@ -253,6 +253,13 @@ int main (int argc, const char *argv[])
        (display && zbar_processor_set_visible(proc, 1)))
         return(zbar_processor_error_spew(proc, 0));
 
+     if(format == RAW) {
+#ifdef _WIN32
+        fflush(stdout);
+        _setmode(_fileno(stdout), _O_BINARY);
+#endif
+    }
+
     if(format == XML) {
 #ifdef _WIN32
         fflush(stdout);
