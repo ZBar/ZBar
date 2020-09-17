@@ -29,7 +29,6 @@
     "zbar/qrcode/*.c",
     "iphone/*.m"
   ],
-  "resources": "iphone/res/{zbar-*.png,zbar-help.html}",
   "frameworks": [
     "AVFoundation",
     "CoreGraphics",
