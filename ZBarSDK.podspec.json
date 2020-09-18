@@ -29,6 +29,10 @@
     "zbar/qrcode/*.c",
     "iphone/*.m"
   ],
+  "exclude_files": [
+    "iphone/{ZBarHelpController,ZBarReaderController,ZBarReaderViewController,ZBarCameraSimulator}.m",
+    "iphone/**/**/{ZBarHelpController,ZBarReaderController,ZBarReaderViewController,ZBarCameraSimulator}.h"
+  ],
   "frameworks": [
     "AVFoundation",
     "CoreGraphics",
