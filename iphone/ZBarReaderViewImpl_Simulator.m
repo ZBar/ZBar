@@ -22,7 +22,6 @@
 //------------------------------------------------------------------------
 
 #import <ZBarSDK/ZBarReaderView.h>
-#import <ZBarSDK/ZBarReaderViewController.h>
 
 #define MODULE ZBarReaderView
 #import "debug.h"
