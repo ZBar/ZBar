@@ -113,6 +113,7 @@ static void data_handler (zbar_image_t *img, const void *userdata)
                 continue;
         }
         else if(format == RAW) {
+            _setmode(_fileno(stdout), _O_BINARY);
             if(fwrite(zbar_symbol_get_data(sym),
                       zbar_symbol_get_data_length(sym),
                       1, stdout) != 1)
