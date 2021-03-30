@@ -54,21 +54,21 @@
     overlay.backgroundColor = [UIColor clearColor].CGColor;
     [preview addSublayer: overlay];
 
-#ifndef NDEBUG
-    overlay.borderWidth = 2;
-    overlay.borderColor = [UIColor colorWithRed: 1
-                                   green: 0
-                                   blue: 0
-                                   alpha: .5].CGColor;
-    cropLayer = [CALayer new];
-    cropLayer.backgroundColor = [UIColor clearColor].CGColor;
-    cropLayer.borderWidth = 2;
-    cropLayer.borderColor = [UIColor colorWithRed: 0
-                                     green: 0
-                                     blue: 1
-                                     alpha: .5].CGColor;
-    [overlay addSublayer: cropLayer];
-#endif
+// #ifndef NDEBUG
+//     overlay.borderWidth = 2;
+//     overlay.borderColor = [UIColor colorWithRed: 1
+//                                    green: 0
+//                                    blue: 0
+//                                    alpha: .5].CGColor;
+//     cropLayer = [CALayer new];
+//     cropLayer.backgroundColor = [UIColor clearColor].CGColor;
+//     cropLayer.borderWidth = 2;
+//     cropLayer.borderColor = [UIColor colorWithRed: 0
+//                                      green: 0
+//                                      blue: 1
+//                                      alpha: .5].CGColor;
+//     [overlay addSublayer: cropLayer];
+// #endif
 
     tracking = [CALayer new];
     tracking.opacity = 0;
@@ -302,23 +302,23 @@ static inline CGFloat rotationForInterfaceOrientation (int orient)
     overlay.transform = CATransform3DScale(xform, viewScale, viewScale, 1);
     tracking.borderWidth = imageScale;
 
-#ifndef NDEBUG
-    preview.backgroundColor = [UIColor yellowColor].CGColor;
-    overlay.borderWidth = 2 * imageScale;
-    cropLayer.borderWidth = 2 * imageScale;
-    cropLayer.frame = CGRectMake(effectiveCrop.origin.x * imageSize.width,
-                                 effectiveCrop.origin.y * imageSize.height,
-                                 effectiveCrop.size.width * imageSize.width,
-                                 effectiveCrop.size.height * imageSize.height);
-    zlog(@"layoutSubviews: bounds=%@ orient=%d image=%@ crop=%@ zoom=%g\n"
-         @"=> preview=%@ crop=(z%@ p%@ %@ i%@) scale=%g %c %g = 1/%g",
-         NSStringFromCGSize(bounds.size), interfaceOrientation,
-         NSStringFromCGSize(imageSize), NSStringFromCGRect(scanCrop), zoom,
-         NSStringFromCGSize(psize), NSStringFromCGRect(zoomCrop),
-         NSStringFromCGRect(previewCrop), NSStringFromCGRect(effectiveCrop),
-         NSStringFromCGRect(cropLayer.frame),
-         scalex, (scalex > scaley) ? '>' : '<', scaley, viewScale);
-#endif
+// #ifndef NDEBUG
+//     preview.backgroundColor = [UIColor yellowColor].CGColor;
+//     overlay.borderWidth = 2 * imageScale;
+//     cropLayer.borderWidth = 2 * imageScale;
+//     cropLayer.frame = CGRectMake(effectiveCrop.origin.x * imageSize.width,
+//                                  effectiveCrop.origin.y * imageSize.height,
+//                                  effectiveCrop.size.width * imageSize.width,
+//                                  effectiveCrop.size.height * imageSize.height);
+//     zlog(@"layoutSubviews: bounds=%@ orient=%d image=%@ crop=%@ zoom=%g\n"
+//          @"=> preview=%@ crop=(z%@ p%@ %@ i%@) scale=%g %c %g = 1/%g",
+//          NSStringFromCGSize(bounds.size), interfaceOrientation,
+//          NSStringFromCGSize(imageSize), NSStringFromCGRect(scanCrop), zoom,
+//          NSStringFromCGSize(psize), NSStringFromCGRect(zoomCrop),
+//          NSStringFromCGRect(previewCrop), NSStringFromCGRect(effectiveCrop),
+//          NSStringFromCGRect(cropLayer.frame),
+//          scalex, (scalex > scaley) ? '>' : '<', scaley, viewScale);
+// #endif
 
     [self resetTracking];
     [self updateCrop];
