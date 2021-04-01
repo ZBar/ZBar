@@ -48,7 +48,6 @@
 {
 #if !TARGET_IPHONE_SIMULATOR
     AVCaptureVideoDataOutput *captureOutput;
-    id<ZBarCaptureDelegate> captureDelegate;
     ZBarImageScanner *scanner;
     CGRect scanCrop;
     CGSize size;
@@ -86,7 +85,7 @@
 @property (nonatomic, readonly) AVCaptureOutput *captureOutput;
 
 // delegate is notified of decode results and symbol tracking.
-@property (nonatomic, assign) id<ZBarCaptureDelegate> captureDelegate;
+@property (nonatomic, weak) id<ZBarCaptureDelegate> captureDelegate;
 
 // access to image scanner for configuration.
 @property (nonatomic, readonly) ZBarImageScanner *scanner;

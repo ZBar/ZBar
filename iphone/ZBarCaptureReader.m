@@ -32,6 +32,8 @@
 #define MODULE ZBarCaptureReader
 #import "debug.h"
 
+#if !TARGET_OS_SIMULATOR
+
 enum {
     STOPPED = 0,
     RUNNING = 1,
@@ -41,13 +43,12 @@ enum {
 
 @implementation ZBarCaptureReader
 
-@synthesize captureOutput, captureDelegate, scanner, scanCrop, size,
+@synthesize captureOutput, scanner, scanCrop, size,
     framesPerSecond, enableCache;
 @dynamic enableReader;
 
 - (void) initResult
 {
-    [result release];
     result = [ZBarCVImage new];
     result.format = [ZBarImage fourcc: @"CV2P"];
 }
@@ -61,7 +62,7 @@ enum {
     t_fps = t_frame = timer_now();
     enableCache = YES;
 
-    scanner = [_scanner retain];
+    scanner = _scanner;
     scanCrop = CGRectMake(0, 0, 1, 1);
     image = [ZBarImage new];
     image.format = [ZBarImage fourcc: @"Y800"];
@@ -97,9 +98,7 @@ enum {
 
 - (id) init
 {
-    self = [self initWithImageScanner:
-               [[ZBarImageScanner new]
-                   autorelease]];
+    self = [self initWithImageScanner: [ZBarImageScanner new]];
     if(!self)
         return(nil);
 
@@ -114,24 +113,11 @@ enum {
 
 - (void) dealloc
 {
-    captureDelegate = nil;
-
     // queue continues to run after stopping (NB even after DidStopRunning!);
     // ensure released delegate is not called. (also NB that the queue
     // may not be null, even in this case...)
     [captureOutput setSampleBufferDelegate: nil
                    queue: queue];
-    [captureOutput release];
-    captureOutput = nil;
-    dispatch_release(queue);
-
-    [image release];
-    image = nil;
-    [result release];
-    result = nil;
-    [scanner release];
-    scanner = nil;
-    [super dealloc];
 }
 
 - (BOOL) enableReader
@@ -176,7 +162,7 @@ enum {
 - (void) setCaptureDelegate: (id<ZBarCaptureDelegate>) delegate
 {
     @synchronized(scanner) {
-        captureDelegate = delegate;
+        self->_captureDelegate = delegate;
     }
 }
 
@@ -200,7 +186,7 @@ enum {
 
 - (void) didTrackSymbols: (ZBarSymbolSet*) syms
 {
-    [captureDelegate
+    [self.captureDelegate
         captureReader: self
         didTrackSymbols: syms];
 }
@@ -208,7 +194,7 @@ enum {
 - (void) didReadNewSymbolsFromImage: (ZBarImage*) img
 {
     timer_start;
-    [captureDelegate
+    [self.captureDelegate
         captureReader: self
         didReadNewSymbolsFromImage: img];
     OSAtomicAnd32Barrier(~PAUSED, &state);
@@ -232,13 +218,6 @@ enum {
     size = _size;
 }
 
-- (void) updateSize: (CFDictionaryRef) val
-{
-    CGSize _size;
-    if(CGSizeMakeWithDictionaryRepresentation(val, &_size))
-        [self setSize: _size];
-}
-
 - (void)  captureOutput: (AVCaptureOutput*) output
   didOutputSampleBuffer: (CMSampleBufferRef) samp
          fromConnection: (AVCaptureConnection*) conn
@@ -249,122 +228,119 @@ enum {
     if((_state & (PAUSED | RUNNING)) != RUNNING)
         return;
 
-    NSAutoreleasePool *pool = [NSAutoreleasePool new];
-    image.sequence = framecnt++;
+    @autoreleasepool {
+        image.sequence = framecnt++;
 
-    uint64_t now = timer_now();
-    double dt = timer_elapsed(t_frame, now);
-    t_frame = now;
-    if(dt > 2) {
-        t_fps = now;
-        dt_frame = 0;
+           uint64_t now = timer_now();
+           double dt = timer_elapsed(t_frame, now);
+           t_frame = now;
+           if(dt > 2) {
+               t_fps = now;
+               dt_frame = 0;
+           }
+           else if(!dt_frame)
+               dt_frame = dt;
+           dt_frame = (dt_frame + dt) / 2;
+           if(timer_elapsed(t_fps, now) >= 1) {
+               [self performSelectorOnMainThread: @selector(updateFPS:)
+                     withObject: [NSNumber numberWithDouble: 1 / dt_frame]
+                     waitUntilDone: NO];
+               t_fps = now;
+           }
+
+           CVImageBufferRef buf = CMSampleBufferGetImageBuffer(samp);
+           if(CMSampleBufferGetNumSamples(samp) != 1 ||
+              !CMSampleBufferIsValid(samp) ||
+              !CMSampleBufferDataIsReady(samp) ||
+              !buf) {
+               zlog(@"ERROR: invalid sample");
+               return;
+           }
+
+           OSType format = CVPixelBufferGetPixelFormatType(buf);
+           int planes = CVPixelBufferGetPlaneCount(buf);
+
+           if(format != kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange ||
+              !planes) {
+               zlog(@"ERROR: invalid buffer format");
+               return;
+           }
+
+           int w = CVPixelBufferGetBytesPerRowOfPlane(buf, 0);
+           int h = CVPixelBufferGetHeightOfPlane(buf, 0);
+           CVReturn rc =
+               CVPixelBufferLockBaseAddress(buf, kCVPixelBufferLock_ReadOnly);
+           if(!w || !h || rc) {
+               zlog(@"ERROR: invalid buffer data");
+               return;
+           }
+
+           void *data = CVPixelBufferGetBaseAddressOfPlane(buf, 0);
+           if(data) {
+               [image setData: data
+                      withLength: w * h];
+
+               BOOL doTrack = NO;
+               int ngood = 0;
+               ZBarSymbolSet *syms = nil;
+               @synchronized(scanner) {
+                   if(width != w || height != h) {
+                       width = w;
+                       height = h;
+                       CGSize _size = CGSizeMake(w, h);
+
+                       [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+                           [self setSize:_size];
+                       }];
+
+                       image.size = _size;
+                       [self cropUpdate];
+                   }
+
+                   ngood = [scanner scanImage: image];
+                   syms = scanner.results;
+                   doTrack = [self.captureDelegate respondsToSelector:
+                                 @selector(captureReader:didTrackSymbols:)];
+               }
+               now = timer_now();
+
+               if(ngood >= 0) {
+                   // return unfiltered results for tracking feedback
+                   syms.filterSymbols = NO;
+                   int nraw = syms.count;
+                   if(nraw > 0 || (_state & CAPTURE))
+                       zlog(@"scan image: %dx%d crop=%@ ngood=%d nraw=%d st=%d",
+                            w, h, NSStringFromCGRect(image.crop), ngood, nraw, _state);
+
+                   if(ngood || (_state & CAPTURE)) {
+                       // copy image data so we can release the buffer
+                       result.size = CGSizeMake(w, h);
+                       result.pixelBuffer = buf;
+                       result.symbols = syms;
+                       t_scan = now;
+                       OSAtomicXor32Barrier((_state & CAPTURE) | PAUSED, &state);
+                       [self performSelectorOnMainThread:
+                                 @selector(didReadNewSymbolsFromImage:)
+                             withObject: result
+                             waitUntilDone: NO];
+                       [self initResult];
+                   }
+
+                   if(nraw && doTrack)
+                       [self performSelectorOnMainThread:
+                                 @selector(didTrackSymbols:)
+                             withObject: syms
+                             waitUntilDone: NO];
+               }
+               [image setData: NULL
+                      withLength: 0];
+           }
+           else
+               zlog(@"ERROR: invalid data");
+           CVPixelBufferUnlockBaseAddress(buf, kCVPixelBufferLock_ReadOnly);
     }
-    else if(!dt_frame)
-        dt_frame = dt;
-    dt_frame = (dt_frame + dt) / 2;
-    if(timer_elapsed(t_fps, now) >= 1) {
-        [self performSelectorOnMainThread: @selector(updateFPS:)
-              withObject: [NSNumber numberWithDouble: 1 / dt_frame]
-              waitUntilDone: NO];
-        t_fps = now;
-    }
-
-    CVImageBufferRef buf = CMSampleBufferGetImageBuffer(samp);
-    if(CMSampleBufferGetNumSamples(samp) != 1 ||
-       !CMSampleBufferIsValid(samp) ||
-       !CMSampleBufferDataIsReady(samp) ||
-       !buf) {
-        zlog(@"ERROR: invalid sample");
-        goto error;
-    }
-
-    OSType format = CVPixelBufferGetPixelFormatType(buf);
-    int planes = CVPixelBufferGetPlaneCount(buf);
-
-    if(format != kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange ||
-       !planes) {
-        zlog(@"ERROR: invalid buffer format");
-        goto error;
-    }
-
-    int w = CVPixelBufferGetBytesPerRowOfPlane(buf, 0);
-    int h = CVPixelBufferGetHeightOfPlane(buf, 0);
-    CVReturn rc =
-        CVPixelBufferLockBaseAddress(buf, kCVPixelBufferLock_ReadOnly);
-    if(!w || !h || rc) {
-        zlog(@"ERROR: invalid buffer data");
-        goto error;
-    }
-
-    void *data = CVPixelBufferGetBaseAddressOfPlane(buf, 0);
-    if(data) {
-        [image setData: data
-               withLength: w * h];
-
-        BOOL doTrack = NO;
-        int ngood = 0;
-        ZBarSymbolSet *syms = nil;
-        @synchronized(scanner) {
-            if(width != w || height != h) {
-                width = w;
-                height = h;
-                CGSize _size = CGSizeMake(w, h);
-                CFDictionaryRef sized =
-                    CGSizeCreateDictionaryRepresentation(_size);
-                if(sized) {
-                    [self performSelectorOnMainThread: @selector(updateSize:)
-                          withObject: (id)sized
-                          waitUntilDone: NO];
-                    CFRelease(sized);
-                }
-                image.size = _size;
-                [self cropUpdate];
-            }
-
-            ngood = [scanner scanImage: image];
-            syms = scanner.results;
-            doTrack = [captureDelegate respondsToSelector:
-                          @selector(captureReader:didTrackSymbols:)];
-        }
-        now = timer_now();
-
-        if(ngood >= 0) {
-            // return unfiltered results for tracking feedback
-            syms.filterSymbols = NO;
-            int nraw = syms.count;
-            if(nraw > 0 || (_state & CAPTURE))
-                zlog(@"scan image: %dx%d crop=%@ ngood=%d nraw=%d st=%d",
-                     w, h, NSStringFromCGRect(image.crop), ngood, nraw, _state);
-
-            if(ngood || (_state & CAPTURE)) {
-                // copy image data so we can release the buffer
-                result.size = CGSizeMake(w, h);
-                result.pixelBuffer = buf;
-                result.symbols = syms;
-                t_scan = now;
-                OSAtomicXor32Barrier((_state & CAPTURE) | PAUSED, &state);
-                [self performSelectorOnMainThread:
-                          @selector(didReadNewSymbolsFromImage:)
-                      withObject: result
-                      waitUntilDone: NO];
-                [self initResult];
-            }
-
-            if(nraw && doTrack)
-                [self performSelectorOnMainThread:
-                          @selector(didTrackSymbols:)
-                      withObject: syms
-                      waitUntilDone: NO];
-        }
-        [image setData: NULL
-               withLength: 0];
-    }
-    else
-        zlog(@"ERROR: invalid data");
-    CVPixelBufferUnlockBaseAddress(buf, kCVPixelBufferLock_ReadOnly);
-
- error:
-    [pool release];
 }
 
 @end
+
+#endif

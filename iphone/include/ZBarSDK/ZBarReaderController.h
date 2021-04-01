@@ -74,7 +74,6 @@ typedef enum {
     UIBarButtonItem *cancelBtn, *scanBtn, *space[3];
     UIButton *infoBtn;
 
-    id <ZBarReaderDelegate> readerDelegate;
     BOOL showsZBarControls, showsHelpOnFail, takesPicture, enableCache;
     ZBarReaderControllerCameraMode cameraMode;
     CGRect scanCrop;
@@ -91,7 +90,7 @@ typedef enum {
 @property (readonly, nonatomic) ZBarImageScanner *scanner;
 
 // barcode result recipient (NB don't use delegate)
-@property (nonatomic, assign) id <ZBarReaderDelegate> readerDelegate;
+@property (nonatomic, weak) id <ZBarReaderDelegate> readerDelegate;
 
 // whether to use alternate control set
 @property (nonatomic) BOOL showsZBarControls;

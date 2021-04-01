@@ -42,7 +42,6 @@
         zbar_image_scanner_destroy(scanner);
         scanner = NULL;
     }
-    [super dealloc];
 }
 
 - (BOOL) enableCache
@@ -59,7 +58,7 @@
 - (ZBarSymbolSet*) results
 {
     const zbar_symbol_set_t *set = zbar_image_scanner_get_results(scanner);
-    return([[[ZBarSymbolSet alloc] initWithSymbolSet: set] autorelease]);
+    return([[ZBarSymbolSet alloc] initWithSymbolSet: set]);
 }
 
 // image scanner config wrappers

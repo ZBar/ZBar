@@ -32,7 +32,7 @@
 
 @implementation ZBarReaderView
 
-@synthesize readerDelegate, tracksSymbols, trackingColor, torchMode, showsFPS,
+@synthesize tracksSymbols, trackingColor, torchMode, showsFPS,
     zoom, maxZoom, scanCrop, previewTransform, captureReader;
 @dynamic scanner, allowsPinchZoom, enableCache, device, session;
 
@@ -54,21 +54,21 @@
     overlay.backgroundColor = [UIColor clearColor].CGColor;
     [preview addSublayer: overlay];
 
-#ifndef NDEBUG
-    overlay.borderWidth = 2;
-    overlay.borderColor = [UIColor colorWithRed: 1
-                                   green: 0
-                                   blue: 0
-                                   alpha: .5].CGColor;
-    cropLayer = [CALayer new];
-    cropLayer.backgroundColor = [UIColor clearColor].CGColor;
-    cropLayer.borderWidth = 2;
-    cropLayer.borderColor = [UIColor colorWithRed: 0
-                                     green: 0
-                                     blue: 1
-                                     alpha: .5].CGColor;
-    [overlay addSublayer: cropLayer];
-#endif
+// #ifndef NDEBUG
+//     overlay.borderWidth = 2;
+//     overlay.borderColor = [UIColor colorWithRed: 1
+//                                    green: 0
+//                                    blue: 0
+//                                    alpha: .5].CGColor;
+//     cropLayer = [CALayer new];
+//     cropLayer.backgroundColor = [UIColor clearColor].CGColor;
+//     cropLayer.borderWidth = 2;
+//     cropLayer.borderColor = [UIColor colorWithRed: 0
+//                                      green: 0
+//                                      blue: 1
+//                                      alpha: .5].CGColor;
+//     [overlay addSublayer: cropLayer];
+// #endif
 
     tracking = [CALayer new];
     tracking.opacity = 0;
@@ -76,8 +76,7 @@
     tracking.backgroundColor = [UIColor clearColor].CGColor;
     [overlay addSublayer: tracking];
 
-    trackingColor = [[UIColor greenColor]
-                        retain];
+    trackingColor = [UIColor greenColor];
     tracking.borderColor = trackingColor.CGColor;
 
     fpsView = [UIView new];
@@ -138,9 +137,7 @@
 
 - (id) init
 {
-    ZBarImageScanner *scanner =
-        [[ZBarImageScanner new]
-            autorelease];
+    ZBarImageScanner *scanner = [ZBarImageScanner new];
     self = [self initWithImageScanner: scanner];
     if(!self)
         return(nil);
@@ -159,9 +156,7 @@
     self = [super initWithCoder: decoder];
     if(!self)
         return(nil);
-    ZBarImageScanner *scanner =
-        [[ZBarImageScanner new]
-            autorelease];
+    ZBarImageScanner *scanner = [ZBarImageScanner new];
     [self _initWithImageScanner: scanner];
 
     [scanner setSymbology: 0
@@ -176,23 +171,6 @@
 - (void) dealloc
 {
     [preview removeFromSuperlayer];
-    [preview release];
-    preview = nil;
-    [overlay release];
-    overlay = nil;
-    [cropLayer release];
-    cropLayer = nil;
-    [tracking release];
-    tracking = nil;
-    [trackingColor release];
-    trackingColor = nil;
-    [fpsLabel release];
-    fpsLabel = nil;
-    [fpsView release];
-    fpsView = nil;
-    [pinch release];
-    pinch = nil;
-    [super dealloc];
 }
 
 - (void) resetTracking
@@ -324,23 +302,23 @@ static inline CGFloat rotationForInterfaceOrientation (int orient)
     overlay.transform = CATransform3DScale(xform, viewScale, viewScale, 1);
     tracking.borderWidth = imageScale;
 
-#ifndef NDEBUG
-    preview.backgroundColor = [UIColor yellowColor].CGColor;
-    overlay.borderWidth = 2 * imageScale;
-    cropLayer.borderWidth = 2 * imageScale;
-    cropLayer.frame = CGRectMake(effectiveCrop.origin.x * imageSize.width,
-                                 effectiveCrop.origin.y * imageSize.height,
-                                 effectiveCrop.size.width * imageSize.width,
-                                 effectiveCrop.size.height * imageSize.height);
-    zlog(@"layoutSubviews: bounds=%@ orient=%d image=%@ crop=%@ zoom=%g\n"
-         @"=> preview=%@ crop=(z%@ p%@ %@ i%@) scale=%g %c %g = 1/%g",
-         NSStringFromCGSize(bounds.size), interfaceOrientation,
-         NSStringFromCGSize(imageSize), NSStringFromCGRect(scanCrop), zoom,
-         NSStringFromCGSize(psize), NSStringFromCGRect(zoomCrop),
-         NSStringFromCGRect(previewCrop), NSStringFromCGRect(effectiveCrop),
-         NSStringFromCGRect(cropLayer.frame),
-         scalex, (scalex > scaley) ? '>' : '<', scaley, viewScale);
-#endif
+// #ifndef NDEBUG
+//     preview.backgroundColor = [UIColor yellowColor].CGColor;
+//     overlay.borderWidth = 2 * imageScale;
+//     cropLayer.borderWidth = 2 * imageScale;
+//     cropLayer.frame = CGRectMake(effectiveCrop.origin.x * imageSize.width,
+//                                  effectiveCrop.origin.y * imageSize.height,
+//                                  effectiveCrop.size.width * imageSize.width,
+//                                  effectiveCrop.size.height * imageSize.height);
+//     zlog(@"layoutSubviews: bounds=%@ orient=%d image=%@ crop=%@ zoom=%g\n"
+//          @"=> preview=%@ crop=(z%@ p%@ %@ i%@) scale=%g %c %g = 1/%g",
+//          NSStringFromCGSize(bounds.size), interfaceOrientation,
+//          NSStringFromCGSize(imageSize), NSStringFromCGRect(scanCrop), zoom,
+//          NSStringFromCGSize(psize), NSStringFromCGRect(zoomCrop),
+//          NSStringFromCGRect(previewCrop), NSStringFromCGRect(effectiveCrop),
+//          NSStringFromCGRect(cropLayer.frame),
+//          scalex, (scalex > scaley) ? '>' : '<', scaley, viewScale);
+// #endif
 
     [self resetTracking];
     [self updateCrop];
@@ -400,8 +378,6 @@ static inline CGFloat rotationForInterfaceOrientation (int orient)
 {
     if(!color)
         return;
-    [color retain];
-    [trackingColor release];
     trackingColor = color;
     tracking.borderColor = color.CGColor;
 }

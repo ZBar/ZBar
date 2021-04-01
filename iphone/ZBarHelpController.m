@@ -28,8 +28,6 @@
 
 @implementation ZBarHelpController
 
-@synthesize delegate;
-
 - (id) initWithReason: (NSString*) _reason
 {
     self = [super init];
@@ -38,7 +36,7 @@
 
     if(!_reason)
         _reason = @"INFO";
-    reason = [_reason retain];
+    reason = _reason;
     return(self);
 }
 
@@ -49,26 +47,16 @@
 
 - (void) cleanup
 {
-    [toolbar release];
     toolbar = nil;
-    [webView release];
     webView = nil;
-    [doneBtn release];
     doneBtn = nil;
-    [backBtn release];
     backBtn = nil;
-    [space release];
     space = nil;
 }
 
 - (void) dealloc
 {
     [self cleanup];
-    [reason release];
-    reason = nil;
-    [linkURL release];
-    linkURL = nil;
-    [super dealloc];
 }
 
 - (void) viewDidLoad
@@ -204,8 +192,8 @@
 
 - (void) dismiss
 {
-    if([delegate respondsToSelector: @selector(helpControllerDidFinish:)])
-        [delegate helpControllerDidFinish: self];
+    if([self.delegate respondsToSelector: @selector(helpControllerDidFinish:)])
+        [self.delegate helpControllerDidFinish: self];
     else
         [self dismissModalViewControllerAnimated: YES];
 }
@@ -242,7 +230,7 @@
     if([url isFileURL])
         return(YES);
 
-    linkURL = [url retain];
+    linkURL = url;
     UIAlertView *alert =
         [[UIAlertView alloc]
             initWithTitle: @"Open External Link"
@@ -252,7 +240,6 @@
             otherButtonTitles: @"OK", nil];
     alert.delegate = self;
     [alert show];
-    [alert release];
     return(NO);
 }
 
