@@ -1,1 +1,0 @@
-../../../iphone/include/ZBarSDK//ZBarHelpController.h

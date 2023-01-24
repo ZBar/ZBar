@@ -22,7 +22,6 @@
 //------------------------------------------------------------------------
 
 #import <ZBarSDK/ZBarReaderController.h>
-#import <ZBarSDK/ZBarHelpController.h>
 #import "debug.h"
 
 /* the use of UIGetScreenImage() may no longer be sanctioned, even
@@ -160,7 +159,6 @@ CGImageRef UIGetScreenImage(void);
         space[i] = nil;
     }
     infoBtn = nil;
-    help = nil;
 }
 
 - (void) dealloc
@@ -556,41 +554,8 @@ CGImageRef UIGetScreenImage(void);
               imageSize: size];
 }
 
-- (void) showHelpWithReason: (NSString*) reason
-{
-    if(help) {
-        [help.view removeFromSuperview];
-    }
-    help = [[ZBarHelpController alloc]
-               initWithReason: reason];
-    help.delegate = (id<ZBarHelpDelegate>)self;
-
-    if(self.sourceType != UIImagePickerControllerSourceTypeCamera) {
-        [self presentModalViewController: help
-              animated: YES];
-        return;
-    }
-
-    // show help as overlay view to workaround controller bugs
-    sampling = NO;
-    scanner.enableCache = NO;
-    help.wantsFullScreenLayout = YES;
-    help.view.alpha = 0;
-
-    UIView *activeOverlay = [self cameraOverlayView];
-    help.view.frame = [activeOverlay
-                          convertRect: CGRectMake(0, 0, 320, 480)
-                          fromView: nil];
-    [activeOverlay addSubview: help.view];
-    [UIView beginAnimations: @"ZBarHelp"
-            context: nil];
-    help.view.alpha = 1;
-    [UIView commitAnimations];
-}
-
 - (void) info
 {
-    [self showHelpWithReason: @"INFO"];
 }
 
 - (void)  imagePickerController: (UIImagePickerController*) picker
@@ -655,21 +620,6 @@ CGImageRef UIGetScreenImage(void);
         [self.readerDelegate imagePickerControllerDidCancel: self];
     else
         [self dismissModalViewControllerAnimated: YES];
-}
-
-// ZBarHelpDelegate
-
-- (void) helpControllerDidFinish: (ZBarHelpController*) hlp
-{
-    if(self.sourceType == UIImagePickerControllerSourceTypeCamera) {
-        [UIView beginAnimations: @"ZBarHelp"
-                context: nil];
-        hlp.view.alpha = 0;
-        [UIView commitAnimations];
-        [self initScanning];
-    }
-    else
-        [hlp dismissModalViewControllerAnimated: YES];
 }
 
 - (id <NSFastEnumeration>) scanImage: (CGImageRef) image

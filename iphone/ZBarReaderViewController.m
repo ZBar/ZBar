@@ -26,7 +26,6 @@
 #import <ZBarSDK/ZBarReaderViewController.h>
 #import <ZBarSDK/ZBarReaderView.h>
 #import <ZBarSDK/ZBarCaptureReader.h>
-#import <ZBarSDK/ZBarHelpController.h>
 #import <ZBarSDK/ZBarCameraSimulator.h>
 
 #define MODULE ZBarReaderViewController
@@ -455,9 +454,6 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
                                           duration: (NSTimeInterval) duration
 {
     zlog(@"willAnimateRotation: orient=%d #%g", orient, duration);
-    if(helpController)
-        [helpController willAnimateRotationToInterfaceOrientation: orient
-                        duration: duration];
     if(readerView)
         [readerView setNeedsLayout];
 }
@@ -535,26 +531,6 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
 - (void) info
 {
-    [self showHelpWithReason: @"INFO"];
-}
-
-- (void) showHelpWithReason: (NSString*) reason
-{
-    if(helpController)
-        return;
-    helpController = [[ZBarHelpController alloc]
-                         initWithReason: reason];
-    helpController.delegate = (id<ZBarHelpDelegate>)self;
-    helpController.wantsFullScreenLayout = YES;
-    UIView *helpView = helpController.view;
-    helpView.alpha = 0;
-    helpView.frame = self.view.bounds;
-    [helpController viewWillAppear: YES];
-    [self.view addSubview: helpView];
-    [UIView beginAnimations: @"ZBarHelp"
-            context: nil];
-    helpController.view.alpha = 1;
-    [UIView commitAnimations];
 }
 
 - (void) takePicture
@@ -601,31 +577,6 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
     videoQuality = quality;
     if(readerView)
         [self initVideoQuality];
-}
-
-
-// ZBarHelpDelegate
-
-- (void) helpControllerDidFinish: (ZBarHelpController*) help
-{
-    assert(help == helpController);
-    [help viewWillDisappear: YES];
-    [UIView beginAnimations: @"ZBarHelp"
-            context: NULL];
-    [UIView setAnimationDelegate: self];
-    [UIView setAnimationDidStopSelector: @selector(removeHelp:done:context:)];
-    help.view.alpha = 0;
-    [UIView commitAnimations];
-}
-
-- (void) removeHelp: (NSString*) tag
-               done: (NSNumber*) done
-            context: (void*) ctx
-{
-    if([tag isEqualToString: @"ZBarHelp"] && helpController) {
-        [helpController.view removeFromSuperview];
-        helpController = nil;
-    }
 }
 
 
