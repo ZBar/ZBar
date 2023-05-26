@@ -25,29 +25,11 @@
 #define MODULE ZBarCVImage
 #import "debug.h"
 
-static NSOperationQueue *conversionQueue;
+static dispatch_queue_t conversionQueue;
 
-static const void*
-asyncProvider_getBytePointer (void *info)
-{
-    // block until data is available
-    ZBarCVImage *image = info;
-    assert(image);
-    [image waitUntilConverted];
-    void *buf = image.rgbBuffer;
-    assert(buf);
-    return(buf);
+@implementation ZBarCVImage {
+    NSData* _imageData;
 }
-
-static const CGDataProviderDirectCallbacks asyncProvider = {
-    .version = 0,
-    .getBytePointer = asyncProvider_getBytePointer,
-    .releaseBytePointer = NULL,
-    .getBytesAtPosition = NULL,
-    .releaseInfo = (void*)CFRelease,
-};
-
-@implementation ZBarCVImage
 
 @synthesize pixelBuffer, rgbBuffer;
 
@@ -58,9 +40,6 @@ static const CGDataProviderDirectCallbacks asyncProvider = {
         free(rgbBuffer);
         rgbBuffer = NULL;
     }
-    [conversion release];
-    conversion = nil;
-    [super dealloc];
 }
 
 - (void) setPixelBuffer: (CVPixelBufferRef) newbuf
@@ -73,34 +52,27 @@ static const CGDataProviderDirectCallbacks asyncProvider = {
         CVPixelBufferRelease(oldbuf);
 }
 
-- (void) waitUntilConverted
-{
-    // operation will at least have been queued already
-    NSOperation *op = [conversion retain];
-    if(!op)
-        return;
-    [op waitUntilFinished];
-    [op release];
-}
-
 - (UIImage*) UIImageWithOrientation: (UIImageOrientation) orient
 {
-    if(!conversion && !rgbBuffer) {
-        // start format conversion in separate thread
-        NSOperationQueue *queue = conversionQueue;
-        if(!queue) {
-            queue = conversionQueue = [NSOperationQueue new];
-            queue.maxConcurrentOperationCount = 1;
-        }
-        else
-            [queue waitUntilAllOperationsAreFinished];
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        conversionQueue = dispatch_queue_create("ZBarCVImageConversion", NULL);
+    });
 
-        conversion = [[NSInvocationOperation alloc]
-                         initWithTarget: self
-                         selector: @selector(convertCVtoRGB)
-                         object: nil];
-        [queue addOperation: conversion];
-        [conversion release];
+    NSData* data = nil;
+
+    @synchronized (self) {
+        if (self->_imageData == nil) {
+            __block NSData* computed = nil;
+
+            dispatch_sync(conversionQueue, ^{
+                computed = [self convertCVtoData];
+            });
+
+            self->_imageData = computed;
+        }
+
+        data = self->_imageData;
     }
 
     // create UIImage before converted data is available
@@ -108,23 +80,36 @@ static const CGDataProviderDirectCallbacks asyncProvider = {
     int w = size.width;
     int h = size.height;
 
-    CGDataProviderRef datasrc =
-        CGDataProviderCreateDirect([self retain], 3 * w * h, &asyncProvider);
-    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
-    CGImageRef cgimg =
-        CGImageCreate(w, h, 8, 24, 3 * w, cs,
-                      kCGBitmapByteOrderDefault, datasrc,
-                      NULL, YES, kCGRenderingIntentDefault);
-    CGColorSpaceRelease(cs);
-    CGDataProviderRelease(datasrc);
+    CFDataRef dataRef = CFBridgingRetain(data);
+    CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
+    CGDataProviderRef provider = CGDataProviderCreateWithCFData(dataRef);
+    CGImageRef rgbImageRef = CGImageCreate(w, h, 8, 24, w * 3, colorspace, kCGBitmapByteOrderDefault, provider, NULL, YES, kCGRenderingIntentDefault);
 
-    UIImage *uiimg =
-        [UIImage imageWithCGImage: cgimg
-                 scale: 1
-                 orientation: orient];
-    CGImageRelease(cgimg);
+    CFRelease(dataRef);
+    CGDataProviderRelease(provider);
+    CGColorSpaceRelease(colorspace);
 
-    return(uiimg);
+       // use the created CGImage
+    UIImage *uiimg =  [UIImage imageWithCGImage: rgbImageRef
+                                          scale: 1
+                                    orientation: orient];
+
+    CGImageRelease(rgbImageRef);
+
+    return uiimg;
+}
+
+- (NSData*) convertCVtoData {
+    [self convertCVtoRGB];
+
+    // create UIImage before converted data is available
+    CGSize size = self.size;
+    int w = size.width;
+    int h = size.height;
+
+    CFDataRef rgbData = CFDataCreateWithBytesNoCopy(NULL, self.rgbBuffer, w * h * 3, kCFAllocatorNull);
+
+    return (__bridge NSData*)rgbData;
 }
 
 // convert video frame to a CGImage compatible RGB format
@@ -188,8 +173,6 @@ error:
 
     // release buffer as soon as conversion is complete
     self.pixelBuffer = NULL;
-
-    conversion = nil;
 }
 
 @end

@@ -591,12 +591,7 @@ static const CGFloat const zoom_choices[] = {
 
 - (void) help
 {
-    ZBarHelpController *help =
-        [[ZBarHelpController alloc]
-            initWithReason: @"TEST"];
-    [self presentModalViewController: help
-          animated: YES];
-    [help release];
+    
 }
 
 - (void) info

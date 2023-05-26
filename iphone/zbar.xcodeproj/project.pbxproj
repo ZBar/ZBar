@@ -114,11 +114,9 @@
 		DC67C1A310A07AD30033B702 /* refcnt.c in Sources */ = {isa = PBXBuildFile; fileRef = DC67C15510A07AD30033B702 /* refcnt.c */; };
 		DC67C1A510A07AD30033B702 /* scanner.c in Sources */ = {isa = PBXBuildFile; fileRef = DC67C15710A07AD30033B702 /* scanner.c */; };
 		DC67C1A810A07AD30033B702 /* symbol.c in Sources */ = {isa = PBXBuildFile; fileRef = DC67C15A10A07AD30033B702 /* symbol.c */; };
-		DC67C1C210A07B6B0033B702 /* ZBarHelpController.m in Sources */ = {isa = PBXBuildFile; fileRef = DC67C1BE10A07B6B0033B702 /* ZBarHelpController.m */; };
 		DC67C1C310A07B6B0033B702 /* ZBarReaderController.m in Sources */ = {isa = PBXBuildFile; fileRef = DC67C1BF10A07B6B0033B702 /* ZBarReaderController.m */; };
 		DC67C1C410A07B6B0033B702 /* ZBarSymbol.m in Sources */ = {isa = PBXBuildFile; fileRef = DC67C1C010A07B6B0033B702 /* ZBarSymbol.m */; };
 		DC8245EF1629DC340010B2E6 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = DC8245EE1629DC140010B2E6 /* Default-568h@2x.png */; };
-		DCB3789B12A43CAC0059B07B /* ZBarHelpController.h in Copy Headers */ = {isa = PBXBuildFile; fileRef = DCB3789A12A43C7E0059B07B /* ZBarHelpController.h */; };
 		DCC93259137B50CB0040A82D /* EmbedReader in Copy Examples */ = {isa = PBXBuildFile; fileRef = DCC9324E137B509B0040A82D /* EmbedReader */; };
 		DCC9325A137B50CB0040A82D /* TabReader in Copy Examples */ = {isa = PBXBuildFile; fileRef = DCC9324F137B509B0040A82D /* TabReader */; };
 		DCDC6E3011ADCA8E00021380 /* ZBarReaderView.m in Sources */ = {isa = PBXBuildFile; fileRef = DCDC6E2F11ADCA8E00021380 /* ZBarReaderView.m */; };
@@ -159,7 +157,6 @@
 			files = (
 				DC5D76C6136FA94B0069AEF5 /* ZBarCameraSimulator.h in Copy Headers */,
 				DC3CEFB51216349700D7A786 /* ZBarCaptureReader.h in Copy Headers */,
-				DCB3789B12A43CAC0059B07B /* ZBarHelpController.h in Copy Headers */,
 				DC3CEFB61216349700D7A786 /* ZBarImage.h in Copy Headers */,
 				DC3CEFB71216349700D7A786 /* ZBarImageScanner.h in Copy Headers */,
 				DC3CEFB81216349700D7A786 /* ZBarReaderController.h in Copy Headers */,
@@ -332,12 +329,10 @@
 		DC67C15710A07AD30033B702 /* scanner.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = scanner.c; sourceTree = "<group>"; usesTabs = 0; };
 		DC67C15A10A07AD30033B702 /* symbol.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = symbol.c; sourceTree = "<group>"; usesTabs = 0; };
 		DC67C15B10A07AD30033B702 /* symbol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = symbol.h; sourceTree = "<group>"; usesTabs = 0; };
-		DC67C1BE10A07B6B0033B702 /* ZBarHelpController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarHelpController.m; sourceTree = "<group>"; usesTabs = 0; };
 		DC67C1BF10A07B6B0033B702 /* ZBarReaderController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarReaderController.m; sourceTree = "<group>"; usesTabs = 0; };
 		DC67C1C010A07B6B0033B702 /* ZBarSymbol.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarSymbol.m; sourceTree = "<group>"; usesTabs = 0; };
 		DC67C1CB10A07BEE0033B702 /* svg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = svg.h; sourceTree = "<group>"; usesTabs = 0; };
 		DC8245EE1629DC140010B2E6 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Default-568h@2x.png"; path = "examples/readertest/Default-568h@2x.png"; sourceTree = "<group>"; };
-		DCB3789A12A43C7E0059B07B /* ZBarHelpController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ZBarHelpController.h; path = include/ZBarSDK/ZBarHelpController.h; sourceTree = "<group>"; };
 		DCC9324E137B509B0040A82D /* EmbedReader */ = {isa = PBXFileReference; lastKnownFileType = folder; name = EmbedReader; path = examples/EmbedReader; sourceTree = "<group>"; };
 		DCC9324F137B509B0040A82D /* TabReader */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TabReader; path = examples/TabReader; sourceTree = "<group>"; };
 		DCDC6E2F11ADCA8E00021380 /* ZBarReaderView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZBarReaderView.m; sourceTree = "<group>"; usesTabs = 0; };
@@ -428,7 +423,6 @@
 			children = (
 				DC5D76C5136FA8F20069AEF5 /* ZBarCameraSimulator.h */,
 				DC3CEFA51216347100D7A786 /* ZBarCaptureReader.h */,
-				DCB3789A12A43C7E0059B07B /* ZBarHelpController.h */,
 				DC3CEFA61216347100D7A786 /* ZBarImage.h */,
 				DC3CEFA71216347100D7A786 /* ZBarImageScanner.h */,
 				DC3CEFA81216347100D7A786 /* ZBarReaderController.h */,
@@ -454,7 +448,6 @@
 				DC3CE47611FA1622008FAF88 /* ZBarReaderViewImpl_Capture.m */,
 				DC3CE47711FA1622008FAF88 /* ZBarReaderViewImpl_Simulator.m */,
 				DC5D76C2136FA8C40069AEF5 /* ZBarCameraSimulator.m */,
-				DC67C1BE10A07B6B0033B702 /* ZBarHelpController.m */,
 				DC3EBB2C119DDB2100107EE9 /* ZBarReaderViewController.m */,
 				DC67C1BF10A07B6B0033B702 /* ZBarReaderController.m */,
 				DC67C11E10A07AD30033B702 /* zbar */,
@@ -624,6 +617,8 @@
 /* Begin PBXProject section */
 		0867D690FE84028FC02AAC07 /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+			};
 			buildConfigurationList = 1DEB922208733DC00010E9CD /* Build configuration list for PBXProject "zbar" */;
 			compatibilityVersion = "Xcode 3.1";
 			developmentRegion = English;
@@ -735,7 +730,6 @@
 				DC67C1A310A07AD30033B702 /* refcnt.c in Sources */,
 				DC67C1A510A07AD30033B702 /* scanner.c in Sources */,
 				DC67C1A810A07AD30033B702 /* symbol.c in Sources */,
-				DC67C1C210A07B6B0033B702 /* ZBarHelpController.m in Sources */,
 				DC67C1C310A07B6B0033B702 /* ZBarReaderController.m in Sources */,
 				DC67C1C410A07B6B0033B702 /* ZBarSymbol.m in Sources */,
 				DC4920EE10A70475000E4D43 /* ZBarImage.m in Sources */,
@@ -786,6 +780,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
@@ -808,6 +803,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = include/prefix.pch;
@@ -825,7 +821,6 @@
 		1DEB922308733DC00010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				EXCLUDED_SOURCE_FILE_NAMES = "";
 				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphoneos*][arch=*]" = ZBarReaderViewImpl_Simulator.m;
@@ -838,7 +833,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG_OBJC=1";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 3.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				OTHER_LDFLAGS = "-all_load";
 				PREBINDING = NO;
 				PROVISIONING_PROFILE = "";
@@ -851,7 +846,6 @@
 		1DEB922408733DC00010E9CD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				EXCLUDED_SOURCE_FILE_NAMES = "";
 				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphoneos*][arch=*]" = ZBarReaderViewImpl_Simulator.m;
@@ -863,7 +857,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "NDEBUG=1";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 3.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				OTHER_LDFLAGS = "-all_load";
 				PREBINDING = NO;
 				PROVISIONING_PROFILE = "";
@@ -939,7 +933,6 @@
 		DC3748D71357BC69004E69D6 /* Distribution */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				EXCLUDED_SOURCE_FILE_NAMES = "";
 				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphoneos*][arch=*]" = ZBarReaderViewImpl_Simulator.m;
@@ -951,7 +944,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "NDEBUG=1";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 3.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				OTHER_LDFLAGS = "-all_load";
 				PREBINDING = NO;
 				PROVISIONING_PROFILE = "";
@@ -965,6 +958,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = include/prefix.pch;

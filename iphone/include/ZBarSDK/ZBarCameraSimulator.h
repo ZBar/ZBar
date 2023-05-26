@@ -21,6 +21,8 @@
 //  http://sourceforge.net/projects/zbar
 //------------------------------------------------------------------------
 
+#import <UIKit/UIKit.h>
+
 @class ZBarReaderView;
 
 // hack around missing simulator support for AVCapture interfaces
@@ -34,12 +36,11 @@
     UIViewController *viewController;
     ZBarReaderView *readerView;
     UIImagePickerController *picker;
-    UIPopoverController *pickerPopover;
 }
 
 - (id) initWithViewController: (UIViewController*) viewController;
 - (void) takePicture;
 
-@property (nonatomic, assign) ZBarReaderView *readerView;
+@property (nonatomic, strong) ZBarReaderView *readerView;
 
 @end

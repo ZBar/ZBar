@@ -22,7 +22,6 @@
 //------------------------------------------------------------------------
 
 #import <ZBarSDK/ZBarReaderController.h>
-#import <ZBarSDK/ZBarHelpController.h>
 #import "debug.h"
 
 /* the use of UIGetScreenImage() may no longer be sanctioned, even
@@ -47,7 +46,7 @@ CGImageRef UIGetScreenImage(void);
 
 @implementation ZBarReaderController
 
-@synthesize scanner, readerDelegate, cameraMode, scanCrop, maxScanDimension,
+@synthesize scanner, cameraMode, scanCrop, maxScanDimension,
     showsHelpOnFail, takesPicture, enableCache, tracksSymbols;
 @dynamic showsZBarControls;
 
@@ -131,7 +130,7 @@ CGImageRef UIGetScreenImage(void);
                     action: nil];
     space[2].width = r.size.width / 4 - 16;
 
-    infoBtn = [[UIButton buttonWithType: UIButtonTypeInfoLight] retain];
+    infoBtn = [UIButton buttonWithType: UIButtonTypeInfoLight];
     r.origin.x = r.size.width - 54;
     r.size.width = 54;
     infoBtn.frame = r;
@@ -150,40 +149,21 @@ CGImageRef UIGetScreenImage(void);
 
 - (void) cleanup
 {
-    [overlay release];
     overlay = nil;
-    [boxView release];
     boxView = nil;
-    [boxLayer release];
     boxLayer = nil;
-    [toolbar release];
     toolbar = nil;
-    [cancelBtn release];
     cancelBtn = nil;
-    [scanBtn release];
     scanBtn = nil;
     for(int i = 0; i < 3; i++) {
-        [space[i] release];
         space[i] = nil;
     }
-    [infoBtn release];
     infoBtn = nil;
-    [help release];
-    help = nil;
-}
-
-- (void) viewDidUnload
-{
-    [self cleanup];
-    [super viewDidUnload];
 }
 
 - (void) dealloc
 {
     [self cleanup];
-    [scanner release];
-    scanner = nil;
-    [super dealloc];
 }
 
 - (void) scan
@@ -402,7 +382,6 @@ CGImageRef UIGetScreenImage(void);
                           crop: crop
                           size: size];
     int nsyms = [scanner scanImage: zimg];
-    [zimg release];
 
     return(nsyms);
 }
@@ -542,7 +521,6 @@ CGImageRef UIGetScreenImage(void);
 - (void) scanSequence: (UIImage*) image
 {
     if(!sampling) {
-        [image release];
         return;
     }
 
@@ -555,8 +533,8 @@ CGImageRef UIGetScreenImage(void);
 
     SEL cb = @selector(imagePickerController:didFinishPickingMediaWithInfo:);
     if(sym && !sym.count &&
-       [readerDelegate respondsToSelector: cb])
-        [readerDelegate
+       [self.readerDelegate respondsToSelector: cb])
+        [self.readerDelegate
             imagePickerController: self
             didFinishPickingMediaWithInfo:
                 [NSDictionary dictionaryWithObjectsAndKeys:
@@ -565,7 +543,6 @@ CGImageRef UIGetScreenImage(void);
                         ZBarReaderControllerResults,
                     nil]];
     CGSize size = image.size;
-    [image release];
 
     // reschedule
     [self performSelector: @selector(takePicture)
@@ -577,42 +554,8 @@ CGImageRef UIGetScreenImage(void);
               imageSize: size];
 }
 
-- (void) showHelpWithReason: (NSString*) reason
-{
-    if(help) {
-        [help.view removeFromSuperview];
-        [help release];
-    }
-    help = [[ZBarHelpController alloc]
-               initWithReason: reason];
-    help.delegate = (id<ZBarHelpDelegate>)self;
-
-    if(self.sourceType != UIImagePickerControllerSourceTypeCamera) {
-        [self presentModalViewController: help
-              animated: YES];
-        return;
-    }
-
-    // show help as overlay view to workaround controller bugs
-    sampling = NO;
-    scanner.enableCache = NO;
-    help.wantsFullScreenLayout = YES;
-    help.view.alpha = 0;
-
-    UIView *activeOverlay = [self cameraOverlayView];
-    help.view.frame = [activeOverlay
-                          convertRect: CGRectMake(0, 0, 320, 480)
-                          fromView: nil];
-    [activeOverlay addSubview: help.view];
-    [UIView beginAnimations: @"ZBarHelp"
-            context: nil];
-    help.view.alpha = 1;
-    [UIView commitAnimations];
-}
-
 - (void) info
 {
-    [self showHelpWithReason: @"INFO"];
 }
 
 - (void)  imagePickerController: (UIImagePickerController*) picker
@@ -623,17 +566,18 @@ CGImageRef UIGetScreenImage(void);
     id results = nil;
     if(self.sourceType == UIImagePickerControllerSourceTypeCamera &&
        cameraMode == ZBarReaderControllerCameraModeSequence) {
-        if(sampling)
-            [self performSelector: @selector(scanSequence:)
-                  withObject: [img retain]
-                  afterDelay: 0.001];
+        if(sampling) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.001 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self scanSequence:img];
+            });
+        }
+        
         return;
     }
     else if(!sampling)
         results = [self scanImage: img.CGImage];
     else {
         results = [NSArray arrayWithObject: symbol];
-        [symbol release];
         symbol = nil;
     }
 
@@ -646,12 +590,11 @@ CGImageRef UIGetScreenImage(void);
         [newinfo setObject: results
                  forKey: ZBarReaderControllerResults];
         SEL cb = @selector(imagePickerController:didFinishPickingMediaWithInfo:);
-        if([readerDelegate respondsToSelector: cb])
-            [readerDelegate imagePickerController: self
+        if([self.readerDelegate respondsToSelector: cb])
+            [self.readerDelegate imagePickerController: self
                             didFinishPickingMediaWithInfo: newinfo];
         else
             [self dismissModalViewControllerAnimated: YES];
-        [newinfo release];
         return;
     }
 
@@ -661,9 +604,9 @@ CGImageRef UIGetScreenImage(void);
         [self showHelpWithReason: @"FAIL"];
 
     SEL cb = @selector(readerControllerDidFailToRead:withRetry:);
-    if([readerDelegate respondsToSelector: cb])
+    if([self.readerDelegate respondsToSelector: cb])
         // assume delegate dismisses controller if necessary
-        [readerDelegate readerControllerDidFailToRead: self
+        [self.readerDelegate readerControllerDidFailToRead: self
                         withRetry: retry];
     else if(!retry)
         // must dismiss stock controller
@@ -673,25 +616,10 @@ CGImageRef UIGetScreenImage(void);
 - (void) imagePickerControllerDidCancel: (UIImagePickerController*) picker
 {
     SEL cb = @selector(imagePickerControllerDidCancel:);
-    if([readerDelegate respondsToSelector: cb])
-        [readerDelegate imagePickerControllerDidCancel: self];
+    if([self.readerDelegate respondsToSelector: cb])
+        [self.readerDelegate imagePickerControllerDidCancel: self];
     else
         [self dismissModalViewControllerAnimated: YES];
-}
-
-// ZBarHelpDelegate
-
-- (void) helpControllerDidFinish: (ZBarHelpController*) hlp
-{
-    if(self.sourceType == UIImagePickerControllerSourceTypeCamera) {
-        [UIView beginAnimations: @"ZBarHelp"
-                context: nil];
-        hlp.view.alpha = 0;
-        [UIView commitAnimations];
-        [self initScanning];
-    }
-    else
-        [hlp dismissModalViewControllerAnimated: YES];
 }
 
 - (id <NSFastEnumeration>) scanImage: (CGImageRef) image

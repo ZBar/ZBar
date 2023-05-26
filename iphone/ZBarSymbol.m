@@ -48,7 +48,6 @@
         zbar_symbol_ref(symbol, -1);
         symbol = NULL;
     }
-    [super dealloc];
 }
 
 - (zbar_symbol_type_t) type
@@ -98,9 +97,8 @@
 
 - (ZBarSymbolSet*) components
 {
-    return([[[ZBarSymbolSet alloc]
-                initWithSymbolSet: zbar_symbol_get_components(symbol)]
-               autorelease]);
+    return([[ZBarSymbolSet alloc]
+                initWithSymbolSet: zbar_symbol_get_components(symbol)]);
 }
 
 - (CGRect) bounds
@@ -134,7 +132,6 @@
 - (id) initWithSymbolSet: (const zbar_symbol_set_t*) s
 {
     if(!s) {
-        [self release];
         return(nil);
     }
     if(self = [super init]) {
@@ -151,7 +148,6 @@
         zbar_symbol_set_ref(set, -1);
         set = NULL;
     }
-    [super dealloc];
 }
 
 - (int) count
@@ -172,7 +168,7 @@
 }
 
 - (NSUInteger) countByEnumeratingWithState: (NSFastEnumerationState*) state
-                                   objects: (id*) stackbuf
+                                   objects: (id __unsafe_unretained []) stackbuf
                                      count: (NSUInteger) len
 {
     const zbar_symbol_t *sym = (void*)state->state; // FIXME
@@ -183,14 +179,14 @@
     else if(set)
         sym = zbar_symbol_set_first_unfiltered(set);
 
-    if(sym)
-        *stackbuf = [[[ZBarSymbol alloc]
-                         initWithSymbol: sym]
-                        autorelease];
+    if(sym) {
+       ZBarSymbol* symbol = [[ZBarSymbol alloc] initWithSymbol: sym];
+        stackbuf[0] = CFAutorelease(CFBridgingRetain(symbol));
+    }
 
     state->state = (unsigned long)sym; // FIXME
     state->itemsPtr = stackbuf;
-    state->mutationsPtr = (void*)self;
+    state->mutationsPtr = (__bridge void*)self;
     return((sym) ? 1 : 0);
 }
 

@@ -33,7 +33,6 @@
 - (id) initWithViewController: (UIViewController*) vc
 {
     if(!TARGET_IPHONE_SIMULATOR) {
-        [self release];
         return(nil);
     }
     self = [super init];
@@ -45,22 +44,9 @@
     return(self);
 }
 
-- (void) dealloc
-{
-    viewController = nil;
-    readerView = nil;
-    [picker release];
-    picker = nil;
-    [pickerPopover release];
-    pickerPopover = nil;
-    [super dealloc];
-}
-
 - (void) setReaderView: (ZBarReaderView*) view
 {
-    ZBarReaderView *oldView = readerView;
-    readerView = [view retain];
-    [oldView release];
+    readerView = view;
 
     UILongPressGestureRecognizer *gesture =
         [[UILongPressGestureRecognizer alloc]
@@ -68,7 +54,6 @@
             action: @selector(didLongPress:)];
     gesture.numberOfTouchesRequired = 2;
     [view addGestureRecognizer: gesture];
-    [gesture release];
 }
 
 - (void) didLongPress: (UILongPressGestureRecognizer*) gesture
@@ -84,17 +69,20 @@
         picker.delegate = self;
     }
     if(UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
-        if(!pickerPopover)
-            pickerPopover = [[UIPopoverController alloc]
-                                initWithContentViewController: picker];
-        [pickerPopover presentPopoverFromRect: CGRectZero
-                       inView: readerView
-                       permittedArrowDirections: UIPopoverArrowDirectionAny
-                       animated: YES];
+        picker.modalPresentationStyle = UIModalPresentationPopover;
+        
+        [viewController presentViewController:picker animated:YES completion:nil];
+        
+        UIPopoverPresentationController* popover = picker.popoverPresentationController;
+        popover.permittedArrowDirections = UIPopoverArrowDirectionAny;
+        popover.sourceRect = CGRectZero;
+        popover.sourceView = readerView;
     }
-    else
-        [viewController presentModalViewController: picker
-                        animated: YES];
+    else {
+        [viewController presentViewController:picker animated:YES completion:nil];
+    }
+    
+    
 }
 
 - (void)  imagePickerController: (UIImagePickerController*) _picker
@@ -102,10 +90,7 @@
 {
     UIImage *image = [info objectForKey: UIImagePickerControllerOriginalImage];
 
-    if(UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
-        [pickerPopover dismissPopoverAnimated: YES];
-    else
-        [_picker dismissModalViewControllerAnimated: YES];
+    [viewController dismissViewControllerAnimated:YES completion:nil];
 
     [readerView performSelector: @selector(scanImage:)
                 withObject: image
@@ -114,7 +99,7 @@
 
 - (void) imagePickerControllerDidCancel: (UIImagePickerController*) _picker
 {
-    [_picker dismissModalViewControllerAnimated: YES];
+    [viewController dismissViewControllerAnimated:YES completion:nil];
 }
 
 @end

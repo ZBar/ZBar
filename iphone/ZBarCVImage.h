@@ -27,17 +27,9 @@
 // ZBarImage referring to a CVPixelBuffer.  used internally to handle
 // asynchronous conversion to UIImage
 
-@interface ZBarCVImage
-    : ZBarImage
-{
-    CVPixelBufferRef pixelBuffer;
-    void *rgbBuffer;
-    NSInvocationOperation *conversion;
-}
+@interface ZBarCVImage: ZBarImage
 
-- (void) waitUntilConverted;
-
-@property (nonatomic) CVPixelBufferRef pixelBuffer;
+@property (nonatomic, readwrite, assign) CVPixelBufferRef pixelBuffer;
 @property (nonatomic, readonly) void *rgbBuffer;
 
 @end
