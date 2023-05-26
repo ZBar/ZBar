@@ -322,6 +322,7 @@ public:
 
     /// retrieve the string name for any addon.
     /// @deprecated in 0.11
+    __attribute__((deprecated))
     const std::string get_addon_name () const
     {
         return(zbar_get_addon_name(_type));
