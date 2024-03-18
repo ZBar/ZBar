@@ -40,6 +40,9 @@
     "CoreVideo",
     "QuartzCore"
   ],
+  "resources": [
+    "iphone/res/PrivacyInfo.xcprivacy"
+  ],
   "libraries": "iconv",
   "xcconfig": {
     "EXCLUDED_SOURCE_FILE_NAMES[sdk=iphoneos*][arch=*]": "ZBarReaderViewImpl_Simulator.m",
